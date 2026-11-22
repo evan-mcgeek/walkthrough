@@ -7,19 +7,22 @@ import { stateDir } from './paths';
 export const DECISIONS = ['approved'] as const;
 export type Decision = (typeof DECISIONS)[number];
 export type FoldedFile = { path: string; reason: string };
-/** `whole` is the entire change until the session records its steps; a `folded` step is one the session marked so. */
+/** A `folded` step is one the session marked so. */
 export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
-  | { kind: 'whole' }
   | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
+export type ChecklistItem = { id: string; status: string; text: string; steps: string[] };
+export type Checklist = { title: string; items: ChecklistItem[] };
 export type Walkthrough = {
   kind: 'branch';
   branch: string;
   target: string;
   base: string;
   head: string;
+  /** Empty until the session records its steps. */
   steps: Step[];
+  checklist?: Checklist;
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
@@ -47,7 +50,7 @@ export function openWalkthrough(change: Change): {
       target: change.target,
       base: change.base,
       head: change.head,
-      steps: [{ id: 'change', kind: 'whole', title: 'The whole change', diff: change.diff, decision: null }],
+      steps: [],
     };
     writeJson(file(dir), walkthrough);
     return { dir, walkthrough, opened: saved ? 'replaced' : 'new' };
@@ -62,6 +65,17 @@ export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => St
     walkthrough.steps = build(walkthrough);
     writeJson(file(dir), walkthrough);
     return walkthrough;
+  });
+}
+
+/** Replaces the checklist; `build` sees the saved walkthrough under the lock. */
+export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Checklist {
+  return locked(file(dir), () => {
+    const walkthrough = readWalkthrough(dir);
+    if (!walkthrough) throw new Error('there is no walkthrough of this branch yet; run walkthrough start first');
+    walkthrough.checklist = build(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return walkthrough.checklist;
   });
 }
 

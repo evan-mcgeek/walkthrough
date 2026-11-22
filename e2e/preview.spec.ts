@@ -21,11 +21,18 @@ const logo =
 
 test.use({ files: { 'docs/guide.md': guide, 'logo.svg': logo } });
 
+test.beforeEach(async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  const files = ['docs/guide.md', 'logo.svg', 'login.ts', 'app.ts'];
+  const recorded = repo.record([{ title: 'Docs and login', explanation: 'Adds docs and login.', files }]);
+  if (recorded.status !== 0) throw new Error(recorded.stderr);
+  await expect(page.getByRole('region', { name: 'Docs and login' })).toBeVisible();
+});
+
 const fileIn = (page: import('@playwright/test').Page, name: string) =>
   page.locator('.d2h-file-wrapper').filter({ has: page.locator('.d2h-file-name', { hasText: name }) });
 
-test('a changed Markdown file previews rendered and safe, and switches back to its diff', async ({ page, url }) => {
-  await expect(page).toHaveURL(url);
+test('a changed Markdown file previews rendered and safe, and switches back to its diff', async ({ page }) => {
   const file = fileIn(page, 'docs/guide.md');
   const toggle = file.getByRole('group', { name: 'Show docs/guide.md as' });
   await expect(toggle.getByRole('button', { name: 'Diff' })).toHaveAttribute('aria-pressed', 'true');
@@ -50,8 +57,7 @@ test('a changed Markdown file previews rendered and safe, and switches back to i
   await expect(file.locator('.d2h-file-diff')).toBeVisible();
 });
 
-test('a changed image previews as it is at the head commit; other files have no switch', async ({ page, url }) => {
-  await expect(page).toHaveURL(url);
+test('a changed image previews as it is at the head commit; other files have no switch', async ({ page }) => {
   const file = fileIn(page, 'logo.svg');
 
   await file.getByRole('group', { name: 'Show logo.svg as' }).getByRole('button', { name: 'Preview' }).click();
@@ -62,14 +68,25 @@ test('a changed image previews as it is at the head commit; other files have no 
   await expect(fileIn(page, 'login.ts').getByRole('group')).toHaveCount(0);
 });
 
-test('a redraw from the session keeps a file in preview', async ({ page, repo, url }) => {
-  await expect(page).toHaveURL(url);
+test('a redraw from the session keeps a file in preview, even when its step is recorded again', async ({
+  page,
+  repo,
+}) => {
   const file = fileIn(page, 'docs/guide.md');
   await file.getByRole('button', { name: 'Preview' }).click();
   await expect(file.getByRole('heading', { name: 'Guide' })).toBeVisible();
 
   repo.background('listen');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
+
+  await expect(file.getByRole('heading', { name: 'Guide' })).toBeVisible();
+  await expect(file.locator('.d2h-file-diff')).toBeHidden();
+
+  repo.record([
+    { title: 'Docs', explanation: 'Adds docs.', files: ['docs/guide.md', 'logo.svg'] },
+    { title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts'] },
+  ]);
+  await expect(page.getByRole('region', { name: 'Docs', exact: true })).toBeVisible();
 
   await expect(file.getByRole('heading', { name: 'Guide' })).toBeVisible();
   await expect(file.locator('.d2h-file-diff')).toBeHidden();

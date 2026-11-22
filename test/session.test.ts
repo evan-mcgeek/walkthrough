@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import type { SessionView } from '../src/session';
 import type { Walkthrough } from '../src/walkthrough';
-import { makeRepo, type Repo } from './helpers';
+import { ONE_STEP, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
 afterEach(async () => {
@@ -37,13 +37,14 @@ describe('walkthrough listen', () => {
   test('exits with the question the person asks on a step', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
     const listener = await listening();
 
-    expect((await post(repo.url(), '/ask', { step: 'change', text: 'Why is app 2 now?' })).status).toBe(200);
+    expect((await post(repo.url(), '/ask', { step: '1', text: 'Why is app 2 now?' })).status).toBe(200);
 
     const { status, stdout } = await listener.ended;
     expect(status).toBe(0);
-    expect(handed(stdout)).toEqual([expect.objectContaining({ kind: 'ask', step: 'change', text: 'Why is app 2 now?' })]);
+    expect(handed(stdout)).toEqual([expect.objectContaining({ kind: 'ask', step: '1', text: 'Why is app 2 now?' })]);
     expect(handed(stdout)[0]?.['id']).toMatch(/^[0-9a-f]{8}$/);
     expect((await sessionAt(repo.url())).state).toBe('working');
   });
@@ -51,8 +52,9 @@ describe('walkthrough listen', () => {
   test('hands over what the person sent while nobody listened, at once', async () => {
     repo = makeRepo();
     repo.run('start');
-    await post(repo.url(), '/ask', { step: 'change', text: 'First?' });
-    await post(repo.url(), '/ask', { step: 'change', text: 'Second?' });
+    repo.record(ONE_STEP);
+    await post(repo.url(), '/ask', { step: '1', text: 'First?' });
+    await post(repo.url(), '/ask', { step: '1', text: 'Second?' });
 
     const { status, stdout } = await repo.background('listen').ended;
 
@@ -63,6 +65,7 @@ describe('walkthrough listen', () => {
   test('a newer listener takes over and the older one exits with 3', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
     const older = await listening();
 
     const newer = repo.background('listen');
@@ -70,7 +73,7 @@ describe('walkthrough listen', () => {
     expect(status).toBe(3);
     expect(stderr).toContain('another walkthrough listen took over');
 
-    await post(repo.url(), '/ask', { step: 'change', text: 'Who gets this?' });
+    await post(repo.url(), '/ask', { step: '1', text: 'Who gets this?' });
     expect(handed((await newer.ended).stdout)[0]).toMatchObject({ text: 'Who gets this?' });
   });
 
@@ -89,8 +92,9 @@ describe('walkthrough listen', () => {
   test('refuses a question with no text or about a step the walkthrough does not have', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
 
-    expect((await post(repo.url(), '/ask', { step: 'change', text: '  ' })).status).toBe(400);
+    expect((await post(repo.url(), '/ask', { step: '1', text: '  ' })).status).toBe(400);
     expect((await post(repo.url(), '/ask', { step: 'nope', text: 'Why?' })).status).toBe(400);
     expect((await post(repo.url(), '/reply', { to: 'nope', text: 'Yes' })).status).toBe(400);
     expect((await sessionAt(repo.url())).conversation).toEqual([]);
@@ -101,15 +105,16 @@ describe('walkthrough say', () => {
   test('puts the answer to an ask on the page and leaves the step undecided', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
     const listener = await listening();
-    await post(repo.url(), '/ask', { step: 'change', text: 'Why is app 2 now?' });
+    await post(repo.url(), '/ask', { step: '1', text: 'Why is app 2 now?' });
     const [asked] = handed((await listener.ended).stdout);
 
     const said = repo.run('say', '--answer', String(asked?.['id']), 'Login needs the second app.');
 
     expect(said.stdout).toContain('Said on the page.');
     expect((await sessionAt(repo.url())).conversation).toEqual([
-      expect.objectContaining({ from: 'page', kind: 'ask', step: 'change', text: 'Why is app 2 now?' }),
+      expect.objectContaining({ from: 'page', kind: 'ask', step: '1', text: 'Why is app 2 now?' }),
       expect.objectContaining({ from: 'session', answer: asked?.['id'], text: 'Login needs the second app.' }),
     ]);
     expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();

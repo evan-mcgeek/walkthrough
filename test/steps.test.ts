@@ -33,6 +33,14 @@ describe('walkthrough files', () => {
 });
 
 describe('walkthrough steps', () => {
+  test('a started walkthrough has no steps until the session records them', async () => {
+    repo = makeRepo();
+
+    repo.run('start');
+
+    expect((await shownAt(repo.url())).steps).toEqual([]);
+  });
+
   test('records the steps in the given order, each with its explanation and its own diff', async () => {
     repo = makeRepo({ feature: { 'login.test.ts': "test('login', () => {});\n" } });
     repo.run('start');
@@ -71,7 +79,7 @@ describe('walkthrough steps', () => {
     expect(refused.stderr).toContain('login.ts is in more than one step');
     expect(refused.stderr).toContain('other.ts is not changed in this walkthrough');
     expect(refused.stderr).toContain('no step has app.ts, login.test.ts');
-    expect((await shownAt(repo.url())).steps.map(step => step.kind)).toEqual(['whole']);
+    expect((await shownAt(repo.url())).steps).toEqual([]);
   });
 
   test('refuses a step without an explanation', () => {

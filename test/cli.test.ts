@@ -3,7 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { Walkthrough } from '../src/walkthrough';
-import { git, makeRepo, type Repo } from './helpers';
+import { git, ONE_STEP, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
 afterEach(() => {
@@ -33,6 +33,7 @@ describe('walkthrough start', () => {
     fs.writeFileSync(path.join(repo.dir, 'draft.ts'), 'export const draft = 1;\n');
 
     const started = repo.run('start');
+    repo.record(ONE_STEP);
 
     expect(started.stdout).toContain('Warning: 2 uncommitted changes are left out of this walkthrough.');
     const shown = (await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough;
@@ -71,8 +72,9 @@ describe('deciding on a step', () => {
   test('an approve decision is saved and resumed after the page server restarts', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
 
-    const answer = await post(repo.url(), '/decide', { step: 'change', decision: 'approved' });
+    const answer = await post(repo.url(), '/decide', { step: '1', decision: 'approved' });
     expect(answer.status).toBe(200);
     repo.run('stop');
     const again = repo.run('start');
@@ -84,22 +86,24 @@ describe('deciding on a step', () => {
   test('a new head starts the walkthrough over and says so', async () => {
     repo = makeRepo();
     repo.run('start');
-    await post(repo.url(), '/decide', { step: 'change', decision: 'approved' });
+    repo.record(ONE_STEP);
+    await post(repo.url(), '/decide', { step: '1', decision: 'approved' });
     fs.writeFileSync(path.join(repo.dir, 'login.ts'), 'export const login = () => false;\n');
     git(repo.dir, 'commit', '-am', 'Fix login');
 
     const again = repo.run('start');
 
     expect(again.stdout).toContain('The head moved since the last walkthrough, so it starts over.');
-    expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();
+    expect((await shownAt(repo.url())).steps).toEqual([]);
   });
 
   test('a decision on an unknown step or of an unknown kind is refused', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
 
     expect((await post(repo.url(), '/decide', { step: 'nope', decision: 'approved' })).status).toBe(400);
-    expect((await post(repo.url(), '/decide', { step: 'change', decision: 'merged' })).status).toBe(400);
+    expect((await post(repo.url(), '/decide', { step: '1', decision: 'merged' })).status).toBe(400);
     expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();
   });
 });
@@ -120,12 +124,13 @@ describe('the page server', () => {
   test('refuses a request without the token, from another host or origin, or without JSON', async () => {
     repo = makeRepo();
     repo.run('start');
+    repo.record(ONE_STEP);
     const page = repo.url();
     const { host, pathname } = new URL(page);
     const token = pathname.split('/')[2] ?? '';
     const wrong = '0'.repeat(48);
     const json = { 'content-type': 'application/json' };
-    const decide = { step: 'change', decision: 'approved' };
+    const decide = { step: '1', decision: 'approved' };
 
     expect(await statusOf(page, `/s/${wrong}/`, 'GET', {})).toBe(404);
     expect(await statusOf(page, `/s/${wrong}/data/walkthrough.json`, 'GET', {})).toBe(404);

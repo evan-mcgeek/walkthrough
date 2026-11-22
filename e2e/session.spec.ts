@@ -1,14 +1,16 @@
+import { ONE_STEP } from '../test/helpers';
 import { expect, test } from './walkthrough';
 
 test('Ask reaches the listening session and its answer shows at the step', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const chip = page.getByRole('status', { name: 'Session' });
   await expect(chip).toHaveText('Quiet');
+  repo.record(ONE_STEP);
 
   const listener = repo.background('listen');
   await expect(chip).toHaveText('Listening');
 
-  const step = page.getByRole('region', { name: 'The whole change' });
+  const step = page.getByRole('region', { name: 'Login' });
   await step.getByRole('textbox', { name: 'Ask about this step' }).fill('Why is app 2 now?');
   await step.getByRole('button', { name: 'Ask' }).click();
 
@@ -46,6 +48,7 @@ test('a question from the session needs the person until they reply', async ({ p
 
 test('a draft question survives the page redrawing', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
   const box = page.getByRole('textbox', { name: 'Ask about this step' });
   await box.fill('Half a thou');
 
