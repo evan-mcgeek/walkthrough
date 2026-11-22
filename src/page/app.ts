@@ -195,6 +195,14 @@ function diffView(step: Step): HTMLElement {
 const paths = (label: string, files: string[]) =>
   el('p', { className: 'paths' }, `${label}: `, ...files.flatMap((file, at) => [at ? ', ' : '', el('code', {}, file)]));
 
+function assumedView(stepId: string, assumptions: string[]): HTMLElement[] {
+  if (!assumptions.length) return [];
+  const label = el('p', { id: `assumed-${stepId}` }, el('strong', {}, 'Assumed, not read'));
+  const list = el('ul', {}, ...assumptions.map(assumption => el('li', {}, assumption)));
+  list.setAttribute('aria-labelledby', label.id);
+  return [label, list];
+}
+
 /** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
 const opened = new Set<string>();
 
@@ -209,6 +217,7 @@ function stepBody(step: Step): HTMLElement[] {
           'div',
           { className: 'about' },
           ...step.explanation.split(/\n\s*\n/).map(paragraph => el('p', {}, paragraph.trim())),
+          ...assumedView(step.id, step.assumptions),
           paths('Files', step.files),
         ),
         diffView(step),

@@ -10,7 +10,7 @@ export type FoldedFile = { path: string; reason: string };
 /** `whole` is the entire change until the session records its steps; a `folded` step is one the session marked so. */
 export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
   | { kind: 'whole' }
-  | { kind: 'step'; explanation: string; files: string[] }
+  | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
 export type Walkthrough = {
