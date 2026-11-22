@@ -9,6 +9,7 @@ allowed-tools: Bash(walkthrough *)
 The `walkthrough` CLI owns all walkthrough state; never write files under its state folder yourself.
 Every judgement in a walkthrough (how to split, order and fold the change, what to write, what to do with what the person sends) follows the person's review policy and the project's own instructions for agents.
 Until a review policy exists, use your own judgement and tell the person in one line what you chose.
+Run any reviewer in a fresh context, and never treat the author session's own summary of the change as evidence (ADR 0002).
 
 1. Run `walkthrough start` in the repo.
    If the person names the branch their change targets, pass `--target <branch>`.
