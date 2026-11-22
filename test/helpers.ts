@@ -16,6 +16,9 @@ export function git(cwd: string, ...args: string[]): string {
 
 type Files = Record<string, string>;
 
+/** The default change as one step, recorded as step 1. */
+export const ONE_STEP = [{ title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts'] }];
+
 const commit = (cwd: string, message: string, files: Files) => {
   for (const [name, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(cwd, name)), { recursive: true });
@@ -95,12 +98,14 @@ export function makeRepo({
     },
     /** Waits for every background CLI to end, so none writes into the sandbox while it is removed. */
     settled: () => Promise.all(running),
-    /** Records the steps the way the skill does, as JSON on standard input. */
-    record: (steps: unknown) =>
-      spawnSync(CLI, ['steps'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(steps) }),
-    /** Records notes the way the skill does, as JSON on standard input. */
-    note: (notes: unknown) =>
-      spawnSync(CLI, ['note'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(notes) }),
+    /** Records with `command` the way the skill does, as JSON on standard input; a string goes in as it is. */
+    record: (input: unknown, command = 'steps') =>
+      spawnSync(CLI, [command], {
+        cwd: dir,
+        encoding: 'utf8',
+        env,
+        input: typeof input === 'string' ? input : JSON.stringify(input),
+      }),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */

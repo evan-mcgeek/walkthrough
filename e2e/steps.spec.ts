@@ -22,7 +22,7 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const recorded = repo.record(steps);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
-  await page.reload();
+  await expect(page.getByRole('navigation', { name: 'Steps' })).toBeVisible();
 });
 
 test('shows one step at a time with its explanation and files, folded steps collapsed, and moves between steps', async ({
@@ -77,7 +77,10 @@ test('shows how many steps are decided and left, and approving moves on to the n
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
-test('a redraw from the session keeps the step being read and its opened diff', async ({ page, repo }) => {
+test('a redraw from the session or from steps recorded again keeps the step being read and its opened diff', async ({
+  page,
+  repo,
+}) => {
   await page.getByRole('navigation', { name: 'Steps' }).getByRole('link', { name: '2. Regenerated schema' }).click();
   const folded = page.getByRole('region', { name: 'Regenerated schema' });
   await folded.getByText('Show the diff').click();
@@ -86,6 +89,13 @@ test('a redraw from the session keeps the step being read and its opened diff', 
 
   repo.background('listen');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
+
+  expect(page.url()).toBe(address);
+  await expect(folded).toBeVisible();
+  await expect(folded.locator('details')).toHaveAttribute('open', '');
+
+  repo.record(steps.map(step => (step.title === 'App version' ? { ...step, title: 'App version bump' } : step)));
+  await expect(page.getByRole('link', { name: '3. App version bump' })).toBeVisible();
 
   expect(page.url()).toBe(address);
   await expect(folded).toBeVisible();

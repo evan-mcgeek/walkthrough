@@ -1,7 +1,7 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
 import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Entry, SessionMessage, SessionState, SessionView } from '../session';
-import type { Decision, Step, Walkthrough } from '../walkthrough';
+import type { Checklist, Decision, Step, Walkthrough } from '../walkthrough';
 
 const token = location.pathname.split('/')[2] ?? '';
 
@@ -29,8 +29,12 @@ function showAlert(message: string | null): void {
   alertBox.hidden = message === null;
 }
 
+/** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
+let posted = 0;
+
 /** The server's answer, or null once the person has been told why there is none. */
 async function post(route: string, body: unknown): Promise<Response | null> {
+  posted++;
   try {
     const answer = await fetch(`/${route}?token=${token}`, {
       method: 'POST',
@@ -83,6 +87,7 @@ async function send(route: 'ask' | 'reply', draft: string, body: Record<string, 
 }
 
 let lastSession = '';
+let lastWalkthrough = '';
 
 async function stop(): Promise<void> {
   if (!(await post('stop', {}))) return;
@@ -201,8 +206,6 @@ const opened = new Set<string>();
 /** What the step says about itself before its diff, and the diff, by kind of step. */
 function stepBody(step: Step): HTMLElement[] {
   switch (step.kind) {
-    case 'whole':
-      return [diffView(step)];
     case 'step':
       return [
         el(
@@ -270,8 +273,31 @@ function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
   return nav;
 }
 
+function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement {
+  const heading = el('h2', { id: 'checklist' }, title);
+  const rows = items.map(item => {
+    const links = item.steps.flatMap(id => {
+      const at = steps.findIndex(step => step.id === id);
+      const step = steps[at];
+      // A step recorded again may no longer have the id the item links to.
+      return step ? [el('a', { href: `#${encodeURIComponent(id)}`, title: step.title }, `Step ${String(at + 1)}`)] : [];
+    });
+    return el(
+      'li',
+      {},
+      el('span', { className: 'status' }, item.status),
+      el('p', { className: 'item-text' }, item.text),
+      ...(links.length ? [el('p', { className: 'links' }, ...links)] : []),
+    );
+  });
+  const section = el('section', { className: 'checklist' }, heading, el('ul', {}, ...rows));
+  section.setAttribute('aria-labelledby', heading.id);
+  return section;
+}
+
 function render(): void {
   lastSession = JSON.stringify(session);
+  lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
   const typing = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null;
   const draft = typing?.dataset['draft'];
@@ -287,7 +313,7 @@ function render(): void {
       el('h1', {}, walkthrough.branch),
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
-    el('p', { className: 'progress' }, progress),
+    ...(steps.length ? [el('p', { className: 'progress' }, progress)] : []),
     el(
       'div',
       { className: 'actions' },
@@ -296,7 +322,16 @@ function render(): void {
     ),
   );
   const current = currentStep(walkthrough);
-  main.replaceChildren(...sessionMessages(), stepsNav(steps, current), ...(current ? [stepView(current, steps)] : []));
+  const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
+  main.replaceChildren(
+    ...sessionMessages(),
+    ...(current
+      ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist), stepView(current, steps)]
+      : [
+          el('p', { className: 'notice' }, 'The session is preparing the steps; they appear here as it records them.'),
+          ...checklist,
+        ]),
+  );
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
@@ -317,15 +352,21 @@ render();
 
 const POLL_MS = 1500;
 let polling = false;
-// The session answers through the CLI, so the page asks for the conversation and the session's state again and again.
+const fetchText = async (data: string) => {
+  const answer = await fetch(data);
+  if (!answer.ok) throw new Error(`${data}: ${String(answer.status)}`);
+  return answer.text();
+};
+// The session records and answers through the CLI, so the page asks for the walkthrough and the session again and again.
 const poller = setInterval(() => {
   if (polling) return;
   polling = true;
-  fetch('data/session.json')
-    .then(async answer => {
-      const text = await answer.text();
-      if (!answer.ok || text === lastSession) return;
-      session = JSON.parse(text) as SessionView;
+  const since = posted;
+  Promise.all([fetchText('data/walkthrough.json'), fetchText('data/session.json')])
+    .then(([walkthroughText, sessionText]) => {
+      if (since !== posted || (walkthroughText === lastWalkthrough && sessionText === lastSession)) return;
+      walkthrough = JSON.parse(walkthroughText) as Walkthrough;
+      session = JSON.parse(sessionText) as SessionView;
       render();
     })
     .catch(() => {

@@ -13,7 +13,7 @@ const example = [
   },
 ];
 
-const notes = [
+const notesExample = [
   { step: '1', label: 'Risk', text: 'Sessions never expire, so a stolen one works **forever**.' },
   {
     step: '1',
@@ -24,6 +24,14 @@ const notes = [
     low: true,
   },
 ];
+
+const checklistExample = {
+  title: 'Acceptance criteria',
+  items: [
+    { status: 'met', text: 'Sessions survive a restart.', steps: ['1'] },
+    { status: 'not shown', text: 'Expired sessions are removed.', steps: [] },
+  ],
+};
 
 export const GUIDE = `walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
@@ -42,14 +50,23 @@ ${JSON.stringify(example, null, 2)}
 walkthrough note < notes.json
   Pins notes to the page, after those pinned before, and prints each note's id.
   Standard input is a JSON array of notes; their text is Markdown, shown without any raw HTML.
-  Steps are "1", "2", ... in the order recorded; before any are recorded, the whole change is step "change".
+  "step" is a step id ("1" for the first step).
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   Example:
-${JSON.stringify(notes, null, 2)}
+${JSON.stringify(notesExample, null, 2)}
+
+walkthrough checklist < checklist.json
+  Records the checklist shown beside the steps, replacing the one recorded before; re-recording the steps keeps it.
+  Standard input is a JSON object with a title and items in reading order.
+  Title, status and text are the session's own words.
+  An item's steps are the ids of the steps it links to ("1" for the first step); every id must exist, otherwise nothing is recorded ("steps" may be left out).
+    {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
+  Example checklist:
+${JSON.stringify(checklistExample, null, 2)}
 
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
