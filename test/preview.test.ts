@@ -58,6 +58,8 @@ test('previews still load after the worktree the walkthrough was started in is r
   git(repo.dir, 'worktree', 'add', worktree, 'feature/login');
   repo.runIn(worktree, 'start');
   git(repo.dir, 'worktree', 'remove', worktree);
+  // Back on the branch, so stopping after the test finds its walkthrough.
+  git(repo.dir, 'checkout', 'feature/login');
 
   const markdown = await fileAt('docs/guide.md');
 
