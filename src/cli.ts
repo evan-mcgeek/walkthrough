@@ -1,11 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
-import { currentBranch, currentChange } from './change';
-import { prune, pruneDaily } from './prune';
+import { changedFiles, currentBranch, currentChange } from './change';
+import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { listen, say } from './session';
-import { buildSteps, changeFiles, parseSteps } from './steps';
+import { GUIDE } from './guide';
+import { buildSteps, parseSteps } from './steps';
 import { openWalkthrough, readWalkthrough, recordSteps, type Walkthrough, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
@@ -49,12 +50,8 @@ function current(): { dir: string; walkthrough: Walkthrough } {
 }
 
 function files(): void {
-  const { files: changed, mechanical } = changeFiles(current().walkthrough, process.cwd());
-  const lines = ['Group these files into steps:'];
-  for (const { path } of changed) if (!mechanical.has(path)) lines.push(`  ${path}`);
-  if (mechanical.size > 0) lines.push('Mechanical, collapsed into the last step by walkthrough itself:');
-  for (const [path, reason] of mechanical) lines.push(`  ${path} (${reason})`);
-  console.log(lines.join('\n'));
+  const { base, head } = current().walkthrough;
+  for (const { path } of changedFiles(process.cwd(), base, head)) console.log(path);
 }
 
 function steps(): void {
@@ -63,15 +60,8 @@ function steps(): void {
   const { steps: recorded } = recordSteps(walkthroughDir(currentBranch(cwd)), walkthrough =>
     buildSteps(cwd, walkthrough, inputs),
   );
-  const mechanical = recorded.at(-1);
-  if (mechanical?.kind !== 'mechanical') {
-    console.log(`Recorded ${plural(recorded.length, 'step')}.`);
-    return;
-  }
-  console.log(
-    `Recorded ${plural(recorded.length, 'step')}, the last one mechanical with ${plural(mechanical.files.length, 'file')}.`,
-  );
-  for (const problem of mechanical.problems) console.log(`Consistency problem: ${problem}`);
+  const folded = recorded.filter(step => step.kind === 'folded').length;
+  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
 }
 
 async function listenCommand(): Promise<void> {
@@ -99,15 +89,22 @@ function sayCommand(args: string[]): void {
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
-  // The skill's steps, as a JSON array on standard input.
+  // The session's steps, as a JSON array on standard input.
   steps,
+  guide: () => {
+    process.stdout.write(GUIDE);
+  },
   listen: listenCommand,
   say: sayCommand,
   stop: async () => {
     const stopped = await stopServer(walkthroughDir(currentBranch(process.cwd())));
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
   },
-  prune: async () => {
+  prune: async ([id]) => {
+    if (id) {
+      console.log(await pruneOne(process.cwd(), id));
+      return;
+    }
     const removed = await prune(process.cwd());
     console.log(removed.length > 0 ? removed.join('\n') : 'No walkthrough to remove.');
   },
@@ -122,7 +119,7 @@ const command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      'usage: walkthrough start [--target <branch>] | files | steps < steps.json | listen | say [--answer <id>] [--question] <text> | stop | prune',
+      'usage: walkthrough start [--target <branch>] | guide | files | steps < steps.json | listen | say [--answer <id>] [--question] <text> | stop | prune [<branch>]',
     );
   await command(rest);
 } catch (error) {

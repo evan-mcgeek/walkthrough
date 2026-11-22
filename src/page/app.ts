@@ -203,20 +203,18 @@ function stepBody(step: Step): HTMLElement[] {
   switch (step.kind) {
     case 'whole':
       return [diffView(step)];
-    case 'logical':
+    case 'step':
       return [
         el(
           'div',
           { className: 'about' },
-          el('p', {}, step.what),
-          el('p', {}, el('strong', {}, 'Why: '), step.why),
+          ...step.explanation.split(/\n\s*\n/).map(paragraph => el('p', {}, paragraph.trim())),
           paths('Files', step.files),
-          step.tests.length ? paths('Tests', step.tests) : el('p', { className: 'untested' }, 'No tests in this step.'),
         ),
         diffView(step),
       ];
-    case 'mechanical': {
-      const details = el('details', { open: opened.has(step.id) }, el('summary', {}, 'Show the diff'));
+    case 'folded': {
+      const details = el('details', { open: opened.has(step.id) }, el('summary', {}, 'Show the diff'), diffView(step));
       details.ontoggle = () => {
         if (details.open) opened.add(step.id);
         else opened.delete(step.id);
@@ -225,13 +223,14 @@ function stepBody(step: Step): HTMLElement[] {
         el(
           'div',
           { className: 'about' },
-          el('p', {}, 'Checked for consistency, not line by line.'),
-          step.problems.length
-            ? el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', {}, problem)))
-            : el('p', { className: 'consistent' }, 'No consistency problems found.'),
-          step.files.length
-            ? el('ul', {}, ...step.files.map(file => el('li', {}, `${file.path} (${file.reason})`)))
-            : el('p', {}, 'No mechanical files changed.'),
+          el('p', {}, 'Folded by the session, not shown line by line.'),
+          el('ul', {}, ...step.files.map(file => el('li', {}, el('code', {}, file.path), `: ${file.reason}`))),
+          ...(step.problems.length
+            ? [
+                el('p', {}, el('strong', {}, 'Problems the session found:')),
+                el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', {}, problem))),
+              ]
+            : []),
         ),
         ...(step.diff ? [details] : []),
       ];

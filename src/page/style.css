@@ -288,14 +288,8 @@ main {
   margin: 0 0 8px;
 }
 
-.paths,
-.untested,
-.consistent {
+.paths {
   color: var(--muted);
-}
-
-.untested {
-  font-style: italic;
 }
 
 .problems {

@@ -1,80 +1,72 @@
-// The skill groups and orders the change into steps; this checks that grouping and builds the steps from git.
+// The session groups, orders and folds the change into steps; this checks only that every changed file is in exactly one step.
 import { changedFiles, diffOf } from './change';
-import { consistencyProblems, mechanicalFiles } from './mechanical';
-import type { Step, Walkthrough } from './walkthrough';
+import type { FoldedFile, Step, Walkthrough } from './walkthrough';
 
-export type StepInput = { title: string; what: string; why: string; files: string[]; tests: string[] };
+export type StepInput =
+  | { title: string; explanation: string; files: string[] }
+  | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
 
-/** The steps the skill sent, in its order, or an error naming what is wrong with their shape. */
+const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
+const isFoldedFile = (file: unknown): file is FoldedFile =>
+  typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
+
+/** The steps the session sent, in its order, or an error naming what is wrong with their shape. */
 export function parseSteps(text: string): StepInput[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('the steps must be a JSON array on standard input');
+    throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
   }
-  if (!Array.isArray(parsed)) throw new Error('the steps must be a JSON array on standard input');
+  if (!Array.isArray(parsed)) throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
   return parsed.map((one: unknown, at) => {
     const step = (one ?? {}) as Record<string, unknown>;
-    const text = (field: string) => {
-      const value = step[field];
-      if (typeof value !== 'string' || !value.trim()) throw new Error(`step ${String(at + 1)} needs a ${field}`);
-      return value;
-    };
-    const paths = (field: string) => {
-      const value = step[field] ?? [];
-      if (!Array.isArray(value) || !value.every(item => typeof item === 'string'))
-        throw new Error(`step ${String(at + 1)}: ${field} must be a list of paths`);
-      return value;
-    };
-    return { title: text('title'), what: text('what'), why: text('why'), files: paths('files'), tests: paths('tests') };
+    const name = `step ${String(at + 1)}`;
+    const { title, explanation, files, folded, problems = [] } = step;
+    if (!filled(title)) throw new Error(`${name} needs a title`);
+    if (!Array.isArray(files)) throw new Error(`${name}: files must be a list`);
+    if (folded === true) {
+      if (!files.every(isFoldedFile))
+        throw new Error(`${name}: every file of a folded step needs a path and a reason`);
+      if (!Array.isArray(problems) || !problems.every(filled))
+        throw new Error(`${name}: problems must be a list of text`);
+      return {
+        title,
+        folded,
+        files: files.map(({ path, reason }) => ({ path, reason })),
+        problems,
+      };
+    }
+    if (!filled(explanation)) throw new Error(`${name} needs an explanation`);
+    if (!files.every(filled)) throw new Error(`${name}: files must be a list of paths`);
+    return { title, explanation, files };
   });
 }
 
-/** The walkthrough's changed files in path order, and the reason for each mechanical one. */
-export function changeFiles({ base, head }: Walkthrough, cwd: string) {
-  const files = changedFiles(cwd, base, head);
-  return { files, mechanical: mechanicalFiles(cwd, base, head, files) };
-}
+const pathsOf = (input: StepInput) => input.files.map(file => (typeof file === 'string' ? file : file.path));
 
-/** The steps of the walkthrough's change as `inputs` group them, then one step of its mechanical files. */
-export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Step[] {
-  const { base, head } = walkthrough;
-  const { files, mechanical } = changeFiles(walkthrough, cwd);
-  const changed = new Map(files.map(file => [file.path, file]));
-  const filesOf = (paths: string[]) => paths.flatMap(one => changed.get(one) ?? []);
+/** The steps of the walkthrough's change as `inputs` group them, or an error naming every file out of place. */
+export function buildSteps(cwd: string, { base, head }: Walkthrough, inputs: StepInput[]): Step[] {
+  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
   const problems: string[] = [];
   const placed = new Set<string>();
-  for (const one of inputs.flatMap(input => [...input.files, ...input.tests])) {
-    const reason = mechanical.get(one);
+  for (const one of inputs.flatMap(pathsOf)) {
     if (!changed.has(one)) problems.push(`${one} is not changed in this walkthrough`);
-    else if (reason) problems.push(`${one} is mechanical (${reason}); walkthrough puts it in the last step`);
-    else if (placed.has(one)) problems.push(`${one} is listed more than once`);
+    else if (placed.has(one)) problems.push(`${one} is in more than one step`);
     placed.add(one);
   }
-  const left = [...changed.keys()].filter(one => !placed.has(one) && !mechanical.has(one));
+  const left = [...changed.keys()].filter(one => !placed.has(one));
   if (left.length > 0) problems.push(`no step has ${left.join(', ')}`);
   if (problems.length > 0) throw new Error(`the steps were not recorded:\n  ${[...new Set(problems)].join('\n  ')}`);
-  const steps: Step[] = inputs.map((input, at) => ({
-    id: String(at + 1),
-    kind: 'logical',
-    ...input,
-    diff: diffOf(cwd, base, head, filesOf([...input.files, ...input.tests])),
-    decision: null,
-  }));
-  const consistency = consistencyProblems(cwd, head, files, mechanical);
-  // A lockfile that should have changed but did not still needs this step to say so.
-  if (mechanical.size === 0 && consistency.length === 0) return steps;
-  return [
-    ...steps,
-    {
-      id: 'mechanical',
-      kind: 'mechanical',
-      title: 'Mechanical changes',
-      files: [...mechanical].map(([path, reason]) => ({ path, reason })),
-      problems: consistency,
-      diff: diffOf(cwd, base, head, filesOf([...mechanical.keys()])),
+  return inputs.map((input, at) => {
+    const common = {
+      id: String(at + 1),
+      title: input.title,
+      diff: diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
       decision: null,
-    },
-  ];
+    };
+    return 'folded' in input
+      ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
+      : { ...common, kind: 'step', explanation: input.explanation, files: input.files };
+  });
 }
