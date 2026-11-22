@@ -7,7 +7,7 @@ An ask from the page can be pinned to a selected line range, and the session's a
 
 **Blocked by:** 16 Strip the rules out of the tool
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Notes appear at their step, and line notes beside their lines in the diff.
 - [ ] Low-priority notes sit behind an "N more" control.

@@ -8,7 +8,7 @@ An undecided item stays undecided everywhere; read state is kept apart from deci
 
 **Blocked by:** 19 Notes on steps and lines, 20 Checklist panel
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Actions render per item exactly as the session defined them, plus walkthrough-level actions at the end.
 - [ ] An action that asks for a note or allows editing collects it before sending.

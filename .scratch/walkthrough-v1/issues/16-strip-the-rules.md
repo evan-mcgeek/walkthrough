@@ -10,7 +10,7 @@ The skill's grouping, ordering and folding rules move out of SKILL.md into the r
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] No code, test fixture or skill text names a language, package manager, file name pattern, tracker or code host.
 - [ ] The CLI accepts a folded step from the session with per-file reasons and problems, and still refuses a file in two steps or in none.

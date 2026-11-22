@@ -7,7 +7,7 @@ A question the session asks on the page offers its answers as buttons.
 
 **Blocked by:** 18 Page opens before steps exist
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Each state is reached only from its evidence, covered by tests.
 - [ ] A long-running answer stays Working, not Gone.

@@ -7,7 +7,7 @@ State is keyed by the repo's identity (name plus a short hash of its git directo
 
 **Blocked by:** 16 Strip the rules out of the tool
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] `start --base <rev> --head <rev> [--label <text>]` creates a walkthrough of that range without checking anything out.
 - [ ] Two repos with the same folder name keep separate walkthroughs.

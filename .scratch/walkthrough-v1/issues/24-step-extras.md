@@ -6,7 +6,7 @@ A changed Markdown or image file gets a Diff / Preview switch.
 
 **Blocked by:** 16 Strip the rules out of the tool
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Assumptions render as their own list on the step.
 - [ ] Markdown previews render safely; images preview from the head commit.

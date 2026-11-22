@@ -6,7 +6,7 @@ Notes and asks whose step or lines no longer exist are kept and shown as detache
 
 **Blocked by:** 17 Any change, any repo, 21 Agent-defined actions and decisions
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] An unchanged step keeps its decision across a new head or a re-recording.
 - [ ] A step whose files changed is reopened.

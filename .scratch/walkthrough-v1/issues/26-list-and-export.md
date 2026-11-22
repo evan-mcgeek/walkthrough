@@ -6,7 +6,7 @@
 
 **Blocked by:** 17 Any change, any repo, 21 Agent-defined actions and decisions
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The list page shows every walkthrough of the repo and opens one.
 - [ ] The export opens offline from a single file with no server.

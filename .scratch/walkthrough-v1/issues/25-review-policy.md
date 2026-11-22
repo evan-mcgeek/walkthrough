@@ -7,7 +7,7 @@ The skill reads the policy and the project's instructions on every walkthrough a
 
 **Blocked by:** 21 Agent-defined actions and decisions
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The template carries every default listed under "Review policy template" in the spec, including settled findings as conventions, the fix-list hand-over, and received-review and reply walkthroughs.
 - [ ] First run offers the template and an interview; an unchanged template is offered again later.

@@ -6,7 +6,7 @@ The page shows it beside the steps and following a link opens that step.
 
 **Blocked by:** 16 Strip the rules out of the tool
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The panel shows the session's title and items with their statuses.
 - [ ] Item links open the linked step.

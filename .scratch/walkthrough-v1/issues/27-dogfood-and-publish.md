@@ -6,7 +6,7 @@ Measure token cost of each run and state it in the README, along with install an
 
 **Blocked by:** 22 When the change moves, 23 Session presence from evidence, 24 Assumptions and previews, 25 Review policy: template, interview, skill, 26 Walkthrough list and HTML export
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Two real walkthroughs completed end to end, with the issues they exposed fixed or filed.
 - [ ] README states install, first run, and measured token cost.

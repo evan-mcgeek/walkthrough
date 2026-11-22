@@ -6,7 +6,7 @@ The walkthrough data is polled like the session state, and polling never moves t
 
 **Blocked by:** 16 Strip the rules out of the tool
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The page shows a preparing state until steps are recorded.
 - [ ] Recording steps updates an open page within the poll interval.
