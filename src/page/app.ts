@@ -1,3 +1,5 @@
+import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
+import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Entry, SessionMessage, SessionState, SessionView } from '../session';
 import type { Decision, Step, Walkthrough } from '../walkthrough';
 
@@ -72,20 +74,6 @@ async function stop(): Promise<void> {
   header.replaceChildren(el('h1', {}, 'Walkthrough'));
   main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
 }
-
-// Content lines start with a space, + or -, or a backslash note; every other line is a file header.
-const lineClass = (line: string) =>
-  line.startsWith('+++ ') || line.startsWith('--- ')
-    ? 'meta'
-    : line.startsWith('@@')
-      ? 'hunk'
-      : line.startsWith('+')
-        ? 'add'
-        : line.startsWith('-')
-          ? 'del'
-          : line.startsWith(' ') || line.startsWith('\\')
-            ? ''
-            : 'meta';
 
 const SESSION: Record<SessionState, readonly [string, string]> = {
   listening: ['Listening', 'The session is listening: what you ask reaches it right away.'],
@@ -170,20 +158,34 @@ function sessionMessages(): HTMLElement[] {
   return [section];
 }
 
+// Kept across redraws: the page redraws whenever the session's state changes, and drawing a diff is the slow part.
+const drawn = new Map<string, { diff: string; view: HTMLElement }>();
+
+function diffView(step: Step): HTMLElement {
+  const kept = drawn.get(step.id);
+  if (kept?.diff === step.diff) return kept.view;
+  const view = el('div', { className: 'diff' });
+  new Diff2HtmlUI(view, step.diff, {
+    outputFormat: 'line-by-line',
+    drawFileList: false,
+    matching: 'lines',
+    colorScheme: ColorSchemeType.AUTO,
+    fileContentToggle: false,
+  }).draw();
+  drawn.set(step.id, { diff: step.diff, view });
+  return view;
+}
+
 function stepView(step: Step): HTMLElement {
   const title = el('h2', { id: `step-${step.id}` }, step.title);
   const decision = step.decision
     ? el('span', { className: 'decision approved' }, 'Approved')
     : el('button', { type: 'button', onclick: () => void decide(step, 'approved') }, 'Approve');
-  const lines = step.diff
-    .replace(/\n$/, '')
-    .split('\n')
-    .map(line => el('span', { className: `line ${lineClass(line)}` }, line));
   const section = el(
     'section',
     { className: 'step' },
     el('div', { className: 'step-head' }, title, decision),
-    el('pre', { className: 'diff' }, el('div', { className: 'lines' }, ...lines)),
+    diffView(step),
     askView(step),
   );
   section.setAttribute('aria-labelledby', title.id);
