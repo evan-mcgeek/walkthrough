@@ -311,18 +311,48 @@ function askView(step: Step): HTMLElement[] {
   )];
 }
 
-let picked: { step: string; file: string; from: number; lines: Lines } | null = null;
+/** `ended` once the last line is picked too; from the keyboard the first line is picked on its own first. */
+let picked: { step: string; file: string; from: number; lines: Lines; ended: boolean } | null = null;
+
+/** The line number cell the event is on, with its file and line, unless the page is read-only. */
+function lineAt(event: Event): { cell: HTMLElement; file: string; line: number } | null {
+  const target = event.target instanceof Element ? event.target : null;
+  const cell = target?.closest<HTMLElement>('.d2h-code-linenumber');
+  const row = cell?.closest<HTMLTableRowElement>('tr[data-line]');
+  const file = row?.dataset['file'];
+  return readOnly || !cell || !row || file === undefined ? null : { cell, file, line: Number(row.dataset['line']) };
+}
+
+function pick(step: Step, file: string, line: number, extend: boolean, ended: boolean): void {
+  const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line;
+  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended };
+  render();
+  if (ended) document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+}
 
 function pickLine(step: Step, event: MouseEvent): void {
-  const target = event.target instanceof Element ? event.target : null;
-  const row = target?.closest<HTMLTableRowElement>('tr[data-line]');
-  const file = row?.dataset['file'];
-  if (readOnly || !row || file === undefined || !target?.closest('.d2h-code-linenumber')) return;
-  const line = Number(row.dataset['line']);
-  const from = event.shiftKey && picked?.step === step.id && picked.file === file ? picked.from : line;
-  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)] };
-  render();
-  document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+  const at = lineAt(event);
+  if (at) pick(step, at.file, at.line, event.shiftKey, true);
+}
+
+/** Enter picks the first line, and Enter on another line or Shift+Enter the last; the arrows move between line numbers. */
+function pickByKey(step: Step, event: KeyboardEvent): void {
+  const at = lineAt(event);
+  if (!at) return;
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    const cells = [...(event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('tr[data-line] .d2h-code-linenumber')];
+    const next = cells[cells.indexOf(at.cell) + (event.key === 'ArrowDown' ? 1 : -1)];
+    if (!next) return;
+    event.preventDefault();
+    at.cell.tabIndex = -1;
+    next.tabIndex = 0;
+    next.focus();
+    return;
+  }
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const started = picked?.step === step.id && picked.file === at.file && !picked.ended;
+  pick(step, at.file, at.line, started, event.shiftKey || (started && picked?.from !== at.line));
 }
 
 function unpick(): void {
@@ -416,6 +446,17 @@ function drawDiff(step: Step): Drawn {
   view.onclick = event => {
     pickLine(step, event);
   };
+  if (!readOnly) {
+    const cells = [...view.querySelectorAll<HTMLElement>('tr[data-line] .d2h-code-linenumber')];
+    // One line number is in the tab order, and the arrows move from it, so the diff is one stop.
+    cells.forEach((cell, at) => {
+      cell.tabIndex = at === 0 ? 0 : -1;
+      cell.setAttribute('aria-label', `Ask about line ${cell.closest('tr')?.dataset['line'] ?? ''} of ${cell.closest('tr')?.dataset['file'] ?? ''}`);
+    });
+    view.onkeydown = event => {
+      pickByKey(step, event);
+    };
+  }
   const made = { diff: step.diff, view, rows };
   drawn.set(step.id, made);
   return made;
@@ -439,7 +480,7 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
       const line = Number(row.dataset['line']);
       if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) row.classList.add('selected');
     }
-    if (!at.has(pickKey)) at.set(pickKey, []);
+    if (pick.ended && !at.has(pickKey)) at.set(pickKey, []);
   }
   for (const [key, entries] of at) {
     const shown = el(
@@ -447,7 +488,7 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
       { className: 'pinned' },
       ...notesView(entries.filter(isNote), `more:${step.id}:${key}`),
       ...entries.filter(isAsk).map(askThread),
-      ...(pick && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
+      ...(pick?.ended && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
     );
     rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
   }
@@ -678,7 +719,8 @@ function render(): void {
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
-  const typing = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null;
+  const focused = document.activeElement;
+  const typing = focused instanceof HTMLTextAreaElement ? focused : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const { steps } = walkthrough;
@@ -717,11 +759,35 @@ function render(): void {
         ]),
   );
   if (current) void markRead(current);
+  // A diff is kept across redraws, so a line number focused in it is still there to focus again.
+  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
   box?.setSelectionRange(...caret);
 }
+
+const isTyping = (target: EventTarget | null) =>
+  target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+function stepBy(delta: number): void {
+  const { steps } = walkthrough;
+  const current = currentStep(walkthrough);
+  show(current && steps[steps.indexOf(current) + delta]);
+}
+
+document.addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key === 'Escape' && picked) {
+    const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
+    unpick();
+    end?.querySelector<HTMLElement>('.d2h-code-linenumber')?.focus();
+    return;
+  }
+  if (isTyping(event.target)) return;
+  if (event.key === 'j' || event.key === 'ArrowRight') stepBy(1);
+  else if (event.key === 'k' || event.key === 'ArrowLeft') stepBy(-1);
+});
 
 window.addEventListener('hashchange', () => {
   render();

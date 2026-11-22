@@ -100,6 +100,32 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(pinned.getByText('Then merge them.')).toHaveCount(1);
 });
 
+test('lines can be picked from the keyboard to ask about them', async ({ page }) => {
+  const number = (line: number) => row(page, 'cart.ts', line).locator('td.d2h-code-linenumber');
+  await number(2).focus();
+
+  await page.keyboard.press('Enter');
+  await expect(row(page, 'cart.ts', 2)).toHaveClass(/selected/);
+  await expect(page.getByRole('textbox', { name: /^Ask about cart.ts/ })).toHaveCount(0);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(number(4)).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2-4' });
+  await expect(box).toBeFocused();
+  await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
+
+  await page.keyboard.press('Escape');
+  await expect(box).toHaveCount(0);
+  await expect(row(page, 'cart.ts', 3)).not.toHaveClass(/selected/);
+  await expect(number(4)).toBeFocused();
+
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Shift+Enter');
+  await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
+});
+
 test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {
   pin(repo, [
     {

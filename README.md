@@ -62,6 +62,8 @@ Claude Code asks you to approve the session's reads of your policy, which lives 
 
 The page then opens and shows the session preparing.
 Steps appear as soon as the session records them.
+On the page, `j` and `k` or the right and left arrows move between steps.
+To ask about lines, click a line number and Shift-click another, or from the keyboard press Enter on the first line number and Enter on the last (Shift+Enter for a single line); Escape cancels.
 Uncommitted edits are left out of the walkthrough, with a warning, and nothing is ever checked out.
 
 ## Commands
