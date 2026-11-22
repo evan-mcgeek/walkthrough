@@ -1,2 +1,6 @@
 **/.claude/autoharness/
 .claude/worktrees/
+node_modules/
+plugin/dist/
+test-results/
+playwright-report/
