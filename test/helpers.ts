@@ -67,6 +67,14 @@ export function makeRepo() {
     base,
     head,
     run: (...args: string[]) => spawnSync(CLI, args, { cwd: dir, encoding: 'utf8', env }),
+    /** Runs the CLI in another folder with this repo's state and fakes. */
+    runIn: (cwd: string, ...args: string[]) => spawnSync(CLI, args, { cwd, encoding: 'utf8', env }),
+    /** Makes the fake `gh` run `script` after logging its arguments. */
+    gh: (script: string) => {
+      fs.writeFileSync(path.join(bin, 'gh'), `#!/bin/sh\necho "$@" >> "${log('gh')}"\n${script}\n`, { mode: 0o755 });
+    },
+    /** Every command line the CLI ran `gh` with. */
+    ghCalls: () => lines('gh'),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */

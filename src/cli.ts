@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
+import { prune, pruneDaily } from './prune';
 import { ensureServer, serve, stopServer } from './server';
 import { openWalkthrough, walkthroughDir } from './walkthrough';
 
@@ -10,6 +11,7 @@ const plural = (count: number, word: string) => `${String(count)} ${word}${count
 async function start(args: string[]): Promise<void> {
   const { values } = parseArgs({ args, options: { target: { type: 'string' } } });
   const change = currentChange(process.cwd(), values.target);
+  for (const line of await pruneDaily(process.cwd())) console.log(line);
   const { dir, walkthrough, opened } = openWalkthrough(change);
   const { steps } = walkthrough;
   console.log(
@@ -40,6 +42,10 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     const stopped = await stopServer(walkthroughDir(currentBranch(process.cwd())));
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
   },
+  prune: async () => {
+    const removed = await prune(process.cwd());
+    console.log(removed.length > 0 ? removed.join('\n') : 'No walkthrough to remove.');
+  },
   // The detached page server that start runs.
   serve: ([dir = '']) => {
     serve(dir);
@@ -49,7 +55,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
 const [name = '', ...rest] = process.argv.slice(2);
 const command = COMMANDS[name];
 try {
-  if (!command) throw new Error('usage: walkthrough start [--target <branch>] | stop');
+  if (!command) throw new Error('usage: walkthrough start [--target <branch>] | stop | prune');
   await command(rest);
 } catch (error) {
   console.error(`walkthrough: ${(error as Error).message}`);

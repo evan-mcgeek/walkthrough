@@ -22,12 +22,15 @@ function git(cwd: string, ...args: string[]): string {
   return result.stdout;
 }
 
+/** The folder name of the repo `cwd` is in, shared by all its worktrees. */
+export const currentRepo = (cwd: string) =>
+  path.basename(path.dirname(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim()));
+
 /** The repo and the branch checked out in `cwd`. */
 export function currentBranch(cwd: string): Pick<Change, 'repo' | 'branch'> {
   const branch = git(cwd, 'branch', '--show-current').trim();
   if (!branch) throw new Error('not on a branch; check out the branch to walk through');
-  const commonDir = git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim();
-  return { repo: path.basename(path.dirname(commonDir)), branch };
+  return { repo: currentRepo(cwd), branch };
 }
 
 /** The current branch from the merge-base with `origin/<target>` (the remote's default branch unless given) to its head commit. */
