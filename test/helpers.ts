@@ -1,5 +1,5 @@
 // A throwaway repo with an origin and a feature branch, and the walkthrough CLI run in it with fakes for `gh` and the browser.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -27,7 +27,7 @@ export type Repo = ReturnType<typeof makeRepo>;
  * `feature/login` branched from main at `base`, adding `login.ts` and changing `app.ts`; main moved on after it.
  * The working copy is left on the feature branch.
  */
-export function makeRepo() {
+export function makeRepo(extraEnv: Record<string, string> = {}) {
   const root = fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', 'repo-'));
   const dir = path.join(root, 'shop');
   const state = path.join(root, 'state');
@@ -57,7 +57,7 @@ export function makeRepo() {
   fs.writeFileSync(path.join(bin, 'gh'), `#!/bin/sh\necho "$@" >> "${log('gh')}"\ncat >> "${log('gh-stdin')}"\n`, {
     mode: 0o755,
   });
-  const env = { ...process.env, PATH: `${bin}:${process.env['PATH'] ?? ''}`, WALKTHROUGH_STATE: state };
+  const env = { ...process.env, PATH: `${bin}:${process.env['PATH'] ?? ''}`, WALKTHROUGH_STATE: state, ...extraEnv };
   const lines = (name: string) =>
     fs.existsSync(log(name)) ? fs.readFileSync(log(name), 'utf8').trim().split('\n') : [];
 
@@ -67,6 +67,20 @@ export function makeRepo() {
     base,
     head,
     run: (...args: string[]) => spawnSync(CLI, args, { cwd: dir, encoding: 'utf8', env }),
+    /** Runs the CLI in the background, as the session runs `listen`: what it printed and how it ended. */
+    background: (...args: string[]) => {
+      const child = spawn(CLI, args, { cwd: dir, env });
+      let stdout = '';
+      let stderr = '';
+      child.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()));
+      child.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()));
+      const ended = new Promise<{ status: number | null; stdout: string; stderr: string }>(resolve =>
+        child.on('exit', status => {
+          resolve({ status, stdout, stderr });
+        }),
+      );
+      return { child, ended };
+    },
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */

@@ -1,5 +1,5 @@
 // The page server: one detached process per walkthrough, on loopback only, behind a private token in the page address.
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -7,6 +7,8 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readJson, writeJson } from './json-files';
+import { alive, psStart } from './processes';
+import { ask, reply, type SessionView, sessionView } from './session';
 import { type Decision, DECISIONS, decide as walkthroughDecide, readWalkthrough } from './walkthrough';
 
 type ServerRecord = { pid: number; started: string; url: string };
@@ -14,6 +16,8 @@ type Answer = { status: number; body?: unknown; after?: () => void };
 type Route = (body: Record<string, unknown>) => Answer;
 
 const MAX_BODY_BYTES = 256 * 1024;
+// A server no page has polled for this long was forgotten, so it stops itself.
+const IDLE_MS = 30 * 60 * 1000;
 const PAGE = path.join(import.meta.dirname, 'page');
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
   '': { file: 'index.html', type: 'text/html; charset=utf-8' },
@@ -47,17 +51,10 @@ function pageToken(dir: string): string {
   return token;
 }
 
-const psStart = (pid: number) =>
-  spawnSync('ps', ['-p', String(pid), '-o', 'lstart='], { encoding: 'utf8' }).stdout.trim();
-
-/** A pid can be reused by an unrelated process, so its start time must match too. */
-function alive(record: ServerRecord): boolean {
-  try {
-    process.kill(record.pid, 0);
-  } catch {
-    return false;
-  }
-  return psStart(record.pid) === record.started;
+/** Whether the page server of the walkthrough in `dir` runs. */
+export function serverRunning(dir: string): boolean {
+  const record = readRecord(dir);
+  return !!record && alive(record);
 }
 
 const sleep = (ms: number) =>
@@ -106,9 +103,14 @@ export function serve(dir: string): void {
       const decided = known ? walkthroughDecide(dir, step, decision as Decision) : null;
       return decided ? { status: 200, body: decided } : { status: 400 };
     },
+    '/ask': ({ step, text }) => answered(ask(dir, step, text)),
+    '/reply': ({ to, text }) => answered(reply(dir, to, text)),
     '/stop': () => ({ status: 200, body: { stopped: true }, after: shutDown }),
   };
+  let seen = Date.now();
   const server = http.createServer((req, res) => {
+    // The page polls, so a request under its private address means a page is still open.
+    if (req.url?.startsWith(`/s/${token}/`)) seen = Date.now();
     try {
       gate(req, res, { dir, token, port: String((server.address() as AddressInfo).port), routes });
     } catch (error) {
@@ -122,6 +124,10 @@ export function serve(dir: string): void {
   process.on('SIGTERM', shutDown);
   process.on('SIGINT', shutDown);
   process.on('uncaughtException', logged);
+  const idleMs = Number(process.env['WALKTHROUGH_IDLE_MS']) || IDLE_MS;
+  setInterval(() => {
+    if (Date.now() - seen > idleMs) shutDown();
+  }, Math.min(idleMs / 4, 60_000));
   server.listen(0, '127.0.0.1', () => {
     const { port } = server.address() as AddressInfo;
     const record: ServerRecord = {
@@ -132,6 +138,8 @@ export function serve(dir: string): void {
     writeJson(recordFile(dir), record);
   });
 }
+
+const answered = (view: SessionView | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
 
 const logged = (error: unknown) => {
   console.error(`walkthrough server: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
@@ -146,6 +154,10 @@ function failRequest(res: http.ServerResponse, error: unknown): void {
 function serveFile(dir: string, what: string, res: http.ServerResponse): void {
   if (what === 'data/walkthrough.json') {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(readWalkthrough(dir)));
+    return;
+  }
+  if (what === 'data/session.json') {
+    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(sessionView(dir)));
     return;
   }
   const known = Object.hasOwn(PAGE_FILES, what) ? PAGE_FILES[what] : undefined;
