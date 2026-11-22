@@ -12,7 +12,7 @@ const steps = [
     files: [{ path: 'schema.json', reason: 'Regenerated from the schema source.' }],
     problems: ['schema.json still lists the removed field.'],
   },
-  { title: 'App version', explanation: 'Bumps the app constant.', files: ['app.ts'] },
+  { title: 'App version', explanation: 'Bumps the app **constant**.', files: ['app.ts'] },
 ];
 
 test.use({ files: { 'login.test.ts': "test('login', () => {});\n", 'schema.json': '{"field": 1}\n' } });
@@ -54,6 +54,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
 
   await nav.getByRole('link', { name: '3. App version' }).click();
   await expect(page.getByRole('region', { name: 'App version' }).getByText('Bumps the app constant.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'App version' }).locator('strong')).toHaveText('constant');
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 
   await page.getByRole('button', { name: 'Previous' }).click();
