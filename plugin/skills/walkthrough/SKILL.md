@@ -1,14 +1,14 @@
 ---
 name: walkthrough
 description: Walk through a change, the current branch or any base and head, on a local page, one step at a time. Use when the person runs /walkthrough or asks to walk through or review their branch or a change.
-allowed-tools: Bash(walkthrough *)
+allowed-tools: Bash(walkthrough *) Bash(cmp *)
 ---
 
 # Walkthrough
 
 The `walkthrough` CLI owns all walkthrough state; never write files under its state folder yourself.
 Every judgement in a walkthrough (how to split, order and fold the change, what to write, what to do with what the person sends) follows the person's review policy and the project's own instructions for agents.
-Until a review policy exists, use your own judgement and tell the person in one line what you chose.
+Before step 1, find the review policy as below, read it, and read the project's instructions for agents (its CLAUDE.md, AGENTS.md and the files they point to).
 Run any reviewer in a fresh context, and never treat the author session's own summary of the change as evidence (ADR 0002).
 
 1. Run `walkthrough start` in the repo.
@@ -24,6 +24,25 @@ Run any reviewer in a fresh context, and never treat the author session's own su
    Running `walkthrough start` again on the same head reopens the walkthrough with their decisions intact.
 6. Listen for the page, as below, until the walkthrough stops.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
+
+## Review policy
+
+The person's policy lives at `${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md`, outside every project; the template is `${CLAUDE_SKILL_DIR}/review-policy.md`.
+Compare them with `cmp "${CLAUDE_SKILL_DIR}/review-policy.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md"`:
+
+- Exit 1, the files differ: the policy is the person's own; read it and go on.
+- Exit 0, silent: the policy is still the unchanged template; offer the interview.
+- Exit 2 naming the policy: the person has none; offer the template and the interview.
+
+Offer in one or two lines: the template's defaults apply until they make the policy theirs, and a short interview does that now.
+When they say later, follow the template for this walkthrough; the offer comes again next time.
+When they say now:
+
+1. With no policy yet, copy the template there: `mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough" && cp "${CLAUDE_SKILL_DIR}/review-policy.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md"`.
+2. Go through the policy's sections in order.
+   For each, sum up its defaults in a line and ask one short question about how they actually review that part.
+   Edit their copy to match the answer before asking the next question; "keep" leaves the section as it is.
+3. The interview is done when every section is asked or they say enough; read their policy and go on with `walkthrough start`.
 
 ## Steps
 
