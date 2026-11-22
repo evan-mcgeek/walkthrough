@@ -2,8 +2,7 @@
 import { fieldsOf, filled, parseObject } from './input';
 import type { Checklist, Walkthrough } from './walkthrough';
 
-// An item keeps the id the session names, else that of an item recorded before with the same text, else one never given out,
-// so a decision follows its item rather than its place.
+// Ids follow the session's id or the item's text, never the place, so a decision cannot land on another item.
 export function parseChecklist(text: string, { steps, checklist, lastChecklistItem = 0 }: Walkthrough): Checklist {
   const { title, items } = parseObject(text, 'the checklist');
   if (!filled(title)) throw new Error('the checklist needs a title');

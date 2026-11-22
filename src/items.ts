@@ -5,6 +5,5 @@ export type Action = { id: string; label: string; note?: true; edit?: true };
 
 export const itemKey = (item: Item) => (item.type === 'walkthrough' ? item.type : `${item.type}:${item.id}`);
 
-/** What a walkthrough is called: its branch or its label. */
 export const nameOf = (named: { kind: 'branch'; branch: string } | { kind: 'range'; label: string }) =>
   named.kind === 'branch' ? named.branch : named.label;

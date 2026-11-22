@@ -83,7 +83,6 @@ export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: 
   }));
 }
 
-/** The steps at the walkthrough's new base and head, and the changed files none of them has. */
 export async function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Promise<{ steps: Step[]; unplaced: string[] }> {
   const changed = new Map((await changedFiles(cwd, base, head)).map(file => [file.path, file]));
   const diff = (files: (string | FoldedFile)[]) =>

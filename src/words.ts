@@ -2,7 +2,6 @@ export const plural = (count: number, word: string) => `${String(count)} ${word}
 
 const MAX_TEXT = 4000;
 
-/** Why what the person wrote is refused, or null when every text in `fields` fits. */
 export function tooLong(fields: Record<string, unknown>): string | null {
   const long = Object.values(fields).find((value): value is string => typeof value === 'string' && value.length > MAX_TEXT);
   return long === undefined

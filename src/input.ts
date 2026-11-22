@@ -13,7 +13,6 @@ function parsed(text: string): unknown {
 
 const wrongShape = (what: string, shape: string) => new Error(`${what} must be a JSON ${shape} on standard input; see walkthrough guide`);
 
-/** Each entry of the array, checked by `check` with its number from 1. */
 export function parseList<T>(text: string, what: string, check: (fields: Record<string, unknown>, number: number) => T): T[] {
   const list = parsed(text);
   if (!Array.isArray(list)) throw wrongShape(what, 'array');

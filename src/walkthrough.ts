@@ -60,7 +60,8 @@ export function openWalkthrough(
       const moved = { ...saved, target: change.target, base: change.base, head: change.head };
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
-      moved.unplaced = unplaced;
+      // Before any steps, the page shows the session preparing them instead.
+      if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
       writeJson(file(dir), moved);
       return { walkthrough: moved, opened: 'moved' };
     }

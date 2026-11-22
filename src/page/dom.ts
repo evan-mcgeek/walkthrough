@@ -24,7 +24,6 @@ export function showAlert(message: string | null): void {
   box.hidden = message === null;
 }
 
-/** What the page calls itself when it tells the person something went wrong. */
 export type PageName = { name: string; reopen: string };
 
 export const unreachable = ({ name, reopen }: PageName) => `Could not reach the ${name}. ${reopen}`;

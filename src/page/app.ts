@@ -314,7 +314,6 @@ function askView(step: Step): HTMLElement[] {
 /** `ended` once the last line is picked too; from the keyboard the first line is picked on its own first. */
 let picked: { step: string; file: string; from: number; lines: Lines; ended: boolean } | null = null;
 
-/** The line number cell the event is on, with its file and line, unless the page is read-only. */
 function lineAt(event: Event): { cell: HTMLElement; file: string; line: number } | null {
   const target = event.target instanceof Element ? event.target : null;
   const cell = target?.closest<HTMLElement>('.d2h-code-linenumber');
@@ -335,7 +334,6 @@ function pickLine(step: Step, event: MouseEvent): void {
   if (at) pick(step, at.file, at.line, event.shiftKey, true);
 }
 
-/** Enter picks the first line, and Enter on another line or Shift+Enter the last; the arrows move between line numbers. */
 function pickByKey(step: Step, event: KeyboardEvent): void {
   const at = lineAt(event);
   if (!at) return;

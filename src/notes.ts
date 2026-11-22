@@ -28,7 +28,6 @@ const isLines = (value: unknown): value is Lines =>
 // The page asks for every note's place on each poll; a step read from disk is parsed once per read.
 const parsed = new WeakMap<Step, ReturnType<typeof parse>>();
 
-/** The text of each line of `file` the step's diff shows, by its number at the head. */
 function shownLines(step: Step, file: string): Map<number, string> | null {
   const files = parsed.get(step) ?? parse(step.diff);
   parsed.set(step, files);
