@@ -115,7 +115,7 @@ describe('walkthrough actions', () => {
     expect((await shownAt(repo.url())).actions['step:1']?.map(action => action.id)).toEqual(['approve', 'flag']);
   });
 
-  test('recording the steps again keeps the actions of steps that keep their id; recording the checklist drops its own', async () => {
+  test('recording the steps or the checklist again keeps the actions of items that keep their id', async () => {
     started();
     repo.record(
       [
@@ -129,6 +129,9 @@ describe('walkthrough actions', () => {
     repo.record({ title: 'Criteria', items: [{ status: 'met', text: 'Other.' }] }, 'checklist');
 
     expect(Object.keys((await shownAt(repo.url())).actions)).toEqual(['step:1']);
+    repo.record([{ item: { type: 'checklist', id: '2' }, actions: [{ id: 'check', label: 'Checked' }] }], 'actions');
+    repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'Other.' }] }, 'checklist');
+    expect(Object.keys((await shownAt(repo.url())).actions)).toEqual(['step:1', 'checklist:2']);
     expect((await shownAt(repo.url())).actions['step:1']?.[0]?.id).toBe('ship');
   });
 
@@ -263,12 +266,12 @@ describe('decisions', () => {
     expect((await shownAt(repo.url())).decided).toMatchObject({ 'step:1': null, 'step:2': null });
   });
 
-  test('a checklist item recorded again with other text is reopened with the decision it had', async () => {
+  test('a checklist item recorded again with its id and other text is reopened with the decision it had', async () => {
     started();
     repo.record([{ item: { type: 'checklist', id: '1' }, actions: [{ id: 'no', label: 'Disagree', note: true }] }], 'actions');
     await decide({ item: { type: 'checklist', id: '1' }, action: 'no', note: 'Not yet.' });
 
-    repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'A person can log in, not yet shown.' }] }, 'checklist');
+    repo.record({ title: 'Criteria', items: [{ id: '1', status: 'not met', text: 'A person can log in, not yet shown.' }] }, 'checklist');
 
     const view = await shownAt(repo.url());
     expect(view.decided['checklist:1']).toBeNull();

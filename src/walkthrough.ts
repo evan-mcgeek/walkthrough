@@ -24,6 +24,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   /** The highest step id given out, so the id of a step gone is never given again. */
   lastStep?: number;
   checklist?: Checklist;
+  /** The highest checklist item id given out, never given again. */
+  lastChecklistItem?: number;
   actions?: Record<string, Action[]>;
 };
 
@@ -107,7 +109,10 @@ export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) =
   return update(dir, walkthrough => {
     const checklist = build(walkthrough);
     walkthrough.checklist = checklist;
-    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('checklist:'));
+    const ids = checklist.items.map(item => item.id);
+    walkthrough.lastChecklistItem = Math.max(walkthrough.lastChecklistItem ?? 0, ...ids.map(Number));
+    const kept = new Set(ids.map(id => itemKey({ type: 'checklist', id })));
+    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('checklist:') || kept.has(key));
     return checklist;
   });
 }

@@ -133,7 +133,8 @@ async function notes(args: string[]): Promise<void> {
 async function checklist(args: string[]): Promise<void> {
   const text = fs.readFileSync(0, 'utf8');
   const { title, items } = await recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
-  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}.`);
+  const ids = items.map(item => item.id).join(', ');
+  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}${items.length ? `: ${ids}` : ''}.`);
 }
 
 async function actions(args: string[]): Promise<void> {

@@ -87,25 +87,28 @@ walkthrough note < notes.json
 ${JSON.stringify(notesExample, null, 2)}
 
 walkthrough checklist < checklist.json
-  Records the checklist shown beside the steps, replacing the one recorded before; recording the steps again or a new head keeps it.
+  Records the checklist shown beside the steps, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
   Standard input is a JSON object with a title and items in reading order.
+  An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
+  To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
   Title, status and text are the session's own words.
   An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
   A link to a step that is later gone shows as gone.
     {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
+    {"id": string, "status": string, "text": string, "steps": [step id, ...]}   an item kept under a new text
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
 
 walkthrough actions < actions.json
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
   Standard input is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item ("1" for the first) or the whole walkthrough:
+  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
     [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
   Other items offer nothing until actions are recorded on them; the walkthrough's actions show beside the steps.
-  Recording the checklist again drops the actions on its items; a step's actions last while its id does.
+  A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
 [

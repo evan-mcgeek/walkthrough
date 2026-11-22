@@ -63,6 +63,7 @@ Recording again replaces the steps and prints their ids; a step keeps its id by 
 
 When the review policy asks for a checklist, record it after the steps with `walkthrough checklist` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
 Its links name the step ids `walkthrough steps` printed; a link to a step that is gone shows as gone, so record the checklist again when you merge or drop steps.
+An item keeps its id, and the person's decision, while its text is the same; when you reword an item, give it its id so its decision reopens instead of being lost.
 
 ## Notes
 
@@ -75,7 +76,7 @@ A note whose step or lines leave the change, or whose lines change, stays on the
 
 Record the actions the page offers on steps, notes, checklist items and the whole walkthrough with `walkthrough actions` in the shape `walkthrough guide` prints, after the items they are on.
 Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
-Recording the checklist again drops the actions on its items, and a step that is gone takes its actions with it, so record those again too.
+A step or checklist item that is gone takes its actions with it, so record actions on new ones.
 `walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
 ## Listening for the page
