@@ -42,6 +42,7 @@ export function mechanicalFiles(cwd: string, base: string, head: string, files: 
           ? 'vendored'
           : attributes.get(file);
     if (reason) reasons.set(file, reason);
+    // Simplification: one git process per file; batch through `git cat-file --batch` if large changes get slow.
     else if (GENERATED_HEADER.test(firstLines(fileAt(cwd, head, file) ?? fileAt(cwd, base, file) ?? '')))
       reasons.set(file, 'generated, per its header');
   }
