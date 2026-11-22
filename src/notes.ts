@@ -16,9 +16,14 @@ const isLines = (value: unknown): value is Lines =>
   value.every(line => Number.isInteger(line) && (line as number) >= 1) &&
   (value[0] as number) <= (value[1] as number);
 
+// The page asks for every note's place on each poll; a step read from disk is parsed once per read.
+const parsed = new WeakMap<Step, ReturnType<typeof parse>>();
+
 /** The lines of `file` the step's diff shows, numbered as at the head, or null when it does not change the file. */
 function shownLines(step: Step, file: string): Set<number | undefined> | null {
-  const shown = parse(step.diff).find(one => one.newName === file);
+  const files = parsed.get(step) ?? parse(step.diff);
+  parsed.set(step, files);
+  const shown = files.find(one => one.newName === file);
   return shown ? new Set(shown.blocks.flatMap(block => block.lines.map(line => line.newNumber))) : null;
 }
 
