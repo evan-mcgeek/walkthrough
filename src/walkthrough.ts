@@ -19,6 +19,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   head: string;
   /** Empty until the session records its steps. */
   steps: Step[];
+  /** Changed files no step has since the head moved, until the steps are recorded again. */
+  unplaced?: string[];
   /** The highest step id given out, so the id of a step gone is never given again. */
   lastStep?: number;
   checklist?: Checklist;
@@ -44,7 +46,7 @@ export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
-  carry: (moved: Walkthrough) => Promise<Step[]>,
+  carry: (moved: Walkthrough) => Promise<{ steps: Step[]; unplaced: string[] }>,
 ): Promise<{
   walkthrough: Walkthrough;
   opened: 'new' | 'resumed' | 'moved';
@@ -54,7 +56,9 @@ export function openWalkthrough(
     if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
     if (saved) {
       const moved = { ...saved, target: change.target, base: change.base, head: change.head };
-      setSteps(moved, await carry(moved));
+      const { steps, unplaced } = await carry(moved);
+      setSteps(moved, steps);
+      moved.unplaced = unplaced;
       writeJson(file(dir), moved);
       return { walkthrough: moved, opened: 'moved' };
     }
@@ -86,6 +90,7 @@ function keepActions(walkthrough: Walkthrough, keep: (key: string) => boolean): 
 
 function setSteps(walkthrough: Walkthrough, steps: Step[]) {
   walkthrough.steps = steps;
+  delete walkthrough.unplaced;
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps.map(step => Number(step.id)));
   const kept = new Set(steps.map(step => itemKey({ type: 'step', id: step.id })));
   walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:') || kept.has(key));

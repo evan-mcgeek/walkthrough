@@ -636,6 +636,21 @@ function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement 
   return section;
 }
 
+function unplacedView(): HTMLElement[] {
+  const files = walkthrough.unplaced ?? [];
+  if (!files.length) return [];
+  const title = el('h2', { id: 'unplaced' }, 'In no step yet');
+  const section = el(
+    'section',
+    { className: 'messages' },
+    title,
+    el('p', { className: 'notice' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
+    paths('Files', files),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return [section];
+}
+
 function detachedView(): HTMLElement[] {
   const gone = session.conversation.filter(
     (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === null,
@@ -685,6 +700,7 @@ function render(): void {
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
+    ...unplacedView(),
     ...detachedView(),
     ...(current
       ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)]

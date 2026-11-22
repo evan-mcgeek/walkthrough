@@ -54,7 +54,7 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
   When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
-  and start prints the changed files that no step has yet; record the steps again with those in new steps.
+  and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
 walkthrough files

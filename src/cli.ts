@@ -15,7 +15,7 @@ import { GUIDE } from './guide';
 import { plural } from './words';
 import { nameOf } from './items';
 import { stateDir } from './paths';
-import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
+import { buildSteps, carrySteps, parseSteps } from './steps';
 import {
   openWalkthrough,
   readWalkthrough,
@@ -75,10 +75,8 @@ async function start(args: string[]): Promise<void> {
     console.log(
       `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
     );
-    const placed = new Set(steps.flatMap(pathsOf));
-    const left = (await changedFiles(cwd, change.base, change.head)).filter(file => !placed.has(file.path));
-    if (left.length > 0)
-      console.log(`In no step yet: ${left.map(file => file.path).join(', ')}. Record the steps again with these in new steps.`);
+    const left = walkthrough.unplaced ?? [];
+    if (left.length > 0) console.log(`In no step yet: ${left.join(', ')}. Record the steps again with these in new steps.`);
   }
   if (change.uncommitted > 0)
     console.log(
