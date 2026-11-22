@@ -34,7 +34,7 @@ Never check anything out.
 Split the change into steps, order them, and fold the files not worth reading line by line, as the review policy and the project's instructions say.
 Record them with `walkthrough steps` in the shape `walkthrough guide` prints.
 The CLI only checks that every changed file is in exactly one step; when it refuses, it names every problem, so fix them and record again.
-Recording again replaces the steps and their decisions, so do it before the person starts deciding.
+Recording again replaces the steps; a step keeps the person's decision only while its id and diff stay the same, so record before they start deciding.
 
 ## Checklist
 
@@ -46,6 +46,13 @@ Its links name step ids, so record it again after recording the steps again.
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
 Notes name step ids, so record them after the steps.
+
+## Actions
+
+Record the actions the page offers on steps, notes, checklist items and the whole walkthrough with `walkthrough actions` in the shape `walkthrough guide` prints, after the items they are on.
+Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
+Recording the steps or the checklist again drops the actions on them, so record those actions again too.
+`walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
 ## Listening for the page
 
@@ -59,6 +66,8 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
    - A reply: the person's reply to a question you asked or to a note; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
+   - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
+     A later decision on the same item replaces the earlier one.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.

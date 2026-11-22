@@ -63,8 +63,9 @@ async function start(args: string[]): Promise<void> {
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
   if (opened === 'resumed') {
-    const decided = Object.entries(walkthroughView(dir)?.decided ?? {}).filter(([key, decision]) => key.startsWith('step:') && decision);
-    console.log(`Resumed: ${String(decided.length)} of ${plural(steps.length, 'step')} decided.`);
+    const decided = walkthroughView(dir)?.decided ?? {};
+    const count = steps.filter(step => decided[`step:${step.id}`]).length;
+    console.log(`Resumed: ${String(count)} of ${plural(steps.length, 'step')} decided.`);
   }
   if (opened === 'replaced') console.log('The head moved since the last walkthrough, so it starts over.');
   if (change.uncommitted > 0)

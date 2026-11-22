@@ -2,12 +2,12 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
-import { cleanText, conversationOf, type Entry, request, type SessionView, type Taken } from './session';
+import { cleanText, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
 import { filled } from './steps';
 import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
-export type Decision = Entry & Taken;
+export type Decision = PageRequest & Taken;
 /** The walkthrough as the page and the session see it: every item's actions, and its latest decision or null while undecided. */
 export type WalkthroughView = Walkthrough & {
   actions: Record<string, Action[]>;

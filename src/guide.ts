@@ -59,7 +59,7 @@ walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
 walkthrough steps < steps.json
-  Records the steps, replacing the steps and decisions recorded before.
+  Records the steps, replacing those recorded before; a step keeps its decisions only while its id and diff are the same.
   Standard input is a JSON array of steps in reading order.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
@@ -102,12 +102,14 @@ walkthrough actions < actions.json
   Recording the steps or the checklist again drops the actions recorded on them.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
-${JSON.stringify(actionsExample, null, 2)}
+[
+${actionsExample.map(one => `  ${JSON.stringify(one)}`).join(',\n')}
+]
 
 walkthrough decisions
   Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
-  A decision stays on an item until what it was about changes: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
 
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:

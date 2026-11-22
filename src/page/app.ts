@@ -71,6 +71,8 @@ const drafts = new Map<string, string>();
 
 const decisionOf = (item: Item) => walkthrough.decided[itemKey(item)] ?? null;
 const stepDecided = (step: Step) => decisionOf({ type: 'step', id: step.id }) !== null;
+/** The label of the item's action `id`, or the id when the session no longer offers it. */
+const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
 
 /** The step named in the address, else the first undecided one. */
 function currentStep({ steps }: WalkthroughView): Step | undefined {
@@ -205,7 +207,6 @@ function decideView(item: Item, text = ''): HTMLElement[] {
   const actions = walkthrough.actions[key] ?? [];
   if (!actions.length) return [];
   const decision = walkthrough.decided[key] ?? null;
-  const labelOf = (id: string) => actions.find(action => action.id === id)?.label ?? id;
   const buttons = actions.map(action => {
     const button = el('button', { type: 'button', className: 'quiet' }, action.label);
     button.setAttribute('aria-pressed', String(decision?.action === action.id));
@@ -225,9 +226,13 @@ function decideView(item: Item, text = ''): HTMLElement[] {
     el(
       'div',
       { className: 'decide' },
-      el('p', { className: decision ? 'decision decided' : 'decision' }, decision ? `Decided: ${labelOf(decision.action)}` : 'Undecided'),
+      el(
+        'div',
+        { className: 'decide-row' },
+        el('p', { className: decision ? 'decision decided' : 'decision' }, decision ? `Decided: ${labelOf(item, decision.action)}` : 'Undecided'),
+        group,
+      ),
       ...(decision ? decisionSaid(decision) : []),
-      group,
       ...(taken ? [takingForm(item, taken, text)] : []),
     ),
   ];
@@ -597,12 +602,13 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
 /** Undecided steps in order, each marked once read; decided steps collapse behind a count. */
 function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
   const item = (step: Step) => {
-    const decided = stepDecided(step);
+    const decision = decisionOf({ type: 'step', id: step.id });
     const href = `#${encodeURIComponent(step.id)}`;
-    const link = el('a', { href, className: decided ? 'decided' : '' }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
+    const link = el('a', { href, className: decision ? 'decided' : '' }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
     if (step === current) link.setAttribute('aria-current', 'step');
-    const read = !decided && walkthrough.read.includes(step.id);
-    return el('li', {}, link, ...(read ? [el('span', { className: 'mark' }, 'Read')] : []));
+    const read = walkthrough.read.includes(step.id) ? 'Read' : '';
+    const mark = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : read;
+    return el('li', {}, link, ...(mark ? [el('span', { className: 'mark' }, mark)] : []));
   };
   const nav = el('nav', { className: 'steps' }, el('ol', {}, ...steps.filter(step => !stepDecided(step)).map(item)));
   const decided = steps.filter(stepDecided);
