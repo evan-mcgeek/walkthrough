@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import type { Repo } from '../test/helpers';
 import { expect, test } from './walkthrough';
 
 const cart = ['const a = 1;', 'const b = 2;', 'const c = 3;', 'const d = 4;', 'const e = 5;', ''].join('\n');
@@ -10,18 +11,27 @@ const row = (page: Page, file: string, line: number) =>
     .locator('.d2h-file-wrapper', { has: page.locator('.d2h-file-name', { hasText: file }) })
     .locator('tr', { has: page.locator('.line-num2', { hasText: new RegExp(`^${String(line)}$`) }) });
 const rowAfter = (one: Locator) => one.locator('xpath=following-sibling::tr[1]');
-
-test('notes show at their step and beside their lines, low-priority ones behind a count', async ({ page, repo, url }) => {
-  await expect(page).toHaveURL(url);
-  const noted = repo.note([
-    { step: 'change', label: 'Risk', text: 'Login lets **everyone** in.' },
-    { step: 'change', file: 'cart.ts', lines: [2, 3], label: 'Finding', text: 'These could be one.' },
-    { step: 'change', file: 'cart.ts', lines: [2, 3], label: 'Nit', text: 'Name them.', low: true },
-    { step: 'change', file: 'cart.ts', lines: [3, 3], label: 'Style', text: 'Spacing.', low: true },
-  ]);
+const pin = (repo: Repo, notes: unknown[]) => {
+  const noted = repo.record(notes, 'note');
   if (noted.status !== 0) throw new Error(noted.stderr);
+};
 
-  const step = page.getByRole('region', { name: 'The whole change' });
+// Asking for the url starts the walkthrough with the page open; the step comes after, as the skill records it.
+test.beforeEach(async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record([{ title: 'Cart', explanation: 'Adds a cart.', files: ['login.ts', 'app.ts', 'cart.ts'] }]);
+  await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
+});
+
+test('notes show at their step and beside their lines, low-priority ones behind a count', async ({ page, repo }) => {
+  pin(repo, [
+    { step: '1', label: 'Risk', text: 'Login lets **everyone** in.' },
+    { step: '1', file: 'cart.ts', lines: [2, 3], label: 'Finding', text: 'These could be one.' },
+    { step: '1', file: 'cart.ts', lines: [2, 3], label: 'Nit', text: 'Name them.', low: true },
+    { step: '1', file: 'cart.ts', lines: [3, 3], label: 'Style', text: 'Spacing.', low: true },
+  ]);
+
+  const step = page.getByRole('region', { name: 'Cart' });
   const risk = step.getByRole('article', { name: 'Risk' });
   await expect(risk.locator('strong', { hasText: 'everyone' })).toBeVisible();
   const pinned = rowAfter(row(page, 'cart.ts', 3));
@@ -36,9 +46,8 @@ test('notes show at their step and beside their lines, low-priority ones behind 
   await expect(pinned.getByRole('article', { name: 'Style' })).toContainText('Line 3');
 });
 
-test('a reply to a note reaches the session and its answer shows in the thread', async ({ page, repo, url }) => {
-  await expect(page).toHaveURL(url);
-  repo.note([{ step: 'change', file: 'cart.ts', lines: [1, 1], label: 'Risk', text: 'A starts at one.' }]);
+test('a reply to a note reaches the session and its answer shows in the thread', async ({ page, repo }) => {
+  pin(repo, [{ step: '1', file: 'cart.ts', lines: [1, 1], label: 'Risk', text: 'A starts at one.' }]);
   const listener = repo.background('listen');
   const note = page.getByRole('article', { name: 'Risk' });
 
@@ -53,8 +62,7 @@ test('a reply to a note reaches the session and its answer shows in the thread',
   await expect(note.getByRole('textbox', { name: 'Reply' })).toHaveValue('');
 });
 
-test('asking about selected lines sends the range, and the answer lands on those lines', async ({ page, repo, url }) => {
-  await expect(page).toHaveURL(url);
+test('asking about selected lines sends the range, and the answer lands on those lines', async ({ page, repo }) => {
   const listener = repo.background('listen');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
 
@@ -69,7 +77,7 @@ test('asking about selected lines sends the range, and the answer lands on those
   await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask' }).click();
 
   const asked = JSON.parse((await listener.ended).stdout) as { id: string };
-  expect(asked).toMatchObject({ kind: 'ask', step: 'change', file: 'cart.ts', lines: [2, 4], text: 'Why three constants?' });
+  expect(asked).toMatchObject({ kind: 'ask', step: '1', file: 'cart.ts', lines: [2, 4], text: 'Why three constants?' });
   await expect(row(page, 'cart.ts', 3)).not.toHaveClass(/selected/);
   const pinned = rowAfter(row(page, 'cart.ts', 4));
   await expect(pinned.getByText('Why three constants?')).toBeVisible();
@@ -81,11 +89,10 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
 });
 
-test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, repo, url }) => {
-  await expect(page).toHaveURL(url);
-  repo.note([
+test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, repo }) => {
+  pin(repo, [
     {
-      step: 'change',
+      step: '1',
       label: 'Risk',
       text: [
         'Raw <b id="raw">bold</b> and <img src=x onerror="document.title=1">.',

@@ -7,7 +7,7 @@ const md = new MarkdownIt({ html: false }).disable('image');
 // The CSP refuses inline styles, so a table column's alignment becomes a class.
 md.core.ruler.push('align_class', state => {
   for (const token of state.tokens) {
-    const align = /^text-align:(\w+)$/.exec(token.attrGet('style') ?? '')?.[1];
+    const align = /^text-align:(\w+)$/.exec(String(token.attrGet('style') ?? ''))?.[1];
     if (!align) continue;
     token.attrs = (token.attrs ?? []).filter(([name]) => name !== 'style');
     token.attrJoin('class', `align-${align}`);
