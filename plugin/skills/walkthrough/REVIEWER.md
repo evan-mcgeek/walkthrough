@@ -47,7 +47,7 @@ Every rule here is a default; edit any of it.
 ## Drafts for colleagues
 
 - Anything you draft to go out under my name, a comment or a reply, is one or two sentences.
-- It starts with the marker "AI draft:", and keeps it after I edit the text; put the marker back if my edit dropped it.
+- It starts with the marker "[AI]", and keeps it after I edit the text; put the marker back if my edit dropped it.
 - Pin each draft as a note labelled "Draft" on its lines.
 
 ## Actions

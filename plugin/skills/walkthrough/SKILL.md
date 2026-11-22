@@ -27,8 +27,8 @@ Run any reviewer in a fresh context, and never treat the author session's own su
 
 ## Review policy
 
-The person's policy lives at `${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md`, outside every project; the template is `${CLAUDE_SKILL_DIR}/review-policy.md`.
-Compare them with `cmp "${CLAUDE_SKILL_DIR}/review-policy.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md"`:
+The person's policy lives at `${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/REVIEWER.md`, outside every project; the template is `${CLAUDE_SKILL_DIR}/REVIEWER.md`.
+Compare them with `cmp "${CLAUDE_SKILL_DIR}/REVIEWER.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/REVIEWER.md"`:
 
 - Exit 1, the files differ: the policy is the person's own; read it and go on.
 - Exit 0, silent: the policy is still the unchanged template; offer the interview.
@@ -38,7 +38,7 @@ Offer in one or two lines: the template's defaults apply until they make the pol
 When they say later, follow the template for this walkthrough; the offer comes again next time.
 When they say now:
 
-1. With no policy yet, copy the template there: `mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough" && cp "${CLAUDE_SKILL_DIR}/review-policy.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/review-policy.md"`.
+1. With no policy yet, copy the template there: `mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough" && cp "${CLAUDE_SKILL_DIR}/REVIEWER.md" "${XDG_CONFIG_HOME:-$HOME/.config}/walkthrough/REVIEWER.md"`.
 2. Go through the policy's sections in order.
    For each, sum up its defaults in a line and ask one short question about how they actually review that part.
    Edit their copy to match the answer before asking the next question; "keep" leaves the section as it is.
