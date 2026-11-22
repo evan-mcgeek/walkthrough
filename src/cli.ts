@@ -10,10 +10,15 @@ const plural = (count: number, word: string) => `${String(count)} ${word}${count
 async function start(args: string[]): Promise<void> {
   const { values } = parseArgs({ args, options: { target: { type: 'string' } } });
   const change = currentChange(process.cwd(), values.target);
-  const { dir, walkthrough } = openWalkthrough(change);
+  const { dir, walkthrough, resumed } = openWalkthrough(change);
+  const { steps } = walkthrough;
   console.log(
-    `Walkthrough of ${change.branch} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(walkthrough.steps.length, 'step')}.`,
+    `Walkthrough of ${change.branch} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
+  if (resumed)
+    console.log(
+      `Resumed: ${String(steps.filter(step => step.decision).length)} of ${plural(steps.length, 'step')} decided.`,
+    );
   if (change.uncommitted > 0)
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,

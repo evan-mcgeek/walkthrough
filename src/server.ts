@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readJson, writeJson } from './json-files';
-import { readWalkthrough } from './walkthrough';
+import { type Decision, DECISIONS, decide as walkthroughDecide, readWalkthrough } from './walkthrough';
 
 type ServerRecord = { pid: number; started: string; url: string };
 type Answer = { status: number; body?: unknown; after?: () => void };
@@ -99,7 +99,14 @@ export async function stopServer(dir: string): Promise<boolean> {
 /** Runs the server of the walkthrough in `dir` in this process until it is stopped. */
 export function serve(dir: string): void {
   const token = pageToken(dir);
-  const routes: Record<string, Route> = {};
+  const routes: Record<string, Route> = {
+    '/decide': ({ step, decision }) => {
+      const known = typeof step === 'string' && DECISIONS.some(one => one === decision);
+      const decided = known ? walkthroughDecide(dir, step, decision as Decision) : null;
+      return decided ? { status: 200, body: decided } : { status: 400 };
+    },
+    '/stop': () => ({ status: 200, body: { stopped: true }, after: shutDown }),
+  };
   const server = http.createServer((req, res) => {
     try {
       gate(req, res, { dir, token, port: String((server.address() as AddressInfo).port), routes });
@@ -215,9 +222,9 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, token,
     const fields = body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
     try {
       const { status, body: said, after } = route(fields);
+      if (after) res.once('finish', after);
       if (said === undefined) res.writeHead(status).end();
       else res.writeHead(status, JSON_HEADERS).end(JSON.stringify(said));
-      after?.();
     } catch (error) {
       failRequest(res, error);
     }

@@ -4,7 +4,8 @@ import type { Change } from './change';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
-export type Decision = 'approved';
+export const DECISIONS = ['approved'] as const;
+export type Decision = (typeof DECISIONS)[number];
 export type Step = { id: string; title: string; diff: string; decision: Decision | null };
 export type Walkthrough = {
   kind: 'branch';
@@ -39,5 +40,17 @@ export function openWalkthrough(change: Change): { dir: string; walkthrough: Wal
     };
     writeJson(file(dir), walkthrough);
     return { dir, walkthrough, resumed: false };
+  });
+}
+
+/** The walkthrough with the decision recorded, or null when it has no such step. */
+export function decide(dir: string, stepId: string, decision: Decision): Walkthrough | null {
+  return locked(file(dir), () => {
+    const walkthrough = readWalkthrough(dir);
+    const step = walkthrough?.steps.find(one => one.id === stepId);
+    if (!walkthrough || !step) return null;
+    step.decision = decision;
+    writeJson(file(dir), walkthrough);
+    return walkthrough;
   });
 }

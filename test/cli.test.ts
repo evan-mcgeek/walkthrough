@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { Walkthrough } from '../src/walkthrough';
@@ -58,6 +59,74 @@ describe('walkthrough start', () => {
   });
 });
 
+const post = (page: string, route: string, body: unknown, token = new URL(page).pathname.split('/')[2] ?? '') =>
+  fetch(new URL(`${route}?token=${token}`, page), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as Walkthrough;
+
+describe('deciding on a step', () => {
+  test('an approve decision is saved and resumed after the page server restarts', async () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    const answer = await post(repo.url(), '/decide', { step: 'change', decision: 'approved' });
+    expect(answer.status).toBe(200);
+    repo.run('stop');
+    const again = repo.run('start');
+
+    expect(again.stdout).toContain('Resumed: 1 of 1 step decided.');
+    expect((await shownAt(repo.url())).steps[0]?.decision).toBe('approved');
+  });
+
+  test('a decision on an unknown step or of an unknown kind is refused', async () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    expect((await post(repo.url(), '/decide', { step: 'nope', decision: 'approved' })).status).toBe(400);
+    expect((await post(repo.url(), '/decide', { step: 'change', decision: 'merged' })).status).toBe(400);
+    expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();
+  });
+});
+
+/** The status the page server answers, with full control over the headers, which fetch does not allow for Host. */
+const statusOf = (page: string, target: string, method: string, headers: Record<string, string>) =>
+  new Promise<number | undefined>((resolve, reject) => {
+    const { hostname, port } = new URL(page);
+    const req = http.request({ hostname, port, path: target, method, headers }, res => {
+      res.resume();
+      resolve(res.statusCode);
+    });
+    req.on('error', reject);
+    req.end(method === 'POST' ? '{}' : undefined);
+  });
+
+describe('the page server', () => {
+  test('refuses a request without the token, from another host or origin, or without JSON', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const page = repo.url();
+    const { host, pathname } = new URL(page);
+    const token = pathname.split('/')[2] ?? '';
+    const wrong = '0'.repeat(48);
+    const json = { 'content-type': 'application/json' };
+    const decide = { step: 'change', decision: 'approved' };
+
+    expect(await statusOf(page, `/s/${wrong}/`, 'GET', {})).toBe(404);
+    expect(await statusOf(page, `/s/${wrong}/data/walkthrough.json`, 'GET', {})).toBe(404);
+    expect(await statusOf(page, '/decide', 'POST', json)).toBe(404);
+    expect(await statusOf(page, `/decide?token=${wrong}`, 'POST', json)).toBe(404);
+    expect(await statusOf(page, `/decide?token=${token}`, 'POST', { 'content-type': 'text/plain' })).toBe(415);
+    expect(await statusOf(page, pathname, 'GET', { host: `attacker.example:${new URL(page).port}` })).toBe(403);
+    expect(await statusOf(page, pathname, 'GET', { origin: 'http://attacker.example' })).toBe(403);
+    expect(await statusOf(page, pathname, 'GET', { origin: `http://${host}` })).toBe(200);
+    expect((await post(page, '/decide', decide, wrong)).status).toBe(404);
+    expect((await shownAt(page)).steps[0]?.decision).toBeNull();
+  });
+});
+
 describe('walkthrough stop', () => {
   test('ends the page server', async () => {
     repo = makeRepo();
@@ -70,4 +139,20 @@ describe('walkthrough stop', () => {
     await expect(fetch(url)).rejects.toThrow();
     expect(repo.run('stop').stdout).toContain('The walkthrough page was not running.');
   });
+
+  test('the page can end its own server', async () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    expect((await post(repo.url(), '/stop', {})).status).toBe(200);
+
+    await until('the page server ends', () => fetch(repo.url()).then(() => false, () => true));
+    expect(repo.run('stop').stdout).toContain('The walkthrough page was not running.');
+  });
 });
+
+async function until(what: string, done: () => Promise<boolean>, ms = 5000) {
+  for (const end = Date.now() + ms; Date.now() < end; await new Promise(resolve => setTimeout(resolve, 50)))
+    if (await done()) return;
+  throw new Error(`${what} did not happen within ${String(ms / 1000)}s`);
+}
