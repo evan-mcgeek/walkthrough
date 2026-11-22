@@ -10,7 +10,7 @@
     "test": "npm run build && vitest run && playwright test",
     "test:cli": "npm run build && vitest run",
     "test:page": "npm run build && playwright test",
-    "lint": "tsc --noEmit && eslint ."
+    "lint": "tsc --noEmit && eslint . --ignore-pattern .claude/"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
