@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
-import { prune, pruneDaily } from './prune';
+import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { listen, say } from './session';
 import { buildSteps, changeFiles, parseSteps } from './steps';
@@ -107,7 +107,11 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     const stopped = await stopServer(walkthroughDir(currentBranch(process.cwd())));
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
   },
-  prune: async () => {
+  prune: async ([id]) => {
+    if (id) {
+      console.log(await pruneOne(process.cwd(), id));
+      return;
+    }
     const removed = await prune(process.cwd());
     console.log(removed.length > 0 ? removed.join('\n') : 'No walkthrough to remove.');
   },

@@ -10,14 +10,6 @@ afterEach(() => {
 
 const saved = (branch: string) => fs.existsSync(path.join(repo.state, 'shop', `branch-${branch.replaceAll('/', '~')}`));
 
-/** The fake `gh` answers `pr list --head <branch>` with a pull request in each given state. */
-const pullRequests = (states: Record<string, string[]>) => {
-  const cases = Object.entries(states).map(
-    ([branch, list]) => `  *"--head ${branch} "*) echo '${JSON.stringify(list.map(state => ({ state })))}' ;;`,
-  );
-  repo.gh(`case "$*" in\n${cases.join('\n')}\n  *) echo '[]' ;;\nesac`);
-};
-
 /** A walkthrough saved for `feature/login` and one for `feature/cart`, both pages stopped, left on `feature/cart`. */
 function twoWalkthroughs() {
   repo = makeRepo();
@@ -31,35 +23,32 @@ function twoWalkthroughs() {
   repo.run('stop');
 }
 
+/** Merges `feature/login` into origin's main, where its walkthrough's target is. */
+function mergeLogin() {
+  const branch = git(repo.dir, 'branch', '--show-current');
+  git(repo.dir, 'checkout', 'main');
+  git(repo.dir, 'merge', '--no-ff', '-m', 'Merge login', 'feature/login');
+  git(repo.dir, 'push', 'origin', 'main');
+  git(repo.dir, 'checkout', branch);
+}
+
 describe('walkthrough prune', () => {
-  test('removes the walkthrough whose pull request is merged and keeps the one whose pull request is open', () => {
+  test('removes the walkthrough whose head is already merged into its target and keeps the other', () => {
     twoWalkthroughs();
-    pullRequests({ 'feature/login': ['MERGED'], 'feature/cart': ['OPEN'] });
+    mergeLogin();
 
     const pruned = repo.run('prune');
 
     expect(pruned.stderr).toBe('');
     expect(pruned.status).toBe(0);
-    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its pull request is merged.');
+    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its head is merged into origin/main.');
     expect(saved('feature/login')).toBe(false);
     expect(saved('feature/cart')).toBe(true);
   });
 
-  test('removes the walkthrough whose pull request is closed, unless the branch has a newer open one', () => {
-    twoWalkthroughs();
-    pullRequests({ 'feature/login': ['CLOSED'], 'feature/cart': ['OPEN', 'CLOSED'] });
-
-    const pruned = repo.run('prune');
-
-    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its pull request is closed.');
-    expect(saved('feature/login')).toBe(false);
-    expect(saved('feature/cart')).toBe(true);
-  });
-
-  test('removes the walkthrough whose branch is gone, even when GitHub cannot be asked', () => {
+  test('removes the walkthrough whose branch is gone', () => {
     twoWalkthroughs();
     git(repo.dir, 'branch', '-D', 'feature/login');
-    repo.gh('exit 1');
 
     const pruned = repo.run('prune');
 
@@ -68,9 +57,8 @@ describe('walkthrough prune', () => {
     expect(saved('feature/cart')).toBe(true);
   });
 
-  test('keeps every walkthrough when GitHub cannot be asked or has no pull request for the branch', () => {
+  test('keeps every walkthrough whose branch exists and is not merged', () => {
     twoWalkthroughs();
-    repo.gh(`case "$*" in\n  *"--head feature/login "*) echo '[]' ;;\n  *) echo 'HTTP 502' >&2; exit 1 ;;\nesac`);
 
     const pruned = repo.run('prune');
 
@@ -78,12 +66,11 @@ describe('walkthrough prune', () => {
     expect(pruned.stdout).toContain('No walkthrough to remove.');
     expect(saved('feature/login')).toBe(true);
     expect(saved('feature/cart')).toBe(true);
-    expect(repo.ghCalls()).toContain('pr list --head feature/cart --state all --json state');
   });
 
   test('keeps the walkthroughs of another repo with the same folder name', () => {
     twoWalkthroughs();
-    pullRequests({ 'feature/login': ['MERGED'] });
+    mergeLogin();
     const other = path.join(fs.mkdtempSync(path.join(path.dirname(repo.dir), 'other-')), 'shop');
     fs.mkdirSync(other);
     git(other, 'init', '-b', 'main');
@@ -100,7 +87,7 @@ describe('walkthrough prune', () => {
     repo = makeRepo();
     repo.run('start');
     const url = repo.url();
-    pullRequests({ 'feature/login': ['MERGED'] });
+    mergeLogin();
 
     repo.run('prune');
 
@@ -110,22 +97,42 @@ describe('walkthrough prune', () => {
 
   test('runs on start at most once a day', () => {
     twoWalkthroughs();
-    pullRequests({ 'feature/login': ['MERGED'] });
-    const asked = repo.ghCalls().length;
+    mergeLogin();
 
     const again = repo.run('start');
 
     expect(again.stdout).not.toContain('Removed');
-    expect(repo.ghCalls()).toHaveLength(asked);
     expect(saved('feature/login')).toBe(true);
 
     const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
     fs.writeFileSync(path.join(repo.state, 'shop', 'last-prune.json'), JSON.stringify({ at: dayAgo }));
     const nextDay = repo.run('start');
 
-    expect(nextDay.stdout).toContain('Removed the walkthrough of feature/login: its pull request is merged.');
+    expect(nextDay.stdout).toContain('Removed the walkthrough of feature/login: its head is merged into origin/main.');
     expect(saved('feature/login')).toBe(false);
     expect(saved('feature/cart')).toBe(true);
+  });
+
+  test('removes the walkthrough named by its id even when it is not over, and ends its page', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const url = repo.url();
+
+    const pruned = repo.run('prune', 'feature/login');
+
+    expect(pruned.stderr).toBe('');
+    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: asked to.');
+    expect(saved('feature/login')).toBe(false);
+    await expect(fetch(url)).rejects.toThrow();
+  });
+
+  test('refuses an id that names no walkthrough', () => {
+    repo = makeRepo();
+
+    const pruned = repo.run('prune', 'feature/nothing');
+
+    expect(pruned.status).toBe(1);
+    expect(pruned.stderr).toContain('there is no walkthrough of feature/nothing');
   });
 
   test('says so when the repo has no saved walkthrough', () => {

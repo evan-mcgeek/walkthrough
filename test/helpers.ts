@@ -1,4 +1,4 @@
-// A throwaway repo with an origin and a feature branch, and the walkthrough CLI run in it with fakes for `gh` and the browser.
+// A throwaway repo with an origin and a feature branch, and the walkthrough CLI run in it with a fake browser.
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,9 +65,6 @@ export function makeRepo({
   const log = (name: string) => path.join(logs, name);
   for (const opener of ['open', 'xdg-open'])
     fs.writeFileSync(path.join(bin, opener), `#!/bin/sh\necho "$@" >> "${log('open')}"\n`, { mode: 0o755 });
-  fs.writeFileSync(path.join(bin, 'gh'), `#!/bin/sh\necho "$@" >> "${log('gh')}"\ncat >> "${log('gh-stdin')}"\n`, {
-    mode: 0o755,
-  });
   const env = { ...process.env, PATH: `${bin}:${process.env['PATH'] ?? ''}`, WALKTHROUGH_STATE: state, ...extraEnv };
   const running: Promise<unknown>[] = [];
   const lines = (name: string) =>
@@ -81,12 +78,6 @@ export function makeRepo({
     run: (...args: string[]) => spawnSync(CLI, args, { cwd: dir, encoding: 'utf8', env }),
     /** Runs the CLI in another folder with this repo's state and fakes. */
     runIn: (cwd: string, ...args: string[]) => spawnSync(CLI, args, { cwd, encoding: 'utf8', env }),
-    /** Makes the fake `gh` run `script` after logging its arguments. */
-    gh: (script: string) => {
-      fs.writeFileSync(path.join(bin, 'gh'), `#!/bin/sh\necho "$@" >> "${log('gh')}"\n${script}\n`, { mode: 0o755 });
-    },
-    /** Every command line the CLI ran `gh` with. */
-    ghCalls: () => lines('gh'),
     /** Runs the CLI in the background, as the session runs `listen`: what it printed and how it ended. */
     background: (...args: string[]) => {
       const child = spawn(CLI, args, { cwd: dir, env });
