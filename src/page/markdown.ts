@@ -13,5 +13,12 @@ markdown.core.ruler.push('align_by_class', state => {
   }
 });
 
+// A link leaves the walkthrough open, and the page address with its token stays private.
+markdown.renderer.rules['link_open'] = (tokens, at, options, _env, self) => {
+  tokens[at]?.attrSet('target', '_blank');
+  tokens[at]?.attrSet('rel', 'noopener noreferrer');
+  return self.renderToken(tokens, at, options);
+};
+
 /** The HTML of session or project Markdown, with no raw HTML and no inline styles. */
 export const renderMarkdown = (text: string) => markdown.render(text);

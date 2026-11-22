@@ -105,7 +105,7 @@ export function serve(dir: string): void {
       const decided = known ? walkthroughDecide(dir, step, decision as Decision) : null;
       return decided ? { status: 200, body: decided } : { status: 400 };
     },
-    '/ask': ({ step, text }) => answered(ask(dir, step, text)),
+    '/ask': fields => answered(ask(dir, fields)),
     '/reply': ({ to, text }) => answered(reply(dir, to, text)),
     '/stop': () => ({ status: 200, body: { stopped: true }, after: shutDown }),
   };

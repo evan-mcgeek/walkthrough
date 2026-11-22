@@ -5,7 +5,8 @@ import { changedFiles, changeOf, currentBranch, currentRepo, type Source } from 
 import { parseChecklist } from './checklist';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
-import { listen, say, starting } from './session';
+import { parseNotes } from './notes';
+import { listen, note, say, starting } from './session';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
 import { nameOf, openWalkthrough, readWalkthrough, recordChecklist, recordSteps, walkthroughDir } from './walkthrough';
@@ -92,6 +93,13 @@ function steps(args: string[]): void {
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
 }
 
+function notes(args: string[]): void {
+  const { dir, walkthrough } = current(args);
+  const noted = note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
+  const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
+  console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
+}
+
 function checklist(args: string[]): void {
   const text = fs.readFileSync(0, 'utf8');
   const { title, items } = recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
@@ -124,6 +132,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   files,
   // The session's steps, as a JSON array on standard input.
   steps,
+  // The session's notes, as a JSON array on standard input.
+  note: notes,
   // The session's checklist, as a JSON object on standard input.
   checklist,
   guide: () => {
@@ -158,8 +168,8 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> [--label <text>]]\n' +
-        '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | listen\n' +
-        '    | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
+        '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
+        '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
         '  every command but guide finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);

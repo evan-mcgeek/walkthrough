@@ -31,7 +31,8 @@ test('shows the session title and items with their statuses beside the steps', a
   await expect(items.nth(0).getByText('met', { exact: true })).toBeVisible();
   await expect(items.nth(0).getByText('A person can log in.', { exact: true })).toBeVisible();
   await expect(items.nth(1).getByText('not yet', { exact: true })).toBeVisible();
-  await expect(items.nth(1).getByText('The app shows its **version**.', { exact: true })).toBeVisible();
+  await expect(items.nth(1).getByText('The app shows its version.', { exact: true })).toBeVisible();
+  await expect(items.nth(1).locator('strong')).toHaveText('version');
   await expect(items.nth(2).getByText('open question', { exact: true })).toBeVisible();
   await expect(items.nth(2).getByRole('link')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();

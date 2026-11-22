@@ -14,6 +14,18 @@ const example = [
   },
 ];
 
+const notesExample = [
+  { step: '1', label: 'Risk', text: 'Sessions never expire, so a stolen one works **forever**.' },
+  {
+    step: '1',
+    file: 'src/session-store.ts',
+    lines: [1, 1],
+    label: 'Nit',
+    text: 'The name could say what is stored.',
+    low: true,
+  },
+];
+
 const checklistExample = {
   title: 'Acceptance criteria',
   items: [
@@ -44,6 +56,18 @@ walkthrough steps < steps.json
   Example:
 ${JSON.stringify(example, null, 2)}
 
+walkthrough note < notes.json
+  Pins notes to the page, after those pinned before, and prints each note's id.
+  Standard input is a JSON array of notes; their text is Markdown, shown without any raw HTML.
+  "step" is a step id ("1" for the first step).
+  A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
+    {"step": string, "label": string, "text": string, "low": boolean}
+    {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
+  "low": true puts the note behind a count of low-priority notes; it may be left out.
+  When a note does not fit the walkthrough, nothing is recorded and the problem is named.
+  Example:
+${JSON.stringify(notesExample, null, 2)}
+
 walkthrough checklist < checklist.json
   Records the checklist shown beside the steps, replacing the one recorded before; re-recording the steps keeps it.
   Standard input is a JSON object with a title and items in reading order.
@@ -56,12 +80,13 @@ ${JSON.stringify(checklistExample, null, 2)}
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
     {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
-    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
+    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer shows on those lines
+    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a note or to a question the session asked
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
 walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
-  Puts the session's text on the page: an answer to the ask or reply with that id, a question the person replies to, or else a note.
+  Puts the session's Markdown on the page: an answer to the ask or reply with that id, a question the person replies to, or else a note at the top.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
   Until every ask and reply that listen handed over has its answer, the page shows the session working.
 `;

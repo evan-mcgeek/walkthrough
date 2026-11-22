@@ -1,12 +1,20 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
-import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import { parse } from 'diff2html/lib-esm/diff-parser';
+import { ColorSchemeType } from 'diff2html/lib-esm/types';
+import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
-import { renderMarkdown } from './markdown';
-import type { Entry, SessionMessage, SessionState, SessionView } from '../session';
+import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import type { Checklist, Decision, Step, Walkthrough } from '../walkthrough';
+import { renderMarkdown } from './markdown';
 
 const token = location.pathname.split('/')[2] ?? '';
+
+function markdown(text: string, className: string): HTMLElement {
+  const box = document.createElement('div');
+  box.className = `markdown ${className}`;
+  box.innerHTML = renderMarkdown(text);
+  return box;
+}
 
 function region(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -81,12 +89,13 @@ async function decide(step: Step, decision: Decision): Promise<void> {
 }
 
 /** Sends what the person said; the box `draft` it came from is kept when the walkthrough could not take it. */
-async function send(route: 'ask' | 'reply', body: Record<string, string>, draft?: string): Promise<void> {
+async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
   const answer = await post(route, body);
-  if (!answer) return;
+  if (!answer) return false;
   if (draft) drafts.delete(draft);
   session = (await answer.json()) as SessionView;
   render();
+  return true;
 }
 
 let lastSession = '';
@@ -129,34 +138,120 @@ function draftBox(draft: string, label: string, action: string, onSend: () => vo
   return form;
 }
 
-const said = (entry: Entry, className: string) => el('p', { className: `said ${className}` }, entry.text);
-const answersTo = (request: Entry) =>
-  session.conversation.filter(entry => entry.from === 'session' && entry.answer === request.id);
+/** The person's words as they typed them; the session's as Markdown. */
+const said = (entry: Entry) =>
+  entry.from === 'session' ? markdown(entry.text, 'said session') : el('p', { className: 'said person' }, entry.text);
+
+/** What followed `root`: replies to it, answers to those, and so on, in the order they came. */
+function followUps(root: Entry): Entry[] {
+  const thread = new Set([root.id]);
+  return session.conversation.filter(entry => {
+    const to = entry.from === 'session' ? entry.answer : entry.kind === 'reply' ? entry.to : undefined;
+    if (to === undefined || !thread.has(to)) return false;
+    thread.add(entry.id);
+    return true;
+  });
+}
+
+type Ask = PageRequest & { kind: 'ask' };
+type Note = SessionMessage & { note: NoteMark };
+const isNote = (entry: Entry): entry is Note => entry.from === 'session' && entry.note !== undefined;
+const isAsk = (entry: Entry): entry is Ask => entry.from === 'page' && entry.kind === 'ask';
+const placeOf = (entry: Note | Ask): Place => (isNote(entry) ? entry.note : entry);
+
+function askThread(asked: Ask): HTMLElement {
+  const answers = followUps(asked);
+  return el(
+    'div',
+    { className: 'thread' },
+    said(asked),
+    ...(answers.length ? answers.map(said) : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
+  );
+}
+
+const linesLabel = ([first, last]: Lines) =>
+  first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
+
+function noteView(note: Note): HTMLElement {
+  const { label, lines } = note.note;
+  const draft = `reply:${note.id}`;
+  const view = el(
+    'article',
+    { className: 'note' },
+    el(
+      'p',
+      { className: 'note-head' },
+      el('span', { className: 'label' }, label),
+      ...(lines ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
+    ),
+    markdown(note.text, 'note-text'),
+    ...followUps(note).map(said),
+    draftBox(draft, 'Reply', 'Reply', () => {
+      void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft);
+    }),
+  );
+  view.setAttribute('aria-label', label);
+  return view;
+}
+
+/** Notes in the order pinned, the low-priority ones behind a count the person opens; `place` keeps it open across redraws. */
+function notesView(notes: Note[], place: string): HTMLElement[] {
+  const views = notes.filter(note => !note.note.low).map(noteView);
+  const low = notes.filter(note => note.note.low);
+  if (!low.length) return views;
+  const more = el('details', { className: 'more', open: opened.has(place) }, el('summary', {}, `${String(low.length)} more`));
+  more.append(...low.map(noteView));
+  more.ontoggle = () => {
+    if (more.open) opened.add(place);
+    else opened.delete(place);
+  };
+  return [...views, more];
+}
 
 function askView(step: Step): HTMLElement {
-  const asks = session.conversation.flatMap(entry =>
-    entry.from === 'page' && entry.kind === 'ask' && entry.step === step.id ? [entry] : [],
-  );
-  const threads = asks.map(asked => {
-    const answers = answersTo(asked);
-    return el(
-      'div',
-      { className: 'thread' },
-      said(asked, 'person'),
-      ...(answers.length
-        ? answers.map(answer => said(answer, 'session'))
-        : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
-    );
-  });
+  const asks = session.conversation.filter(isAsk).filter(asked => asked.step === step.id && !asked.lines);
   const draft = `ask:${step.id}`;
   return el(
     'div',
     { className: 'conversation' },
-    ...threads,
+    ...asks.map(askThread),
     draftBox(draft, 'Ask about this step', 'Ask', () => {
       void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
     }),
   );
+}
+
+/** The lines the person picked to ask about; `from` is the line picked first. */
+let picked: { step: string; file: string; from: number; lines: Lines } | null = null;
+
+/** A click on a line number picks that line; with Shift, the lines from the one picked before. */
+function pickLine(step: Step, event: MouseEvent): void {
+  const target = event.target instanceof Element ? event.target : null;
+  const row = target?.closest<HTMLTableRowElement>('tr[data-line]');
+  const file = row?.dataset['file'];
+  if (!row || file === undefined || !target?.closest('.d2h-code-linenumber')) return;
+  const line = Number(row.dataset['line']);
+  const from = event.shiftKey && picked?.step === step.id && picked.file === file ? picked.from : line;
+  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)] };
+  render();
+  document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+}
+
+function unpick(): void {
+  picked = null;
+  render();
+}
+
+function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
+  const draft = `ask:${step.id}:${file}:${lines.join('-')}`;
+  const form = draftBox(draft, `Ask about ${file} ${linesLabel(lines).toLowerCase()}`, 'Ask', () => {
+    void send('ask', { step: step.id, file, lines, text: drafts.get(draft) ?? '' }, draft).then(sent => {
+      if (sent) unpick();
+    });
+  });
+  form.append(el('button', { type: 'button', className: 'quiet', onclick: unpick }, 'Cancel'));
+  form.classList.add('picked-ask');
+  return form;
 }
 
 /** The answers a question offers, each sent as the person's reply. */
@@ -171,7 +266,7 @@ function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
 /** What the session said that answers no ask: its notes, and its questions with the person's replies and its answers to them. */
 function sessionMessages(): HTMLElement[] {
   const messages = session.conversation.filter(
-    (entry): entry is SessionMessage => entry.from === 'session' && !entry.answer,
+    (entry): entry is SessionMessage => entry.from === 'session' && !entry.answer && !entry.note,
   );
   if (!messages.length) return [];
   const threads = messages.map(message => {
@@ -182,8 +277,8 @@ function sessionMessages(): HTMLElement[] {
     return el(
       'div',
       { className: 'thread' },
-      said(message, message.question ? 'session question' : 'session'),
-      ...replies.flatMap(reply => [said(reply, 'person'), ...answersTo(reply).map(answer => said(answer, 'session'))]),
+      said(message),
+      ...followUps(message).map(said),
       ...(message.question && !replies.length
         ? [
             ...choiceButtons(message),
@@ -200,27 +295,78 @@ function sessionMessages(): HTMLElement[] {
   return [section];
 }
 
+/** Where a line shows in a step's diff, by file and line number at the head. */
+const lineKey = (file: string, line: number) => JSON.stringify([file, line]);
+type Drawn = { diff: string; view: HTMLElement; rows: Map<string, HTMLTableRowElement> };
 // Kept across redraws: the page redraws whenever the session's state changes, and drawing a diff is the slow part.
-const drawn = new Map<string, { diff: string; view: HTMLElement }>();
+const drawn = new Map<string, Drawn>();
 
-function diffView(step: Step): HTMLElement {
+function drawDiff(step: Step): Drawn {
   const kept = drawn.get(step.id);
-  if (kept?.diff === step.diff) return kept.view;
+  if (kept?.diff === step.diff) return kept;
   const view = el('div', { className: 'diff' });
-  new Diff2HtmlUI(view, step.diff, {
+  const files = parse(step.diff);
+  new Diff2HtmlUI(view, files, {
     outputFormat: 'line-by-line',
     drawFileList: false,
     matching: 'lines',
     colorScheme: ColorSchemeType.AUTO,
     fileContentToggle: false,
   }).draw();
+  const rows = new Map<string, HTMLTableRowElement>();
   // diff2html draws one wrapper per file, in the order it parses them.
-  const files = parse(step.diff);
   view.querySelectorAll('.d2h-file-wrapper').forEach((wrapper, at) => {
-    const file = files[at];
-    if (file && !file.isDeleted) addPreview(wrapper, step.id, file.newName);
+    const parsed = files[at];
+    const file = parsed?.newName ?? '';
+    if (parsed && !parsed.isDeleted) addPreview(wrapper, step.id, file);
+    for (const number of wrapper.querySelectorAll('.line-num2')) {
+      const line = number.textContent.trim();
+      const row = number.closest('tr');
+      if (!line || !row) continue;
+      row.dataset['file'] = file;
+      row.dataset['line'] = line;
+      rows.set(lineKey(file, Number(line)), row);
+    }
   });
-  drawn.set(step.id, { diff: step.diff, view });
+  view.onclick = event => {
+    pickLine(step, event);
+  };
+  const made = { diff: step.diff, view, rows };
+  drawn.set(step.id, made);
+  return made;
+}
+
+/** The step's diff with its notes, asks and picked lines shown after the last line each is about. */
+function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
+  const { view, rows } = drawDiff(step);
+  for (const old of view.querySelectorAll('.pinned-row')) old.remove();
+  for (const old of view.querySelectorAll('tr.selected')) old.classList.remove('selected');
+  const at = new Map<string, (Note | Ask)[]>();
+  for (const entry of pinned) {
+    const { file, lines } = placeOf(entry);
+    if (file === undefined || !lines) continue;
+    const key = lineKey(file, lines[1]);
+    at.set(key, [...(at.get(key) ?? []), entry]);
+  }
+  const pick = picked?.step === step.id ? picked : null;
+  const pickKey = pick && lineKey(pick.file, pick.lines[1]);
+  if (pick && pickKey) {
+    for (const row of rows.values()) {
+      const line = Number(row.dataset['line']);
+      if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) row.classList.add('selected');
+    }
+    if (!at.has(pickKey)) at.set(pickKey, []);
+  }
+  for (const [key, entries] of at) {
+    const shown = el(
+      'div',
+      { className: 'pinned' },
+      ...notesView(entries.filter(isNote), `more:${step.id}:${key}`),
+      ...entries.filter(isAsk).map(askThread),
+      ...(pick && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
+    );
+    rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
+  }
   return view;
 }
 
@@ -280,22 +426,33 @@ function assumedView(stepId: string, assumptions: string[]): HTMLElement[] {
 /** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
 const opened = new Set<string>();
 
-/** What the step says about itself before its diff, and the diff, by kind of step. */
+/** What the step says about itself, its notes, and its diff, by kind of step. */
 function stepBody(step: Step): HTMLElement[] {
+  const pinned = session.conversation.filter(
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && placeOf(entry).step === step.id,
+  );
+  const stepNotes = pinned.filter(isNote).filter(note => !note.note.lines);
+  const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
   switch (step.kind) {
     case 'step':
       return [
         el(
           'div',
           { className: 'about' },
-          ...step.explanation.split(/\n\s*\n/).map(paragraph => el('p', {}, paragraph.trim())),
+          markdown(step.explanation, 'explanation'),
           ...assumedView(step.id, step.assumptions),
           paths('Files', step.files),
         ),
-        diffView(step),
+        ...notes,
+        diffView(step, pinned),
       ];
     case 'folded': {
-      const details = el('details', { open: opened.has(step.id) }, el('summary', {}, 'Show the diff'), diffView(step));
+      const details = el(
+        'details',
+        { open: opened.has(step.id) },
+        el('summary', {}, 'Show the diff'),
+        diffView(step, pinned),
+      );
       details.ontoggle = () => {
         if (details.open) opened.add(step.id);
         else opened.delete(step.id);
@@ -313,6 +470,7 @@ function stepBody(step: Step): HTMLElement[] {
               ]
             : []),
         ),
+        ...notes,
         ...(step.diff ? [details] : []),
       ];
     }
@@ -364,7 +522,7 @@ function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement 
       'li',
       {},
       el('span', { className: 'status' }, item.status),
-      el('p', { className: 'item-text' }, item.text),
+      markdown(item.text, 'item-text'),
       ...(links.length ? [el('p', { className: 'links' }, ...links)] : []),
     );
   });
