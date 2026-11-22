@@ -2,8 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
 import { prune, pruneDaily } from './prune';
-import { ensureServer, serve, stopServer } from './server';
-import { openWalkthrough, walkthroughDir } from './walkthrough';
+import { ensureServer, serve, serverRunning, stopServer } from './server';
+import { listen, say } from './session';
+import { openWalkthrough, readWalkthrough, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
@@ -36,8 +37,40 @@ async function start(args: string[]): Promise<void> {
   );
 }
 
+/** The folder of the current branch's walkthrough, which must have been started. */
+function currentDir(): string {
+  const current = currentBranch(process.cwd());
+  const dir = walkthroughDir(current);
+  if (!readWalkthrough(dir)) throw new Error(`there is no walkthrough of ${current.branch}; run walkthrough start`);
+  return dir;
+}
+
+async function listenCommand(): Promise<void> {
+  const dir = currentDir();
+  const taken = await listen(dir, () => serverRunning(dir));
+  if (taken === 'replaced') {
+    console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
+    process.exitCode = 3;
+  } else if (taken === 'stopped') console.log(JSON.stringify({ kind: 'stopped' }));
+  else for (const request of taken) console.log(JSON.stringify(request));
+}
+
+function sayCommand(args: string[]): void {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: { answer: { type: 'string' }, question: { type: 'boolean' } },
+  });
+  const text = positionals.join(' ').trim();
+  if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question] <text>');
+  say(currentDir(), text, values);
+  console.log('Said on the page.');
+}
+
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
+  listen: listenCommand,
+  say: sayCommand,
   stop: async () => {
     const stopped = await stopServer(walkthroughDir(currentBranch(process.cwd())));
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
@@ -55,7 +88,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
 const [name = '', ...rest] = process.argv.slice(2);
 const command = COMMANDS[name];
 try {
-  if (!command) throw new Error('usage: walkthrough start [--target <branch>] | stop | prune');
+  if (!command) throw new Error('usage: walkthrough start [--target <branch>] | listen | say [--answer <id>] [--question] <text> | stop | prune');
   await command(rest);
 } catch (error) {
   console.error(`walkthrough: ${(error as Error).message}`);
