@@ -51,7 +51,9 @@ function located<T extends Options>(
     source = { kind: 'branch', branch: branch ?? currentBranch(cwd), ...(target !== undefined && { target }) };
   else if (!base || !head) throw new Error('--base and --head go together, and --label needs them');
   else if (target !== undefined) throw new Error('--target is for the current branch; a range has its --base');
-  else source = { kind: 'range', base, head, label: label ?? `${base}..${head}` };
+  // Two changes fetched to the same name, such as FETCH_HEAD, would otherwise share one walkthrough.
+  else if (!label?.trim()) throw new Error('--base and --head need a --label that names the change');
+  else source = { kind: 'range', base, head, label };
   return { ...parsed, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
 }
 
@@ -225,7 +227,7 @@ const command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> [--label <text>]]\n' +
+      'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
         '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +

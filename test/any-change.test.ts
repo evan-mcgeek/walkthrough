@@ -59,13 +59,14 @@ describe('walkthrough start of a range', () => {
     expect(repo.run('files', ...LOGIN).stdout.trim().split('\n').sort()).toEqual(['app.ts', 'login.ts']);
   });
 
-  test('without a label it is named by its range', () => {
+  test('refuses a range without a label, since two changes fetched to the same name would share it', () => {
     const repo = newRepo();
 
     const started = repo.run('start', '--base', repo.base, '--head', 'feature/login');
-    repo.run('stop', '--base', repo.base, '--head', 'feature/login');
 
-    expect(started.stdout).toContain(`Walkthrough of ${repo.base}..feature/login against ${repo.base}`);
+    expect(started.status).toBe(1);
+    expect(started.stderr).toBe('walkthrough: --base and --head need a --label that names the change\n');
+    expect(repo.opened()).toEqual([]);
   });
 
   test('refuses a change with no changed file', () => {
@@ -75,7 +76,7 @@ describe('walkthrough start of a range', () => {
       ['feature/login', 'feature/login'],
       ['origin/main', repo.base],
     ] as const) {
-      const started = repo.run('start', '--base', base, '--head', head);
+      const started = repo.run('start', '--base', base, '--head', head, '--label', 'Empty');
       expect(started.status).toBe(1);
       expect(started.stderr.trim()).toBe(`walkthrough: nothing changed from ${base} to ${head}`);
     }
@@ -90,7 +91,7 @@ describe('walkthrough start of a range', () => {
     expect(repo.run('start', '--base', 'origin/main').stderr).toContain('--base and --head go together');
     expect(repo.run('start', '--label', 'Login').stderr).toContain('--base and --head go together');
     expect(repo.run('start', ...LOGIN, '--target', 'main').stderr).toContain('--target is for the current branch');
-    const missing = repo.run('start', '--base', 'origin/main', '--head', 'nope');
+    const missing = repo.run('start', '--base', 'origin/main', '--head', 'nope', '--label', 'Nope');
     expect(missing.status).toBe(1);
     expect(missing.stderr).toContain('there is no commit nope');
     expect(repo.run('start', 'feature/login').stderr).toContain('Unexpected argument');
@@ -139,8 +140,8 @@ describe('where a walkthrough is kept', () => {
     await expect(fetch(rangePage)).rejects.toThrow();
     expect((await fetch(branchPage)).status).toBe(200);
 
-    const unlabelled = repo.run('files', '--base', 'origin/main', '--head', 'feature/login');
+    const unlabelled = repo.run('files', '--base', 'origin/main', '--head', 'feature/login', '--label', 'Other');
     expect(unlabelled.status).toBe(1);
-    expect(unlabelled.stderr).toContain('there is no walkthrough of origin/main..feature/login');
+    expect(unlabelled.stderr).toContain('there is no walkthrough of Other');
   });
 });
