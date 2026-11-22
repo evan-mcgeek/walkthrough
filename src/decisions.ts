@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { cleanText, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
+import { anchorOf } from './notes';
 import { filled } from './steps';
 import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
@@ -16,6 +17,8 @@ export type WalkthroughView = Walkthrough & {
   reopened: Record<string, Decision>;
   /** The ids of the steps the page has shown. */
   read: string[];
+  /** The id of the step each note and ask shows on, by its id, null when its step or lines are gone. */
+  anchored: Record<string, string | null>;
 };
 
 const STEP_ACTIONS: Action[] = [
@@ -57,7 +60,8 @@ export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
 export function walkthroughView(dir: string): WalkthroughView | null {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return null;
-  const items = decisionsOf(walkthrough, conversationOf(dir));
+  const conversation = conversationOf(dir);
+  const items = decisionsOf(walkthrough, conversation);
   const read = readJson<string[]>(readFile(dir), []);
   return {
     ...walkthrough,
@@ -65,6 +69,12 @@ export function walkthroughView(dir: string): WalkthroughView | null {
     decided: Object.fromEntries(items.map(one => [one.key, one.decision])),
     reopened: Object.fromEntries(items.flatMap(one => (one.reopened ? [[one.key, one.reopened]] : []))),
     read: walkthrough.steps.filter(step => read.includes(`${step.id}:${fingerprint(step.diff)}`)).map(step => step.id),
+    anchored: Object.fromEntries(
+      conversation.flatMap(entry => {
+        const place = entry.from === 'session' ? entry.note : entry.kind === 'ask' ? entry : undefined;
+        return place ? [[entry.id, anchorOf(walkthrough, place)]] : [];
+      }),
+    ),
   };
 }
 

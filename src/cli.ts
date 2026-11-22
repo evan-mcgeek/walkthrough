@@ -7,7 +7,7 @@ import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
-import { decisionsOf, parseActions, walkthroughView } from './decisions';
+import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { GUIDE } from './guide';
 import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
 import {
@@ -132,10 +132,9 @@ function actions(args: string[]): void {
 
 function decisions(args: string[]): void {
   const { dir, walkthrough } = current(args);
-  for (const { item, decision } of decisionsOf(walkthrough, conversationOf(dir))) {
-    const { id, at, action, note, text } = decision ?? {};
-    console.log(JSON.stringify({ item, decision: decision && { id, at, action, note, text } }));
-  }
+  const shown = ({ id, at, action, note, text }: Decision) => ({ id, at, action, note, text });
+  for (const { item, decision, reopened } of decisionsOf(walkthrough, conversationOf(dir)))
+    console.log(JSON.stringify({ item, decision: decision && shown(decision), ...(reopened && { reopened: shown(reopened) }) }));
 }
 
 async function listenCommand(args: string[]): Promise<void> {

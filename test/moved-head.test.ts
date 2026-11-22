@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { WalkthroughView } from '../src/decisions';
+import type { SessionView } from '../src/session';
 import { git, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
@@ -65,6 +66,22 @@ describe('a new head', () => {
     expect(view.checklist?.items[0]?.steps).toEqual(['1', '2']);
   });
 
+  test('walkthrough decisions gives a reopened step the decision it had before', async () => {
+    await decidedTwice();
+    moveHead({ 'login.ts': 'export const login = () => false;\n' });
+    repo.run('start');
+
+    const lines = repo
+      .run('decisions')
+      .stdout.trim()
+      .split('\n')
+      .map(line => JSON.parse(line) as Record<string, unknown>);
+
+    expect(lines[0]).toMatchObject({ item: { type: 'step', id: '1' }, decision: null, reopened: { action: 'approve' } });
+    expect(lines[1]).toMatchObject({ item: { type: 'step', id: '2' }, decision: { action: 'approve' } });
+    expect(lines[1]).not.toHaveProperty('reopened');
+  });
+
   test('drops a step none of whose files change any more', async () => {
     await decidedTwice();
     moveHead({ 'app.ts': 'export const app = 1;\n' });
@@ -91,7 +108,38 @@ describe('a new head', () => {
   });
 });
 
-const CART = { title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] };
+describe('notes and asks whose place is gone', () => {
+  test('are kept and shown detached, and a note on lines follows its file to the step that has it', async () => {
+    repo = makeRepo({ feature: { 'login.ts': 'one\ntwo\nthree\n' } });
+    repo.run('start');
+    repo.record([LOGIN, APP]);
+    const noted = repo.record(
+      [
+        { step: '2', label: 'Step', text: 'On the app step.' },
+        { step: '2', file: 'app.ts', lines: [1, 1], label: 'Line', text: 'On the app line.' },
+        { step: '1', file: 'login.ts', lines: [3, 3], label: 'Gone', text: 'On line three.' },
+      ],
+      'note',
+    );
+    const [onStep, onLine, onGoneLine] = noted.stdout.match(/[0-9a-f]{8}/g) ?? [];
+    expect((await post('/ask', { step: '2', text: 'Why?' })).status).toBe(200);
+    moveHead({ 'login.ts': 'one\ntwo\n' });
+    repo.run('start');
+
+    repo.record([{ title: 'All', explanation: 'Everything.', files: ['login.ts', 'app.ts'] }]);
+
+    const { conversation } = (await (await fetch(`${repo.url()}data/session.json`)).json()) as SessionView;
+    const asked = conversation.find(entry => entry.from === 'page' && entry.kind === 'ask');
+    expect((await shown()).anchored).toEqual({
+      [onStep ?? '']: null,
+      [onLine ?? '']: '1',
+      [onGoneLine ?? '']: null,
+      [asked?.id ?? '']: null,
+    });
+  });
+});
+
+const CART ={ title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] };
 
 describe('recording the steps again', () => {
   test('a step keeps its id, decision and read mark by its files, whatever its place, and prints the ids', async () => {
