@@ -58,6 +58,8 @@ While your policy is still the unchanged template, the offer comes again on late
 The template covers how to split and order steps, how to write explanations, what the checklist tracks, which reviewers run and how their findings are checked, how drafts for colleagues are written, and which actions each kind of walkthrough offers.
 Every rule in it is a default you can edit.
 
+Claude Code asks you to approve the session's reads of your policy, which lives outside the project, and the commands that pass JSON to the CLI.
+
 The page then opens and shows the session preparing.
 Steps appear as soon as the session records them.
 Uncommitted edits are left out of the walkthrough, with a warning, and nothing is ever checked out.
