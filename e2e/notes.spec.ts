@@ -89,7 +89,7 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
 });
 
-test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, repo }) => {
+test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {
   pin(repo, [
     {
       step: '1',
@@ -102,6 +102,8 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
         '| a    | b     |',
         '',
         '[docs](https://example.com/docs)',
+        '',
+        '![Dot](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==)',
       ].join('\n'),
     },
   ]);
@@ -109,6 +111,7 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
 
   await expect(note).toContainText('Raw <b id="raw">bold</b> and <img src=x onerror="document.title=1">.');
   await expect(note.locator('#raw, img')).toHaveCount(0);
+  await expect(note).toContainText('Dot');
   await expect(note.locator('td.align-right')).toHaveText('b');
   await expect(note.locator('[style]')).toHaveCount(0);
   await expect(note.getByRole('link', { name: 'docs' })).toHaveAttribute('target', '_blank');

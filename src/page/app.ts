@@ -467,7 +467,7 @@ function addPreview(wrapper: Element, stepId: string, file: string): void {
     }
     preview.replaceChildren(el('p', { className: 'notice' }, 'Loading the preview.'));
     const answer = await fetch(source).catch(() => null);
-    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text());
+    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), { images: true });
     else preview.replaceChildren(el('p', { className: 'notice' }, 'Could not load the preview.'));
   };
   const choices = (['Diff', 'Preview'] as const).map(label =>

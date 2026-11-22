@@ -75,7 +75,7 @@ ${JSON.stringify(example, null, 2)}
 
 walkthrough note < notes.json
   Pins notes to the page, after those pinned before, and prints each note's id.
-  Standard input is a JSON array of notes; their text is Markdown, shown without any raw HTML.
+  Standard input is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
   "step" is a step id as walkthrough steps printed it.
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}

@@ -11,6 +11,10 @@ const guide = [
   '',
   '[Run](javascript:window.ran=true)',
   '',
+  '[Home](https://example.com/)',
+  '',
+  '![Dot](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==)',
+  '',
   '| Name | Count |',
   '| :--- | ----: |',
   '| apples | 3 |',
@@ -44,7 +48,10 @@ test('a changed Markdown file previews rendered and safe, and switches back to i
   await expect(preview.locator('strong')).toHaveText('this');
   await expect(preview.getByText('<script>window.ran = true</script>')).toBeVisible();
   await expect(preview.getByText('<img src="x" onerror="window.ran = true">')).toBeVisible();
-  await expect(preview.locator('script, img, [onerror]')).toHaveCount(0);
+  await expect(preview.locator('script, [onerror]')).toHaveCount(0);
+  await expect(preview.getByRole('img', { name: 'Dot' })).toBeVisible();
+  await expect(preview.getByRole('link', { name: 'Home' })).toHaveAttribute('target', '_blank');
+  await expect(preview.getByRole('link', { name: 'Home' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(preview.locator('a[href^="javascript:"]')).toHaveCount(0);
   await expect(preview.getByRole('cell', { name: '3' })).toHaveCSS('text-align', 'right');
   expect(await page.evaluate(() => (window as { ran?: boolean }).ran)).toBeUndefined();
