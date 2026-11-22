@@ -9,7 +9,7 @@ export type Decision = (typeof DECISIONS)[number];
 export type FoldedFile = { path: string; reason: string };
 /** A `folded` step is one the session marked so. */
 export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
-  | { kind: 'step'; explanation: string; files: string[] }
+  | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
 export type ChecklistItem = { id: string; status: string; text: string; steps: string[] };

@@ -314,6 +314,74 @@ button:disabled {
   cursor: default;
 }
 
+.d2h-file-header .switch {
+  display: flex;
+  flex: none;
+  margin-left: 12px;
+}
+
+.switch button {
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.switch button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.switch button:last-child {
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+}
+
+.switch button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.preview {
+  padding: 8px 16px;
+  overflow-x: auto;
+}
+
+.preview img {
+  max-width: 100%;
+}
+
+.preview table {
+  border-collapse: collapse;
+}
+
+.preview th,
+.preview td {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+}
+
+.preview pre,
+.preview code {
+  background: var(--panel);
+  border-radius: 4px;
+}
+
+.preview pre {
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.align-right {
+  text-align: right;
+}
+
 .side {
   display: grid;
   gap: 24px;
