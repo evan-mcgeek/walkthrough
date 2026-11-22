@@ -53,13 +53,17 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
   With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
+  When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
+  and start prints the changed files that no step has yet; record the steps again with those in new steps.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
 walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
 walkthrough steps < steps.json
-  Records the steps, replacing those recorded before; a step keeps its decisions only while its id and diff are the same.
+  Records the steps, replacing those recorded before, and prints each step's id and title in order.
+  A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, or else a new id; its notes and checklist links follow the id.
+  A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
   Standard input is a JSON array of steps in reading order.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
@@ -72,20 +76,22 @@ ${JSON.stringify(example, null, 2)}
 walkthrough note < notes.json
   Pins notes to the page, after those pinned before, and prints each note's id.
   Standard input is a JSON array of notes; their text is Markdown, shown without any raw HTML.
-  "step" is a step id ("1" for the first step).
+  "step" is a step id as walkthrough steps printed it.
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
+  A note whose step or lines later leave the change is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
 ${JSON.stringify(notesExample, null, 2)}
 
 walkthrough checklist < checklist.json
-  Records the checklist shown beside the steps, replacing the one recorded before; re-recording the steps keeps it.
+  Records the checklist shown beside the steps, replacing the one recorded before; recording the steps again or a new head keeps it.
   Standard input is a JSON object with a title and items in reading order.
   Title, status and text are the session's own words.
-  An item's steps are the ids of the steps it links to ("1" for the first step); every id must exist, otherwise nothing is recorded ("steps" may be left out).
+  An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
+  A link to a step that is later gone shows as gone.
     {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
@@ -99,7 +105,7 @@ walkthrough actions < actions.json
     [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
   Other items offer nothing until actions are recorded on them; the walkthrough's actions show beside the steps.
-  Recording the steps or the checklist again drops the actions recorded on them.
+  Recording the checklist again drops the actions on its items; a step's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
 [
@@ -109,6 +115,7 @@ ${actionsExample.map(one => `  ${JSON.stringify(one)}`).join(',\n')}
 walkthrough decisions
   Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
+  A reopened step, whose diff changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
   A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
 
 walkthrough listen

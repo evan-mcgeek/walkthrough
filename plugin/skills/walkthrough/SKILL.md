@@ -22,6 +22,8 @@ Run any reviewer in a fresh context, and never treat the author session's own su
 4. Record the steps, as below.
 5. The page is open in their browser; they review and decide there.
    Running `walkthrough start` again on the same head reopens the walkthrough with their decisions intact.
+   On a new head (the branch moved, or the same label on a new range) it goes on with the walkthrough: steps whose diff is unchanged keep their decisions, changed ones are reopened, and it names the changed files in no step yet.
+   Record the steps again with those files in new steps, and tell the person in one line what reopened.
 6. Listen for the page, as below, until the walkthrough stops.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
 
@@ -34,24 +36,25 @@ Never check anything out.
 Split the change into steps, order them, and fold the files not worth reading line by line, as the review policy and the project's instructions say.
 Record them with `walkthrough steps` in the shape `walkthrough guide` prints.
 The CLI only checks that every changed file is in exactly one step; when it refuses, it names every problem, so fix them and record again.
-Recording again replaces the steps; a step keeps the person's decision only while its id and diff stay the same, so record before they start deciding.
+Recording again replaces the steps and prints their ids; a step keeps its id by its files, and the person's decision while its diff is unchanged.
 
 ## Checklist
 
 When the review policy asks for a checklist, record it after the steps with `walkthrough checklist` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
-Its links name step ids, so record it again after recording the steps again.
+Its links name the step ids `walkthrough steps` printed; a link to a step that is gone shows as gone, so record the checklist again when you merge or drop steps.
 
 ## Notes
 
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
 Notes name step ids, so record them after the steps.
+A note whose step or lines leave the change stays on the page as detached.
 
 ## Actions
 
 Record the actions the page offers on steps, notes, checklist items and the whole walkthrough with `walkthrough actions` in the shape `walkthrough guide` prints, after the items they are on.
 Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
-Recording the steps or the checklist again drops the actions on them, so record those actions again too.
+Recording the checklist again drops the actions on its items, and a step that is gone takes its actions with it, so record those again too.
 `walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
 ## Listening for the page
