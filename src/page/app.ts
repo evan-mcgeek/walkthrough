@@ -210,6 +210,8 @@ function decideView(item: Item, text = ''): HTMLElement[] {
   if (!actions.length) return [];
   const decision = walkthrough.decided[key] ?? null;
   const reopened = walkthrough.reopened[key];
+  // A reopened item keeps what the person and the session said about the decision it had.
+  const shown = decision ?? reopened;
   const state = decision
     ? el('p', { className: 'decision decided' }, `Decided: ${labelOf(item, decision.action)}`)
     : reopened
@@ -240,7 +242,7 @@ function decideView(item: Item, text = ''): HTMLElement[] {
         state,
         ...(readOnly ? [] : [group]),
       ),
-      ...(decision ? decisionSaid(decision) : []),
+      ...(shown ? decisionSaid(shown) : []),
       ...(taken ? [takingForm(item, taken, text)] : []),
     ),
   ];

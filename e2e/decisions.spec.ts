@@ -120,6 +120,30 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await expect(whole.getByText('Decided: Post my comments', { exact: true })).toBeVisible();
 });
 
+test('a checklist item the session records again after a decision shows reopened, keeping the note and the answer', async ({
+  page,
+  repo,
+}) => {
+  const disagree = [{ item: { type: 'checklist', id: '1' }, actions: [{ id: 'no', label: 'Disagree', note: true }] }];
+  record(repo, { title: 'Criteria', items: [{ status: 'met', text: 'A person can log in.' }] }, 'checklist');
+  record(repo, disagree, 'actions');
+  const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
+  const listener = repo.background('listen');
+  await item.getByRole('button', { name: 'Disagree' }).click();
+  await item.getByRole('textbox', { name: 'Note' }).fill('Only staff can.');
+  await item.getByRole('button', { name: 'Send' }).click();
+  const decided = await decisionOf(repo, listener);
+
+  record(repo, { title: 'Criteria', items: [{ status: 'not met', text: 'Only staff can log in.' }] }, 'checklist');
+  record(repo, disagree, 'actions');
+  repo.run('say', '--answer', String(decided['id']), 'Marked it not met.');
+
+  await expect(item.getByText('Reopened: changed since you chose Disagree', { exact: true })).toBeVisible();
+  await expect(item.getByText('Only staff can.', { exact: true })).toBeVisible();
+  await expect(item.getByText('Marked it not met.', { exact: true })).toBeVisible();
+  await expect(item.getByRole('button', { name: 'Disagree' })).toHaveAttribute('aria-pressed', 'false');
+});
+
 test('steps shown are read apart from decided, and decided steps collapse in the step list', async ({ page }) => {
   const nav = page.getByRole('navigation', { name: 'Steps' });
   await expect(page.getByText('0 of 2 steps decided, 2 left, 1 read')).toBeVisible();

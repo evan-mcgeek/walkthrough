@@ -115,7 +115,7 @@ ${actionsExample.map(one => `  ${JSON.stringify(one)}`).join(',\n')}
 walkthrough decisions
   Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
-  A reopened step, whose diff changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
+  A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
   A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
 
 walkthrough listen
