@@ -42,9 +42,8 @@ describe('walkthrough listen', () => {
 
     const { status, stdout } = await listener.ended;
     expect(status).toBe(0);
-    expect(handed(stdout)).toEqual([
-      expect.objectContaining({ kind: 'ask', step: 'change', text: 'Why is app 2 now?', id: expect.any(String) }),
-    ]);
+    expect(handed(stdout)).toEqual([expect.objectContaining({ kind: 'ask', step: 'change', text: 'Why is app 2 now?' })]);
+    expect(handed(stdout)[0]?.['id']).toMatch(/^[0-9a-f]{8}$/);
     expect((await sessionAt(repo.url())).state).toBe('working');
   });
 
