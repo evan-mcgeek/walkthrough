@@ -92,6 +92,33 @@ describe('walkthrough steps', () => {
     expect(refused.stderr).toContain('step 1 needs an explanation');
   });
 
+  test('keeps what the session assumed rather than read apart from the explanation; it may be left out', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const assumed = ['Nothing else calls login yet.', 'The app constant is only read at startup.'];
+
+    const recorded = repo.record([
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'], assumptions: assumed },
+      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+    ]);
+
+    expect(recorded.stderr).toBe('');
+    const { steps } = await shownAt(repo.url());
+    expect(steps[0]).toMatchObject({ explanation: 'Adds login.', assumptions: assumed });
+    expect(steps[1]).toMatchObject({ assumptions: [] });
+  });
+
+  test('refuses assumptions that are not a list of text', () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    for (const assumptions of ['Nothing calls login.', [''], [3]]) {
+      const refused = repo.record([{ title: 'All', explanation: 'All.', files: ['login.ts', 'app.ts'], assumptions }]);
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toContain('step 1: assumptions must be a list of text');
+    }
+  });
+
   test('keeps a renamed file together with its old path in its step diff', async () => {
     repo = makeRepo({ start: { 'auth.ts': 'export const auth = 1;\nexport const two = 2;\n' } });
     git(repo.dir, 'mv', 'auth.ts', 'session.ts');
@@ -162,8 +189,9 @@ describe('walkthrough guide', () => {
     expect(guide.stderr).toBe('');
     expect(guide.status).toBe(0);
     for (const shape of [
+      'walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]',
       'walkthrough steps',
-      '{"title": string, "explanation": string, "files": [path, ...]}',
+      '{"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}',
       '{"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}',
       'walkthrough listen',
       '{"kind": "ask", "id": string, "step": string, "text": string}',
@@ -176,7 +204,8 @@ describe('walkthrough guide', () => {
 
   test('the steps it gives as an example are recorded as they are', () => {
     const example = /Example:\n(\[[\s\S]*?\n\])\n/.exec(makeRepo().run('guide').stdout)?.[1] ?? '';
-    const steps = JSON.parse(example) as { files: (string | { path: string })[] }[];
+    const steps = JSON.parse(example) as { files: (string | { path: string })[]; assumptions?: string[] }[];
+    expect(steps.some(step => step.assumptions?.length)).toBe(true);
     const paths = steps.flatMap(step => step.files.map(file => (typeof file === 'string' ? file : file.path)));
     repo = makeRepo({ feature: Object.fromEntries(paths.map(file => [file, `${file}\n`])) });
     repo.run('start');

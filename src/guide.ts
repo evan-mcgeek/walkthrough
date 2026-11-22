@@ -3,6 +3,7 @@ const example = [
   {
     title: 'Session store',
     explanation: 'Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.',
+    assumptions: ['Sessions are only read by the login handler.'],
     files: ['src/session-store.ts', 'test/session-store.test.ts'],
   },
   {
@@ -21,15 +22,23 @@ const checklistExample = {
   ],
 };
 
-export const GUIDE = `walkthrough files
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
+  Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  With no options it is of the current branch against origin/<target>, the remote's default branch unless given.
+  With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
+  Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
+  Every command below finds the walkthrough from the same options start was given, so pass them to each.
+  Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+
+walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
 walkthrough steps < steps.json
   Records the steps, replacing the steps and decisions recorded before.
   Standard input is a JSON array of steps in reading order.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
-  A step:
-    {"title": string, "explanation": string, "files": [path, ...]}
+  A step, with what the session assumed rather than read ("assumptions" may be left out):
+    {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
   A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
     {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
   Example:

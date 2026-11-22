@@ -1,16 +1,20 @@
 // The change under review, read from git objects only: nothing is checked out.
 import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 
+/** What a walkthrough is of: the current branch against its target, or a range the session names, with a label to name it by. */
+export type Source =
+  | { kind: 'branch'; branch: string; target?: string }
+  | { kind: 'range'; base: string; head: string; label: string };
+
 export type Change = {
-  /** The repo's folder name, shared by all its worktrees. */
-  repo: string;
-  branch: string;
-  /** The remote-tracking branch the base is taken from, such as origin/main. */
+  /** The revision the base is the merge-base with: a remote-tracking branch such as origin/main, or a range's base as given. */
   target: string;
   base: string;
   head: string;
-  /** Uncommitted and untracked paths, which the change leaves out. */
+  /** Uncommitted and untracked paths when the head is checked out, which the change leaves out. */
   uncommitted: number;
 };
 
@@ -25,35 +29,52 @@ export function gitWith(cwd: string, input: string | undefined, ...args: string[
   return result.stdout;
 }
 
-/** The folder name of the repo `cwd` is in, shared by all its worktrees. */
-export const currentRepo = (cwd: string) =>
-  path.basename(path.dirname(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim()));
-
-/** The repo and the branch checked out in `cwd`. */
-export function currentBranch(cwd: string): Pick<Change, 'repo' | 'branch'> {
-  const branch = git(cwd, 'branch', '--show-current').trim();
-  if (!branch) throw new Error('not on a branch; check out the branch to walk through');
-  return { repo: currentRepo(cwd), branch };
+/** The repo `cwd` is in, shared by all its worktrees: its folder name and a short hash of its git folder, so two repos of the same name differ. */
+export function currentRepo(cwd: string): string {
+  const common = fs.realpathSync(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim());
+  const hash = crypto.createHash('sha256').update(common).digest('hex').slice(0, 8);
+  return `${path.basename(path.dirname(common))}-${hash}`;
 }
 
-/** The current branch from the merge-base with `origin/<target>` (the remote's default branch unless given) to its head commit. */
-export function currentChange(cwd: string, targetBranch?: string): Change {
-  const { repo, branch } = currentBranch(cwd);
-  const target = targetBranch ? `origin/${targetBranch}` : defaultTarget(cwd);
+/** The branch checked out in `cwd`. */
+export function currentBranch(cwd: string): string {
+  const branch = git(cwd, 'branch', '--show-current').trim();
+  if (!branch) throw new Error('not on a branch; check out the branch to walk through, or pass --base and --head');
+  return branch;
+}
+
+/** The commit `rev` names, or null when it names none. */
+function commitOf(cwd: string, rev: string): string | null {
   try {
-    git(cwd, 'rev-parse', '--verify', '--quiet', `${target}^{commit}`);
+    return git(cwd, 'rev-parse', '--verify', '--quiet', `${rev}^{commit}`).trim();
   } catch {
-    throw new Error(`there is no ${target}; pass --target <branch>`);
+    return null;
   }
-  const head = git(cwd, 'rev-parse', 'HEAD').trim();
-  const base = git(cwd, 'merge-base', target, head).trim();
+}
+
+/** The change from the merge-base of the target and the head to the head; a branch's target is `origin/<target>`, the remote's default branch unless given. */
+export function changeOf(cwd: string, source: Source): Change {
+  const range = source.kind === 'range';
+  const target = range ? source.base : source.target ? `origin/${source.target}` : defaultTarget(cwd);
+  if (!commitOf(cwd, target))
+    throw new Error(range ? `there is no commit ${target}` : `there is no ${target}; pass --target <branch>`);
+  const head = commitOf(cwd, range ? source.head : 'HEAD');
+  if (!head) throw new Error(range ? `there is no commit ${source.head}` : `${source.branch} has no commit yet`);
+  let base: string;
+  try {
+    base = git(cwd, 'merge-base', target, head).trim();
+  } catch {
+    throw new Error(`${target} and ${range ? source.head : source.branch} share no history`);
+  }
+  // No steps means the session is still preparing them, so a change without files would never be ready.
+  if (changedFiles(cwd, base, head).length === 0)
+    throw new Error(`nothing changed from ${target} to ${range ? source.head : source.branch}`);
   return {
-    repo,
-    branch,
     target,
     base,
     head,
-    uncommitted: git(cwd, 'status', '--porcelain').split('\n').filter(Boolean).length,
+    uncommitted:
+      commitOf(cwd, 'HEAD') === head ? git(cwd, 'status', '--porcelain').split('\n').filter(Boolean).length : 0,
   };
 }
 
@@ -88,13 +109,10 @@ export const diffOf = (cwd: string, base: string, head: string, files: ChangedFi
         ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])),
       );
 
-/** The file's text at `rev`, or null when it does not exist there. */
-export function fileAt(cwd: string, rev: string, file: string): string | null {
-  try {
-    return git(cwd, 'cat-file', 'blob', `${rev}:${file}`);
-  } catch {
-    return null;
-  }
+/** The file's content at `rev`, or null when it does not exist there. */
+export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
+  const result = spawnSync('git', ['cat-file', 'blob', `${rev}:${file}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
+  return result.status === 0 ? result.stdout : null;
 }
 
 function defaultTarget(cwd: string): string {

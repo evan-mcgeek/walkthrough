@@ -98,9 +98,9 @@ export function makeRepo({
     },
     /** Waits for every background CLI to end, so none writes into the sandbox while it is removed. */
     settled: () => Promise.all(running),
-    /** Records with `command` the way the skill does, as JSON on standard input; a string goes in as it is. */
-    record: (input: unknown, command = 'steps') =>
-      spawnSync(CLI, [command], {
+    /** Records with `command` and `args` the way the skill does, as JSON on standard input; a string goes in as it is. */
+    record: (input: unknown, command = 'steps', ...args: string[]) =>
+      spawnSync(CLI, [command, ...args], {
         cwd: dir,
         encoding: 'utf8',
         env,

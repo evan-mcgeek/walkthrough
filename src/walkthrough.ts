@@ -1,6 +1,6 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
-import type { Change } from './change';
+import type { Change, Source } from './change';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
@@ -9,14 +9,13 @@ export type Decision = (typeof DECISIONS)[number];
 export type FoldedFile = { path: string; reason: string };
 /** A `folded` step is one the session marked so. */
 export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
-  | { kind: 'step'; explanation: string; files: string[] }
+  | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
 export type ChecklistItem = { id: string; status: string; text: string; steps: string[] };
 export type Checklist = { title: string; items: ChecklistItem[] };
-export type Walkthrough = {
-  kind: 'branch';
-  branch: string;
+export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
+  /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
   base: string;
   head: string;
@@ -27,33 +26,46 @@ export type Walkthrough = {
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
 
-/** The folder of the walkthrough of `change`'s branch; `~` cannot appear in a branch name, so `/` maps to it one to one. */
-export const walkthroughDir = (change: Pick<Change, 'repo' | 'branch'>) =>
-  path.join(stateDir(), change.repo, `branch-${change.branch.replaceAll('/', '~')}`);
+/** What the walkthrough of `source` is called: its branch or its label. */
+export const nameOf = (source: Source | Walkthrough) => (source.kind === 'branch' ? source.branch : source.label);
+
+/**
+ * The folder of the walkthrough of `source` in the repo `repo`.
+ * `~` cannot appear in a branch name, so `/` maps to it one to one; a label is encoded whole.
+ */
+export function walkthroughDir(repo: string, source: Source): string {
+  const name =
+    source.kind === 'branch'
+      ? `branch-${source.branch.replaceAll('/', '~')}`
+      : `range-${encodeURIComponent(source.label)}`;
+  if (Buffer.byteLength(name) > 255)
+    throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
+  return path.join(stateDir(), repo, name);
+}
 
 export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
 
 /** The saved walkthrough of the change when it is pinned to the same base and head, else a new one replacing it. */
-export function openWalkthrough(change: Change): {
-  dir: string;
+export function openWalkthrough(
+  dir: string,
+  source: Source,
+  change: Change,
+): {
   walkthrough: Walkthrough;
   opened: 'new' | 'resumed' | 'replaced';
 } {
-  const dir = walkthroughDir(change);
   return locked(file(dir), () => {
     const saved = readWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base)
-      return { dir, walkthrough: saved, opened: 'resumed' };
+    if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
     const walkthrough: Walkthrough = {
-      kind: 'branch',
-      branch: change.branch,
+      ...(source.kind === 'branch' ? { kind: 'branch', branch: source.branch } : { kind: 'range', label: source.label }),
       target: change.target,
       base: change.base,
       head: change.head,
       steps: [],
     };
     writeJson(file(dir), walkthrough);
-    return { dir, walkthrough, opened: saved ? 'replaced' : 'new' };
+    return { walkthrough, opened: saved ? 'replaced' : 'new' };
   });
 }
 
@@ -61,7 +73,7 @@ export function openWalkthrough(change: Change): {
 export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
   return locked(file(dir), () => {
     const walkthrough = readWalkthrough(dir);
-    if (!walkthrough) throw new Error('there is no walkthrough of this branch yet; run walkthrough start first');
+    if (!walkthrough) throw new Error('there is no such walkthrough yet; run walkthrough start first');
     walkthrough.steps = build(walkthrough);
     writeJson(file(dir), walkthrough);
     return walkthrough;
