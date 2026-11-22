@@ -51,10 +51,11 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    - An ask: answer it from the change at the pinned head with `walkthrough say --answer <id> "<answer>"`.
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
-   - A reply: the person's reply to a question you asked; act on it.
+   - A reply: the person's reply to a question you asked; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
 
 To ask the person something on the page, run `walkthrough say --question "<question>"` and listen; their reply comes back as a reply line.
-While you work on what they sent, the page shows you as working; it shows quiet when nobody listens.
+When the question has a few likely answers, offer each with `--choice "<answer>"`; the page shows them as buttons.
+The page shows you as working until you have answered everything listen handed you, and as gone when you stop listening and do not come back.

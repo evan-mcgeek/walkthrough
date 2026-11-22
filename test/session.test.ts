@@ -149,11 +149,102 @@ describe('walkthrough say', () => {
 });
 
 describe('the session status', () => {
-  test('is quiet until a session listens', async () => {
+  // Short, so a test sees the session not come back after answering.
+  const BACK_WITHIN = { WALKTHROUGH_BACK_WITHIN_MS: '300' };
+  const stateAt = async () => (await sessionAt(repo.url())).state;
+  const asked = async (text: string) => {
+    const listener = await listening();
+    await post(repo.url(), '/ask', { step: '1', text });
+    return handed((await listener.ended).stdout)[0]?.['id'] as string;
+  };
+
+  test('is working from start until a session listens', async () => {
     repo = makeRepo();
     repo.run('start');
 
-    expect((await sessionAt(repo.url())).state).toBe('quiet');
+    expect(await stateAt()).toBe('working');
+    await listening();
+  });
+
+  test('stays working on an unanswered request however long it takes, and is gone once answered and not back', async () => {
+    repo = makeRepo({ env: BACK_WITHIN });
+    repo.run('start');
+    repo.record(ONE_STEP);
+    const id = await asked('Why is app 2 now?');
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    expect(await stateAt()).toBe('working');
+
+    repo.run('say', '--answer', id, 'Login needs the second app.');
+    expect(await stateAt()).toBe('working');
+    await until('the session is gone', async () => (await stateAt()) === 'gone');
+  });
+
+  test('is listening again when the session comes back after answering', async () => {
+    repo = makeRepo({ env: BACK_WITHIN });
+    repo.run('start');
+    repo.record(ONE_STEP);
+    repo.run('say', '--answer', await asked('Why?'), 'Because.');
+
+    await listening();
+    await new Promise(resolve => setTimeout(resolve, 600));
+    expect(await stateAt()).toBe('listening');
+  });
+
+  test('stays working on a reply until the session answers it', async () => {
+    repo = makeRepo({ env: BACK_WITHIN });
+    repo.run('start');
+    repo.run('say', '--question', 'Only staff?');
+    const listener = repo.background('listen');
+    const [question] = (await sessionAt(repo.url())).conversation;
+    await post(repo.url(), '/reply', { to: question?.id, text: 'Yes' });
+    const [replied] = handed((await listener.ended).stdout);
+
+    await new Promise(resolve => setTimeout(resolve, 600));
+    expect(await stateAt()).toBe('working');
+
+    expect(repo.run('say', '--answer', String(replied?.['id']), 'Limited it to staff.').status).toBe(0);
+    await until('the session is gone', async () => (await stateAt()) === 'gone');
+  });
+
+  test.each(['SIGTERM', 'SIGKILL'] as const)('is gone at once when the listener ends by %s', async signal => {
+    repo = makeRepo();
+    repo.run('start');
+    const listener = await listening();
+
+    listener.child.kill(signal);
+    await listener.ended;
+
+    expect(await stateAt()).toBe('gone');
+  });
+});
+
+describe('walkthrough say --question --choice', () => {
+  test('offers the choices with the question, and a choice reaches the listener as the reply', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    expect(repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?').status).toBe(0);
+    const listener = repo.background('listen');
+
+    const [question] = (await sessionAt(repo.url())).conversation;
+    expect(question).toMatchObject({ question: true, text: 'Who may log in?', choices: ['Staff only', 'Everyone'] });
+    await post(repo.url(), '/reply', { to: question?.id, text: 'Everyone' });
+
+    expect(handed((await listener.ended).stdout)).toEqual([
+      expect.objectContaining({ kind: 'reply', to: question?.id, text: 'Everyone' }),
+    ]);
+  });
+
+  test('refuses choices without a question, and an empty choice', () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    const loose = repo.run('say', '--choice', 'Yes', 'Shall I?');
+    expect(loose.status).toBe(1);
+    expect(loose.stderr).toContain('--choice needs --question');
+    const empty = repo.run('say', '--question', '--choice', ' ', 'Shall I?');
+    expect(empty.status).toBe(1);
+    expect(empty.stderr).toContain('a choice needs text');
   });
 });
 

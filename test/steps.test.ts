@@ -197,7 +197,7 @@ describe('walkthrough guide', () => {
       '{"kind": "ask", "id": string, "step": string, "text": string}',
       '{"kind": "reply", "id": string, "to": string, "text": string}',
       '{"kind": "stopped"}',
-      'walkthrough say',
+      'walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>',
     ])
       expect(guide.stdout).toContain(shape);
   });

@@ -80,11 +80,11 @@ async function decide(step: Step, decision: Decision): Promise<void> {
   show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !one.decision));
 }
 
-/** Sends what the person typed in the box `draft`; it is kept when the walkthrough could not take it. */
-async function send(route: 'ask' | 'reply', draft: string, body: Record<string, string>): Promise<void> {
-  const answer = await post(route, { ...body, text: drafts.get(draft) ?? '' });
+/** Sends what the person said; the box `draft` it came from is kept when the walkthrough could not take it. */
+async function send(route: 'ask' | 'reply', body: Record<string, string>, draft?: string): Promise<void> {
+  const answer = await post(route, body);
   if (!answer) return;
-  drafts.delete(draft);
+  if (draft) drafts.delete(draft);
   session = (await answer.json()) as SessionView;
   render();
 }
@@ -101,9 +101,9 @@ async function stop(): Promise<void> {
 
 const SESSION: Record<SessionState, readonly [string, string]> = {
   listening: ['Listening', 'The session is listening: what you ask reaches it right away.'],
-  working: ['Working', 'The session is working on what you sent; what you send now waits for it.'],
+  working: ['Working', 'The session is working; what you send now waits until it listens again.'],
   'needs-you': ['Needs you', 'The session asked you something; reply to it below.'],
-  quiet: ['Quiet', 'No session is listening. What you send waits until one does; run /walkthrough in Claude Code.'],
+  gone: ['Gone', 'The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code.'],
 };
 
 function sessionChip(): HTMLElement {
@@ -130,13 +130,15 @@ function draftBox(draft: string, label: string, action: string, onSend: () => vo
 }
 
 const said = (entry: Entry, className: string) => el('p', { className: `said ${className}` }, entry.text);
+const answersTo = (request: Entry) =>
+  session.conversation.filter(entry => entry.from === 'session' && entry.answer === request.id);
 
 function askView(step: Step): HTMLElement {
   const asks = session.conversation.flatMap(entry =>
     entry.from === 'page' && entry.kind === 'ask' && entry.step === step.id ? [entry] : [],
   );
   const threads = asks.map(asked => {
-    const answers = session.conversation.filter(entry => entry.from === 'session' && entry.answer === asked.id);
+    const answers = answersTo(asked);
     return el(
       'div',
       { className: 'thread' },
@@ -151,11 +153,22 @@ function askView(step: Step): HTMLElement {
     'div',
     { className: 'conversation' },
     ...threads,
-    draftBox(draft, 'Ask about this step', 'Ask', () => void send('ask', draft, { step: step.id })),
+    draftBox(draft, 'Ask about this step', 'Ask', () => {
+      void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
+    }),
   );
 }
 
-/** What the session said that answers no ask: its notes, and its questions with the person's replies. */
+/** The answers a question offers, each sent as the person's reply. */
+function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
+  if (!choices.length) return [];
+  const buttons = choices.map(choice =>
+    el('button', { type: 'button', onclick: () => void send('reply', { to: id, text: choice }) }, choice),
+  );
+  return [el('div', { className: 'choices' }, ...buttons)];
+}
+
+/** What the session said that answers no ask: its notes, and its questions with the person's replies and its answers to them. */
 function sessionMessages(): HTMLElement[] {
   const messages = session.conversation.filter(
     (entry): entry is SessionMessage => entry.from === 'session' && !entry.answer,
@@ -170,9 +183,14 @@ function sessionMessages(): HTMLElement[] {
       'div',
       { className: 'thread' },
       said(message, message.question ? 'session question' : 'session'),
-      ...replies.map(reply => said(reply, 'person')),
+      ...replies.flatMap(reply => [said(reply, 'person'), ...answersTo(reply).map(answer => said(answer, 'session'))]),
       ...(message.question && !replies.length
-        ? [draftBox(draft, 'Reply', 'Reply', () => void send('reply', draft, { to: message.id }))]
+        ? [
+            ...choiceButtons(message),
+            draftBox(draft, 'Reply', 'Reply', () => {
+              void send('reply', { to: message.id, text: drafts.get(draft) ?? '' }, draft);
+            }),
+          ]
         : []),
     );
   });

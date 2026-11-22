@@ -5,7 +5,7 @@ import { changedFiles, changeOf, currentBranch, currentRepo, type Source } from 
 import { parseChecklist } from './checklist';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
-import { listen, say } from './session';
+import { listen, say, starting } from './session';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
 import { nameOf, openWalkthrough, readWalkthrough, recordChecklist, recordSteps, walkthroughDir } from './walkthrough';
@@ -47,6 +47,7 @@ async function start(args: string[]): Promise<void> {
   const change = changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = openWalkthrough(dir, source, change);
+  starting(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
@@ -109,11 +110,11 @@ async function listenCommand(args: string[]): Promise<void> {
 
 function sayCommand(args: string[]): void {
   const { values, positionals, dir } = current(args, {
-    options: { answer: { type: 'string' }, question: { type: 'boolean' } },
+    options: { answer: { type: 'string' }, question: { type: 'boolean' }, choice: { type: 'string', multiple: true } },
     allowPositionals: true,
   });
   const text = positionals.join(' ').trim();
-  if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question] <text>');
+  if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question [--choice <answer>]...] <text>');
   say(dir, text, values);
   console.log('Said on the page.');
 }
@@ -158,7 +159,7 @@ try {
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> [--label <text>]]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | listen\n' +
-        '    | say [--answer <id>] [--question] <text> | stop | prune [<branch>]\n' +
+        '    | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
         '  every command but guide finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);

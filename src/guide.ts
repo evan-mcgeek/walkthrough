@@ -60,6 +60,8 @@ walkthrough listen
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
-walkthrough say [--answer <id>] [--question] <text>
-  Puts the session's text on the page: an answer to the ask with that id, a question the person replies to, or else a note.
+walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
+  Puts the session's text on the page: an answer to the ask or reply with that id, a question the person replies to, or else a note.
+  Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
+  Until every ask and reply that listen handed over has its answer, the page shows the session working.
 `;
