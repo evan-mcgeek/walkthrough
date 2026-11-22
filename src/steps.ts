@@ -45,7 +45,8 @@ export function parseSteps(text: string): StepInput[] {
   });
 }
 
-const pathsOf = (input: StepInput) => input.files.map(file => (typeof file === 'string' ? file : file.path));
+const pathOf = (file: string | FoldedFile) => (typeof file === 'string' ? file : file.path);
+export const pathsOf = (step: StepInput | Step) => step.files.map(pathOf);
 
 /** The steps of the walkthrough's change as `inputs` group them, or an error naming every file out of place. */
 export function buildSteps(cwd: string, { base, head }: Walkthrough, inputs: StepInput[]): Step[] {
@@ -69,5 +70,20 @@ export function buildSteps(cwd: string, { base, head }: Walkthrough, inputs: Ste
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
       : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files };
+  });
+}
+
+/** The steps at the walkthrough's base and head: each keeps the files that still change, and a step with none left is gone. */
+export function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Step[] {
+  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
+  const diff = (files: (string | FoldedFile)[]) =>
+    diffOf(cwd, base, head, files.flatMap(one => changed.get(pathOf(one)) ?? []));
+  return steps.flatMap((step): Step[] => {
+    if (step.kind === 'folded') {
+      const files = step.files.filter(one => changed.has(one.path));
+      return files.length ? [{ ...step, files, diff: diff(files) }] : [];
+    }
+    const files = step.files.filter(one => changed.has(one));
+    return files.length ? [{ ...step, files, diff: diff(files) }] : [];
   });
 }

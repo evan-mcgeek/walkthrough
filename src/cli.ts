@@ -9,7 +9,7 @@ import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
 import { decisionsOf, parseActions, walkthroughView } from './decisions';
 import { GUIDE } from './guide';
-import { buildSteps, parseSteps } from './steps';
+import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
 import {
   nameOf,
   openWalkthrough,
@@ -56,18 +56,24 @@ async function start(args: string[]): Promise<void> {
   const { cwd, source, dir } = located(args);
   const change = changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = openWalkthrough(dir, source, change);
+  const { walkthrough, opened } = openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
   starting(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
-  if (opened === 'resumed') {
-    const decided = walkthroughView(dir)?.decided ?? {};
-    const count = steps.filter(step => decided[`step:${step.id}`]).length;
-    console.log(`Resumed: ${String(count)} of ${plural(steps.length, 'step')} decided.`);
+  const view = walkthroughView(dir);
+  const count = (of: Record<string, unknown> = {}) => String(steps.filter(step => of[`step:${step.id}`]).length);
+  if (opened === 'resumed') console.log(`Resumed: ${count(view?.decided)} of ${plural(steps.length, 'step')} decided.`);
+  if (opened === 'moved' && steps.length > 0) {
+    console.log(
+      `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
+    );
+    const placed = new Set(steps.flatMap(pathsOf));
+    const left = changedFiles(cwd, change.base, change.head).filter(file => !placed.has(file.path));
+    if (left.length > 0)
+      console.log(`In no step yet: ${left.map(file => file.path).join(', ')}. Record the steps again with these in new steps.`);
   }
-  if (opened === 'replaced') console.log('The head moved since the last walkthrough, so it starts over.');
   if (change.uncommitted > 0)
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,

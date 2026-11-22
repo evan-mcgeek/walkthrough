@@ -20,6 +20,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   head: string;
   /** Empty until the session records its steps. */
   steps: Step[];
+  /** The highest step id given out, so the id of a step gone is never given again. */
+  lastStep?: number;
   checklist?: Checklist;
   /** The actions the session defined, by item key. */
   actions?: Record<string, Action[]>;
@@ -46,18 +48,25 @@ export function walkthroughDir(repo: string, source: Source): string {
 
 export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
 
-/** The saved walkthrough of the change when it is pinned to the same base and head, else a new one replacing it. */
+/** The saved walkthrough of the change, moved to its base and head with the steps `carry` gives there when they changed, else a new one. */
 export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
+  carry: (moved: Walkthrough) => Step[],
 ): {
   walkthrough: Walkthrough;
-  opened: 'new' | 'resumed' | 'replaced';
+  opened: 'new' | 'resumed' | 'moved';
 } {
   return locked(file(dir), () => {
     const saved = readWalkthrough(dir);
     if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
+    if (saved) {
+      const moved = { ...saved, target: change.target, base: change.base, head: change.head };
+      setSteps(moved, carry(moved));
+      writeJson(file(dir), moved);
+      return { walkthrough: moved, opened: 'moved' };
+    }
     const walkthrough: Walkthrough = {
       ...(source.kind === 'branch' ? { kind: 'branch', branch: source.branch } : { kind: 'range', label: source.label }),
       target: change.target,
@@ -66,7 +75,7 @@ export function openWalkthrough(
       steps: [],
     };
     writeJson(file(dir), walkthrough);
-    return { walkthrough, opened: saved ? 'replaced' : 'new' };
+    return { walkthrough, opened: 'new' };
   });
 }
 
@@ -86,12 +95,18 @@ function keepActions(walkthrough: Walkthrough, keep: (key: string) => boolean): 
   return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
 }
 
-/** Replaces the steps and drops the actions defined on them; `build` sees the saved walkthrough under the lock. */
+/** Puts `steps` in place and drops the actions of steps gone. */
+function setSteps(walkthrough: Walkthrough, steps: Step[]) {
+  walkthrough.steps = steps;
+  walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps.map(step => Number(step.id)));
+  const kept = new Set(steps.map(step => itemKey({ type: 'step', id: step.id })));
+  walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:') || kept.has(key));
+}
+
+/** Replaces the steps and drops the actions of steps gone; `build` sees the saved walkthrough under the lock. */
 export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
   return update(dir, walkthrough => {
-    walkthrough.steps = build(walkthrough);
-    // Step ids are positions, so actions recorded on them may now name other steps.
-    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:'));
+    setSteps(walkthrough, build(walkthrough));
     return walkthrough;
   });
 }
