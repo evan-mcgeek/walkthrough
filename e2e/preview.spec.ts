@@ -19,6 +19,8 @@ const guide = [
   '| :--- | ----: |',
   '| apples | 3 |',
   '',
+  '![Logo](../logo.svg)',
+  '',
 ].join('\n');
 const logo =
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="teal"/></svg>\n';
@@ -50,6 +52,10 @@ test('a changed Markdown file previews rendered and safe, and switches back to i
   await expect(preview.getByText('<img src="x" onerror="window.ran = true">')).toBeVisible();
   await expect(preview.locator('script, [onerror]')).toHaveCount(0);
   await expect(preview.getByRole('img', { name: 'Dot' })).toBeVisible();
+  // A relative image loads from the repo as it is at the head commit.
+  const logo = preview.getByRole('img', { name: 'Logo' });
+  await expect(logo).toBeVisible();
+  await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(40);
   await expect(preview.getByRole('link', { name: 'Home' })).toHaveAttribute('target', '_blank');
   await expect(preview.getByRole('link', { name: 'Home' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(preview.locator('a[href^="javascript:"]')).toHaveCount(0);
