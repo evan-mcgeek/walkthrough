@@ -39,6 +39,12 @@ Recording again replaces the steps and their decisions, so do it before the pers
 When the review policy asks for a checklist, record it after the steps with `walkthrough checklist` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
 Its links name step ids, so record it again after recording the steps again.
 
+## Notes
+
+Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
+Labels, what counts as low priority, and what to note at all come from the review policy.
+Notes name step ids, so record them after the steps.
+
 ## Listening for the page
 
 The page reaches you only while `walkthrough listen` runs, and the chat stays free while it does.
@@ -47,9 +53,10 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    Never run it in the foreground: it blocks until the person acts on the page.
 2. When it exits you are woken with its output, one JSON line per thing the person sent, in the shapes `walkthrough guide` prints.
    - An ask: answer it from the change at the pinned head with `walkthrough say --answer <id> "<answer>"`.
+     An ask with a file and lines is about those lines, and the answer shows on them.
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
-   - A reply: the person's reply to a question you asked; act on it.
+   - A reply: the person's reply to a question you asked or to a note; act on it, and answer a reply to a note with `walkthrough say --answer <id>`.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
