@@ -11,10 +11,11 @@ import { conversationOf, listen, note, say, starting } from './session';
 import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
 import { GUIDE } from './guide';
+import { plural } from './words';
+import { nameOf } from './items';
 import { stateDir } from './paths';
 import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
 import {
-  nameOf,
   openWalkthrough,
   readWalkthrough,
   recordActions,
@@ -24,7 +25,6 @@ import {
 } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
-const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
 
 type Options = NonNullable<ParseArgsConfig['options']>;
 const SOURCE_OPTIONS = {

@@ -6,7 +6,8 @@ import { currentRepo } from './change';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 import { stopServer } from './server';
-import { nameOf, readWalkthrough, type Walkthrough } from './walkthrough';
+import { nameOf } from './items';
+import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 const gitStatus = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, stdio: 'ignore' }).status;
 

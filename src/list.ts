@@ -2,8 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { walkthroughView } from './decisions';
-import { itemKey } from './items';
-import { nameOf } from './walkthrough';
+import { itemKey, nameOf } from './items';
 
 /** `id` is the walkthrough's folder in the repo's state; `last` is when the session or the person last changed it. */
 export type Listed = { id: string; name: string; target: string; steps: number; decided: number; read: number; last: string };

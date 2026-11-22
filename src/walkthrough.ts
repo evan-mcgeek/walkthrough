@@ -1,7 +1,7 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
 import type { Change, Source } from './change';
-import { type Action, type Item, itemKey } from './items';
+import { type Action, type Item, itemKey, nameOf } from './items';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
@@ -26,8 +26,6 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
-
-export const nameOf = (source: Source | Walkthrough) => (source.kind === 'branch' ? source.branch : source.label);
 
 // `~` cannot appear in a branch name, so `/` maps to it one to one; a label is encoded whole.
 export function walkthroughDir(repo: string, source: Source): string {

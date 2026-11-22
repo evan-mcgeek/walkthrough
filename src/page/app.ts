@@ -5,12 +5,12 @@ import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, type Item, itemKey } from '../items';
+import { type Action, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, Step } from '../walkthrough';
-import { el } from './dom';
+import { plural } from '../words';
+import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
 import { renderMarkdown } from './markdown';
 
-const token = location.pathname.split('/')[2] ?? '';
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
 const exported = document.getElementById('exported')?.textContent;
 const readOnly = exported !== undefined;
@@ -22,40 +22,17 @@ function markdown(text: string, className: string): HTMLElement {
   return box;
 }
 
-function region(id: string): HTMLElement {
-  const found = document.getElementById(id);
-  if (!found) throw new Error(`the page has no #${id}`);
-  return found;
-}
 const header = region('header');
-const alertBox = region('alert');
 const main = region('main');
-
-function showAlert(message: string | null): void {
-  alertBox.textContent = message;
-  alertBox.hidden = message === null;
-}
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
 let posted = 0;
 
-async function post(route: string, body: unknown): Promise<Response | null> {
+const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough again to reopen it.' };
+const post = (route: string, body: unknown) => {
   posted++;
-  try {
-    const answer = await fetch(`/${route}?token=${token}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    showAlert(answer.ok ? null : `The walkthrough could not do that (${String(answer.status)}).`);
-    return answer.ok ? answer : null;
-  } catch {
-    showAlert('Could not reach the walkthrough. Run /walkthrough again to reopen it.');
-    return null;
-  }
-}
-
-const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+  return postTo(PAGE, route, body);
+};
 
 let walkthrough: WalkthroughView;
 let session: SessionView;
@@ -694,7 +671,7 @@ function render(): void {
     el(
       'div',
       { className: 'title' },
-      el('h1', {}, walkthrough.kind === 'branch' ? walkthrough.branch : walkthrough.label),
+      el('h1', {}, nameOf(walkthrough)),
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
     ...(steps.length ? [el('p', { className: 'progress' }, progress)] : []),
@@ -762,7 +739,7 @@ const poller = readOnly ? undefined : setInterval(() => {
       render();
     })
     .catch(() => {
-      showAlert('Could not reach the walkthrough. Run /walkthrough again to reopen it.');
+      showAlert(unreachable(PAGE));
     })
     .finally(() => {
       polling = false;
