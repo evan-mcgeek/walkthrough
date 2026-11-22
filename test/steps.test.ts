@@ -136,6 +136,9 @@ describe('folded steps', () => {
 
     expect(refused.status).toBe(1);
     expect(refused.stderr).toContain('step 3: every file of a folded step needs a path and a reason');
+    expect(repo.record([...loginSteps, { ...folded, files: [null, 'schema.json'] }]).stderr).toContain(
+      'step 3: every file of a folded step needs a path and a reason',
+    );
 
     expect(repo.record([{ ...loginSteps[0], files: ['login.ts'] }, loginSteps[1], noProblems]).stderr).toBe('');
     expect((await shownAt(repo.url())).steps[2]).toMatchObject({ kind: 'folded', problems: [] });
