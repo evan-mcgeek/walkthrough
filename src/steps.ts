@@ -3,7 +3,7 @@ import { changedFiles, diffOf } from './change';
 import type { FoldedFile, Step, Walkthrough } from './walkthrough';
 
 export type StepInput =
-  | { title: string; explanation: string; files: string[] }
+  | { title: string; explanation: string; assumptions: string[]; files: string[] }
   | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
 
 export const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
@@ -22,7 +22,7 @@ export function parseSteps(text: string): StepInput[] {
   return parsed.map((one: unknown, at) => {
     const step = (one ?? {}) as Record<string, unknown>;
     const name = `step ${String(at + 1)}`;
-    const { title, explanation, files, folded, problems = [] } = step;
+    const { title, explanation, files, folded, problems = [], assumptions = [] } = step;
     if (!filled(title)) throw new Error(`${name} needs a title`);
     if (!Array.isArray(files)) throw new Error(`${name}: files must be a list`);
     if (folded === true) {
@@ -39,7 +39,9 @@ export function parseSteps(text: string): StepInput[] {
     }
     if (!filled(explanation)) throw new Error(`${name} needs an explanation`);
     if (!files.every(filled)) throw new Error(`${name}: files must be a list of paths`);
-    return { title, explanation, files };
+    if (!Array.isArray(assumptions) || !assumptions.every(filled))
+      throw new Error(`${name}: assumptions must be a list of text`);
+    return { title, explanation, assumptions, files };
   });
 }
 
@@ -67,6 +69,6 @@ export function buildSteps(cwd: string, { base, head }: Walkthrough, inputs: Ste
     };
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
-      : { ...common, kind: 'step', explanation: input.explanation, files: input.files };
+      : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files };
   });
 }

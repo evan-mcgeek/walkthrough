@@ -6,7 +6,9 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { changedFiles, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
+import { previewType } from './preview';
 import { alive, psStart } from './processes';
 import { ask, reply, type SessionView, sessionView } from './session';
 import { type Decision, DECISIONS, decide as walkthroughDecide, readWalkthrough } from './walkthrough';
@@ -151,7 +153,32 @@ function failRequest(res: http.ServerResponse, error: unknown): void {
   else res.writeHead(500, JSON_HEADERS).end(JSON.stringify({ error: 'walkthrough could not do that' }));
 }
 
-function serveFile(dir: string, what: string, res: http.ServerResponse): void {
+/** A changed file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
+function serveChangedFile(dir: string, file: string, res: http.ServerResponse): void {
+  const walkthrough = readWalkthrough(dir);
+  const type = previewType(file);
+  const changed =
+    walkthrough && type && changedFiles(process.cwd(), walkthrough.base, walkthrough.head).some(one => one.path === file);
+  const content = changed ? fileAt(process.cwd(), walkthrough.head, file) : null;
+  if (!type || !content) {
+    res.writeHead(404).end();
+    return;
+  }
+  // Opened on its own, a file from the change (an SVG, say) runs no script and has no origin.
+  res
+    .writeHead(200, {
+      'content-type': type,
+      'cache-control': 'no-store',
+      'content-security-policy': "default-src 'none'; sandbox",
+    })
+    .end(content);
+}
+
+function serveFile(dir: string, what: string, query: URLSearchParams, res: http.ServerResponse): void {
+  if (what === 'file') {
+    serveChangedFile(dir, query.get('path') ?? '', res);
+    return;
+  }
   if (what === 'data/walkthrough.json') {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(readWalkthrough(dir)));
     return;
@@ -215,7 +242,7 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, token,
     return;
   }
   if (req.method === 'GET' && url.pathname.startsWith(prefix)) {
-    serveFile(dir, url.pathname.slice(prefix.length), res);
+    serveFile(dir, url.pathname.slice(prefix.length), url.searchParams, res);
     return;
   }
   const given = Buffer.from(url.searchParams.get('token') ?? '');

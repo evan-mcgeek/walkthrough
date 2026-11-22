@@ -4,6 +4,7 @@ const steps = [
   {
     title: 'Login check',
     explanation: 'Adds a login function that lets everyone in.\n\nThe app needs a login entry point.',
+    assumptions: ['Nothing else calls login yet.', 'Tests run without a network.'],
     files: ['login.ts', 'login.test.ts'],
   },
   {
@@ -34,6 +35,8 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(first.getByText('Adds a login function that lets everyone in.', { exact: true })).toBeVisible();
   await expect(first.getByText('The app needs a login entry point.', { exact: true })).toBeVisible();
   await expect(first.getByText('Files: login.ts, login.test.ts', { exact: true })).toBeVisible();
+  const assumed = first.getByRole('list', { name: 'Assumed, not read' });
+  await expect(assumed.getByRole('listitem')).toHaveText(['Nothing else calls login yet.', 'Tests run without a network.']);
   await expect(first.locator('.d2h-ins')).toContainText(["test('login', () => {});", 'export const login = () => true;']);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toHaveCount(0);
 
@@ -55,6 +58,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await nav.getByRole('link', { name: '3. App version' }).click();
   await expect(page.getByRole('region', { name: 'App version' }).getByText('Bumps the app constant.')).toBeVisible();
   await expect(page.getByRole('region', { name: 'App version' }).locator('strong')).toHaveText('constant');
+  await expect(page.getByRole('list', { name: 'Assumed, not read' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 
   await page.getByRole('button', { name: 'Previous' }).click();

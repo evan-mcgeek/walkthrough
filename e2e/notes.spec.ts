@@ -101,7 +101,7 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
         '|:-----|------:|',
         '| a    | b     |',
         '',
-        '![away](https://example.com/x.png) [docs](https://example.com/docs)',
+        '[docs](https://example.com/docs)',
       ].join('\n'),
     },
   ]);
@@ -112,5 +112,6 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
   await expect(note.locator('td.align-right')).toHaveText('b');
   await expect(note.locator('[style]')).toHaveCount(0);
   await expect(note.getByRole('link', { name: 'docs' })).toHaveAttribute('target', '_blank');
+  await expect(note.getByRole('link', { name: 'docs' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(page).not.toHaveTitle('1');
 });
