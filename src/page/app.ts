@@ -1,3 +1,5 @@
+import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
+import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Decision, Step, Walkthrough } from '../walkthrough';
 
 const token = location.pathname.split('/')[2] ?? '';
@@ -72,26 +74,16 @@ async function stop(): Promise<void> {
   main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
 }
 
-// Content lines start with a space, + or -, or a backslash note; every other line is a file header.
-const lineClass = (line: string) =>
-  line.startsWith('+++ ') || line.startsWith('--- ')
-    ? 'meta'
-    : line.startsWith('@@')
-      ? 'hunk'
-      : line.startsWith('+')
-        ? 'add'
-        : line.startsWith('-')
-          ? 'del'
-          : line.startsWith(' ') || line.startsWith('\\')
-            ? ''
-            : 'meta';
-
 function diffView(diff: string): HTMLElement {
-  const lines = diff
-    .replace(/\n$/, '')
-    .split('\n')
-    .map(line => el('span', { className: `line ${lineClass(line)}` }, line));
-  return el('pre', { className: 'diff' }, el('div', { className: 'lines' }, ...lines));
+  const view = el('div', { className: 'diff' });
+  new Diff2HtmlUI(view, diff, {
+    outputFormat: 'line-by-line',
+    drawFileList: false,
+    matching: 'lines',
+    colorScheme: ColorSchemeType.AUTO,
+    fileContentToggle: false,
+  }).draw();
+  return view;
 }
 
 const paths = (label: string, files: string[]) =>

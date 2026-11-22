@@ -38,8 +38,8 @@ test('shows one step at a time with what changed, why and its tests, and moves b
   const first = page.getByRole('region', { name: 'Login check' });
   await expect(first.getByText('Adds a login function that lets everyone in.')).toBeVisible();
   await expect(first.getByText('The app needs a login entry point.')).toBeVisible();
-  await expect(first.getByText('login.test.ts', { exact: true })).toBeVisible();
-  await expect(first.getByText('+export const login = () => true;')).toBeVisible();
+  await expect(first.getByText('Tests: login.test.ts', { exact: true })).toBeVisible();
+  await expect(first.locator('.d2h-ins')).toContainText(["test('login', () => {});", 'export const login = () => true;']);
   await expect(page.getByRole('region', { name: 'App version' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Next' }).click();
