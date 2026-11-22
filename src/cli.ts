@@ -1,8 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
 import { ensureServer, serve, stopServer } from './server';
-import { openWalkthrough, walkthroughDir } from './walkthrough';
+import { buildSteps, parseSteps } from './steps';
+import { openWalkthrough, recordSteps, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
@@ -34,8 +36,19 @@ async function start(args: string[]): Promise<void> {
   );
 }
 
+function steps(): void {
+  const cwd = process.cwd();
+  const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
+  const { steps: recorded } = recordSteps(walkthroughDir(currentBranch(cwd)), walkthrough =>
+    buildSteps(cwd, walkthrough, inputs),
+  );
+  console.log(`Recorded ${plural(recorded.length, 'step')}.`);
+}
+
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
+  // The skill's steps, as a JSON array on standard input.
+  steps,
   stop: async () => {
     const stopped = await stopServer(walkthroughDir(currentBranch(process.cwd())));
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
