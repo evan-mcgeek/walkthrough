@@ -8,15 +8,13 @@ import { alive, psStart } from './processes';
 import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
 
-/** An action the person took on an item, with their note and edited text; `on` fingerprints the item as it was. */
+/** `on` fingerprints the item as it was decided. */
 export type Taken = { kind: 'decision'; item: Item; action: string; note?: string; text?: string; on: string };
-/** What the person sends from the page; `listen` hands these to the session. */
 export type PageRequest = { id: string; from: 'page'; at: string } & (
   | ({ kind: 'ask'; text: string } & Place)
   | { kind: 'reply'; to: string; text: string }
   | Taken
 );
-/** What the session says on the page: an answer to a request, a question with the answers it offers, a note pinned to a place, or else a note at the top. */
 export type SessionMessage = {
   id: string;
   from: 'session';
@@ -31,7 +29,6 @@ export type Entry = PageRequest | SessionMessage;
 export type SessionState = 'listening' | 'working' | 'needs-you' | 'gone';
 export type SessionView = { state: SessionState; conversation: Entry[] };
 
-/** What the session's listener last did: started the walkthrough, listens, handed requests over, or stopped. */
 type Listener =
   | { state: 'starting' }
   | { state: 'listening'; pid: number; started: string }
@@ -73,7 +70,6 @@ const newId = () => crypto.randomBytes(4).toString('hex');
 const stamp = () => new Date().toISOString();
 export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '');
 
-/** Questions the session asked that the person has not replied to. */
 const openQuestions = (conversation: Entry[]) =>
   conversation.filter(
     entry =>
@@ -82,7 +78,6 @@ const openQuestions = (conversation: Entry[]) =>
       !conversation.some(reply => reply.from === 'page' && reply.kind === 'reply' && reply.to === entry.id),
   );
 
-/** Whether the session listens, works on what it was handed or on starting, or is gone, from what its listener did. */
 function presence(listener: Listener | null, conversation: Entry[]): Exclude<SessionState, 'needs-you'> {
   switch (listener?.state) {
     case 'starting':
@@ -125,7 +120,6 @@ export function starting(dir: string): void {
 
 type Fields<T> = T extends unknown ? Omit<T, 'id' | 'from' | 'at'> : never;
 
-/** Hands what the person sent to the session, by way of the conversation and the inbox `listen` empties. */
 export function request(dir: string, fields: Fields<PageRequest>): SessionView {
   const entry = { id: newId(), from: 'page', at: stamp(), ...fields } as PageRequest;
   return hold(dir, () => {
@@ -135,7 +129,6 @@ export function request(dir: string, fields: Fields<PageRequest>): SessionView {
   });
 }
 
-/** The person's question about a step or lines of it, or null when there is no such place or no question. */
 export function ask(dir: string, { text, ...where }: Record<string, unknown>): SessionView | null {
   const said = cleanText(text);
   let place: Place;
@@ -148,7 +141,6 @@ export function ask(dir: string, { text, ...where }: Record<string, unknown>): S
   return request(dir, { kind: 'ask', ...place, text: said });
 }
 
-/** The person's reply to a note or an open question of the session, or null when there is no such one or no reply. */
 export function reply(dir: string, to: unknown, text: unknown): SessionView | null {
   const said = cleanText(text);
   const conversation = conversationOf(dir);
@@ -159,7 +151,6 @@ export function reply(dir: string, to: unknown, text: unknown): SessionView | nu
   return request(dir, { kind: 'reply', to, text: said });
 }
 
-/** Puts the session's words on the page; `answer` names the request they answer, `choices` the answers a question offers. */
 export function say(
   dir: string,
   text: string,
@@ -184,7 +175,6 @@ export function say(
   });
 }
 
-/** Pins the session's notes to their places on the page, in order. */
 export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note: NoteMark })[] {
   return hold(dir, () =>
     notes.map(({ text, ...mark }) => {
@@ -195,10 +185,7 @@ export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note:
   );
 }
 
-/**
- * Waits for the person to act on the page and returns what they sent.
- * A newer listener takes over from this one ('replaced'); a page server that is not running ends it ('stopped').
- */
+// A newer listener takes over from this one ('replaced'); a page server that is not running ends it ('stopped').
 export async function listen(dir: string, pageRunning: () => boolean): Promise<PageRequest[] | 'stopped' | 'replaced'> {
   const { inbox, listener } = files(dir);
   const mine = () => {

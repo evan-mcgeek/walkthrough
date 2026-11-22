@@ -4,7 +4,6 @@ import type { Checklist, Walkthrough } from './walkthrough';
 const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 const shapeError = 'the checklist must be a JSON object on standard input; see walkthrough guide';
 
-/** The checklist the session sent for `walkthrough`, or an error naming what is wrong with it. */
 export function parseChecklist(text: string, { steps }: Walkthrough): Checklist {
   let parsed: unknown;
   try {

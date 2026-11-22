@@ -20,5 +20,4 @@ markdown.renderer.rules['link_open'] = (tokens, at, options, _env, self) => {
   return self.renderToken(tokens, at, options);
 };
 
-/** The HTML of session or project Markdown, with no raw HTML and no inline styles. */
 export const renderMarkdown = (text: string) => markdown.render(text);

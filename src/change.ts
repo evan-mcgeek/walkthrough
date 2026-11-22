@@ -4,7 +4,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** What a walkthrough is of: the current branch against its target, or a range the session names, with a label to name it by. */
 export type Source =
   | { kind: 'branch'; branch: string; target?: string }
   | { kind: 'range'; base: string; head: string; label: string };
@@ -29,21 +28,19 @@ export function gitWith(cwd: string, input: string | undefined, ...args: string[
   return result.stdout;
 }
 
-/** The repo `cwd` is in, shared by all its worktrees: its folder name and a short hash of its git folder, so two repos of the same name differ. */
+// Shared by all its worktrees; the hash of its git folder keeps two repos of the same name apart.
 export function currentRepo(cwd: string): string {
   const common = fs.realpathSync(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim());
   const hash = crypto.createHash('sha256').update(common).digest('hex').slice(0, 8);
   return `${path.basename(path.dirname(common))}-${hash}`;
 }
 
-/** The branch checked out in `cwd`. */
 export function currentBranch(cwd: string): string {
   const branch = git(cwd, 'branch', '--show-current').trim();
   if (!branch) throw new Error('not on a branch; check out the branch to walk through, or pass --base and --head');
   return branch;
 }
 
-/** The commit `rev` names, or null when it names none. */
 function commitOf(cwd: string, rev: string): string | null {
   try {
     return git(cwd, 'rev-parse', '--verify', '--quiet', `${rev}^{commit}`).trim();
@@ -52,7 +49,6 @@ function commitOf(cwd: string, rev: string): string | null {
   }
 }
 
-/** The change from the merge-base of the target and the head to the head; a branch's target is `origin/<target>`, or the local branch without one, and the remote's default branch unless given. */
 export function changeOf(cwd: string, source: Source): Change {
   const range = source.kind === 'range';
   const target = range ? source.base : source.target ? targetBranch(cwd, source.target) : defaultTarget(cwd);
@@ -78,7 +74,7 @@ export function changeOf(cwd: string, source: Source): Change {
   };
 }
 
-/** A changed file at its head path; `from` is its base path when it was renamed. */
+/** `from` is the base path of a renamed file. */
 export type ChangedFile = { path: string; from?: string };
 
 export function changedFiles(cwd: string, base: string, head: string): ChangedFile[] {
@@ -114,7 +110,6 @@ export const diffOf = (cwd: string, base: string, head: string, files: ChangedFi
         ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])),
       );
 
-/** The file's content at `rev`, or null when it does not exist there. */
 export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
   const result = spawnSync('git', ['cat-file', 'blob', `${rev}:${file}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
   return result.status === 0 ? result.stdout : null;

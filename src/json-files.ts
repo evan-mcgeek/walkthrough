@@ -2,7 +2,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** The file's content, or `fallback` when it is missing or not JSON. */
 export function readJson<T>(file: string, fallback: T): T {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, '')) as T;

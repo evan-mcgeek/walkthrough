@@ -29,7 +29,6 @@ async function post(route: string, body: unknown): Promise<Response | null> {
   }
 }
 
-/** Opens the walkthrough's page here, its server started when it is not running. */
 async function open(one: Listed): Promise<void> {
   const answer = await post('open', { id: one.id });
   if (answer) location.assign(((await answer.json()) as { url: string }).url);

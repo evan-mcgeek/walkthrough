@@ -5,7 +5,6 @@ import type { Step, Walkthrough } from './walkthrough';
 
 /** The first and last line, numbered as in the file at the head. */
 export type Lines = [number, number];
-/** A step, or lines of a file that the step's diff shows. */
 export type Place = { step: string; file?: string; lines?: Lines };
 export type NoteMark = Place & { label: string; low?: true };
 export type NoteInput = NoteMark & { text: string };
@@ -19,7 +18,6 @@ const isLines = (value: unknown): value is Lines =>
 // The page asks for every note's place on each poll; a step read from disk is parsed once per read.
 const parsed = new WeakMap<Step, ReturnType<typeof parse>>();
 
-/** The lines of `file` the step's diff shows, numbered as at the head, or null when it does not change the file. */
 function shownLines(step: Step, file: string): Set<number | undefined> | null {
   const files = parsed.get(step) ?? parse(step.diff);
   parsed.set(step, files);
@@ -27,7 +25,7 @@ function shownLines(step: Step, file: string): Set<number | undefined> | null {
   return shown ? new Set(shown.blocks.flatMap(block => block.lines.map(line => line.newNumber))) : null;
 }
 
-/** The id of the step `place` shows on, or null when its step or lines are gone; lines follow their file to whichever step has it. */
+// Lines follow their file to whichever step has it.
 export function anchorOf({ steps }: Walkthrough, { step, file, lines }: Place): string | null {
   if (file === undefined || !lines) return steps.some(one => one.id === step) ? step : null;
   const found = steps.find(one => pathsOf(one).includes(file));
@@ -36,7 +34,6 @@ export function anchorOf({ steps }: Walkthrough, { step, file, lines }: Place): 
   return shown?.has(lines[0]) && shown.has(lines[1]) ? found.id : null;
 }
 
-/** The place `fields` name in the walkthrough, or an error saying why it is not there. */
 export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: Record<string, unknown>): Place {
   const found = walkthrough?.steps.find(one => one.id === step);
   if (!found) throw new Error(`the walkthrough has no step ${String(step)}`);
@@ -51,7 +48,6 @@ export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: 
   return { step: found.id, file, lines: [first, last] };
 }
 
-/** The notes the session sent, in its order, or an error naming the first that does not fit the walkthrough. */
 export function parseNotes(text: string, walkthrough: Walkthrough | null): NoteInput[] {
   let parsed: unknown;
   try {

@@ -9,7 +9,6 @@ import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
-/** The walkthrough as the page and the session see it: every item's actions, and its latest decision or null while undecided. */
 export type WalkthroughView = Walkthrough & {
   actions: Record<string, Action[]>;
   decided: Record<string, Decision | null>;
@@ -31,7 +30,7 @@ const fingerprint = (content: string) => crypto.createHash('sha256').update(cont
 const isDecision = (entry: Entry): entry is Decision => entry.from === 'page' && entry.kind === 'decision';
 const keyOf = (value: unknown) => (typeof value === 'object' && value !== null ? itemKey(value as Item) : '');
 
-/** Every item the person can decide on, with what a decision on it is about: a decision outlives no change to that. */
+// A decision outlives no change to what it is about.
 function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: Entry[]) {
   const items: { item: Item; content: string }[] = [
     ...steps.map(step => ({ item: { type: 'step' as const, id: step.id }, content: step.diff })),
@@ -47,7 +46,6 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
 const actionsOf = ({ actions }: Walkthrough, item: Item) =>
   actions?.[itemKey(item)] ?? (item.type === 'step' ? STEP_ACTIONS : []);
 
-/** Each item with the actions it offers and its latest decision, null while undecided; an item decided before what it is about changed is reopened. */
 export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
   const decisions = conversation.filter(isDecision);
   return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
@@ -82,7 +80,6 @@ const ITEM_TYPES = new Set(['step', 'note', 'checklist', 'walkthrough']);
 const nameOfItem = (item: Item) =>
   item.type === 'walkthrough' ? 'the walkthrough' : `${item.type === 'checklist' ? 'checklist item' : item.type} ${item.id}`;
 
-/** The actions the session sent for each item, or an error naming the first that does not fit the walkthrough. */
 export function parseActions(text: string, walkthrough: Walkthrough, conversation: Entry[]): { item: Item; actions: Action[] }[] {
   let parsed: unknown;
   try {
@@ -121,7 +118,6 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
   });
 }
 
-/** Records the action the person took on an item, or null when the item does not offer it or its note or text is missing or not asked for. */
 export function decide(
   dir: string,
   { item, action, note, text }: Record<string, unknown>,
@@ -143,7 +139,6 @@ export function decide(
   return { walkthrough: walkthroughView(dir), session };
 }
 
-/** Marks the step as shown on the page, or null when there is no such step. */
 export function markRead(dir: string, stepId: unknown): WalkthroughView | null {
   const step = readWalkthrough(dir)?.steps.find(one => one.id === stepId);
   if (!step) return null;

@@ -10,7 +10,6 @@ import { nameOf, readWalkthrough, type Walkthrough } from './walkthrough';
 
 const gitStatus = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, stdio: 'ignore' }).status;
 
-/** Why the walkthrough is over, or null unless git says so. */
 function over(cwd: string, walkthrough: Walkthrough): string | null {
   const { target, head } = walkthrough;
   if (walkthrough.kind === 'branch' && gitStatus(cwd, 'show-ref', '--exists', `refs/heads/${walkthrough.branch}`) === 2)
@@ -25,7 +24,6 @@ async function remove(dir: string, name: string, why: string): Promise<string> {
   return `Removed the walkthrough of ${name}: ${why}.`;
 }
 
-/** Removes the repo's walkthroughs that are over, stopping their pages, and says what was removed. */
 export async function prune(cwd: string): Promise<string[]> {
   const repoDir = path.join(stateDir(), currentRepo(cwd));
   const removed: string[] = [];
@@ -39,7 +37,6 @@ export async function prune(cwd: string): Promise<string[]> {
   return removed;
 }
 
-/** Removes the walkthrough in `dir`, called `name`, whether or not it is over. */
 export async function pruneOne(dir: string, name: string): Promise<string> {
   if (!readWalkthrough(dir)) throw new Error(`there is no walkthrough of ${name}`);
   return remove(dir, name, 'asked to');
@@ -47,7 +44,6 @@ export async function pruneOne(dir: string, name: string): Promise<string> {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Prunes the repo's walkthroughs unless that was done in the last day. */
 export async function pruneDaily(cwd: string): Promise<string[]> {
   const marker = path.join(stateDir(), currentRepo(cwd), 'last-prune.json');
   const due = locked(marker, () => {

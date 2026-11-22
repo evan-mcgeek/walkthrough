@@ -34,7 +34,7 @@ const SOURCE_OPTIONS = {
   label: { type: 'string' },
 } as const satisfies Options;
 
-/** The command's own arguments, and the walkthrough its source options name, the same way for every command; `branch` stands in for the current one. */
+// `branch` stands in for the current branch.
 function located<T extends Options>(
   args: string[],
   {
@@ -94,7 +94,6 @@ function openPage(url: string, what: string, dir: string): void {
   );
 }
 
-/** The state folder of the repo the CLI runs in, which holds its walkthroughs and the list's server. */
 const repoDir = () => path.join(stateDir(), currentRepo(process.cwd()));
 
 async function list(args: string[]): Promise<void> {
@@ -102,7 +101,6 @@ async function list(args: string[]): Promise<void> {
   openPage(await ensureServer(repoDir(), true), 'The list of walkthroughs', repoDir());
 }
 
-/** As `located`, for a walkthrough that must have been started. */
 function current<T extends Options>(args: string[], config: { options?: T; allowPositionals?: boolean } = {}) {
   const found = located(args, config);
   const walkthrough = readWalkthrough(found.dir);
@@ -183,13 +181,9 @@ function sayCommand(args: string[]): void {
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
-  // The session's steps, as a JSON array on standard input.
   steps,
-  // The session's notes, as a JSON array on standard input.
   note: notes,
-  // The session's checklist, as a JSON object on standard input.
   checklist,
-  // The session's actions, as a JSON array on standard input.
   actions,
   decisions,
   list,

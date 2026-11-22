@@ -10,7 +10,6 @@ export const filled = (value: unknown): value is string => typeof value === 'str
 const isFoldedFile = (file: unknown): file is FoldedFile =>
   typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
 
-/** The steps the session sent, in its order, or an error naming what is wrong with their shape. */
 export function parseSteps(text: string): StepInput[] {
   let parsed: unknown;
   try {
@@ -48,10 +47,7 @@ export function parseSteps(text: string): StepInput[] {
 const pathOf = (file: string | FoldedFile) => (typeof file === 'string' ? file : file.path);
 export const pathsOf = (step: StepInput | Step) => step.files.map(pathOf);
 
-/**
- * The id of each step in `inputs`: that of the step recorded before it shares the most files with, the earlier on a tie,
- * else one never given out, so a step's decisions, notes and links follow its files rather than its place.
- */
+// Ids follow files rather than places, so decisions, notes and links follow them; a gone id is never reused.
 function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): string[] {
   let next = Math.max(lastStep, ...steps.map(step => Number(step.id)));
   const free = new Map(steps.map(step => [step.id, new Set(pathsOf(step))]));
@@ -69,7 +65,6 @@ function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): str
   });
 }
 
-/** The steps of the walkthrough's change as `inputs` group them, or an error naming every file out of place. */
 export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Step[] {
   const { base, head } = walkthrough;
   const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
@@ -96,7 +91,6 @@ export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepIn
   });
 }
 
-/** The steps at the walkthrough's base and head: each keeps the files that still change, and a step with none left is gone. */
 export function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Step[] {
   const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
   const diff = (files: (string | FoldedFile)[]) =>

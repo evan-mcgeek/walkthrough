@@ -61,7 +61,6 @@ function pageToken(dir: string): string {
   return token;
 }
 
-/** Whether the page server of the walkthrough in `dir` runs. */
 export function serverRunning(dir: string): boolean {
   const record = readRecord(dir);
   return !!record && alive(record);
@@ -72,7 +71,6 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-/** The page address of the walkthrough in `dir`, or with `list` of the list of the repo whose state is `dir`, starting its server when it is not running. */
 export async function ensureServer(dir: string, list = false): Promise<string> {
   const running = readRecord(dir);
   if (running && alive(running)) return running.url;
@@ -91,7 +89,6 @@ export async function ensureServer(dir: string, list = false): Promise<string> {
   throw new Error(`the page server did not start; see ${path.join(dir, 'server.log')}`);
 }
 
-/** Whether a server was running; it is stopped either way. */
 export async function stopServer(dir: string): Promise<boolean> {
   const record = readRecord(dir);
   if (!record || !alive(record)) {
@@ -105,7 +102,6 @@ export async function stopServer(dir: string): Promise<boolean> {
   return true;
 }
 
-/** Runs the server of the walkthrough in `dir`, or with `list` of the list in the repo state `dir`, in this process until it is stopped. */
 export function serve(dir: string, list = false): void {
   const token = pageToken(dir);
   const stop: Route = () => ({ status: 200, body: { stopped: true }, after: shutDown });
@@ -152,7 +148,6 @@ export function serve(dir: string, list = false): void {
 
 const answered = (view: object | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
 
-/** The page address of a walkthrough on the list in `repoDir`, its server started when it is not running. */
 async function open(repoDir: string, id: unknown): Promise<Answer> {
   const listed = listView(repoDir).find(one => one.id === id);
   return listed ? { status: 200, body: { url: await ensureServer(path.join(repoDir, listed.id)) } } : { status: 400 };
@@ -238,7 +233,6 @@ function readBody(req: http.IncomingMessage, res: http.ServerResponse, onBody: (
 
 type Gate = { dir: string; list: boolean; token: string; port: string; routes: Record<string, Route> };
 
-/** Only this machine's own page, with the token, sending JSON, reaches a route; every answer carries the security headers. */
 function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, token, port, routes }: Gate): void {
   const prefix = `/s/${token}/`;
   const url = new URL(req.url ?? '', 'http://127.0.0.1');

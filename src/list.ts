@@ -5,13 +5,12 @@ import { walkthroughView } from './decisions';
 import { itemKey } from './items';
 import { nameOf } from './walkthrough';
 
-/** A walkthrough as the list shows it; `id` is its folder in the repo's state, `last` when the session or the person last changed it. */
+/** `id` is the walkthrough's folder in the repo's state; `last` is when the session or the person last changed it. */
 export type Listed = { id: string; name: string; target: string; steps: number; decided: number; read: number; last: string };
 
 // What the session records and what the person does; not the server's own files.
 const ACTIVITY = ['walkthrough.json', 'conversation.jsonl', 'read.json'];
 
-/** Every walkthrough in the repo's state folder `repoDir`, the latest activity first. */
 export function listView(repoDir: string): Listed[] {
   const entries = fs.existsSync(repoDir) ? fs.readdirSync(repoDir, { withFileTypes: true }) : [];
   const listed = entries.flatMap(entry => {
