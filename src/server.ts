@@ -21,7 +21,7 @@ type Route = (body: Record<string, unknown>) => Answer;
 const MAX_BODY_BYTES = 256 * 1024;
 // A server no page has polled for this long was forgotten, so it stops itself.
 const IDLE_MS = 30 * 60 * 1000;
-const PAGE = path.join(import.meta.dirname, 'page');
+export const PAGE = path.join(import.meta.dirname, 'page');
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
   '': { file: 'index.html', type: 'text/html; charset=utf-8' },
   'app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },

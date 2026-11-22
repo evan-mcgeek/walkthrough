@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
 import { changedFiles, changeOf, currentBranch, currentRepo, type Source } from './change';
 import { parseChecklist } from './checklist';
@@ -8,6 +9,7 @@ import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
 import { decisionsOf, parseActions, walkthroughView } from './decisions';
+import { exportPage } from './export';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
 import {
@@ -131,6 +133,13 @@ function decisions(args: string[]): void {
   }
 }
 
+function exportCommand(args: string[]): void {
+  const { values, dir, walkthrough } = current(args, { options: { out: { type: 'string' } } });
+  const out = path.resolve(values.out ?? path.join(dir, 'export.html'));
+  fs.writeFileSync(out, exportPage(dir));
+  console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
+}
+
 async function listenCommand(args: string[]): Promise<void> {
   const { dir } = current(args);
   const taken = await listen(dir, () => serverRunning(dir));
@@ -165,6 +174,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   // The session's actions, as a JSON array on standard input.
   actions,
   decisions,
+  export: exportCommand,
   guide: () => {
     process.stdout.write(GUIDE);
   },
