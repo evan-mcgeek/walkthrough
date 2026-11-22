@@ -93,16 +93,21 @@ export function changedFiles(cwd: string, base: string, head: string): ChangedFi
   return files;
 }
 
-/** The diff of just these files; a renamed file needs its base path too for the rename to show. */
+// An order file line is a wildmatch pattern, so each path is escaped to match only itself.
+const orderOf = (files: ChangedFile[]) => files.map(file => file.path.replace(/[\\*?[\]#!]/g, '\\$&')).join('\n');
+
+/** The diff of just these files, in their order; a renamed file needs its base path too for the rename to show. */
 export const diffOf = (cwd: string, base: string, head: string, files: ChangedFile[]) =>
   files.length === 0
     ? ''
-    : git(
+    : gitWith(
         cwd,
+        orderOf(files),
         'diff',
         '--no-color',
         '--no-ext-diff',
         '-M',
+        '-O/dev/stdin',
         base,
         head,
         '--',
