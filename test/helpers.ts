@@ -96,8 +96,8 @@ export function makeRepo({
     /** Waits for every background CLI to end, so none writes into the sandbox while it is removed. */
     settled: () => Promise.all(running),
     /** Records the steps the way the skill does, as JSON on standard input. */
-    record: (steps: unknown) =>
-      spawnSync(CLI, ['steps'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(steps) }),
+    record: (steps: unknown, ...args: string[]) =>
+      spawnSync(CLI, ['steps', ...args], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(steps) }),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */

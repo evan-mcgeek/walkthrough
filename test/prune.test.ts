@@ -3,9 +3,12 @@ import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import { git, makeRepo, type Repo } from './helpers';
 
+const LOGIN = ['--base', 'origin/main', '--head', 'feature/login', '--label', 'Login'];
+
 let repo: Repo;
 afterEach(() => {
   repo.run('stop');
+  repo.run('stop', ...LOGIN);
 });
 
 /** The repo's folder of saved walkthroughs: its name and a short hash of where it is. */
@@ -127,6 +130,32 @@ describe('walkthrough prune', () => {
     expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: asked to.');
     expect(saved('feature/login')).toBe(false);
     await expect(fetch(url)).rejects.toThrow();
+  });
+
+  test('removes the walkthrough of a range whose head is merged into the base it was given', () => {
+    repo = makeRepo();
+    repo.run('start', ...LOGIN);
+    repo.run('stop', ...LOGIN);
+    mergeLogin();
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stderr).toBe('');
+    expect(pruned.stdout).toContain('Removed the walkthrough of Login: its head is merged into origin/main.');
+    expect(fs.existsSync(path.join(repoState(), 'range-Login'))).toBe(false);
+  });
+
+  test('removes the walkthrough of a range named by the options it was started with, and ends its page', async () => {
+    repo = makeRepo();
+    repo.run('start', ...LOGIN);
+    const url = repo.url();
+
+    const pruned = repo.run('prune', ...LOGIN);
+
+    expect(pruned.stderr).toBe('');
+    expect(pruned.stdout).toContain('Removed the walkthrough of Login: asked to.');
+    await expect(fetch(url)).rejects.toThrow();
+    expect(repo.run('prune', 'feature/login', ...LOGIN).stderr).toContain('name a branch or a range, not both');
   });
 
   test('refuses an id that names no walkthrough', () => {
