@@ -81,6 +81,21 @@ describe('walkthrough prune', () => {
     expect(repo.ghCalls()).toContain('pr list --head feature/cart --state all --json state');
   });
 
+  test('keeps the walkthroughs of another repo with the same folder name', () => {
+    twoWalkthroughs();
+    pullRequests({ 'feature/login': ['MERGED'] });
+    const other = path.join(fs.mkdtempSync(path.join(path.dirname(repo.dir), 'other-')), 'shop');
+    fs.mkdirSync(other);
+    git(other, 'init', '-b', 'main');
+    git(other, 'commit', '--allow-empty', '-m', 'Start another shop');
+
+    const pruned = repo.runIn(other, 'prune');
+
+    expect(pruned.stdout).toContain('No walkthrough to remove.');
+    expect(saved('feature/login')).toBe(true);
+    expect(saved('feature/cart')).toBe(true);
+  });
+
   test('ends the page of a walkthrough it removes', async () => {
     repo = makeRepo();
     repo.run('start');

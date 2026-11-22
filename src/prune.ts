@@ -9,8 +9,11 @@ import { stopServer } from './server';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 /** Why the walkthrough is over, or null unless git or GitHub says so: a lookup that fails keeps it. */
-function over(cwd: string, { branch }: Walkthrough): string | null {
-  if (spawnSync('git', ['show-ref', '--exists', `refs/heads/${branch}`], { cwd }).status === 2) return 'its branch is gone';
+function over(cwd: string, { branch, head }: Walkthrough): string | null {
+  // Another repo can have the same folder name, and so the same state folder.
+  if (spawnSync('git', ['cat-file', '-e', `${head}^{commit}`], { cwd }).status !== 0) return null;
+  if (spawnSync('git', ['show-ref', '--exists', `refs/heads/${branch}`], { cwd }).status === 2)
+    return 'its branch is gone';
   const list = spawnSync('gh', ['pr', 'list', '--head', branch, '--state', 'all', '--json', 'state'], {
     cwd,
     encoding: 'utf8',
