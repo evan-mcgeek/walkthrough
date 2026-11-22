@@ -4,7 +4,7 @@ import { expect, test } from './walkthrough';
 test('Ask reaches the listening session and its answer shows at the step', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const chip = page.getByRole('status', { name: 'Session' });
-  await expect(chip).toHaveText('Quiet');
+  await expect(chip).toHaveText('Working');
   repo.record(ONE_STEP);
 
   const listener = repo.background('listen');
@@ -57,4 +57,33 @@ test('a draft question survives the page redrawing', async ({ page, repo, url })
 
   await expect(box).toHaveValue('Half a thou');
   await expect(box).toBeFocused();
+});
+
+test('a question offers its answers as buttons, and the choice reaches the listener', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
+  const listener = repo.background('listen');
+  const question = page.getByRole('region', { name: 'From the session' });
+  await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Needs you');
+
+  await question.getByRole('button', { name: 'Everyone' }).click();
+
+  const replied = JSON.parse((await listener.ended).stdout) as { id: string; kind: string; text: string };
+  expect(replied).toMatchObject({ kind: 'reply', text: 'Everyone' });
+  await expect(question.getByRole('button', { name: 'Everyone' })).toHaveCount(0);
+  await expect(question.getByText('Everyone', { exact: true })).toBeVisible();
+
+  repo.run('say', '--answer', replied.id, 'Login now accepts everyone.');
+  await expect(question.getByText('Login now accepts everyone.')).toBeVisible();
+});
+
+test('the session is gone once its listener stops and has not come back', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  const chip = page.getByRole('status', { name: 'Session' });
+  const listener = repo.background('listen');
+  await expect(chip).toHaveText('Listening');
+
+  listener.child.kill('SIGTERM');
+
+  await expect(chip).toHaveText('Gone');
 });

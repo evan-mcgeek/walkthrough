@@ -158,6 +158,11 @@ h2 {
   border-color: currentColor;
 }
 
+.chip[data-state='gone'] {
+  color: var(--danger);
+  border-color: currentColor;
+}
+
 .chip[data-state='needs-you'] {
   color: var(--accent-fg);
   background: var(--accent);
@@ -200,6 +205,13 @@ h2 {
 
 .thread .notice {
   margin: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .draft {
