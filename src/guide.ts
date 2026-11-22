@@ -49,7 +49,7 @@ const actionsExample = [
 
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
-  With no options it is of the current branch against origin/<target>, the remote's default branch unless given.
+  With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
