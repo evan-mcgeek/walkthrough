@@ -34,7 +34,15 @@ const checklistExample = {
   ],
 };
 
-export const GUIDE = `walkthrough files
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
+  Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  With no options it is of the current branch against origin/<target>, the remote's default branch unless given.
+  With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
+  Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
+  Every command below finds the walkthrough from the same options start was given, so pass them to each.
+  Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+
+walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
 walkthrough steps < steps.json
