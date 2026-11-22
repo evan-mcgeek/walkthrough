@@ -85,20 +85,6 @@ describe('deciding on a step', () => {
     expect((await shownAt(repo.url())).decided['step:1']).toMatchObject({ action: 'approve' });
   });
 
-  test('a new head starts the walkthrough over and says so', async () => {
-    repo = makeRepo();
-    repo.run('start');
-    repo.record(ONE_STEP);
-    await post(repo.url(), '/decide', approve);
-    fs.writeFileSync(path.join(repo.dir, 'login.ts'), 'export const login = () => false;\n');
-    git(repo.dir, 'commit', '-am', 'Fix login');
-
-    const again = repo.run('start');
-
-    expect(again.stdout).toContain('The head moved since the last walkthrough, so it starts over.');
-    expect((await shownAt(repo.url())).steps).toEqual([]);
-  });
-
   test('a decision on an unknown step or of an unknown action is refused', async () => {
     repo = makeRepo();
     repo.run('start');

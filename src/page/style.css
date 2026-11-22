@@ -660,6 +660,21 @@ button:disabled {
   flex: 1 1 100%;
 }
 
+.decision.reopened {
+  color: var(--fg);
+  font-style: italic;
+}
+
+.was {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.checklist .gone {
+  color: var(--muted);
+}
+
 .list main {
   grid-template-columns: minmax(0, 1fr);
 }

@@ -8,11 +8,11 @@ import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
-import { decisionsOf, parseActions, walkthroughView } from './decisions';
+import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
 import { GUIDE } from './guide';
 import { stateDir } from './paths';
-import { buildSteps, parseSteps } from './steps';
+import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
 import {
   nameOf,
   openWalkthrough,
@@ -59,18 +59,24 @@ async function start(args: string[]): Promise<void> {
   const { cwd, source, dir } = located(args);
   const change = changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = openWalkthrough(dir, source, change);
+  const { walkthrough, opened } = openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
   starting(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
-  if (opened === 'resumed') {
-    const decided = walkthroughView(dir)?.decided ?? {};
-    const count = steps.filter(step => decided[`step:${step.id}`]).length;
-    console.log(`Resumed: ${String(count)} of ${plural(steps.length, 'step')} decided.`);
+  const view = walkthroughView(dir);
+  const count = (of: Record<string, unknown> = {}) => String(steps.filter(step => of[`step:${step.id}`]).length);
+  if (opened === 'resumed') console.log(`Resumed: ${count(view?.decided)} of ${plural(steps.length, 'step')} decided.`);
+  if (opened === 'moved' && steps.length > 0) {
+    console.log(
+      `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
+    );
+    const placed = new Set(steps.flatMap(pathsOf));
+    const left = changedFiles(cwd, change.base, change.head).filter(file => !placed.has(file.path));
+    if (left.length > 0)
+      console.log(`In no step yet: ${left.map(file => file.path).join(', ')}. Record the steps again with these in new steps.`);
   }
-  if (opened === 'replaced') console.log('The head moved since the last walkthrough, so it starts over.');
   if (change.uncommitted > 0)
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,
@@ -114,7 +120,8 @@ function steps(args: string[]): void {
   const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
   const { steps: recorded } = recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter(step => step.kind === 'folded').length;
-  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
+  const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
+  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
 }
 
 function notes(args: string[]): void {
@@ -139,10 +146,9 @@ function actions(args: string[]): void {
 
 function decisions(args: string[]): void {
   const { dir, walkthrough } = current(args);
-  for (const { item, decision } of decisionsOf(walkthrough, conversationOf(dir))) {
-    const { id, at, action, note, text } = decision ?? {};
-    console.log(JSON.stringify({ item, decision: decision && { id, at, action, note, text } }));
-  }
+  const shown = ({ id, at, action, note, text }: Decision) => ({ id, at, action, note, text });
+  for (const { item, decision, reopened } of decisionsOf(walkthrough, conversationOf(dir)))
+    console.log(JSON.stringify({ item, decision: decision && shown(decision), ...(reopened && { reopened: shown(reopened) }) }));
 }
 
 function exportCommand(args: string[]): void {

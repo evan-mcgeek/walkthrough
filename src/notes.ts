@@ -1,7 +1,7 @@
 // The session pins notes to a step or to lines of a file in it; this checks only that the place is in the walkthrough.
 import { parse } from 'diff2html/lib-esm/diff-parser';
-import { filled } from './steps';
-import type { Walkthrough } from './walkthrough';
+import { filled, pathsOf } from './steps';
+import type { Step, Walkthrough } from './walkthrough';
 
 /** The first and last line, numbered as in the file at the head. */
 export type Lines = [number, number];
@@ -16,6 +16,26 @@ const isLines = (value: unknown): value is Lines =>
   value.every(line => Number.isInteger(line) && (line as number) >= 1) &&
   (value[0] as number) <= (value[1] as number);
 
+// The page asks for every note's place on each poll; a step read from disk is parsed once per read.
+const parsed = new WeakMap<Step, ReturnType<typeof parse>>();
+
+/** The lines of `file` the step's diff shows, numbered as at the head, or null when it does not change the file. */
+function shownLines(step: Step, file: string): Set<number | undefined> | null {
+  const files = parsed.get(step) ?? parse(step.diff);
+  parsed.set(step, files);
+  const shown = files.find(one => one.newName === file);
+  return shown ? new Set(shown.blocks.flatMap(block => block.lines.map(line => line.newNumber))) : null;
+}
+
+/** The id of the step `place` shows on, or null when its step or lines are gone; lines follow their file to whichever step has it. */
+export function anchorOf({ steps }: Walkthrough, { step, file, lines }: Place): string | null {
+  if (file === undefined || !lines) return steps.some(one => one.id === step) ? step : null;
+  const found = steps.find(one => pathsOf(one).includes(file));
+  if (!found) return null;
+  const shown = shownLines(found, file);
+  return shown?.has(lines[0]) && shown.has(lines[1]) ? found.id : null;
+}
+
 /** The place `fields` name in the walkthrough, or an error saying why it is not there. */
 export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: Record<string, unknown>): Place {
   const found = walkthrough?.steps.find(one => one.id === step);
@@ -23,9 +43,8 @@ export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: 
   if (file === undefined && lines === undefined) return { step: found.id };
   if (!filled(file)) throw new Error('lines need a file');
   if (!isLines(lines)) throw new Error('a file needs lines, as [first, last]');
-  const shown = parse(found.diff).find(one => one.newName === file);
-  if (!shown) throw new Error(`step ${found.id} does not change ${file}`);
-  const numbers = new Set(shown.blocks.flatMap(block => block.lines.map(line => line.newNumber)));
+  const numbers = shownLines(found, file);
+  if (!numbers) throw new Error(`step ${found.id} does not change ${file}`);
   const [first, last] = lines;
   if (!numbers.has(first) || !numbers.has(last))
     throw new Error(`lines ${String(first)}-${String(last)} of ${file} are not in the diff of step ${found.id}`);

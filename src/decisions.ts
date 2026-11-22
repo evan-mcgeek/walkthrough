@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { cleanText, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
+import { anchorOf } from './notes';
 import { filled } from './steps';
 import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
@@ -12,8 +13,12 @@ export type Decision = PageRequest & Taken;
 export type WalkthroughView = Walkthrough & {
   actions: Record<string, Action[]>;
   decided: Record<string, Decision | null>;
+  /** The decision each reopened step had before its diff changed, by item key. */
+  reopened: Record<string, Decision>;
   /** The ids of the steps the page has shown. */
   read: string[];
+  /** The id of the step each note and ask shows on, by its id, null when its step or lines are gone. */
+  anchored: Record<string, string | null>;
 };
 
 const STEP_ACTIONS: Action[] = [
@@ -42,27 +47,34 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
 const actionsOf = ({ actions }: Walkthrough, item: Item) =>
   actions?.[itemKey(item)] ?? (item.type === 'step' ? STEP_ACTIONS : []);
 
-/** Each item with the actions it offers and its latest decision, null while undecided. */
+/** Each item with the actions it offers and its latest decision, null while undecided; a step decided before its diff changed is reopened. */
 export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
   const decisions = conversation.filter(isDecision);
-  return itemsOf(walkthrough, conversation).map(({ item, key, on }) => ({
-    item,
-    key,
-    actions: actionsOf(walkthrough, item),
-    decision: decisions.findLast(one => itemKey(one.item) === key && one.on === on) ?? null,
-  }));
+  return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
+    const decision = decisions.findLast(one => itemKey(one.item) === key && one.on === on) ?? null;
+    const earlier = item.type === 'step' && !decision ? decisions.findLast(one => itemKey(one.item) === key) : undefined;
+    return { item, key, actions: actionsOf(walkthrough, item), decision, reopened: earlier ?? null };
+  });
 }
 
 export function walkthroughView(dir: string): WalkthroughView | null {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return null;
-  const items = decisionsOf(walkthrough, conversationOf(dir));
+  const conversation = conversationOf(dir);
+  const items = decisionsOf(walkthrough, conversation);
   const read = readJson<string[]>(readFile(dir), []);
   return {
     ...walkthrough,
     actions: Object.fromEntries(items.filter(one => one.actions.length).map(one => [one.key, one.actions])),
     decided: Object.fromEntries(items.map(one => [one.key, one.decision])),
+    reopened: Object.fromEntries(items.flatMap(one => (one.reopened ? [[one.key, one.reopened]] : []))),
     read: walkthrough.steps.filter(step => read.includes(`${step.id}:${fingerprint(step.diff)}`)).map(step => step.id),
+    anchored: Object.fromEntries(
+      conversation.flatMap(entry => {
+        const place = entry.from === 'session' ? entry.note : entry.kind === 'ask' ? entry : undefined;
+        return place ? [[entry.id, anchorOf(walkthrough, place)]] : [];
+      }),
+    ),
   };
 }
 
