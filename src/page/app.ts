@@ -7,9 +7,13 @@ import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, type Item, itemKey } from '../items';
 import type { Checklist, Step } from '../walkthrough';
+import { el } from './dom';
 import { renderMarkdown } from './markdown';
 
 const token = location.pathname.split('/')[2] ?? '';
+/** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
+const exported = document.getElementById('exported')?.textContent;
+const readOnly = exported !== undefined;
 
 function markdown(text: string, className: string): HTMLElement {
   const box = document.createElement('div');
@@ -26,16 +30,6 @@ function region(id: string): HTMLElement {
 const header = region('header');
 const alertBox = region('alert');
 const main = region('main');
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<HTMLElementTagNameMap[K]> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = Object.assign(document.createElement(tag), props);
-  node.append(...children);
-  return node;
-}
 
 function showAlert(message: string | null): void {
   alertBox.textContent = message;
@@ -107,7 +101,7 @@ const reading = new Set<string>();
 
 /** Tells the walkthrough the page has shown the step. */
 async function markRead(step: Step): Promise<void> {
-  if (walkthrough.read.includes(step.id) || reading.has(step.id)) return;
+  if (readOnly || walkthrough.read.includes(step.id) || reading.has(step.id)) return;
   reading.add(step.id);
   const answer = await post('read', { step: step.id });
   reading.delete(step.id);
@@ -152,6 +146,9 @@ function sessionChip(): HTMLElement {
   chip.setAttribute('aria-label', 'Session');
   return chip;
 }
+
+/** Nothing in an exported file is sent anywhere, so it has no boxes to type into. */
+const writable = (form: HTMLFormElement) => (readOnly ? [] : [form]);
 
 /** A box the person types into, with its draft kept across redraws, and the button that sends it. */
 function draftBox(draft: string, label: string, action: string, onSend: () => void): HTMLFormElement {
@@ -241,7 +238,7 @@ function decideView(item: Item, text = ''): HTMLElement[] {
         'div',
         { className: 'decide-row' },
         state,
-        group,
+        ...(readOnly ? [] : [group]),
       ),
       ...(decision ? decisionSaid(decision) : []),
       ...(taken ? [takingForm(item, taken, text)] : []),
@@ -310,9 +307,9 @@ function noteView(note: Note): HTMLElement {
     markdown(note.text, 'note-text'),
     ...decideView({ type: 'note', id: note.id }, note.text),
     ...followUps(note).map(said),
-    draftBox(draft, 'Reply', 'Reply', () => {
+    ...writable(draftBox(draft, 'Reply', 'Reply', () => {
       void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft);
-    }),
+    })),
   );
   view.setAttribute('aria-label', label);
   return view;
@@ -332,17 +329,18 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
   return [...views, more];
 }
 
-function askView(step: Step): HTMLElement {
+function askView(step: Step): HTMLElement[] {
   const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
+  if (readOnly && !asks.length) return [];
   const draft = `ask:${step.id}`;
-  return el(
+  return [el(
     'div',
     { className: 'conversation' },
     ...asks.map(askThread),
-    draftBox(draft, 'Ask about this step', 'Ask', () => {
+    ...writable(draftBox(draft, 'Ask about this step', 'Ask', () => {
       void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
-    }),
-  );
+    })),
+  )];
 }
 
 /** The lines the person picked to ask about; `from` is the line picked first. */
@@ -353,7 +351,7 @@ function pickLine(step: Step, event: MouseEvent): void {
   const target = event.target instanceof Element ? event.target : null;
   const row = target?.closest<HTMLTableRowElement>('tr[data-line]');
   const file = row?.dataset['file'];
-  if (!row || file === undefined || !target?.closest('.d2h-code-linenumber')) return;
+  if (readOnly || !row || file === undefined || !target?.closest('.d2h-code-linenumber')) return;
   const line = Number(row.dataset['line']);
   const from = event.shiftKey && picked?.step === step.id && picked.file === file ? picked.from : line;
   picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)] };
@@ -403,7 +401,7 @@ function sessionMessages(): HTMLElement[] {
       { className: 'thread' },
       said(message),
       ...followUps(message).map(said),
-      ...(message.question && !replies.length
+      ...(message.question && !replies.length && !readOnly
         ? [
             ...choiceButtons(message),
             draftBox(draft, 'Reply', 'Reply', () => {
@@ -501,7 +499,8 @@ const previewed = new Set<string>();
 function addPreview(wrapper: Element, stepId: string, file: string): void {
   const type = previewType(file);
   const diff = wrapper.querySelector<HTMLElement>('.d2h-file-diff');
-  if (!type || !diff) return;
+  // A preview is read from the server, which an exported file does not have.
+  if (!type || !diff || readOnly) return;
   const source = `file?path=${encodeURIComponent(file)}`;
   const preview = el('div', { className: 'preview', hidden: true });
   preview.setAttribute('role', 'region');
@@ -612,7 +611,7 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
     el('div', { className: 'step-head' }, title),
     ...decideView({ type: 'step', id: step.id }),
     ...stepBody(step),
-    askView(step),
+    ...askView(step),
   );
   section.setAttribute('aria-labelledby', title.id);
   const pager = el('div', { className: 'pager' }, move('Previous', steps[at - 1]), move('Next', steps[at + 1]));
@@ -722,12 +721,14 @@ function render(): void {
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
     ...(steps.length ? [el('p', { className: 'progress' }, progress)] : []),
-    el(
-      'div',
-      { className: 'actions' },
-      sessionChip(),
-      el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop'),
-    ),
+    readOnly
+      ? el('p', { className: 'notice' }, 'Exported, read-only')
+      : el(
+          'div',
+          { className: 'actions' },
+          sessionChip(),
+          el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop'),
+        ),
   );
   const current = currentStep(walkthrough);
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
@@ -754,11 +755,14 @@ window.addEventListener('hashchange', () => {
   window.scrollTo(0, 0);
 });
 
-const [shownWalkthrough, shownSession] = await Promise.all(
-  ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
-);
-walkthrough = shownWalkthrough as WalkthroughView;
-session = shownSession as SessionView;
+({ walkthrough, session } = exported
+  ? (JSON.parse(exported) as { walkthrough: WalkthroughView; session: SessionView })
+  : await Promise.all(
+      ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
+    ).then(([shownWalkthrough, shownSession]) => ({
+      walkthrough: shownWalkthrough as WalkthroughView,
+      session: shownSession as SessionView,
+    })));
 render();
 
 const POLL_MS = 1500;
@@ -769,7 +773,7 @@ const fetchText = async (data: string) => {
   return answer.text();
 };
 // The session records and answers through the CLI, so the page asks for the walkthrough and the session again and again.
-const poller = setInterval(() => {
+const poller = readOnly ? undefined : setInterval(() => {
   if (polling) return;
   polling = true;
   const since = posted;

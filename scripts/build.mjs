@@ -16,10 +16,10 @@ await build({
   outfile: path.join(out, 'walkthrough.mjs'),
 });
 await build({
-  entryPoints: [path.join(root, 'src', 'page', 'app.ts'), path.join(root, 'src', 'page', 'style.css')],
+  entryPoints: ['app.ts', 'list.ts', 'style.css'].map(file => path.join(root, 'src', 'page', file)),
   bundle: true,
   format: 'esm',
   target: 'es2022',
   outdir: path.join(out, 'page'),
 });
-fs.copyFileSync(path.join(root, 'src', 'page', 'index.html'), path.join(out, 'page', 'index.html'));
+for (const page of ['index.html', 'list.html']) fs.copyFileSync(path.join(root, 'src', 'page', page), path.join(out, 'page', page));

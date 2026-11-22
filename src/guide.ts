@@ -132,4 +132,12 @@ walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
   Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
   Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
+
+walkthrough export [--out <file>]
+  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist and decisions.
+  The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
+
+walkthrough list
+  Opens a page of the repo's walkthroughs with their progress and last activity; opening one starts its page when it is not running.
+  It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
 `;

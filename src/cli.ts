@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
 import { changedFiles, changeOf, currentBranch, currentRepo, type Source } from './change';
 import { parseChecklist } from './checklist';
@@ -8,7 +9,9 @@ import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
 import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
+import { exportPage } from './export';
 import { GUIDE } from './guide';
+import { stateDir } from './paths';
 import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
 import {
   nameOf,
@@ -78,14 +81,25 @@ async function start(args: string[]): Promise<void> {
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,
     );
-  const url = await ensureServer(dir);
-  // The address carries the page's token, so it goes to the browser and is not printed.
+  openPage(await ensureServer(dir), 'The page', dir);
+}
+
+// The address carries the page's token, so it goes to the browser and is not printed.
+function openPage(url: string, what: string, dir: string): void {
   const browser = spawnSync(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { stdio: 'ignore' });
   console.log(
     browser.status === 0
-      ? 'The page is open in your browser.'
-      : `Could not open a browser; the page address is in ${dir}/server.json.`,
+      ? `${what} is open in your browser.`
+      : `Could not open a browser; the address of ${what.toLowerCase()} is in ${dir}/server.json.`,
   );
+}
+
+/** The state folder of the repo the CLI runs in, which holds its walkthroughs and the list's server. */
+const repoDir = () => path.join(stateDir(), currentRepo(process.cwd()));
+
+async function list(args: string[]): Promise<void> {
+  parseArgs({ args, options: {} });
+  openPage(await ensureServer(repoDir(), true), 'The list of walkthroughs', repoDir());
 }
 
 /** As `located`, for a walkthrough that must have been started. */
@@ -137,6 +151,13 @@ function decisions(args: string[]): void {
     console.log(JSON.stringify({ item, decision: decision && shown(decision), ...(reopened && { reopened: shown(reopened) }) }));
 }
 
+function exportCommand(args: string[]): void {
+  const { values, dir, walkthrough } = current(args, { options: { out: { type: 'string' } } });
+  const out = path.resolve(values.out ?? path.join(dir, 'export.html'));
+  fs.writeFileSync(out, exportPage(dir));
+  console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
+}
+
 async function listenCommand(args: string[]): Promise<void> {
   const { dir } = current(args);
   const taken = await listen(dir, () => serverRunning(dir));
@@ -171,12 +192,20 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   // The session's actions, as a JSON array on standard input.
   actions,
   decisions,
+  list,
+  export: exportCommand,
   guide: () => {
     process.stdout.write(GUIDE);
   },
   listen: listenCommand,
   say: sayCommand,
   stop: async args => {
+    if (args.includes('--list')) {
+      parseArgs({ args, options: { list: { type: 'boolean' } } });
+      const stopped = await stopServer(repoDir());
+      console.log(stopped ? 'Stopped the list of walkthroughs.' : 'The list of walkthroughs was not running.');
+      return;
+    }
     const stopped = await stopServer(located(args).dir);
     console.log(stopped ? 'Stopped the walkthrough page.' : 'The walkthrough page was not running.');
   },
@@ -192,8 +221,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     console.log(await pruneOne(dir, nameOf(source)));
   },
   // The detached page server that start runs.
-  serve: ([dir = '']) => {
-    serve(dir);
+  serve: ([dir = '', mode]) => {
+    serve(dir, mode === '--list');
   },
 };
 
@@ -206,7 +235,8 @@ try {
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
         '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
-        '  every command but guide finds the walkthrough from the options start was given: none for the current branch',
+        '    | export [--out <file>] | list | stop --list\n' +
+        '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);
 } catch (error) {

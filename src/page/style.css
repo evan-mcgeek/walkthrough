@@ -674,3 +674,29 @@ button:disabled {
 .checklist .gone {
   color: var(--muted);
 }
+
+.list main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.walkthroughs {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.walkthroughs th,
+.walkthroughs td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.walkthroughs th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.walkthroughs td button {
+  overflow-wrap: break-word;
+  text-align: left;
+}
