@@ -9,6 +9,7 @@ import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 /** Why the walkthrough is over, or null unless git or GitHub says so: a lookup that fails keeps it. */
 function over(cwd: string, { branch }: Walkthrough): string | null {
+  if (spawnSync('git', ['show-ref', '--exists', `refs/heads/${branch}`], { cwd }).status === 2) return 'its branch is gone';
   const list = spawnSync('gh', ['pr', 'list', '--head', branch, '--state', 'all', '--json', 'state'], {
     cwd,
     encoding: 'utf8',
@@ -29,6 +30,7 @@ function over(cwd: string, { branch }: Walkthrough): string | null {
 export async function prune(cwd: string): Promise<string[]> {
   const repoDir = path.join(stateDir(), currentRepo(cwd));
   const removed: string[] = [];
+  if (!fs.existsSync(repoDir)) return removed;
   for (const entry of fs.readdirSync(repoDir, { withFileTypes: true, encoding: 'utf8' })) {
     const dir = path.join(repoDir, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;

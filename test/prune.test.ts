@@ -44,4 +44,61 @@ describe('walkthrough prune', () => {
     expect(saved('feature/login')).toBe(false);
     expect(saved('feature/cart')).toBe(true);
   });
+
+  test('removes the walkthrough whose pull request is closed, unless the branch has a newer open one', () => {
+    twoWalkthroughs();
+    pullRequests({ 'feature/login': ['CLOSED'], 'feature/cart': ['OPEN', 'CLOSED'] });
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its pull request is closed.');
+    expect(saved('feature/login')).toBe(false);
+    expect(saved('feature/cart')).toBe(true);
+  });
+
+  test('removes the walkthrough whose branch is gone, even when GitHub cannot be asked', () => {
+    twoWalkthroughs();
+    git(repo.dir, 'branch', '-D', 'feature/login');
+    repo.gh('exit 1');
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its branch is gone.');
+    expect(saved('feature/login')).toBe(false);
+    expect(saved('feature/cart')).toBe(true);
+  });
+
+  test('keeps every walkthrough when GitHub cannot be asked or has no pull request for the branch', () => {
+    twoWalkthroughs();
+    repo.gh(`case "$*" in\n  *"--head feature/login "*) echo '[]' ;;\n  *) echo 'HTTP 502' >&2; exit 1 ;;\nesac`);
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.status).toBe(0);
+    expect(pruned.stdout).toContain('No walkthrough to remove.');
+    expect(saved('feature/login')).toBe(true);
+    expect(saved('feature/cart')).toBe(true);
+    expect(repo.ghCalls()).toContain('pr list --head feature/cart --state all --json state');
+  });
+
+  test('ends the page of a walkthrough it removes', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const url = repo.url();
+    pullRequests({ 'feature/login': ['MERGED'] });
+
+    repo.run('prune');
+
+    await expect(fetch(url)).rejects.toThrow();
+    expect(saved('feature/login')).toBe(false);
+  });
+
+  test('says so when the repo has no saved walkthrough', () => {
+    repo = makeRepo();
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stderr).toBe('');
+    expect(pruned.stdout).toContain('No walkthrough to remove.');
+  });
 });
