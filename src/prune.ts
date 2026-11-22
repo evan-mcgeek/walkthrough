@@ -6,23 +6,23 @@ import { currentRepo } from './change';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 import { stopServer } from './server';
-import { readWalkthrough, type Walkthrough, walkthroughDir } from './walkthrough';
+import { nameOf, readWalkthrough, type Walkthrough } from './walkthrough';
 
 const gitStatus = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, stdio: 'ignore' }).status;
 
 /** Why the walkthrough is over, or null unless git says so. */
-function over(cwd: string, { branch, target, head }: Walkthrough): string | null {
-  // Another repo can have the same folder name, and so the same state folder.
-  if (gitStatus(cwd, 'cat-file', '-e', `${head}^{commit}`) !== 0) return null;
-  if (gitStatus(cwd, 'show-ref', '--exists', `refs/heads/${branch}`) === 2) return 'its branch is gone';
+function over(cwd: string, walkthrough: Walkthrough): string | null {
+  const { target, head } = walkthrough;
+  if (walkthrough.kind === 'branch' && gitStatus(cwd, 'show-ref', '--exists', `refs/heads/${walkthrough.branch}`) === 2)
+    return 'its branch is gone';
   if (gitStatus(cwd, 'merge-base', '--is-ancestor', head, target) === 0) return `its head is merged into ${target}`;
   return null;
 }
 
-async function remove(dir: string, walkthrough: Walkthrough, why: string): Promise<string> {
+async function remove(dir: string, name: string, why: string): Promise<string> {
   await stopServer(dir);
   fs.rmSync(dir, { recursive: true, force: true });
-  return `Removed the walkthrough of ${walkthrough.branch}: ${why}.`;
+  return `Removed the walkthrough of ${name}: ${why}.`;
 }
 
 /** Removes the repo's walkthroughs that are over, stopping their pages, and says what was removed. */
@@ -34,17 +34,15 @@ export async function prune(cwd: string): Promise<string[]> {
     const dir = path.join(repoDir, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
-    if (walkthrough && why) removed.push(await remove(dir, walkthrough, why));
+    if (walkthrough && why) removed.push(await remove(dir, nameOf(walkthrough), why));
   }
   return removed;
 }
 
-/** Removes the repo's walkthrough of `branch` whether or not it is over. */
-export async function pruneOne(cwd: string, branch: string): Promise<string> {
-  const dir = walkthroughDir({ repo: currentRepo(cwd), branch });
-  const walkthrough = readWalkthrough(dir);
-  if (!walkthrough) throw new Error(`there is no walkthrough of ${branch}`);
-  return remove(dir, walkthrough, 'asked to');
+/** Removes the walkthrough in `dir`, called `name`, whether or not it is over. */
+export async function pruneOne(dir: string, name: string): Promise<string> {
+  if (!readWalkthrough(dir)) throw new Error(`there is no walkthrough of ${name}`);
+  return remove(dir, name, 'asked to');
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;

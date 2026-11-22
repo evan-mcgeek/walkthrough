@@ -189,6 +189,7 @@ describe('walkthrough guide', () => {
     expect(guide.stderr).toBe('');
     expect(guide.status).toBe(0);
     for (const shape of [
+      'walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]',
       'walkthrough steps',
       '{"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}',
       '{"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}',

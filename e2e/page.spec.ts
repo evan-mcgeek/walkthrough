@@ -65,6 +65,21 @@ test('an action after the server stopped says how to reopen the walkthrough', as
   );
 });
 
+test('a walkthrough of a range is headed by its label', async ({ page, repo }) => {
+  const login = ['--base', 'origin/main', '--head', 'feature/login', '--label', 'Login change'];
+  expect(repo.run('start', ...login).status).toBe(0);
+  try {
+    await page.goto(repo.url());
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Login change');
+
+    repo.record(ONE_STEP, 'steps', ...login);
+
+    await expect(page.getByRole('region', { name: 'Login' })).toBeVisible();
+  } finally {
+    repo.run('stop', ...login);
+  }
+});
+
 test('a request without the token is refused', async ({ request, url }) => {
   const { origin } = new URL(url);
 
