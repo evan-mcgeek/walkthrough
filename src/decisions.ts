@@ -110,17 +110,17 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
   });
 }
 
-export function decide(
+export async function decide(
   dir: string,
   { item, action, note, text }: Record<string, unknown>,
-): { walkthrough: WalkthroughView | null; session: SessionView } | null {
+): Promise<{ walkthrough: WalkthroughView | null; session: SessionView } | null> {
   const walkthrough = readWalkthrough(dir);
   const found = walkthrough && itemsOf(walkthrough, conversationOf(dir)).find(one => one.key === keyOf(item));
   const offered = found && actionsOf(walkthrough, found.item).find(one => one.id === action);
   if (!found || !offered) return null;
   if (offered.note ? !filled(note) : note !== undefined) return null;
   if (offered.edit ? !filled(text) : text !== undefined) return null;
-  const session = request(dir, {
+  const session = await request(dir, {
     kind: 'decision',
     item: found.item,
     action: offered.id,
@@ -131,12 +131,12 @@ export function decide(
   return { walkthrough: walkthroughView(dir), session };
 }
 
-export function markRead(dir: string, stepId: unknown): WalkthroughView | null {
+export async function markRead(dir: string, stepId: unknown): Promise<WalkthroughView | null> {
   const step = readWalkthrough(dir)?.steps.find(one => one.id === stepId);
   if (!step) return null;
   const file = readFile(dir);
   const mark = `${step.id}:${fingerprint(step.diff)}`;
-  locked(file, () => {
+  await locked(file, () => {
     const read = readJson<string[]>(file, []);
     if (!read.includes(mark)) writeJson(file, [...read, mark]);
   });

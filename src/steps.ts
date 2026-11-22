@@ -57,9 +57,9 @@ function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): str
   });
 }
 
-export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Step[] {
+export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Promise<Step[]> {
   const { base, head } = walkthrough;
-  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
+  const changed = new Map((await changedFiles(cwd, base, head)).map(file => [file.path, file]));
   const problems: string[] = [];
   const placed = new Set<string>();
   for (const one of inputs.flatMap(pathsOf)) {
@@ -71,28 +71,31 @@ export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepIn
   if (left.length > 0) problems.push(`no step has ${left.join(', ')}`);
   if (problems.length > 0) throw new Error(`the steps were not recorded:\n  ${[...new Set(problems)].join('\n  ')}`);
   const ids = stepIds(walkthrough, inputs);
-  return inputs.map((input, at) => {
+  return Promise.all(inputs.map(async (input, at): Promise<Step> => {
     const common = {
       id: ids[at] ?? '',
       title: input.title,
-      diff: diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
+      diff: await diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
     };
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
       : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files };
-  });
+  }));
 }
 
-export function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Step[] {
-  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
+export async function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Promise<Step[]> {
+  const changed = new Map((await changedFiles(cwd, base, head)).map(file => [file.path, file]));
   const diff = (files: (string | FoldedFile)[]) =>
     diffOf(cwd, base, head, files.flatMap(one => changed.get(pathOf(one)) ?? []));
-  return steps.flatMap((step): Step[] => {
-    if (step.kind === 'folded') {
-      const files = step.files.filter(one => changed.has(one.path));
-      return files.length ? [{ ...step, files, diff: diff(files) }] : [];
-    }
-    const files = step.files.filter(one => changed.has(one));
-    return files.length ? [{ ...step, files, diff: diff(files) }] : [];
-  });
+  const carried = await Promise.all(
+    steps.map(async (step): Promise<Step | null> => {
+      if (step.kind === 'folded') {
+        const files = step.files.filter(one => changed.has(one.path));
+        return files.length ? { ...step, files, diff: await diff(files) } : null;
+      }
+      const files = step.files.filter(one => changed.has(one));
+      return files.length ? { ...step, files, diff: await diff(files) } : null;
+    }),
+  );
+  return carried.filter(step => step !== null);
 }

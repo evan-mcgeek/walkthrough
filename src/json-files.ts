@@ -1,6 +1,7 @@
 // JSON files on disk: read without throwing, written whole or not at all, readable by the user alone.
 import fs from 'node:fs';
 import path from 'node:path';
+import { lock } from 'proper-lockfile';
 
 export function readJson<T>(file: string, fallback: T): T {
   try {
@@ -18,29 +19,14 @@ export function writeJson(file: string, value: unknown): void {
   fs.renameSync(beside, file);
 }
 
-const held = new Set<string>();
-/** Runs `work` while no other process does so for `file`: one read-change-write at a time. Taken again inside, it is held already. */
-export function locked<T>(file: string, work: () => T): T {
-  const lock = `${file}.lock`;
-  if (held.has(lock)) return work();
+/** Runs `work` while no other process does so for `file`: one read-change-write at a time; never taken again inside `work`. */
+export async function locked<T>(file: string, work: () => T | Promise<T>): Promise<T> {
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-  for (;;) {
-    try {
-      fs.mkdirSync(lock);
-      break;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-      // A lock left by a process that died is taken over.
-      const age = Date.now() - (fs.statSync(lock, { throwIfNoEntry: false })?.mtimeMs ?? 0);
-      if (age > 5000) fs.rmSync(lock, { recursive: true, force: true });
-      else Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
-    }
-  }
-  held.add(lock);
+  // The lock is refreshed while held, so only a lock whose holder died goes stale.
+  const release = await lock(file, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
   try {
-    return work();
+    return await work();
   } finally {
-    held.delete(lock);
-    fs.rmSync(lock, { recursive: true, force: true });
+    await release();
   }
 }

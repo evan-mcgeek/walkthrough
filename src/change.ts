@@ -1,8 +1,9 @@
 // The change under review, read from git objects only: nothing is checked out.
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { promisify } from 'node:util';
 
 export type Source =
   | { kind: 'branch'; branch: string; target?: string }
@@ -21,11 +22,26 @@ export function git(cwd: string, ...args: string[]): string {
   return gitWith(cwd, undefined, ...args);
 }
 
+const MAX_BUFFER = 256 * 1024 * 1024;
+
 export function gitWith(cwd: string, input: string | undefined, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', input, maxBuffer: 256 * 1024 * 1024 });
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', input, maxBuffer: MAX_BUFFER });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr.trim() || `git ${args.join(' ')} failed`);
   return result.stdout;
+}
+
+const execGit = promisify(execFile);
+
+// Without blocking, so a lock held meanwhile is kept fresh.
+async function gitAsync(cwd: string, input: string, ...args: string[]): Promise<string> {
+  const running = execGit('git', args, { cwd, encoding: 'utf8', maxBuffer: MAX_BUFFER });
+  running.child.stdin?.end(input);
+  try {
+    return (await running).stdout;
+  } catch (error) {
+    throw new Error((error as { stderr?: string }).stderr?.trim() || `git ${args.join(' ')} failed`);
+  }
 }
 
 // Shared by all its worktrees; the hash of its git folder keeps two repos of the same name apart.
@@ -49,7 +65,7 @@ function commitOf(cwd: string, rev: string): string | null {
   }
 }
 
-export function changeOf(cwd: string, source: Source): Change {
+export async function changeOf(cwd: string, source: Source): Promise<Change> {
   const range = source.kind === 'range';
   const target = range ? source.base : source.target ? targetBranch(cwd, source.target) : defaultTarget(cwd);
   if (!commitOf(cwd, target))
@@ -63,7 +79,7 @@ export function changeOf(cwd: string, source: Source): Change {
     throw new Error(`${target} and ${range ? source.head : source.branch} share no history`);
   }
   // No steps means the session is still preparing them, so a change without files would never be ready.
-  if (changedFiles(cwd, base, head).length === 0)
+  if ((await changedFiles(cwd, base, head)).length === 0)
     throw new Error(`nothing changed from ${target} to ${range ? source.head : source.branch}`);
   return {
     target,
@@ -77,8 +93,8 @@ export function changeOf(cwd: string, source: Source): Change {
 /** `from` is the base path of a renamed file. */
 export type ChangedFile = { path: string; from?: string };
 
-export function changedFiles(cwd: string, base: string, head: string): ChangedFile[] {
-  const fields = git(cwd, 'diff', '--name-status', '-z', '-M', '--no-ext-diff', base, head).split('\0');
+export async function changedFiles(cwd: string, base: string, head: string): Promise<ChangedFile[]> {
+  const fields = (await gitAsync(cwd, '', 'diff', '--name-status', '-z', '-M', '--no-ext-diff', base, head)).split('\0');
   const files: ChangedFile[] = [];
   for (let at = 0; at < fields.length - 1; ) {
     const status = fields[at++] ?? '';
@@ -93,10 +109,10 @@ export function changedFiles(cwd: string, base: string, head: string): ChangedFi
 const orderOf = (files: ChangedFile[]) => files.map(file => file.path.replace(/[\\*?[\]#!]/g, '\\$&')).join('\n');
 
 /** The diff of just these files, in their order; a renamed file needs its base path too for the rename to show. */
-export const diffOf = (cwd: string, base: string, head: string, files: ChangedFile[]) =>
+export const diffOf = async (cwd: string, base: string, head: string, files: ChangedFile[]) =>
   files.length === 0
     ? ''
-    : gitWith(
+    : gitAsync(
         cwd,
         orderOf(files),
         'diff',

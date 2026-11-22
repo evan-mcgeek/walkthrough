@@ -108,10 +108,10 @@ export function serve(dir: string, list = false): void {
   const routes: Record<string, Route> = list
     ? { '/open': ({ id }) => open(dir, id), '/stop': stop }
     : {
-        '/decide': fields => answered(decide(dir, fields)),
-        '/read': ({ step }) => answered(markRead(dir, step)),
-        '/ask': fields => answered(ask(dir, fields)),
-        '/reply': ({ to, text }) => answered(reply(dir, to, text)),
+        '/decide': async fields => answered(await decide(dir, fields)),
+        '/read': async ({ step }) => answered(await markRead(dir, step)),
+        '/ask': async fields => answered(await ask(dir, fields)),
+        '/reply': async ({ to, text }) => answered(await reply(dir, to, text)),
         '/stop': stop,
       };
   let seen = Date.now();
@@ -164,11 +164,13 @@ function failRequest(res: http.ServerResponse, error: unknown): void {
 }
 
 /** A changed file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
-function serveChangedFile(dir: string, file: string, res: http.ServerResponse): void {
+async function serveChangedFile(dir: string, file: string, res: http.ServerResponse): Promise<void> {
   const walkthrough = readWalkthrough(dir);
   const type = previewType(file);
   const changed =
-    walkthrough && type && changedFiles(process.cwd(), walkthrough.base, walkthrough.head).some(one => one.path === file);
+    walkthrough &&
+    type &&
+    (await changedFiles(process.cwd(), walkthrough.base, walkthrough.head)).some(one => one.path === file);
   const content = changed ? fileAt(process.cwd(), walkthrough.head, file) : null;
   if (!type || !content) {
     res.writeHead(404).end();
@@ -186,7 +188,9 @@ function serveChangedFile(dir: string, file: string, res: http.ServerResponse): 
 
 function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
   if (!list && what === 'file') {
-    serveChangedFile(dir, query.get('path') ?? '', res);
+    serveChangedFile(dir, query.get('path') ?? '', res).catch((error: unknown) => {
+      failRequest(res, error);
+    });
     return;
   }
   const data: Record<string, () => unknown> = list

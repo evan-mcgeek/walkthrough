@@ -47,7 +47,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function pruneDaily(cwd: string): Promise<string[]> {
   const marker = path.join(stateDir(), currentRepo(cwd), 'last-prune.json');
-  const due = locked(marker, () => {
+  const due = await locked(marker, () => {
     const { at = '' } = readJson<{ at?: string }>(marker, {});
     if (Date.now() - Date.parse(at) < DAY_MS) return false;
     writeJson(marker, { at: new Date().toISOString() });

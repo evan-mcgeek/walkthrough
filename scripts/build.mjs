@@ -13,6 +13,8 @@ await build({
   platform: 'node',
   format: 'esm',
   target: 'node22',
+  // Bundled CommonJS dependencies require Node's own modules, which an ES module has no require for.
+  banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
   outfile: path.join(out, 'walkthrough.mjs'),
 });
 await build({

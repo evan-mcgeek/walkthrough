@@ -44,17 +44,17 @@ export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
-  carry: (moved: Walkthrough) => Step[],
-): {
+  carry: (moved: Walkthrough) => Promise<Step[]>,
+): Promise<{
   walkthrough: Walkthrough;
   opened: 'new' | 'resumed' | 'moved';
-} {
-  return locked(file(dir), () => {
+}> {
+  return locked(file(dir), async () => {
     const saved = readWalkthrough(dir);
     if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
     if (saved) {
       const moved = { ...saved, target: change.target, base: change.base, head: change.head };
-      setSteps(moved, carry(moved));
+      setSteps(moved, await carry(moved));
       writeJson(file(dir), moved);
       return { walkthrough: moved, opened: 'moved' };
     }
@@ -70,11 +70,11 @@ export function openWalkthrough(
   });
 }
 
-function update<T>(dir: string, change: (walkthrough: Walkthrough) => T): T {
-  return locked(file(dir), () => {
+function update<T>(dir: string, change: (walkthrough: Walkthrough) => T | Promise<T>): Promise<T> {
+  return locked(file(dir), async () => {
     const walkthrough = readWalkthrough(dir);
     if (!walkthrough) throw new Error('there is no such walkthrough yet; run walkthrough start first');
-    const changed = change(walkthrough);
+    const changed = await change(walkthrough);
     writeJson(file(dir), walkthrough);
     return changed;
   });
@@ -91,14 +91,14 @@ function setSteps(walkthrough: Walkthrough, steps: Step[]) {
   walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:') || kept.has(key));
 }
 
-export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
-  return update(dir, walkthrough => {
-    setSteps(walkthrough, build(walkthrough));
+export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Promise<Step[]>): Promise<Walkthrough> {
+  return update(dir, async walkthrough => {
+    setSteps(walkthrough, await build(walkthrough));
     return walkthrough;
   });
 }
 
-export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Checklist {
+export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Promise<Checklist> {
   return update(dir, walkthrough => {
     const checklist = build(walkthrough);
     walkthrough.checklist = checklist;

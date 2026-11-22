@@ -110,8 +110,8 @@ export function sessionView(dir: string): SessionView {
 }
 
 /** The session started the walkthrough, so it works on it until it listens; a running listener keeps listening. */
-export function starting(dir: string): void {
-  hold(dir, () => {
+export async function starting(dir: string): Promise<void> {
+  await hold(dir, () => {
     const { listener } = files(dir);
     const now = readJson<Listener | null>(listener, null);
     if (now?.state !== 'listening' || !alive(now)) writeJson(listener, { state: 'starting' } satisfies Listener);
@@ -120,7 +120,7 @@ export function starting(dir: string): void {
 
 type Fields<T> = T extends unknown ? Omit<T, 'id' | 'from' | 'at'> : never;
 
-export function request(dir: string, fields: Fields<PageRequest>): SessionView {
+export function request(dir: string, fields: Fields<PageRequest>): Promise<SessionView> {
   const entry = { id: newId(), from: 'page', at: stamp(), ...fields } as PageRequest;
   return hold(dir, () => {
     append(files(dir).conversation, entry);
@@ -129,7 +129,7 @@ export function request(dir: string, fields: Fields<PageRequest>): SessionView {
   });
 }
 
-export function ask(dir: string, { text, ...where }: Record<string, unknown>): SessionView | null {
+export async function ask(dir: string, { text, ...where }: Record<string, unknown>): Promise<SessionView | null> {
   const said = cleanText(text);
   let place: Place;
   try {
@@ -141,7 +141,7 @@ export function ask(dir: string, { text, ...where }: Record<string, unknown>): S
   return request(dir, { kind: 'ask', ...place, text: said });
 }
 
-export function reply(dir: string, to: unknown, text: unknown): SessionView | null {
+export async function reply(dir: string, to: unknown, text: unknown): Promise<SessionView | null> {
   const said = cleanText(text);
   const conversation = conversationOf(dir);
   const open =
@@ -151,15 +151,15 @@ export function reply(dir: string, to: unknown, text: unknown): SessionView | nu
   return request(dir, { kind: 'reply', to, text: said });
 }
 
-export function say(
+export async function say(
   dir: string,
   text: string,
   { answer, question, choice = [] }: { answer?: string; question?: boolean; choice?: string[] },
-): void {
+): Promise<void> {
   const choices = choice.map(one => one.trim());
   if (choices.length && !question) throw new Error('--choice needs --question');
   if (choices.some(one => !one)) throw new Error('a choice needs text');
-  hold(dir, () => {
+  await hold(dir, () => {
     const { conversation } = files(dir);
     if (answer && !readLines<Entry>(conversation).some(entry => entry.from === 'page' && entry.id === answer))
       throw new Error(`the page sent no request ${answer}`);
@@ -175,7 +175,7 @@ export function say(
   });
 }
 
-export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note: NoteMark })[] {
+export function note(dir: string, notes: NoteInput[]): Promise<(SessionMessage & { note: NoteMark })[]> {
   return hold(dir, () =>
     notes.map(({ text, ...mark }) => {
       const entry = { id: newId(), from: 'session', at: stamp(), text, note: mark } satisfies SessionMessage;
@@ -192,22 +192,20 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<P
     const now = readJson<Listener | null>(listener, null);
     return now?.state === 'listening' && now.pid === process.pid;
   };
-  hold(dir, () => {
+  await hold(dir, () => {
     writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
   });
-  const release = () => {
+  const release = () =>
     hold(dir, () => {
       if (mine()) writeJson(listener, { state: 'stopped' } satisfies Listener);
     });
-  };
   // Claude Code stops a background command with a signal; the page should not show it listening after that.
   for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const)
     process.once(signal, () => {
-      release();
-      process.exit(0);
+      void release().finally(() => process.exit(0));
     });
   for (;;) {
-    const taken = hold(dir, () => {
+    const taken = await hold(dir, () => {
       if (!mine()) return 'replaced';
       const requests = readLines<PageRequest>(inbox);
       if (!requests.length) return null;
@@ -217,7 +215,7 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<P
     });
     if (taken) return taken;
     if (!pageRunning()) {
-      release();
+      await release();
       return 'stopped';
     }
     await new Promise(resolve => setTimeout(resolve, LISTEN_EVERY_MS));

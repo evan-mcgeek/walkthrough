@@ -57,10 +57,10 @@ function located<T extends Options>(
 
 async function start(args: string[]): Promise<void> {
   const { cwd, source, dir } = located(args);
-  const change = changeOf(cwd, source);
+  const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
-  starting(dir);
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
+  await starting(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
@@ -73,7 +73,7 @@ async function start(args: string[]): Promise<void> {
       `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
     );
     const placed = new Set(steps.flatMap(pathsOf));
-    const left = changedFiles(cwd, change.base, change.head).filter(file => !placed.has(file.path));
+    const left = (await changedFiles(cwd, change.base, change.head)).filter(file => !placed.has(file.path));
     if (left.length > 0)
       console.log(`In no step yet: ${left.map(file => file.path).join(', ')}. Record the steps again with these in new steps.`);
   }
@@ -108,37 +108,37 @@ function current<T extends Options>(args: string[], config: { options?: T; allow
   return { ...found, walkthrough };
 }
 
-function files(args: string[]): void {
+async function files(args: string[]): Promise<void> {
   const { base, head } = current(args).walkthrough;
-  for (const { path } of changedFiles(process.cwd(), base, head)) console.log(path);
+  for (const { path } of await changedFiles(process.cwd(), base, head)) console.log(path);
 }
 
-function steps(args: string[]): void {
+async function steps(args: string[]): Promise<void> {
   const { cwd, dir } = located(args);
   const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
-  const { steps: recorded } = recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
+  const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter(step => step.kind === 'folded').length;
   const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
 }
 
-function notes(args: string[]): void {
+async function notes(args: string[]): Promise<void> {
   const { dir, walkthrough } = current(args);
-  const noted = note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
+  const noted = await note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
   const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
   console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
 }
 
-function checklist(args: string[]): void {
+async function checklist(args: string[]): Promise<void> {
   const text = fs.readFileSync(0, 'utf8');
-  const { title, items } = recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
+  const { title, items } = await recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
   console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}.`);
 }
 
-function actions(args: string[]): void {
+async function actions(args: string[]): Promise<void> {
   const text = fs.readFileSync(0, 'utf8');
   const { dir } = located(args);
-  const recorded = recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
+  const recorded = await recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
   console.log(`Recorded the actions of ${plural(recorded.length, 'item')}.`);
 }
 
@@ -167,14 +167,14 @@ async function listenCommand(args: string[]): Promise<void> {
   else for (const request of taken) console.log(JSON.stringify({ ...request, on: undefined }));
 }
 
-function sayCommand(args: string[]): void {
+async function sayCommand(args: string[]): Promise<void> {
   const { values, positionals, dir } = current(args, {
     options: { answer: { type: 'string' }, question: { type: 'boolean' }, choice: { type: 'string', multiple: true } },
     allowPositionals: true,
   });
   const text = positionals.join(' ').trim();
   if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question [--choice <answer>]...] <text>');
-  say(dir, text, values);
+  await say(dir, text, values);
   console.log('Said on the page.');
 }
 
