@@ -7,7 +7,9 @@ A redirect replaces only who produces findings; output that does not fit the fin
 
 **Blocked by:** 07 Findings and the finding gate
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] First run asks the three questions and writes the review policy from the draft in this folder; later runs skip setup.
 - [ ] Setup lists installed review agents and skills it finds.

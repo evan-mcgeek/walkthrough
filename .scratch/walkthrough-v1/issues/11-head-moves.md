@@ -7,7 +7,9 @@ The re-review runs in a fresh session.
 
 **Blocked by:** 07 Findings and the finding gate
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] Unchanged steps keep their decisions at the new head.
 - [ ] Changed steps reopen and get fresh findings.

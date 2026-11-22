@@ -8,7 +8,7 @@ Ask on a step works end to end, and the page shows whether the session is listen
 
 **Blocked by:** 01 Walking skeleton
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Pressing Ask on a step makes a running `walkthrough listen` exit with that request.
 - [ ] `walkthrough say` puts the answer on the page; the step's decision is unchanged.

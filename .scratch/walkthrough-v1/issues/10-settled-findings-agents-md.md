@@ -6,7 +6,9 @@ The person sees the diff; on yes it is written to the working tree and left unco
 
 **Blocked by:** 07 Findings and the finding gate
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] Reject requires a one-line reason.
 - [ ] The proposal is phrased as a convention, not as "don't flag X".

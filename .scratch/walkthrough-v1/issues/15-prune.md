@@ -6,7 +6,9 @@ This runs at most once a day when a walkthrough starts, and on demand with `walk
 
 **Blocked by:** 01 Walking skeleton
 
-**Status:** ready-for-agent
+**Status:** done
+
+Reworked by ticket 16: prune becomes git-only.
 
 - [ ] Prune removes walkthroughs whose PR is merged or closed, or whose branch is gone.
 - [ ] Automatic prune runs at most once a day.

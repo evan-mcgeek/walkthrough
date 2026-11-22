@@ -7,7 +7,9 @@ The person resolves, replies, or keeps blocking; thread resolutions apply only w
 
 **Blocked by:** 13 Thread walkthrough: a review you received
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] Kind detection picks this walkthrough for a PR the person reviewed with new replies.
 - [ ] Only threads with new activity and commits since the person's review are shown.

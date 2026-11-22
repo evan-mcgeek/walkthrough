@@ -5,7 +5,7 @@ Every step on the page shows its diff with the library chosen in the spike inste
 
 **Blocked by:** 01 Walking skeleton, 02 Diff library spike
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Steps render with the chosen diff library, bundled by esbuild.
 - [ ] The page region is redrawn from state by its render function, not patched.

@@ -8,7 +8,9 @@ A rejected finding becomes a suggestion in the pending review instead of an AGEN
 
 **Blocked by:** 07 Findings and the finding gate, 10 Settled findings into AGENTS.md
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] The PR is fetched as a ref; nothing is checked out.
 - [ ] Flags become line comments in one pending review; nothing is submitted.

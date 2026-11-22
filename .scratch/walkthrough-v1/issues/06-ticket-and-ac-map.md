@@ -9,7 +9,9 @@ With no ticket the panel says so and accepts pasted ACs.
 
 **Blocked by:** 05 Steps
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] The ticket key is taken from the branch name, else the PR title, and can be overridden.
 - [ ] Description and decision comments are read; a later comment overrides an earlier one.

@@ -6,7 +6,7 @@ The result picks the library the page will use and records why.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A throwaway page renders a multi-file diff from a real repo with each candidate.
 - [ ] Side-by-side and unified views, syntax highlighting, and long-line handling are compared.

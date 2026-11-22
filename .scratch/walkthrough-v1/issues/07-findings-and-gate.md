@@ -8,7 +8,9 @@ The person can flag a step with a note.
 
 **Blocked by:** 05 Steps
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] Reviewers run as fresh-context subagents and read the change only from git at the pinned SHAs.
 - [ ] Rules findings quote the rule they cite.

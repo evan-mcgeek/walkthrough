@@ -8,7 +8,7 @@ The page shows step navigation and how many steps are decided and left.
 
 **Blocked by:** 01 Walking skeleton
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A real branch produces several steps in dependency order, each with what changed and why.
 - [ ] Test files are attached to the step whose behaviour they prove.

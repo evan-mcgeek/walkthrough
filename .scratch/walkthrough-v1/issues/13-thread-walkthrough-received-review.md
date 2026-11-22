@@ -7,7 +7,9 @@ The person accepts (goes to the fix list), pushes back (a reply is drafted), or 
 
 **Blocked by:** 12 Colleague's PR: change walkthrough and pending review
 
-**Status:** ready-for-agent
+**Status:** wontfix
+
+Superseded by the re-scope of 2026-11-22 (ADR 0005): see tickets 16-27.
 
 - [ ] Kind detection picks a thread walkthrough for the person's own PR with unanswered threads; a flag forces the kind.
 - [ ] Each thread is placed at its step.

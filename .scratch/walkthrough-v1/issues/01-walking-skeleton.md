@@ -9,7 +9,7 @@ This ticket also sets up both test seams from the spec: the CLI run against a th
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] The plugin installs in Claude Code and `/walkthrough` is available.
 - [ ] A walkthrough of the current branch is pinned to the merge-base and head SHAs; nothing is checked out.
