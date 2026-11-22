@@ -15,6 +15,7 @@ Run any reviewer in a fresh context, and never treat the author session's own su
    If the person names the branch their change targets, pass `--target <branch>`.
 2. Tell the person, in one or two lines, what the output says: the branch, the pinned base and head, and any warning.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
+   The page is already open and shows you preparing; the steps appear on it as soon as you record them.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
 4. Record the steps, as below.
 5. The page is open in their browser; they review and decide there.

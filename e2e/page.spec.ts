@@ -1,20 +1,37 @@
+import { ONE_STEP } from '../test/helpers';
 import { expect, test } from './walkthrough';
 
-test('shows the change as one step with a diff of each file and its changed lines', async ({ page, repo, url }) => {
+test('shows the session preparing until it records steps, then the steps without a reload', async ({
+  page,
+  repo,
+  url,
+}) => {
   await expect(page).toHaveURL(url);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   await expect(page.getByText(`${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`)).toBeVisible();
-  const step = page.getByRole('region', { name: 'The whole change' });
+  const preparing = page.getByText('The session is preparing the steps; they appear here as it records them.');
+  await expect(preparing).toBeVisible();
+  await expect(page.getByText(/steps? decided/)).toHaveCount(0);
+  let loads = 0;
+  page.on('load', () => loads++);
+
+  repo.record(ONE_STEP);
+
+  const step = page.getByRole('region', { name: 'Login' });
   // diff2html marks files and changed lines with classes only, no roles.
   const file = (name: string) =>
     step.locator('.d2h-file-wrapper').filter({ has: page.getByText(name, { exact: true }) });
   await expect(file('login.ts').locator('.d2h-ins')).toContainText(['export const login = () => true;']);
   await expect(file('app.ts').locator('.d2h-del')).toContainText(['export const app = 1;']);
   await expect(file('app.ts').locator('.d2h-ins')).toContainText(['export const app = 2;']);
+  await expect(preparing).toHaveCount(0);
+  await expect(page.getByText('0 of 1 step decided, 1 left')).toBeVisible();
+  expect(loads).toBe(0);
 });
 
-test('an approved step stays approved when the page is opened again', async ({ page, context, url }) => {
-  const step = page.getByRole('region', { name: 'The whole change' });
+test('an approved step stays approved when the page is opened again', async ({ page, context, repo, url }) => {
+  repo.record(ONE_STEP);
+  const step = page.getByRole('region', { name: 'Login' });
   await step.getByRole('button', { name: 'Approve' }).click();
   await expect(step.getByText('Approved', { exact: true })).toBeVisible();
 
@@ -22,7 +39,7 @@ test('an approved step stays approved when the page is opened again', async ({ p
   const reopened = await context.newPage();
   await reopened.goto(url);
 
-  const again = reopened.getByRole('region', { name: 'The whole change' });
+  const again = reopened.getByRole('region', { name: 'Login' });
   await expect(again.getByText('Approved', { exact: true })).toBeVisible();
   await expect(again.getByRole('button', { name: 'Approve' })).toHaveCount(0);
 });
@@ -37,6 +54,7 @@ test('the Stop button ends the server', async ({ page, request, url }) => {
 // Started here rather than through `url`, whose check for console errors would catch the refused connection.
 test('an action after the server stopped says how to reopen the walkthrough', async ({ page, repo }) => {
   repo.run('start');
+  repo.record(ONE_STEP);
   await page.goto(repo.url());
   repo.run('stop');
 
@@ -50,7 +68,7 @@ test('an action after the server stopped says how to reopen the walkthrough', as
 test('a request without the token is refused', async ({ request, url }) => {
   const { origin } = new URL(url);
 
-  expect((await request.post(`${origin}/decide`, { data: { step: 'change', decision: 'approved' } })).status()).toBe(
+  expect((await request.post(`${origin}/decide`, { data: { step: '1', decision: 'approved' } })).status()).toBe(
     404,
   );
   expect((await request.get(`${origin}/s/${'0'.repeat(48)}/`)).status()).toBe(404);
