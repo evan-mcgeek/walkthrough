@@ -284,7 +284,7 @@ function render(): void {
     el(
       'div',
       { className: 'title' },
-      el('h1', {}, walkthrough.branch),
+      el('h1', {}, walkthrough.kind === 'branch' ? walkthrough.branch : walkthrough.label),
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
     el('p', { className: 'progress' }, progress),

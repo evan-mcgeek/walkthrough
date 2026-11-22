@@ -8,7 +8,10 @@ afterEach(() => {
   repo.run('stop');
 });
 
-const saved = (branch: string) => fs.existsSync(path.join(repo.state, 'shop', `branch-${branch.replaceAll('/', '~')}`));
+/** The repo's folder of saved walkthroughs: its name and a short hash of where it is. */
+const repoState = () =>
+  path.join(repo.state, fs.readdirSync(repo.state).find(name => /^shop-[0-9a-f]{8}$/.test(name)) ?? '');
+const saved = (branch: string) => fs.existsSync(path.join(repoState(), `branch-${branch.replaceAll('/', '~')}`));
 
 /** A walkthrough saved for `feature/login` and one for `feature/cart`, both pages stopped, left on `feature/cart`. */
 function twoWalkthroughs() {
@@ -105,7 +108,7 @@ describe('walkthrough prune', () => {
     expect(saved('feature/login')).toBe(true);
 
     const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
-    fs.writeFileSync(path.join(repo.state, 'shop', 'last-prune.json'), JSON.stringify({ at: dayAgo }));
+    fs.writeFileSync(path.join(repoState(), 'last-prune.json'), JSON.stringify({ at: dayAgo }));
     const nextDay = repo.run('start');
 
     expect(nextDay.stdout).toContain('Removed the walkthrough of feature/login: its head is merged into origin/main.');
