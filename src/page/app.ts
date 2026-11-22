@@ -29,7 +29,7 @@ const main = region('main');
 let posted = 0;
 
 const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough again to reopen it.' };
-const post = (route: string, body: unknown) => {
+const post = (route: string, body: Record<string, unknown>) => {
   posted++;
   return postTo(PAGE, route, body);
 };

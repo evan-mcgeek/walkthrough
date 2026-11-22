@@ -14,6 +14,7 @@ import { decide, markRead, walkthroughView } from './decisions';
 import { listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
+import { tooLong } from './words';
 
 type ServerRecord = { pid: number; started: string; url: string };
 type Answer = { status: number; body?: unknown; after?: () => void };
@@ -276,6 +277,11 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, 
   }
   readBody(req, res, body => {
     const fields = body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+    const problem = tooLong(fields);
+    if (problem) {
+      res.writeHead(400, JSON_HEADERS).end(JSON.stringify({ error: problem }));
+      return;
+    }
     Promise.resolve()
       .then(() => route(fields))
       .then(({ status, body: said, after }) => {

@@ -6,7 +6,7 @@ const header = region('header');
 const main = region('main');
 
 const PAGE: PageName = { name: 'list', reopen: 'Run walkthrough list again to reopen it.' };
-const post = (route: string, body: unknown) => postTo(PAGE, route, body);
+const post = (route: string, body: Record<string, unknown>) => postTo(PAGE, route, body);
 
 async function open(one: Listed): Promise<void> {
   const answer = await post('open', { id: one.id });

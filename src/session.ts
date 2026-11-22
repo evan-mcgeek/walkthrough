@@ -35,7 +35,6 @@ type Listener =
   | { state: 'handed'; requests: string[] }
   | { state: 'stopped' };
 
-const MAX_TEXT = 4000;
 // A session answers and then listens again; until this has passed it has not had the chance to come back.
 const BACK_WITHIN_MS = 60 * 1000;
 const LISTEN_EVERY_MS = 500;
@@ -68,7 +67,7 @@ const append = (file: string, entry: Entry) => {
 };
 const newId = () => crypto.randomBytes(4).toString('hex');
 const stamp = () => new Date().toISOString();
-export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '');
+export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim() : '');
 
 const openQuestions = (conversation: Entry[]) =>
   conversation.filter(
