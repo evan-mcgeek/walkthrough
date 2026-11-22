@@ -10,6 +10,7 @@ import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
 import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
+import { listView } from './list';
 import { GUIDE } from './guide';
 import { plural } from './words';
 import { nameOf } from './items';
@@ -214,7 +215,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     const { positionals } = parseArgs({ args, allowPositionals: true, options: SOURCE_OPTIONS });
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === 'range') throw new Error('name a branch or a range, not both');
-    console.log(await pruneOne(dir, nameOf(source)));
+    const listed = readWalkthrough(dir) ? undefined : listView(repoDir()).find(one => one.id === positionals[0]);
+    console.log(await (listed ? pruneOne(path.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = '', mode]) => {
@@ -230,7 +232,7 @@ try {
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
-        '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
+        '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list\n' +
         '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
     );

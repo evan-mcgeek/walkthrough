@@ -158,13 +158,30 @@ describe('walkthrough prune', () => {
     expect(repo.run('prune', 'feature/login', ...LOGIN).stderr).toContain('name a branch or a range, not both');
   });
 
+  test('removes the walkthrough named by its id on the list page, and ends its page', async () => {
+    repo = makeRepo();
+    repo.run('start', ...LOGIN);
+    const url = repo.url();
+
+    const pruned = repo.run('prune', 'range-Login');
+
+    expect(pruned.stderr).toBe('');
+    expect(pruned.stdout).toContain('Removed the walkthrough of Login: asked to.');
+    expect(fs.existsSync(path.join(repoState(), 'range-Login'))).toBe(false);
+    await expect(fetch(url)).rejects.toThrow();
+  });
+
   test('refuses an id that names no walkthrough', () => {
     repo = makeRepo();
+    repo.run('start');
+    repo.run('stop');
 
-    const pruned = repo.run('prune', 'feature/nothing');
-
-    expect(pruned.status).toBe(1);
-    expect(pruned.stderr).toContain('there is no walkthrough of feature/nothing');
+    for (const id of ['feature/nothing', 'range-Nothing', '..', '.']) {
+      const pruned = repo.run('prune', id);
+      expect(pruned.status, id).toBe(1);
+      expect(pruned.stderr, id).toContain(`there is no walkthrough of ${id}`);
+    }
+    expect(saved('feature/login')).toBe(true);
   });
 
   test('says so when the repo has no saved walkthrough', () => {

@@ -27,6 +27,8 @@ function row(one: Listed): HTMLTableRowElement {
     'tr',
     {},
     el('td', {}, el('button', { type: 'button', className: 'quiet', onclick: () => void open(one) }, one.name)),
+    // What walkthrough prune takes to remove this one.
+    el('td', {}, el('code', {}, one.id)),
     el('td', {}, one.steps ? progress : 'Preparing'),
     el('td', {}, el('time', { dateTime: one.last }, last.toLocaleString())),
   );
@@ -44,7 +46,7 @@ function render(list: Listed[]): void {
     main.replaceChildren(el('p', { className: 'notice' }, 'This repo has no walkthroughs; run /walkthrough to start one.'));
     return;
   }
-  const head = el('tr', {}, ...['Walkthrough', 'Progress', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
+  const head = el('tr', {}, ...['Walkthrough', 'Id', 'Progress', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
   main.replaceChildren(el('table', { className: 'walkthroughs' }, el('thead', {}, head), el('tbody', {}, ...list.map(row))));
 }
 

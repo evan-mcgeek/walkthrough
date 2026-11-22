@@ -80,7 +80,7 @@ The session runs the `walkthrough` CLI for you; you rarely type it yourself.
 | `export` | Writes the walkthrough to one read-only HTML file. |
 | `list` | Opens a page of this repo's walkthroughs. |
 | `stop` | Ends the page and the listener; `stop --list` ends the list page. |
-| `prune` | Removes walkthroughs whose branch is gone or whose head is merged; it also runs at most once a day on `start`. |
+| `prune` | Removes walkthroughs whose branch is gone or whose head is merged; it also runs at most once a day on `start`. `prune <branch>`, `prune <id>` with an id from the list page, or `prune` with a range's options removes that one. |
 
 Every command but `guide` and `list` takes the same `--target` or `--base`, `--head` and `--label` options that `start` was given.
 
