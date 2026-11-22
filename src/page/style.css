@@ -659,3 +659,18 @@ button:disabled {
 .draft.taking textarea {
   flex: 1 1 100%;
 }
+
+.decision.reopened {
+  color: var(--fg);
+  font-style: italic;
+}
+
+.was {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.checklist .gone {
+  color: var(--muted);
+}

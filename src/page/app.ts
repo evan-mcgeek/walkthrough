@@ -187,6 +187,11 @@ type Note = SessionMessage & { note: NoteMark };
 const isNote = (entry: Entry): entry is Note => entry.from === 'session' && entry.note !== undefined;
 const isAsk = (entry: Entry): entry is Ask => entry.from === 'page' && entry.kind === 'ask';
 const placeOf = (entry: Note | Ask): Place => (isNote(entry) ? entry.note : entry);
+/** The step a note or ask shows on, null when its place is gone; one newer than the walkthrough fetched shows where it was put. */
+const anchorOf = (entry: Note | Ask) => {
+  const at = walkthrough.anchored[entry.id];
+  return at === undefined ? placeOf(entry).step : at;
+};
 
 function askThread(asked: Ask): HTMLElement {
   const answers = followUps(asked);
@@ -207,6 +212,12 @@ function decideView(item: Item, text = ''): HTMLElement[] {
   const actions = walkthrough.actions[key] ?? [];
   if (!actions.length) return [];
   const decision = walkthrough.decided[key] ?? null;
+  const reopened = walkthrough.reopened[key];
+  const state = decision
+    ? el('p', { className: 'decision decided' }, `Decided: ${labelOf(item, decision.action)}`)
+    : reopened
+      ? el('p', { className: 'decision reopened' }, `Reopened: changed since you chose ${labelOf(item, reopened.action)}`)
+      : el('p', { className: 'decision' }, 'Undecided');
   const buttons = actions.map(action => {
     const button = el('button', { type: 'button', className: 'quiet' }, action.label);
     button.setAttribute('aria-pressed', String(decision?.action === action.id));
@@ -229,7 +240,7 @@ function decideView(item: Item, text = ''): HTMLElement[] {
       el(
         'div',
         { className: 'decide-row' },
-        el('p', { className: decision ? 'decision decided' : 'decision' }, decision ? `Decided: ${labelOf(item, decision.action)}` : 'Undecided'),
+        state,
         group,
       ),
       ...(decision ? decisionSaid(decision) : []),
@@ -275,9 +286,17 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
   return form;
 }
 
+/** Where a detached note or ask was. */
+function wasView(entry: Note | Ask): HTMLElement {
+  const { file, lines } = placeOf(entry);
+  const where = file !== undefined && lines ? `${file}, ${linesLabel(lines).toLowerCase()}` : 'a step no longer in the change';
+  return el('p', { className: 'was' }, `Was on ${where}`);
+}
+
 function noteView(note: Note): HTMLElement {
   const { label, lines } = note.note;
   const draft = `reply:${note.id}`;
+  const detached = anchorOf(note) === null;
   const view = el(
     'article',
     { className: 'note' },
@@ -285,8 +304,9 @@ function noteView(note: Note): HTMLElement {
       'p',
       { className: 'note-head' },
       el('span', { className: 'label' }, label),
-      ...(lines ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
+      ...(lines && !detached ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
     ),
+    ...(detached ? [wasView(note)] : []),
     markdown(note.text, 'note-text'),
     ...decideView({ type: 'note', id: note.id }, note.text),
     ...followUps(note).map(said),
@@ -313,7 +333,7 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
 }
 
 function askView(step: Step): HTMLElement {
-  const asks = session.conversation.filter(isAsk).filter(asked => asked.step === step.id && !asked.lines);
+  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
   const draft = `ask:${step.id}`;
   return el(
     'div',
@@ -533,7 +553,7 @@ const opened = new Set<string>();
 /** What the step says about itself, its notes, and its diff, by kind of step. */
 function stepBody(step: Step): HTMLElement[] {
   const pinned = session.conversation.filter(
-    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && placeOf(entry).step === step.id,
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === step.id,
   );
   const stepNotes = pinned.filter(isNote).filter(note => !note.note.lines);
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
@@ -607,7 +627,8 @@ function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
     const link = el('a', { href, className: decision ? 'decided' : '' }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
     if (step === current) link.setAttribute('aria-current', 'step');
     const read = walkthrough.read.includes(step.id) ? 'Read' : '';
-    const mark = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : read;
+    const reopened = walkthrough.reopened[itemKey({ type: 'step', id: step.id })] ? 'Reopened' : read;
+    const mark = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : reopened;
     return el('li', {}, link, ...(mark ? [el('span', { className: 'mark' }, mark)] : []));
   };
   const nav = el('nav', { className: 'steps' }, el('ol', {}, ...steps.filter(step => !stepDecided(step)).map(item)));
@@ -642,12 +663,14 @@ function wholeView(): HTMLElement[] {
 function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement {
   const heading = el('h2', { id: 'checklist' }, title);
   const rows = items.map(item => {
-    const links = item.steps.flatMap(id => {
+    const links: HTMLElement[] = item.steps.flatMap(id => {
       const at = steps.findIndex(step => step.id === id);
       const step = steps[at];
-      // A step recorded again may no longer have the id the item links to.
       return step ? [el('a', { href: `#${encodeURIComponent(id)}`, title: step.title }, `Step ${String(at + 1)}`)] : [];
     });
+    const gone = item.steps.length - links.length;
+    if (gone)
+      links.push(el('span', { className: 'gone' }, `${plural(gone, 'linked step')} ${gone === 1 ? 'is' : 'are'} no longer in the change`));
     return el(
       'li',
       {},
@@ -660,6 +683,24 @@ function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement 
   const section = el('section', { className: 'checklist' }, heading, el('ul', {}, ...rows));
   section.setAttribute('aria-labelledby', heading.id);
   return section;
+}
+
+/** Notes and asks whose step or lines left the change, kept with where they were. */
+function detachedView(): HTMLElement[] {
+  const gone = session.conversation.filter(
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === null,
+  );
+  if (!gone.length) return [];
+  const title = el('h2', { id: 'detached' }, 'Detached');
+  const section = el(
+    'section',
+    { className: 'messages conversation' },
+    title,
+    el('p', { className: 'notice' }, 'Notes and questions whose step or lines are no longer in the change.'),
+    ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, wasView(entry), askThread(entry)))),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return [section];
 }
 
 function render(): void {
@@ -692,6 +733,7 @@ function render(): void {
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
+    ...detachedView(),
     ...(current
       ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)]
       : [
