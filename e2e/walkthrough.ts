@@ -4,9 +4,11 @@ import { makeRepo, type Repo } from '../test/helpers';
 
 export { expect };
 
-export const test = base.extend<{ repo: Repo; url: string }>({
-  repo: async ({}, use) => {
-    const repo = makeRepo();
+export const test = base.extend<{ files: Record<string, string>; repo: Repo; url: string }>({
+  /** Files the feature branch adds on top of the default change. */
+  files: [{}, { option: true }],
+  repo: async ({ files }, use) => {
+    const repo = makeRepo({ feature: files });
     await use(repo);
     repo.run('stop');
   },
