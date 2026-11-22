@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "walkthrough",
+  "description": "Walkthrough: guided reviews of code changes.",
+  "owner": {
+    "name": "evan-mcgeek"
+  },
+  "plugins": [
+    {
+      "name": "walkthrough",
+      "description": "A guided review of a code change on a local page, one step at a time.",
+      "source": "./plugin"
+    }
+  ]
+}

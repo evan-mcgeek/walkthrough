@@ -10,24 +10,25 @@ const plural = (count: number, word: string) => `${String(count)} ${word}${count
 async function start(args: string[]): Promise<void> {
   const { values } = parseArgs({ args, options: { target: { type: 'string' } } });
   const change = currentChange(process.cwd(), values.target);
-  const { dir, walkthrough, resumed } = openWalkthrough(change);
+  const { dir, walkthrough, opened } = openWalkthrough(change);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${change.branch} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
-  if (resumed)
+  if (opened === 'resumed')
     console.log(
       `Resumed: ${String(steps.filter(step => step.decision).length)} of ${plural(steps.length, 'step')} decided.`,
     );
+  if (opened === 'replaced') console.log('The head moved since the last walkthrough, so it starts over.');
   if (change.uncommitted > 0)
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,
     );
   const url = await ensureServer(dir);
   // The address carries the page's token, so it goes to the browser and is not printed.
-  const opened = spawnSync(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { stdio: 'ignore' });
+  const browser = spawnSync(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { stdio: 'ignore' });
   console.log(
-    opened.status === 0
+    browser.status === 0
       ? 'The page is open in your browser.'
       : `Could not open a browser; the page address is in ${dir}/server.json.`,
   );

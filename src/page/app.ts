@@ -8,6 +8,7 @@ function region(id: string): HTMLElement {
   return found;
 }
 const header = region('header');
+const alertBox = region('alert');
 const main = region('main');
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -20,23 +21,34 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-async function post(route: string, body: unknown): Promise<Response> {
-  const answer = await fetch(`/${route}?token=${token}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!answer.ok) throw new Error(`${route} was refused with ${String(answer.status)}`);
-  return answer;
+function showAlert(message: string | null): void {
+  alertBox.textContent = message;
+  alertBox.hidden = message === null;
+}
+
+/** The server's answer, or null once the person has been told why there is none. */
+async function post(route: string, body: unknown): Promise<Response | null> {
+  try {
+    const answer = await fetch(`/${route}?token=${token}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    showAlert(answer.ok ? null : `The walkthrough could not do that (${String(answer.status)}).`);
+    return answer.ok ? answer : null;
+  } catch {
+    showAlert('Could not reach the walkthrough. Run /walkthrough again to reopen it.');
+    return null;
+  }
 }
 
 async function decide(step: Step, decision: Decision): Promise<void> {
   const answer = await post('decide', { step: step.id, decision });
-  render((await answer.json()) as Walkthrough);
+  if (answer) render((await answer.json()) as Walkthrough);
 }
 
 async function stop(): Promise<void> {
-  await post('stop', {});
+  if (!(await post('stop', {}))) return;
   header.replaceChildren(el('h1', {}, 'Walkthrough'));
   main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
 }

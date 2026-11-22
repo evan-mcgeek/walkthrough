@@ -24,12 +24,17 @@ export const walkthroughDir = (change: Pick<Change, 'repo' | 'branch'>) =>
 
 export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
 
-/** The saved walkthrough of the change when it is pinned to the same head, else a new one. */
-export function openWalkthrough(change: Change): { dir: string; walkthrough: Walkthrough; resumed: boolean } {
+/** The saved walkthrough of the change when it is pinned to the same base and head, else a new one replacing it. */
+export function openWalkthrough(change: Change): {
+  dir: string;
+  walkthrough: Walkthrough;
+  opened: 'new' | 'resumed' | 'replaced';
+} {
   const dir = walkthroughDir(change);
   return locked(file(dir), () => {
     const saved = readWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base) return { dir, walkthrough: saved, resumed: true };
+    if (saved?.head === change.head && saved.base === change.base)
+      return { dir, walkthrough: saved, opened: 'resumed' };
     const walkthrough: Walkthrough = {
       kind: 'branch',
       branch: change.branch,
@@ -39,7 +44,7 @@ export function openWalkthrough(change: Change): { dir: string; walkthrough: Wal
       steps: [{ id: 'change', title: 'The whole change', diff: change.diff, decision: null }],
     };
     writeJson(file(dir), walkthrough);
-    return { dir, walkthrough, resumed: false };
+    return { dir, walkthrough, opened: saved ? 'replaced' : 'new' };
   });
 }
 

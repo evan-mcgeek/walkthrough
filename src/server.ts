@@ -78,7 +78,7 @@ export async function ensureServer(dir: string): Promise<string> {
   fs.closeSync(log);
   for (const end = Date.now() + 10_000; Date.now() < end; await sleep(50)) {
     const record = readRecord(dir);
-    if (record?.pid === child.pid) return record.url;
+    if (record && record.pid === child.pid) return record.url;
   }
   throw new Error(`the page server did not start; see ${path.join(dir, 'server.log')}`);
 }
@@ -86,14 +86,15 @@ export async function ensureServer(dir: string): Promise<string> {
 /** Whether a server was running; it is stopped either way. */
 export async function stopServer(dir: string): Promise<boolean> {
   const record = readRecord(dir);
-  const running = record !== null && alive(record);
-  if (running) {
-    process.kill(record.pid, 'SIGTERM');
-    for (const end = Date.now() + 8000; Date.now() < end && alive(record); ) await sleep(50);
-    if (alive(record)) process.kill(record.pid, 'SIGKILL');
+  if (!record || !alive(record)) {
+    fs.rmSync(recordFile(dir), { force: true });
+    return false;
   }
+  process.kill(record.pid, 'SIGTERM');
+  for (const end = Date.now() + 8000; Date.now() < end && alive(record); ) await sleep(50);
+  if (alive(record)) process.kill(record.pid, 'SIGKILL');
   fs.rmSync(recordFile(dir), { force: true });
-  return running;
+  return true;
 }
 
 /** Runs the server of the walkthrough in `dir` in this process until it is stopped. */

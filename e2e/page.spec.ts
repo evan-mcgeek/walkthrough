@@ -1,6 +1,7 @@
 import { expect, test } from './walkthrough';
 
-test('shows the change as one step with its plain-text diff', async ({ page, repo, url: _url }) => {
+test('shows the change as one step with its plain-text diff', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   await expect(page.getByText(`${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`)).toBeVisible();
   const step = page.getByRole('region', { name: 'The whole change' });
@@ -27,6 +28,19 @@ test('the Stop button ends the server', async ({ page, request, url }) => {
 
   await expect(page.getByText('The walkthrough has stopped. You can close this tab.')).toBeVisible();
   await expect(request.get(url)).rejects.toThrow();
+});
+
+// Started here rather than through `url`, whose check for console errors would catch the refused connection.
+test('an action after the server stopped says how to reopen the walkthrough', async ({ page, repo }) => {
+  repo.run('start');
+  await page.goto(repo.url());
+  repo.run('stop');
+
+  await page.getByRole('button', { name: 'Approve' }).click();
+
+  await expect(page.getByRole('alert')).toHaveText(
+    'Could not reach the walkthrough. Run /walkthrough again to reopen it.',
+  );
 });
 
 test('a request without the token is refused', async ({ request, url }) => {
