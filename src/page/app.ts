@@ -1,3 +1,5 @@
+import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
+import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Decision, Step, Walkthrough } from '../walkthrough';
 
 const token = location.pathname.split('/')[2] ?? '';
@@ -53,35 +55,20 @@ async function stop(): Promise<void> {
   main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
 }
 
-// Content lines start with a space, + or -, or a backslash note; every other line is a file header.
-const lineClass = (line: string) =>
-  line.startsWith('+++ ') || line.startsWith('--- ')
-    ? 'meta'
-    : line.startsWith('@@')
-      ? 'hunk'
-      : line.startsWith('+')
-        ? 'add'
-        : line.startsWith('-')
-          ? 'del'
-          : line.startsWith(' ') || line.startsWith('\\')
-            ? ''
-            : 'meta';
-
 function stepView(step: Step): HTMLElement {
   const title = el('h2', { id: `step-${step.id}` }, step.title);
   const decision = step.decision
     ? el('span', { className: 'decision approved' }, 'Approved')
     : el('button', { type: 'button', onclick: () => void decide(step, 'approved') }, 'Approve');
-  const lines = step.diff
-    .replace(/\n$/, '')
-    .split('\n')
-    .map(line => el('span', { className: `line ${lineClass(line)}` }, line));
-  const section = el(
-    'section',
-    { className: 'step' },
-    el('div', { className: 'step-head' }, title, decision),
-    el('pre', { className: 'diff' }, el('div', { className: 'lines' }, ...lines)),
-  );
+  const diff = el('div', { className: 'diff' });
+  new Diff2HtmlUI(diff, step.diff, {
+    outputFormat: 'line-by-line',
+    drawFileList: false,
+    matching: 'lines',
+    colorScheme: ColorSchemeType.AUTO,
+    fileContentToggle: false,
+  }).draw();
+  const section = el('section', { className: 'step' }, el('div', { className: 'step-head' }, title, decision), diff);
   section.setAttribute('aria-labelledby', title.id);
   return section;
 }

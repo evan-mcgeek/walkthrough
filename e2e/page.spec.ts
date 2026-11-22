@@ -1,12 +1,16 @@
 import { expect, test } from './walkthrough';
 
-test('shows the change as one step with its plain-text diff', async ({ page, repo, url }) => {
+test('shows the change as one step with a diff of each file and its changed lines', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   await expect(page.getByText(`${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`)).toBeVisible();
   const step = page.getByRole('region', { name: 'The whole change' });
-  await expect(step.getByText('+export const login = () => true;')).toBeVisible();
-  await expect(step.getByText('-export const app = 1;')).toBeVisible();
+  // diff2html marks files and changed lines with classes only, no roles.
+  const file = (name: string) =>
+    step.locator('.d2h-file-wrapper').filter({ has: page.getByText(name, { exact: true }) });
+  await expect(file('login.ts').locator('.d2h-ins')).toContainText(['export const login = () => true;']);
+  await expect(file('app.ts').locator('.d2h-del')).toContainText(['export const app = 1;']);
+  await expect(file('app.ts').locator('.d2h-ins')).toContainText(['export const app = 2;']);
 });
 
 test('an approved step stays approved when the page is opened again', async ({ page, context, url }) => {
