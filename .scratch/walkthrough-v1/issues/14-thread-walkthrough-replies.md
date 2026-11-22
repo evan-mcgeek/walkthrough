@@ -14,4 +14,5 @@ The person resolves, replies, or keeps blocking; thread resolutions apply only w
 - [ ] Each thread gets a fresh-agent verdict at the new head.
 - [ ] Resolve, Reply and Still blocking are saved; replies are drafted with the AI marker.
 - [ ] Nothing changes on GitHub until the person submits.
+- [ ] Threads marked Resolve are resolved only after the CLI confirms through gh that the person's review was submitted (GitHub resolves threads immediately and cannot defer it to submission).
 - [ ] CLI tests cover the activity filter and the payload.
