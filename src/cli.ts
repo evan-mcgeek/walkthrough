@@ -172,8 +172,15 @@ async function listenCommand(args: string[]): Promise<void> {
       return noted?.from === 'session' && noted.note ? { label: noted.note.label, text: noted.text } : undefined;
     };
     for (const request of taken)
-      // The fingerprint only matches a decision to its item.
-      console.log(JSON.stringify({ ...request, on: undefined, ...(request.kind === 'reply' && { about: about(request.to) }) }));
+      // Fingerprints only match a decision to its item and a question to its lines.
+      console.log(
+        JSON.stringify({
+          ...request,
+          on: undefined,
+          linesHash: undefined,
+          ...(request.kind === 'reply' && { about: about(request.to) }),
+        }),
+      );
   }
 }
 

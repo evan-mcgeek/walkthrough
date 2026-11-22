@@ -141,6 +141,36 @@ describe('notes and asks whose place is gone', () => {
   });
 });
 
+describe('notes and asks on lines whose content changed', () => {
+  test('are detached, while those on unchanged lines stay', async () => {
+    repo = makeRepo({ feature: { 'login.ts': 'one\ntwo\nthree\n' } });
+    repo.run('start');
+    repo.record([LOGIN, APP]);
+    const noted = repo.record(
+      [
+        { step: '1', file: 'login.ts', lines: [2, 2], label: 'Two', text: 'On line two.' },
+        { step: '1', file: 'login.ts', lines: [3, 3], label: 'Three', text: 'On line three.' },
+      ],
+      'note',
+    );
+    const [onTwo, onThree] = noted.stdout.match(/[0-9a-f]{8}/g) ?? [];
+    expect((await post('/ask', { step: '1', file: 'login.ts', lines: [1, 2], text: 'Why?' })).status).toBe(200);
+    expect((await post('/ask', { step: '1', file: 'login.ts', lines: [3, 3], text: 'And?' })).status).toBe(200);
+    moveHead({ 'login.ts': 'one\nTWO\nthree\n' });
+
+    repo.run('start');
+
+    const { conversation } = (await (await fetch(`${repo.url()}data/session.json`)).json()) as SessionView;
+    const [why, and] = conversation.filter(entry => entry.from === 'page' && entry.kind === 'ask');
+    expect((await shown()).anchored).toEqual({
+      [onTwo ?? '']: null,
+      [onThree ?? '']: '1',
+      [why?.id ?? '']: null,
+      [and?.id ?? '']: '1',
+    });
+  });
+});
+
 const CART ={ title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] };
 
 describe('recording the steps again', () => {

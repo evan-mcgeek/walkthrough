@@ -82,7 +82,7 @@ walkthrough note < notes.json
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
-  A note whose step or lines later leave the change is kept and shown as detached; a note on lines follows its file to the step that has it.
+  A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
 ${JSON.stringify(notesExample, null, 2)}
 

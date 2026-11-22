@@ -69,7 +69,7 @@ Its links name the step ids `walkthrough steps` printed; a link to a step that i
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
 Notes name step ids, so record them after the steps.
-A note whose step or lines leave the change stays on the page as detached.
+A note whose step or lines leave the change, or whose lines change, stays on the page as detached.
 
 ## Actions
 

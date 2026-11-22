@@ -39,12 +39,15 @@ describe('walkthrough note', () => {
     expect(noted.stderr).toBe('');
     expect(noted.status).toBe(0);
     expect(noted.stdout).toMatch(/^Recorded 2 notes: [0-9a-f]{8} \(Risk\), [0-9a-f]{8} \(Finding\)\.\n$/);
-    expect((await sessionAt(repo.url())).conversation).toEqual([
+    const { conversation } = await sessionAt(repo.url());
+    const hash = conversation[1]?.from === 'session' ? conversation[1].note?.linesHash : undefined;
+    expect(hash).toMatch(/^[0-9a-f]{16}$/);
+    expect(conversation).toEqual([
       expect.objectContaining({ from: 'session', text: 'Login lets **everyone** in.', note: { step: '1', label: 'Risk' } }),
       expect.objectContaining({
         from: 'session',
         text: 'These could be one.',
-        note: { step: '1', file: 'cart.ts', lines: [2, 4], label: 'Finding', low: true },
+        note: { step: '1', file: 'cart.ts', lines: [2, 4], linesHash: hash, label: 'Finding', low: true },
       }),
     ]);
   });
