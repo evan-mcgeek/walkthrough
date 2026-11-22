@@ -34,6 +34,11 @@ Record them with `walkthrough steps` in the shape `walkthrough guide` prints.
 The CLI only checks that every changed file is in exactly one step; when it refuses, it names every problem, so fix them and record again.
 Recording again replaces the steps and their decisions, so do it before the person starts deciding.
 
+## Checklist
+
+When the review policy asks for a checklist, record it after the steps with `walkthrough checklist` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
+Its links name step ids, so record it again after recording the steps again.
+
 ## Listening for the page
 
 The page reaches you only while `walkthrough listen` runs, and the chat stays free while it does.

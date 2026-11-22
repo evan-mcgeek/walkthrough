@@ -1,13 +1,14 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { parseArgs } from 'node:util';
+import { parseChecklist } from './checklist';
 import { changedFiles, currentBranch, currentChange } from './change';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { listen, say } from './session';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
-import { openWalkthrough, readWalkthrough, recordSteps, type Walkthrough, walkthroughDir } from './walkthrough';
+import { openWalkthrough, readWalkthrough, recordChecklist, recordSteps, type Walkthrough, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
@@ -64,6 +65,14 @@ function steps(): void {
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
 }
 
+function checklist(): void {
+  const text = fs.readFileSync(0, 'utf8');
+  const { title, items } = recordChecklist(walkthroughDir(currentBranch(process.cwd())), walkthrough =>
+    parseChecklist(text, walkthrough),
+  );
+  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}.`);
+}
+
 async function listenCommand(): Promise<void> {
   const { dir } = current();
   const taken = await listen(dir, () => serverRunning(dir));
@@ -91,6 +100,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   files,
   // The session's steps, as a JSON array on standard input.
   steps,
+  // The session's checklist, as a JSON object on standard input.
+  checklist,
   guide: () => {
     process.stdout.write(GUIDE);
   },
@@ -119,7 +130,7 @@ const command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      'usage: walkthrough start [--target <branch>] | guide | files | steps < steps.json | listen | say [--answer <id>] [--question] <text> | stop | prune [<branch>]',
+      'usage: walkthrough start [--target <branch>] | guide | files | steps < steps.json | checklist < checklist.json | listen | say [--answer <id>] [--question] <text> | stop | prune [<branch>]',
     );
   await command(rest);
 } catch (error) {

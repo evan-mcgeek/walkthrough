@@ -12,6 +12,8 @@ export type Step = { id: string; title: string; diff: string; decision: Decision
   | { kind: 'step'; explanation: string; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
+export type ChecklistItem = { id: string; status: string; text: string; steps: string[] };
+export type Checklist = { title: string; items: ChecklistItem[] };
 export type Walkthrough = {
   kind: 'branch';
   branch: string;
@@ -20,6 +22,7 @@ export type Walkthrough = {
   head: string;
   /** Empty until the session records its steps. */
   steps: Step[];
+  checklist?: Checklist;
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
@@ -62,6 +65,17 @@ export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => St
     walkthrough.steps = build(walkthrough);
     writeJson(file(dir), walkthrough);
     return walkthrough;
+  });
+}
+
+/** Replaces the checklist; `build` sees the saved walkthrough under the lock. */
+export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Checklist {
+  return locked(file(dir), () => {
+    const walkthrough = readWalkthrough(dir);
+    if (!walkthrough) throw new Error('there is no walkthrough of this branch yet; run walkthrough start first');
+    walkthrough.checklist = build(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return walkthrough.checklist;
   });
 }
 

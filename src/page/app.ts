@@ -1,7 +1,7 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
 import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Entry, SessionMessage, SessionState, SessionView } from '../session';
-import type { Decision, Step, Walkthrough } from '../walkthrough';
+import type { Checklist, Decision, Step, Walkthrough } from '../walkthrough';
 
 const token = location.pathname.split('/')[2] ?? '';
 
@@ -273,6 +273,28 @@ function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
   return nav;
 }
 
+function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement {
+  const heading = el('h2', { id: 'checklist' }, title);
+  const rows = items.map(item => {
+    const links = item.steps.flatMap(id => {
+      const at = steps.findIndex(step => step.id === id);
+      const step = steps[at];
+      // A step recorded again may no longer have the id the item links to.
+      return step ? [el('a', { href: `#${encodeURIComponent(id)}`, title: step.title }, `Step ${String(at + 1)}`)] : [];
+    });
+    return el(
+      'li',
+      {},
+      el('span', { className: 'status' }, item.status),
+      el('p', { className: 'item-text' }, item.text),
+      ...(links.length ? [el('p', { className: 'links' }, ...links)] : []),
+    );
+  });
+  const section = el('section', { className: 'checklist' }, heading, el('ul', {}, ...rows));
+  section.setAttribute('aria-labelledby', heading.id);
+  return section;
+}
+
 function render(): void {
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
@@ -300,11 +322,15 @@ function render(): void {
     ),
   );
   const current = currentStep(walkthrough);
+  const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
     ...(current
-      ? [stepsNav(steps, current), stepView(current, steps)]
-      : [el('p', { className: 'notice' }, 'The session is preparing the steps; they appear here as it records them.')]),
+      ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist), stepView(current, steps)]
+      : [
+          el('p', { className: 'notice' }, 'The session is preparing the steps; they appear here as it records them.'),
+          ...checklist,
+        ]),
   );
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
