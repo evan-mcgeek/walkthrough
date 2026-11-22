@@ -64,7 +64,7 @@ walkthrough steps < steps.json
   Records the steps, replacing those recorded before, and prints each step's id and title in order.
   A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, or else a new id; its notes and checklist links follow the id.
   A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
-  Standard input is a JSON array of steps in reading order.
+  Standard input is a JSON array of steps in reading order; a step shows its files in the order given.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
     {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
