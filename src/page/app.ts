@@ -120,18 +120,25 @@ function sessionChip(): HTMLElement {
 /** Nothing in an exported file is sent anywhere, so it has no boxes to type into. */
 const writable = (form: HTMLFormElement) => (readOnly ? [] : [form]);
 
-function draftBox(draft: string, label: string, action: string, onSend: () => void): HTMLFormElement {
-  const box = el('textarea', { rows: 2, value: drafts.get(draft) ?? '', placeholder: label });
+function draftArea(draft: string, label: string, start = '', rows = 2): HTMLTextAreaElement {
+  const box = el('textarea', { rows, value: drafts.get(draft) ?? start, placeholder: label });
   box.dataset['draft'] = draft;
   box.setAttribute('aria-label', label);
   box.oninput = () => drafts.set(draft, box.value);
-  const form = el('form', { className: 'draft' }, box, el('button', { type: 'submit' }, action));
+  return box;
+}
+
+function draftForm(boxes: HTMLTextAreaElement[], action: string, onSend: () => void): HTMLFormElement {
+  const form = el('form', { className: 'draft' }, ...boxes, el('button', { type: 'submit' }, action));
   form.onsubmit = event => {
     event.preventDefault();
     onSend();
   };
   return form;
 }
+
+const draftBox = (draft: string, label: string, action: string, onSend: () => void) =>
+  draftForm([draftArea(draft, label)], action, onSend);
 
 /** The person's words as they typed them; the session's as Markdown. */
 const said = (entry: Entry) =>
@@ -225,28 +232,18 @@ function decisionSaid(decision: Decision): HTMLElement[] {
 
 function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
   const draft = (field: string) => `decide:${itemKey(item)}:${action.id}:${field}`;
-  const box = (field: string, label: string, start = '') => {
-    const area = el('textarea', { rows: 3, value: drafts.get(draft(field)) ?? start, placeholder: label });
-    area.dataset['draft'] = draft(field);
-    area.setAttribute('aria-label', label);
-    area.oninput = () => drafts.set(draft(field), area.value);
-    return area;
-  };
-  const form = el(
-    'form',
-    { className: 'draft taking' },
-    ...(action.edit ? [box('text', 'Text', text)] : []),
-    ...(action.note ? [box('note', 'Note')] : []),
-    el('button', { type: 'submit' }, 'Send'),
-    el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'),
-  );
-  form.onsubmit = event => {
-    event.preventDefault();
+  const boxes = [
+    ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
+    ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
+  ];
+  const form = draftForm(boxes, 'Send', () => {
     void decide(item, action.id, {
       ...(action.note && { note: drafts.get(draft('note')) ?? '' }),
       ...(action.edit && { text: drafts.get(draft('text')) ?? text }),
     });
-  };
+  });
+  form.classList.add('taking');
+  form.append(el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'));
   return form;
 }
 
