@@ -87,7 +87,7 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    Never run it in the foreground: it blocks until the person acts on the page.
 2. When it exits you are woken with its output, one JSON line per thing the person sent, in the shapes `walkthrough guide` prints.
    - An ask: answer it from the change at the pinned head with `walkthrough say --answer <id> "<answer>"`.
-     An ask with a file and lines is about those lines, and the answer shows on them.
+     An ask with a file and lines is about those lines, and the answer is a note on them, labelled with `--as "<label>"` as the review policy names it ("Answer" without one); `say` prints its id, so you can record actions on it.
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
    - A reply: the person's reply to a question you asked or to a note, which comes with the note's label and text; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.

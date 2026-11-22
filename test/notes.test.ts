@@ -159,6 +159,48 @@ describe('an ask about lines', () => {
     ]);
   });
 
+  test('is answered with a note on those lines, labelled by the session, that takes replies and actions', async () => {
+    repo = started();
+    const listener = repo.background('listen');
+    await post(repo.url(), '/ask', { step: '1', file: 'cart.ts', lines: [1, 3], text: 'Why three?' });
+    const [asked] = handed((await listener.ended).stdout);
+
+    const said = repo.run('say', '--answer', String(asked?.['id']), '--as', 'Finding', 'They could be one.');
+    const plain = repo.run('say', '--answer', String(asked?.['id']), 'Or kept apart.');
+
+    expect(said.stderr).toBe('');
+    expect(said.stdout).toMatch(/^Said on the page as note [0-9a-f]{8} \(Finding\)\.\n$/);
+    const answers = (await sessionAt(repo.url())).conversation.flatMap(entry => (entry.from === 'session' ? [entry] : []));
+    expect(answers.map(entry => [entry.answer, entry.note?.label, entry.note?.lines])).toEqual([
+      [asked?.['id'], 'Finding', [1, 3]],
+      [asked?.['id'], 'Answer', [1, 3]],
+    ]);
+    expect(plain.stdout).toMatch(/\(Answer\)/);
+    const noteId = /note ([0-9a-f]{8})/.exec(said.stdout)?.[1] ?? '';
+    const replying = repo.background('listen');
+    expect((await post(repo.url(), '/reply', { to: noteId, text: 'Agreed.' })).status).toBe(200);
+    expect(handed((await replying.ended).stdout)[0]).toMatchObject({
+      kind: 'reply',
+      to: noteId,
+      about: { label: 'Finding', text: 'They could be one.' },
+    });
+    const actions = repo.record([{ item: { type: 'note', id: noteId }, actions: [{ id: 'fix', label: 'Fix it' }] }], 'actions');
+    expect(actions.stderr).toBe('');
+  });
+
+  test('takes a label with --as only on an answer to a question about lines', async () => {
+    repo = started();
+    const listener = repo.background('listen');
+    await post(repo.url(), '/ask', { step: '1', text: 'Why a cart?' });
+    const [asked] = handed((await listener.ended).stdout);
+
+    for (const args of [['--as', 'Finding', 'Text'], ['--answer', String(asked?.['id']), '--as', 'Finding', 'Text']]) {
+      const refused = repo.run('say', ...args);
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toContain('--as is for an answer to a question about lines');
+    }
+  });
+
   test('is refused when the lines are not in the step', async () => {
     repo = started();
 

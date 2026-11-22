@@ -165,13 +165,19 @@ const anchorOf = (entry: Note | Ask) => {
   return at === undefined ? placeOf(entry).step : at;
 };
 
+/** A note that answers an ask shows in the ask's thread, with its own replies. */
+const answersAsk = (entry: Entry) => isNote(entry) && entry.answer !== undefined;
+
 function askThread(asked: Ask): HTMLElement {
   const answers = followUps(asked);
+  const inNotes = new Set(answers.filter(isNote).flatMap(note => followUps(note).map(entry => entry.id)));
   return el(
     'div',
     { className: 'thread' },
     said(asked),
-    ...(answers.length ? answers.map(said) : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
+    ...(answers.length
+      ? answers.filter(entry => !inNotes.has(entry.id)).map(entry => (isNote(entry) ? noteView(entry) : said(entry)))
+      : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
   );
 }
 
@@ -506,7 +512,7 @@ const opened = new Set<string>();
 
 function stepBody(step: Step): HTMLElement[] {
   const pinned = session.conversation.filter(
-    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === step.id,
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === step.id,
   );
   const stepNotes = pinned.filter(isNote).filter(note => !note.note.lines);
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
@@ -653,7 +659,7 @@ function unplacedView(): HTMLElement[] {
 
 function detachedView(): HTMLElement[] {
   const gone = session.conversation.filter(
-    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === null,
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null,
   );
   if (!gone.length) return [];
   const title = el('h2', { id: 'detached' }, 'Detached');

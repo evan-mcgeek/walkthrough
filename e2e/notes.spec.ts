@@ -83,10 +83,21 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(pinned.getByText('Why three constants?')).toBeVisible();
   await expect(pinned.getByText('Waiting for the session to answer.')).toBeVisible();
 
-  repo.run('say', '--answer', asked.id, 'Each is used once.');
+  repo.run('say', '--answer', asked.id, '--as', 'Finding', 'Each is used *once*.');
 
-  await expect(pinned.getByText('Each is used once.')).toBeVisible();
+  const answer = pinned.getByRole('article', { name: 'Finding' });
+  await expect(answer.locator('em', { hasText: 'once' })).toBeVisible();
+  await expect(answer).toContainText('Lines 2-4');
   await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
+  await expect(pinned.getByRole('article')).toHaveCount(1);
+
+  const replying = repo.background('listen');
+  await answer.getByRole('textbox', { name: 'Reply' }).fill('Then merge them.');
+  await answer.getByRole('button', { name: 'Reply' }).click();
+
+  expect(JSON.parse((await replying.ended).stdout)).toMatchObject({ kind: 'reply', text: 'Then merge them.' });
+  await expect(answer.getByText('Then merge them.')).toBeVisible();
+  await expect(pinned.getByText('Then merge them.')).toHaveCount(1);
 });
 
 test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {

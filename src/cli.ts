@@ -187,13 +187,19 @@ async function listenCommand(args: string[]): Promise<void> {
 
 async function sayCommand(args: string[]): Promise<void> {
   const { values, positionals, dir } = current(args, {
-    options: { answer: { type: 'string' }, question: { type: 'boolean' }, choice: { type: 'string', multiple: true } },
+    options: {
+      answer: { type: 'string' },
+      as: { type: 'string' },
+      question: { type: 'boolean' },
+      choice: { type: 'string', multiple: true },
+    },
     allowPositionals: true,
   });
   const text = positionals.join(' ').trim();
-  if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question [--choice <answer>]...] <text>');
-  await say(dir, text, values);
-  console.log('Said on the page.');
+  if (!text)
+    throw new Error('usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] <text>');
+  const said = await say(dir, text, { ...values, label: values.as });
+  console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : 'Said on the page.');
 }
 
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
@@ -247,7 +253,7 @@ try {
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
-        '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
+        '    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list\n' +
         '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
     );

@@ -124,7 +124,7 @@ walkthrough decisions
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
     {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
-    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer shows on those lines
+    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer is a note on those lines
     {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
@@ -132,8 +132,10 @@ walkthrough listen
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
-walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
+walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>
   Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
+  An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
+  the person can reply to it like any note, and you can record actions on it.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
   Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
 

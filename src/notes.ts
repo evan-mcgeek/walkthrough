@@ -12,6 +12,13 @@ export type Place = { step: string; file?: string; lines?: Lines; linesHash?: st
 export type NoteMark = Place & { label: string; low?: true };
 export type NoteInput = NoteMark & { text: string };
 
+export const placeOnly = ({ step, file, lines, linesHash }: Place): Place => ({
+  step,
+  ...(file !== undefined && { file }),
+  ...(lines && { lines }),
+  ...(linesHash !== undefined && { linesHash }),
+});
+
 const isLines = (value: unknown): value is Lines =>
   Array.isArray(value) &&
   value.length === 2 &&

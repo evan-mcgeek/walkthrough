@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
-import { type NoteInput, type NoteMark, type Place, placeIn } from './notes';
+import { type NoteInput, type NoteMark, type Place, placeIn, placeOnly } from './notes';
 import { alive, psStart } from './processes';
 import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
@@ -150,19 +150,25 @@ export async function reply(dir: string, to: unknown, text: unknown): Promise<Se
   return request(dir, { kind: 'reply', to, text: said });
 }
 
+// An answer to a question about lines is a note on those lines, so the person can reply to it and the session can offer actions on it.
 export async function say(
   dir: string,
   text: string,
-  { answer, question, choice = [] }: { answer?: string; question?: boolean; choice?: string[] },
-): Promise<void> {
+  { answer, question, choice = [], label }: { answer?: string; question?: boolean; choice?: string[]; label?: string | undefined },
+): Promise<SessionMessage> {
   const choices = choice.map(one => one.trim());
   if (choices.length && !question) throw new Error('--choice needs --question');
   if (choices.some(one => !one)) throw new Error('a choice needs text');
-  await hold(dir, () => {
+  return hold(dir, () => {
     const { conversation } = files(dir);
-    if (answer && !readLines<Entry>(conversation).some(entry => entry.from === 'page' && entry.id === answer))
-      throw new Error(`the page sent no request ${answer}`);
-    append(conversation, {
+    const request = readLines<Entry>(conversation).find(
+      (entry): entry is PageRequest => answer !== undefined && entry.from === 'page' && entry.id === answer,
+    );
+    if (answer && !request) throw new Error(`the page sent no request ${answer}`);
+    const onLines = request?.kind === 'ask' && request.lines ? request : undefined;
+    if (label !== undefined && !onLines) throw new Error('--as is for an answer to a question about lines');
+    const place = onLines && placeOnly(onLines);
+    const entry: SessionMessage = {
       id: newId(),
       from: 'session',
       at: stamp(),
@@ -170,7 +176,10 @@ export async function say(
       ...(answer && { answer }),
       ...(question && { question: true as const }),
       ...(choices.length && { choices }),
-    });
+      ...(place && { note: { ...place, label: label?.trim() || 'Answer' } }),
+    };
+    append(conversation, entry);
+    return entry;
   });
 }
 
