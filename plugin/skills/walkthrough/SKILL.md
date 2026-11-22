@@ -24,6 +24,8 @@ Run any reviewer in a fresh context, and never treat the author session's own su
    Running `walkthrough start` again on the same head reopens the walkthrough with their decisions intact.
 6. Listen for the page, as below, until the walkthrough stops.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
+8. When the person asks to share or keep the walkthrough, run `walkthrough export`, with `--out <file>` when they name a place, and tell them the path it prints.
+9. When the person asks which walkthroughs they have open or wants to find one they left, run `walkthrough list`; `walkthrough stop --list` ends that page.
 
 ## Review policy
 

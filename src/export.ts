@@ -1,0 +1,38 @@
+// A walkthrough as one read-only HTML file: the page itself with its script, style and state inlined, opened with no server.
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { walkthroughView } from './decisions';
+import { PAGE } from './server';
+import { sessionView } from './session';
+
+const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
+
+function inline(html: string, tag: string, replacement: string): string {
+  if (!html.includes(tag)) throw new Error(`the page has no ${tag} to inline`);
+  return html.replace(tag, () => replacement);
+}
+
+/** The HTML of the walkthrough in `dir` as it is now, loading nothing and sending nothing. */
+export function exportPage(dir: string): string {
+  const read = (file: string) => fs.readFileSync(path.join(PAGE, file), 'utf8');
+  // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.
+  const script = read('app.js').replace(/<(?=!--|\/script)/gi, '\\x3C');
+  const style = read('style.css');
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir) };
+  // The state is data and never runs, so a `<` in it cannot end its element.
+  const data = JSON.stringify(state).replaceAll('<', '\\u003c');
+  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; base-uri 'none'; form-action 'none'`;
+  let html = read('index.html');
+  html = inline(
+    html,
+    '<link rel="stylesheet" href="style.css" />',
+    `<meta http-equiv="content-security-policy" content="${policy}" />\n    <style>${style}</style>`,
+  );
+  html = inline(
+    html,
+    '<script type="module" src="app.js"></script>',
+    `<script type="application/json" id="exported">${data}</script>\n    <script type="module">${script}</script>`,
+  );
+  return html;
+}
