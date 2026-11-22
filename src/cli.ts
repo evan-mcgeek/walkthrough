@@ -166,8 +166,17 @@ async function listenCommand(args: string[]): Promise<void> {
     console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
     process.exitCode = 3;
   } else if (taken === 'stopped') console.log(JSON.stringify({ kind: 'stopped' }));
-  // The fingerprint only matches a decision to its item.
-  else for (const request of taken) console.log(JSON.stringify({ ...request, on: undefined }));
+  else {
+    const conversation = conversationOf(dir);
+    // A reply carries its note, so the session need not look it up.
+    const about = (to: string) => {
+      const noted = conversation.find(entry => entry.id === to && entry.from === 'session' && entry.note);
+      return noted?.from === 'session' && noted.note ? { label: noted.note.label, text: noted.text } : undefined;
+    };
+    for (const request of taken)
+      // The fingerprint only matches a decision to its item.
+      console.log(JSON.stringify({ ...request, on: undefined, ...(request.kind === 'reply' && { about: about(request.to) }) }));
+  }
 }
 
 async function sayCommand(args: string[]): Promise<void> {

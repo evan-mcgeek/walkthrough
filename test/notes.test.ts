@@ -70,7 +70,7 @@ describe('walkthrough note', () => {
     expect((await sessionAt(repo.url())).conversation).toEqual([]);
   });
 
-  test('takes a reply to a note to the listener, and the session answers it', async () => {
+  test('takes a reply to a note to the listener with the note it is about, and the session answers it', async () => {
     repo = started();
     note([{ step: '1', label: 'Risk', text: 'Login lets everyone in.' }]);
     const [pinned] = (await sessionAt(repo.url())).conversation;
@@ -79,7 +79,12 @@ describe('walkthrough note', () => {
     expect((await post(repo.url(), '/reply', { to: pinned?.id, text: 'On purpose for now.' })).status).toBe(200);
 
     const [replied] = handed((await listener.ended).stdout);
-    expect(replied).toMatchObject({ kind: 'reply', to: pinned?.id, text: 'On purpose for now.' });
+    expect(replied).toMatchObject({
+      kind: 'reply',
+      to: pinned?.id,
+      text: 'On purpose for now.',
+      about: { label: 'Risk', text: 'Login lets everyone in.' },
+    });
     expect(repo.run('say', '--answer', String(replied?.['id']), 'Then I leave it.').status).toBe(0);
     expect((await sessionAt(repo.url())).conversation.map(entry => entry.text)).toEqual([
       'Login lets everyone in.',

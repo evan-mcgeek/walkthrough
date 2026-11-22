@@ -122,7 +122,8 @@ walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
     {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
     {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer shows on those lines
-    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a note or to a question the session asked
+    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
+    {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.

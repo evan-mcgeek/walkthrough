@@ -89,7 +89,7 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
      An ask with a file and lines is about those lines, and the answer shows on them.
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
-   - A reply: the person's reply to a question you asked or to a note; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
+   - A reply: the person's reply to a question you asked or to a note, which comes with the note's label and text; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
    - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
      A later decision on the same item replaces the earlier one.
    - Stopped: tell the person in one line and do not listen again.
