@@ -115,7 +115,7 @@ describe('walkthrough actions', () => {
     expect((await shownAt(repo.url())).actions['step:1']?.map(action => action.id)).toEqual(['approve', 'flag']);
   });
 
-  test('recording the steps or the checklist again drops the actions defined on them', async () => {
+  test('recording the steps again keeps the actions of steps that keep their id; recording the checklist drops its own', async () => {
     started();
     repo.record(
       [
@@ -129,7 +129,17 @@ describe('walkthrough actions', () => {
     repo.record({ title: 'Criteria', items: [{ status: 'met', text: 'Other.' }] }, 'checklist');
 
     expect(Object.keys((await shownAt(repo.url())).actions)).toEqual(['step:1']);
-    expect((await shownAt(repo.url())).actions['step:1']?.[0]?.id).toBe('approve');
+    expect((await shownAt(repo.url())).actions['step:1']?.[0]?.id).toBe('ship');
+  });
+
+  test('a step that is gone takes its actions with it', async () => {
+    started();
+    repo.record([{ title: 'Login', explanation: 'Adds login.', files: ['login.ts'] }, { title: 'App', explanation: 'Bumps.', files: ['app.ts'] }]);
+    repo.record([{ item: { type: 'step', id: '2' }, actions: [{ id: 'ship', label: 'Ship it' }] }], 'actions');
+
+    repo.record(ONE_STEP);
+
+    expect(Object.keys((await shownAt(repo.url())).actions)).toEqual(['step:1']);
   });
 
   test('records nothing and names the problem when an action does not fit', async () => {

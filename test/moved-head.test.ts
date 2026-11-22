@@ -90,3 +90,45 @@ describe('a new head', () => {
     expect((await shown()).decided['step:2']).toMatchObject({ action: 'approve' });
   });
 });
+
+const CART = { title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] };
+
+describe('recording the steps again', () => {
+  test('a step keeps its id, decision and read mark by its files, whatever its place, and prints the ids', async () => {
+    await decidedTwice();
+
+    const recorded = repo.record([APP, LOGIN]);
+
+    expect(recorded.stdout).toBe('Recorded 2 steps: 2 (App), 1 (Login).\n');
+    const view = await shown();
+    expect(view.steps.map(step => step.id)).toEqual(['2', '1']);
+    expect(view.decided).toMatchObject({ 'step:1': { action: 'approve' }, 'step:2': { action: 'approve' } });
+    expect(view.reopened).toEqual({});
+    expect(view.read).toEqual(['2', '1']);
+  });
+
+  test('new files go in new steps with new ids, never the id of a step gone', async () => {
+    await decidedTwice();
+    moveHead({ 'app.ts': 'export const app = 1;\n' });
+    repo.run('start');
+    moveHead({ 'cart.ts': 'export const cart = [];\n' });
+    repo.run('start');
+
+    const recorded = repo.record([LOGIN, CART]);
+
+    expect(recorded.stdout).toBe('Recorded 2 steps: 1 (Login), 3 (Cart).\n');
+    const view = await shown();
+    expect(view.decided).toMatchObject({ 'step:1': { action: 'approve' }, 'step:3': null });
+    expect(view.reopened).toEqual({});
+  });
+
+  test('a step taking files of several steps keeps the id of the one it shares most with, and is reopened', async () => {
+    await decidedTwice();
+
+    repo.record([{ title: 'All', explanation: 'Everything.', files: ['app.ts', 'login.ts'] }]);
+
+    const view = await shown();
+    expect(view.steps.map(step => step.id)).toEqual(['1']);
+    expect(view.reopened['step:1']).toMatchObject({ action: 'approve' });
+  });
+});

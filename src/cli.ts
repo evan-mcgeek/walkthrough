@@ -106,7 +106,8 @@ function steps(args: string[]): void {
   const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
   const { steps: recorded } = recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter(step => step.kind === 'folded').length;
-  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
+  const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
+  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
 }
 
 function notes(args: string[]): void {

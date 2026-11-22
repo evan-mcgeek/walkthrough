@@ -49,7 +49,7 @@ describe('walkthrough steps', () => {
 
     expect(recorded.stderr).toBe('');
     expect(recorded.status).toBe(0);
-    expect(recorded.stdout).toContain('Recorded 2 steps.');
+    expect(recorded.stdout).toBe('Recorded 2 steps: 1 (Login check), 2 (App version).\n');
     const { steps } = await shownAt(repo.url());
     expect(steps.map(step => step.title)).toEqual(['Login check', 'App version']);
     expect(steps[0]).toMatchObject({
@@ -147,7 +147,7 @@ describe('folded steps', () => {
     const recorded = repo.record([loginSteps[1], folded, { ...loginSteps[0], files: ['login.ts'] }]);
 
     expect(recorded.stderr).toBe('');
-    expect(recorded.stdout).toContain('Recorded 3 steps, 1 of them folded.');
+    expect(recorded.stdout).toBe('Recorded 3 steps, 1 of them folded: 1 (App version), 2 (Regenerated files), 3 (Login check).\n');
     const { steps } = await shownAt(repo.url());
     expect(steps.map(step => step.kind)).toEqual(['step', 'folded', 'step']);
     expect(steps[1]).toMatchObject({
