@@ -3,26 +3,19 @@ import { expect, test } from './walkthrough';
 const steps = [
   {
     title: 'Login check',
-    what: 'Adds a login function that lets everyone in.',
-    why: 'The app needs a login entry point.',
-    files: ['login.ts'],
-    tests: ['login.test.ts'],
+    explanation: 'Adds a login function that lets everyone in.\n\nThe app needs a login entry point.',
+    files: ['login.ts', 'login.test.ts'],
   },
   {
-    title: 'App version',
-    what: 'Bumps the app constant and adds a dependency.',
-    why: 'The app now has login.',
-    files: ['app.ts', 'package.json'],
+    title: 'Regenerated schema',
+    folded: true,
+    files: [{ path: 'schema.json', reason: 'Regenerated from the schema source.' }],
+    problems: ['schema.json still lists the removed field.'],
   },
+  { title: 'App version', explanation: 'Bumps the app constant.', files: ['app.ts'] },
 ];
 
-test.use({
-  files: {
-    'login.test.ts': "test('login', () => {});\n",
-    'package.json': '{"dependencies":{"left-pad":"^1.3.0"}}\n',
-    'package-lock.json': '{"lockfileVersion":3,"packages":{"":{"dependencies":{"left-pad":"^1.2.0"}}}}\n',
-  },
-});
+test.use({ files: { 'login.test.ts': "test('login', () => {});\n", 'schema.json': '{"field": 1}\n' } });
 
 // Asking for the url starts the walkthrough with the page open; the steps come after, as the skill records them.
 test.beforeEach(async ({ page, repo, url }) => {
@@ -32,32 +25,39 @@ test.beforeEach(async ({ page, repo, url }) => {
   await page.reload();
 });
 
-test('shows one step at a time with what changed, why and its tests, and moves between steps', async ({ page }) => {
+test('shows one step at a time with its explanation and files, folded steps collapsed, and moves between steps', async ({
+  page,
+}) => {
   const nav = page.getByRole('navigation', { name: 'Steps' });
-  await expect(nav.getByRole('link')).toHaveText(['1. Login check', '2. App version', '3. Mechanical changes']);
+  await expect(nav.getByRole('link')).toHaveText(['1. Login check', '2. Regenerated schema', '3. App version']);
   const first = page.getByRole('region', { name: 'Login check' });
-  await expect(first.getByText('Adds a login function that lets everyone in.')).toBeVisible();
-  await expect(first.getByText('The app needs a login entry point.')).toBeVisible();
-  await expect(first.getByText('Tests: login.test.ts', { exact: true })).toBeVisible();
+  await expect(first.getByText('Adds a login function that lets everyone in.', { exact: true })).toBeVisible();
+  await expect(first.getByText('The app needs a login entry point.', { exact: true })).toBeVisible();
+  await expect(first.getByText('Files: login.ts, login.test.ts', { exact: true })).toBeVisible();
   await expect(first.locator('.d2h-ins')).toContainText(["test('login', () => {});", 'export const login = () => true;']);
-  await expect(page.getByRole('region', { name: 'App version' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Regenerated schema' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Next' }).click();
-  const second = page.getByRole('region', { name: 'App version' });
-  await expect(second.getByText('No tests in this step.')).toBeVisible();
+  const folded = page.getByRole('region', { name: 'Regenerated schema' });
+  await expect(folded.getByText('Folded by the session, not shown line by line.')).toBeVisible();
+  await expect(folded.getByRole('listitem').filter({ hasText: 'schema.json:' })).toHaveText(
+    'schema.json: Regenerated from the schema source.',
+  );
+  await expect(folded.getByRole('listitem').filter({ hasText: 'removed field' })).toHaveText(
+    'schema.json still lists the removed field.',
+  );
+  const added = folded.locator('.d2h-code-line-ctn').filter({ hasText: '{"field": 1}' });
+  await expect(added).toBeHidden();
+  await folded.getByText('Show the diff').click();
+  await expect(added).toBeVisible();
   await expect(page.getByRole('region', { name: 'Login check' })).toHaveCount(0);
 
-  await nav.getByRole('link', { name: '3. Mechanical changes' }).click();
-  const mechanical = page.getByRole('region', { name: 'Mechanical changes' });
-  await expect(mechanical.getByText('package-lock.json (lockfile)')).toBeVisible();
-  await expect(mechanical.getByText('Checked for consistency, not line by line.')).toBeVisible();
-  await expect(mechanical.getByRole('listitem').filter({ hasText: 'does not match' })).toHaveText(
-    'package-lock.json does not match package.json: dependencies left-pad is ^1.3.0 in package.json but ^1.2.0 in package-lock.json',
-  );
+  await nav.getByRole('link', { name: '3. App version' }).click();
+  await expect(page.getByRole('region', { name: 'App version' }).getByText('Bumps the app constant.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 
   await page.getByRole('button', { name: 'Previous' }).click();
-  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
 test('shows how many steps are decided and left, and approving moves on to the next open step', async ({ page }) => {
@@ -66,27 +66,27 @@ test('shows how many steps are decided and left, and approving moves on to the n
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
   await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();
-  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Steps' }).getByRole('link', { name: '1. Login check' })).toHaveClass(
     /decided/,
   );
 
   await page.reload();
   await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();
-  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
 test('a redraw from the session keeps the step being read and its opened diff', async ({ page, repo }) => {
-  await page.getByRole('navigation', { name: 'Steps' }).getByRole('link', { name: '3. Mechanical changes' }).click();
-  const mechanical = page.getByRole('region', { name: 'Mechanical changes' });
-  await mechanical.getByText('Show the diff').click();
-  await expect(mechanical.locator('details')).toHaveAttribute('open', '');
+  await page.getByRole('navigation', { name: 'Steps' }).getByRole('link', { name: '2. Regenerated schema' }).click();
+  const folded = page.getByRole('region', { name: 'Regenerated schema' });
+  await folded.getByText('Show the diff').click();
+  await expect(folded.locator('details')).toHaveAttribute('open', '');
   const address = page.url();
 
   repo.background('listen');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
 
   expect(page.url()).toBe(address);
-  await expect(mechanical).toBeVisible();
-  await expect(mechanical.locator('details')).toHaveAttribute('open', '');
+  await expect(folded).toBeVisible();
+  await expect(folded.locator('details')).toHaveAttribute('open', '');
 });

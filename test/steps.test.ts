@@ -12,16 +12,28 @@ const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthr
 const loginSteps = [
   {
     title: 'Login check',
-    what: 'Adds a login function that lets everyone in.',
-    why: 'The app needs a login entry point.',
-    files: ['login.ts'],
-    tests: ['login.test.ts'],
+    explanation: 'Adds a login function that lets everyone in, with its test.',
+    files: ['login.ts', 'login.test.ts'],
   },
-  { title: 'App version', what: 'Bumps the app constant.', why: 'The app now has login.', files: ['app.ts'], tests: [] },
+  { title: 'App version', explanation: 'Bumps the app constant because the app now has login.', files: ['app.ts'] },
 ];
 
+describe('walkthrough files', () => {
+  test('lists every changed file at its head path, in path order, without judging any', () => {
+    repo = makeRepo({ start: { 'auth.ts': 'export const auth = 1;\n' }, feature: { 'schema.json': '{}\n' } });
+    git(repo.dir, 'mv', 'auth.ts', 'session.ts');
+    git(repo.dir, 'commit', '-m', 'Rename auth');
+    repo.run('start');
+
+    const listed = repo.run('files');
+
+    expect(listed.stderr).toBe('');
+    expect(listed.stdout).toBe(['app.ts', 'login.ts', 'schema.json', 'session.ts', ''].join('\n'));
+  });
+});
+
 describe('walkthrough steps', () => {
-  test('records the steps in the given order, each with its own diff and its tests', async () => {
+  test('records the steps in the given order, each with its explanation and its own diff', async () => {
     repo = makeRepo({ feature: { 'login.test.ts': "test('login', () => {});\n" } });
     repo.run('start');
 
@@ -33,11 +45,10 @@ describe('walkthrough steps', () => {
     const { steps } = await shownAt(repo.url());
     expect(steps.map(step => step.title)).toEqual(['Login check', 'App version']);
     expect(steps[0]).toMatchObject({
-      kind: 'logical',
-      what: 'Adds a login function that lets everyone in.',
-      why: 'The app needs a login entry point.',
-      files: ['login.ts'],
-      tests: ['login.test.ts'],
+      id: '1',
+      kind: 'step',
+      explanation: 'Adds a login function that lets everyone in, with its test.',
+      files: ['login.ts', 'login.test.ts'],
       decision: null,
     });
     expect(steps[0]?.diff).toContain('+export const login = () => true;');
@@ -52,24 +63,25 @@ describe('walkthrough steps', () => {
     repo.run('start');
 
     const refused = repo.record([
-      { title: 'Login', what: 'Adds login.', why: 'Needed.', files: ['login.ts', 'other.ts'], tests: ['login.ts'] },
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'other.ts'] },
+      { title: 'Folded', folded: true, files: [{ path: 'login.ts', reason: 'Listed twice.' }] },
     ]);
 
     expect(refused.status).toBe(1);
-    expect(refused.stderr).toContain('login.ts is listed more than once');
+    expect(refused.stderr).toContain('login.ts is in more than one step');
     expect(refused.stderr).toContain('other.ts is not changed in this walkthrough');
     expect(refused.stderr).toContain('no step has app.ts, login.test.ts');
     expect((await shownAt(repo.url())).steps.map(step => step.kind)).toEqual(['whole']);
   });
 
-  test('refuses a step without what changed and why', () => {
+  test('refuses a step without an explanation', () => {
     repo = makeRepo();
     repo.run('start');
 
-    const refused = repo.record([{ title: 'All', what: '', files: ['login.ts', 'app.ts'] }]);
+    const refused = repo.record([{ title: 'All', explanation: '', files: ['login.ts', 'app.ts'] }]);
 
     expect(refused.status).toBe(1);
-    expect(refused.stderr).toContain('step 1 needs a what');
+    expect(refused.stderr).toContain('step 1 needs an explanation');
   });
 
   test('keeps a renamed file together with its old path in its step diff', async () => {
@@ -79,170 +91,88 @@ describe('walkthrough steps', () => {
     repo.run('start');
 
     expect(
-      repo.record([{ title: 'All', what: 'Everything.', why: 'Login.', files: ['login.ts', 'app.ts', 'session.ts'] }])
-        .stderr,
+      repo.record([{ title: 'All', explanation: 'Everything.', files: ['login.ts', 'app.ts', 'session.ts'] }]).stderr,
     ).toBe('');
 
     expect((await shownAt(repo.url())).steps[0]?.diff).toContain('rename from auth.ts');
   });
 });
 
-const manifest = (version: string) => `${JSON.stringify({ name: 'shop', dependencies: { 'left-pad': version } })}\n`;
-const lockfile = (version: string) =>
-  `${JSON.stringify({ name: 'shop', lockfileVersion: 3, packages: { '': { name: 'shop', dependencies: { 'left-pad': version } } } })}\n`;
+describe('folded steps', () => {
+  const noProblems = {
+    title: 'Regenerated files',
+    folded: true,
+    files: [{ path: 'schema.json', reason: 'Regenerated from the schema source.' }],
+  };
+  const folded = { ...noProblems, problems: ['schema.json still lists the removed field.'] };
 
-/** One changed file of every mechanical kind, and .gitignore files that look mechanical but are not. */
-const mechanicalRepo = () =>
-  makeRepo({
-    start: {
-      '.gitattributes': 'api/client.ts linguist-generated=true\n',
-      'api/client.ts': 'export const client = 1;\n',
-      'package.json': manifest('^1.0.0'),
-      'package-lock.json': lockfile('^1.0.0'),
-    },
-    feature: {
-      'package.json': manifest('^1.3.0'),
-      'package-lock.json': lockfile('^1.3.0'),
-      'api/client.ts': 'export const client = 2;\n',
-      'proto/user.pb.go': '// Code generated by protoc-gen-go. DO NOT EDIT.\npackage proto\n',
-      '__snapshots__/login.test.ts.snap': 'exports[`login 1`] = `true`;\n',
-      'vendor/lib.js': 'module.exports = 1;\n',
-      'vendor/.gitignore': '*.tmp\n',
-      '.gitignore': 'node_modules/\n',
-    },
-  });
-
-const ownSteps = [
-  {
-    title: 'Login',
-    what: 'Adds login and its dependency.',
-    why: 'Login pads names.',
-    files: ['package.json', 'login.ts', 'app.ts'],
-    tests: [],
-  },
-  { title: 'Ignored files', what: 'Ignores build output.', why: 'Keeps it out.', files: ['.gitignore', 'vendor/.gitignore'] },
-];
-
-describe('mechanical files', () => {
-  test('walkthrough files lists the files to group apart from the mechanical ones, each with its reason', () => {
-    repo = mechanicalRepo();
+  test('records a folded step where the session put it, with a reason per file and the problems it found', async () => {
+    repo = makeRepo({ feature: { 'schema.json': '{"field": 1}\n' } });
     repo.run('start');
 
-    const listed = repo.run('files');
-
-    expect(listed.stderr).toBe('');
-    expect(listed.stdout).toBe(
-      [
-        'Group these files into steps:',
-        '  .gitignore',
-        '  app.ts',
-        '  login.ts',
-        '  package.json',
-        '  vendor/.gitignore',
-        'Mechanical, collapsed into the last step by walkthrough itself:',
-        '  __snapshots__/login.test.ts.snap (snapshot)',
-        '  api/client.ts (generated, per .gitattributes)',
-        '  package-lock.json (lockfile)',
-        '  proto/user.pb.go (generated, per its header)',
-        '  vendor/lib.js (vendored)',
-        '',
-      ].join('\n'),
-    );
-  });
-
-  test('form one mechanical step after the recorded steps', async () => {
-    repo = mechanicalRepo();
-    repo.run('start');
-
-    const recorded = repo.record(ownSteps);
+    const recorded = repo.record([loginSteps[1], folded, { ...loginSteps[0], files: ['login.ts'] }]);
 
     expect(recorded.stderr).toBe('');
-    expect(recorded.stdout).toContain('Recorded 3 steps, the last one mechanical with 5 files.');
+    expect(recorded.stdout).toContain('Recorded 3 steps, 1 of them folded.');
     const { steps } = await shownAt(repo.url());
-    expect(steps.map(step => step.title)).toEqual(['Login', 'Ignored files', 'Mechanical changes']);
-    const mechanical = steps[2];
-    expect(mechanical).toMatchObject({ id: 'mechanical', kind: 'mechanical', problems: [], decision: null });
-    expect(mechanical?.kind === 'mechanical' && mechanical.files).toEqual([
-      { path: '__snapshots__/login.test.ts.snap', reason: 'snapshot' },
-      { path: 'api/client.ts', reason: 'generated, per .gitattributes' },
-      { path: 'package-lock.json', reason: 'lockfile' },
-      { path: 'proto/user.pb.go', reason: 'generated, per its header' },
-      { path: 'vendor/lib.js', reason: 'vendored' },
-    ]);
-    expect(mechanical?.diff).toContain('+module.exports = 1;');
-    expect(mechanical?.diff).not.toContain('node_modules/');
+    expect(steps.map(step => step.kind)).toEqual(['step', 'folded', 'step']);
+    expect(steps[1]).toMatchObject({
+      id: '2',
+      kind: 'folded',
+      title: 'Regenerated files',
+      files: [{ path: 'schema.json', reason: 'Regenerated from the schema source.' }],
+      problems: ['schema.json still lists the removed field.'],
+      decision: null,
+    });
+    expect(steps[1]?.diff).toContain('+{"field": 1}');
+    expect(steps[1]?.diff).not.toContain('login');
   });
 
-  test('a mechanical file named in a step is refused', () => {
-    repo = mechanicalRepo();
+  test('a folded step needs a reason for each file; its problems may be left out', async () => {
+    repo = makeRepo({ feature: { 'schema.json': '{}\n' } });
     repo.run('start');
 
-    const refused = repo.record([
-      { ...ownSteps[0], files: ['package.json', 'package-lock.json', 'login.ts', 'app.ts'] },
-      ownSteps[1],
-    ]);
+    const refused = repo.record([...loginSteps, { ...folded, files: [{ path: 'schema.json', reason: ' ' }] }]);
 
     expect(refused.status).toBe(1);
-    expect(refused.stderr).toContain('package-lock.json is mechanical (lockfile); walkthrough puts it in the last step');
-  });
+    expect(refused.stderr).toContain('step 3: every file of a folded step needs a path and a reason');
 
-  test('a .gitignore is never mechanical, so leaving it out of the steps is refused', () => {
-    repo = mechanicalRepo();
-    repo.run('start');
-
-    const refused = repo.record([ownSteps[0]]);
-
-    expect(refused.status).toBe(1);
-    expect(refused.stderr).toContain('no step has .gitignore, vendor/.gitignore');
+    expect(repo.record([{ ...loginSteps[0], files: ['login.ts'] }, loginSteps[1], noProblems]).stderr).toBe('');
+    expect((await shownAt(repo.url())).steps[2]).toMatchObject({ kind: 'folded', problems: [] });
   });
 });
 
-describe('the mechanical step checks consistency', () => {
-  const npmRepo = (feature: Record<string, string>) =>
-    makeRepo({ start: { 'package.json': manifest('^1.0.0'), 'package-lock.json': lockfile('^1.0.0') }, feature });
-  const npmSteps = [{ title: 'Login', what: 'Adds login.', why: 'Login.', files: ['package.json', 'login.ts', 'app.ts'] }];
-  const mechanicalOf = async () => (await shownAt(repo.url())).steps.find(step => step.kind === 'mechanical');
+describe('walkthrough guide', () => {
+  test('prints the shape of every recording command and of what listen prints', () => {
+    repo = makeRepo();
 
-  test('a lockfile that does not match its manifest', async () => {
-    repo = npmRepo({ 'package.json': manifest('^1.3.0'), 'package-lock.json': lockfile('^1.2.0') });
-    repo.run('start');
+    const guide = repo.run('guide');
 
-    const recorded = repo.record(npmSteps);
-
-    const problem =
-      'package-lock.json does not match package.json: dependencies left-pad is ^1.3.0 in package.json but ^1.2.0 in package-lock.json';
-    expect(recorded.stdout).toContain(`Consistency problem: ${problem}`);
-    expect(await mechanicalOf()).toMatchObject({ problems: [problem] });
+    expect(guide.stderr).toBe('');
+    expect(guide.status).toBe(0);
+    for (const shape of [
+      'walkthrough steps',
+      '{"title": string, "explanation": string, "files": [path, ...]}',
+      '{"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}',
+      'walkthrough listen',
+      '{"kind": "ask", "id": string, "step": string, "text": string}',
+      '{"kind": "reply", "id": string, "to": string, "text": string}',
+      '{"kind": "stopped"}',
+      'walkthrough say',
+    ])
+      expect(guide.stdout).toContain(shape);
   });
 
-  test('a manifest whose dependencies changed while its lockfile did not', async () => {
-    repo = npmRepo({ 'package.json': manifest('^1.3.0') });
+  test('the steps it gives as an example are recorded as they are', () => {
+    const example = /Example:\n(\[[\s\S]*?\n\])\n/.exec(makeRepo().run('guide').stdout)?.[1] ?? '';
+    const steps = JSON.parse(example) as { files: (string | { path: string })[] }[];
+    const paths = steps.flatMap(step => step.files.map(file => (typeof file === 'string' ? file : file.path)));
+    repo = makeRepo({ feature: Object.fromEntries(paths.map(file => [file, `${file}\n`])) });
     repo.run('start');
 
-    repo.record(npmSteps);
+    const recorded = repo.record([...steps, { title: 'Login', explanation: 'Login.', files: ['login.ts', 'app.ts'] }]);
 
-    expect(await mechanicalOf()).toMatchObject({
-      files: [],
-      problems: [
-        'package-lock.json does not match package.json: dependencies left-pad is ^1.3.0 in package.json but ^1.0.0 in package-lock.json',
-      ],
-    });
-  });
-
-  test('a mechanical file left with merge conflict markers', async () => {
-    repo = makeRepo({ feature: { 'yarn.lock': '<<<<<<< HEAD\nleft-pad@^1.0.0:\n=======\nleft-pad@^1.3.0:\n>>>>>>> main\n' } });
-    repo.run('start');
-
-    repo.record([{ title: 'Login', what: 'Adds login.', why: 'Login.', files: ['login.ts', 'app.ts'] }]);
-
-    expect(await mechanicalOf()).toMatchObject({ problems: ['yarn.lock has merge conflict markers'] });
-  });
-
-  test('a consistent lockfile has no problems', async () => {
-    repo = npmRepo({ 'package.json': manifest('^1.3.0'), 'package-lock.json': lockfile('^1.3.0') });
-    repo.run('start');
-
-    expect(repo.record(npmSteps).stdout).not.toContain('Consistency problem');
-    expect(await mechanicalOf()).toMatchObject({ problems: [] });
+    expect(recorded.stderr).toBe('');
+    expect(recorded.status).toBe(0);
   });
 });
