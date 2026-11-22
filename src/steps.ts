@@ -1,6 +1,6 @@
 // The skill groups and orders the change into steps; this checks that grouping and builds the steps from git.
 import { changedFiles, diffOf } from './change';
-import { mechanicalFiles } from './mechanical';
+import { consistencyProblems, mechanicalFiles } from './mechanical';
 import type { Step, Walkthrough } from './walkthrough';
 
 export type StepInput = { title: string; what: string; why: string; files: string[]; tests: string[] };
@@ -62,7 +62,9 @@ export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepIn
     diff: diffOf(cwd, base, head, filesOf([...input.files, ...input.tests])),
     decision: null,
   }));
-  if (mechanical.size === 0) return steps;
+  const consistency = consistencyProblems(cwd, head, files, mechanical);
+  // A lockfile that should have changed but did not still needs this step to say so.
+  if (mechanical.size === 0 && consistency.length === 0) return steps;
   return [
     ...steps,
     {
@@ -70,7 +72,7 @@ export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepIn
       kind: 'mechanical',
       title: 'Mechanical changes',
       files: [...mechanical].map(([path, reason]) => ({ path, reason })),
-      problems: [],
+      problems: consistency,
       diff: diffOf(cwd, base, head, filesOf([...mechanical.keys()])),
       decision: null,
     },

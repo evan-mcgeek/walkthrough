@@ -48,7 +48,61 @@ export function mechanicalFiles(cwd: string, base: string, head: string, files: 
   return reasons;
 }
 
-const firstLines = (text: string) => text.slice(0, 2000).split('\n').slice(0, 5).join('\n');
+const NPM_LOCKFILES = ['package-lock.json', 'npm-shrinkwrap.json'];
+const NPM_DEPENDENCIES = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
+
+/** What makes the mechanical files inconsistent at the head: lockfiles off their manifest, or left mid-merge. */
+export function consistencyProblems(
+  cwd: string,
+  head: string,
+  files: ChangedFile[],
+  mechanical: Map<string, string>,
+): string[] {
+  const problems: string[] = [];
+  for (const file of mechanical.keys()) {
+    if (/^(<{7}|>{7})( |$)/m.test(fileAt(cwd, head, file) ?? '')) problems.push(`${file} has merge conflict markers`);
+  }
+  // Simplification: npm only; yarn, pnpm and other lockfiles need their own formats parsed.
+  const npmFolders = new Set(
+    files
+      .map(file => file.path)
+      .filter(file => ['package.json', ...NPM_LOCKFILES].includes(path.posix.basename(file)))
+      .map(file => path.posix.dirname(file)),
+  );
+  for (const folder of npmFolders) {
+    const at = (name: string) => (folder === '.' ? name : `${folder}/${name}`);
+    const manifest = parsed(fileAt(cwd, head, at('package.json')));
+    const lockName = NPM_LOCKFILES.map(at).find(name => fileAt(cwd, head, name) !== null);
+    // Lockfile version 1 has no root package to compare against.
+    const root = lockName ? (parsed(fileAt(cwd, head, lockName))?.['packages'] as Json | undefined)?.[''] : undefined;
+    if (!manifest || !lockName || !root || typeof root !== 'object') continue;
+    for (const field of NPM_DEPENDENCIES) {
+      const wanted = (manifest[field] ?? {}) as Json;
+      const locked = ((root as Json)[field] ?? {}) as Json;
+      for (const name of new Set([...Object.keys(wanted), ...Object.keys(locked)])) {
+        if (wanted[name] === locked[name]) continue;
+        const said = (where: Json, file: string) =>
+          typeof where[name] === 'string' ? `${where[name]} in ${file}` : `missing from ${file}`;
+        problems.push(
+          `${lockName} does not match ${at('package.json')}: ${field} ${name} is ${said(wanted, at('package.json'))} but ${said(locked, lockName)}`,
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+type Json = Record<string, unknown>;
+function parsed(text: string | null): Json | null {
+  try {
+    const value: unknown = JSON.parse(text ?? '');
+    return value && typeof value === 'object' ? (value as Json) : null;
+  } catch {
+    return null;
+  }
+}
+
+const firstLines =(text: string) => text.slice(0, 2000).split('\n').slice(0, 5).join('\n');
 
 /** Files .gitattributes at the head marks `linguist-generated` or `linguist-vendored`, as GitHub folds them. */
 function generatedByAttributes(cwd: string, head: string, files: string[]): Map<string, string> {

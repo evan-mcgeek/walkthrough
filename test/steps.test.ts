@@ -196,3 +196,53 @@ describe('mechanical files', () => {
     expect(refused.stderr).toContain('no step has .gitignore, vendor/.gitignore');
   });
 });
+
+describe('the mechanical step checks consistency', () => {
+  const npmRepo = (feature: Record<string, string>) =>
+    makeRepo({ start: { 'package.json': manifest('^1.0.0'), 'package-lock.json': lockfile('^1.0.0') }, feature });
+  const npmSteps = [{ title: 'Login', what: 'Adds login.', why: 'Login.', files: ['package.json', 'login.ts', 'app.ts'] }];
+  const mechanicalOf = async () => (await shownAt(repo.url())).steps.find(step => step.kind === 'mechanical');
+
+  test('a lockfile that does not match its manifest', async () => {
+    repo = npmRepo({ 'package.json': manifest('^1.3.0'), 'package-lock.json': lockfile('^1.2.0') });
+    repo.run('start');
+
+    const recorded = repo.record(npmSteps);
+
+    const problem =
+      'package-lock.json does not match package.json: dependencies left-pad is ^1.3.0 in package.json but ^1.2.0 in package-lock.json';
+    expect(recorded.stdout).toContain(`Consistency problem: ${problem}`);
+    expect(await mechanicalOf()).toMatchObject({ problems: [problem] });
+  });
+
+  test('a manifest whose dependencies changed while its lockfile did not', async () => {
+    repo = npmRepo({ 'package.json': manifest('^1.3.0') });
+    repo.run('start');
+
+    repo.record(npmSteps);
+
+    expect(await mechanicalOf()).toMatchObject({
+      files: [],
+      problems: [
+        'package-lock.json does not match package.json: dependencies left-pad is ^1.3.0 in package.json but ^1.0.0 in package-lock.json',
+      ],
+    });
+  });
+
+  test('a mechanical file left with merge conflict markers', async () => {
+    repo = makeRepo({ feature: { 'yarn.lock': '<<<<<<< HEAD\nleft-pad@^1.0.0:\n=======\nleft-pad@^1.3.0:\n>>>>>>> main\n' } });
+    repo.run('start');
+
+    repo.record([{ title: 'Login', what: 'Adds login.', why: 'Login.', files: ['login.ts', 'app.ts'] }]);
+
+    expect(await mechanicalOf()).toMatchObject({ problems: ['yarn.lock has merge conflict markers'] });
+  });
+
+  test('a consistent lockfile has no problems', async () => {
+    repo = npmRepo({ 'package.json': manifest('^1.3.0'), 'package-lock.json': lockfile('^1.3.0') });
+    repo.run('start');
+
+    expect(repo.record(npmSteps).stdout).not.toContain('Consistency problem');
+    expect(await mechanicalOf()).toMatchObject({ problems: [] });
+  });
+});
