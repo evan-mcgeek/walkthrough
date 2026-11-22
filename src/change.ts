@@ -22,10 +22,17 @@ function git(cwd: string, ...args: string[]): string {
   return result.stdout;
 }
 
-/** The current branch from the merge-base with `origin/<target>` (the remote's default branch unless given) to its head commit. */
-export function currentChange(cwd: string, targetBranch?: string): Change {
+/** The repo and the branch checked out in `cwd`. */
+export function currentBranch(cwd: string): Pick<Change, 'repo' | 'branch'> {
   const branch = git(cwd, 'branch', '--show-current').trim();
   if (!branch) throw new Error('not on a branch; check out the branch to walk through');
+  const commonDir = git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim();
+  return { repo: path.basename(path.dirname(commonDir)), branch };
+}
+
+/** The current branch from the merge-base with `origin/<target>` (the remote's default branch unless given) to its head commit. */
+export function currentChange(cwd: string, targetBranch?: string): Change {
+  const { repo, branch } = currentBranch(cwd);
   const target = targetBranch ? `origin/${targetBranch}` : defaultTarget(cwd);
   try {
     git(cwd, 'rev-parse', '--verify', '--quiet', `${target}^{commit}`);
@@ -34,9 +41,8 @@ export function currentChange(cwd: string, targetBranch?: string): Change {
   }
   const head = git(cwd, 'rev-parse', 'HEAD').trim();
   const base = git(cwd, 'merge-base', target, head).trim();
-  const commonDir = git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim();
   return {
-    repo: path.basename(path.dirname(commonDir)),
+    repo,
     branch,
     target,
     base,
