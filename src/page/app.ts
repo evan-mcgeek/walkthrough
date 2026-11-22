@@ -7,6 +7,7 @@ import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, type Item, itemKey } from '../items';
 import type { Checklist, Step } from '../walkthrough';
+import { el } from './dom';
 import { renderMarkdown } from './markdown';
 
 const token = location.pathname.split('/')[2] ?? '';
@@ -29,16 +30,6 @@ function region(id: string): HTMLElement {
 const header = region('header');
 const alertBox = region('alert');
 const main = region('main');
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<HTMLElementTagNameMap[K]> = {},
-  ...children: (Node | string)[]
-): HTMLElementTagNameMap[K] {
-  const node = Object.assign(document.createElement(tag), props);
-  node.append(...children);
-  return node;
-}
 
 function showAlert(message: string | null): void {
   alertBox.textContent = message;
@@ -318,17 +309,18 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
   return [...views, more];
 }
 
-function askView(step: Step): HTMLElement {
+function askView(step: Step): HTMLElement[] {
   const asks = session.conversation.filter(isAsk).filter(asked => asked.step === step.id && !asked.lines);
+  if (readOnly && !asks.length) return [];
   const draft = `ask:${step.id}`;
-  return el(
+  return [el(
     'div',
     { className: 'conversation' },
     ...asks.map(askThread),
     ...writable(draftBox(draft, 'Ask about this step', 'Ask', () => {
       void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
     })),
-  );
+  )];
 }
 
 /** The lines the person picked to ask about; `from` is the line picked first. */
@@ -599,7 +591,7 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
     el('div', { className: 'step-head' }, title),
     ...decideView({ type: 'step', id: step.id }),
     ...stepBody(step),
-    askView(step),
+    ...askView(step),
   );
   section.setAttribute('aria-labelledby', title.id);
   const pager = el('div', { className: 'pager' }, move('Previous', steps[at - 1]), move('Next', steps[at + 1]));

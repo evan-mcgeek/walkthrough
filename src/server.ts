@@ -11,21 +11,28 @@ import { readJson, writeJson } from './json-files';
 import { previewType } from './preview';
 import { alive, psStart } from './processes';
 import { decide, markRead, walkthroughView } from './decisions';
+import { listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
 
 type ServerRecord = { pid: number; started: string; url: string };
 type Answer = { status: number; body?: unknown; after?: () => void };
-type Route = (body: Record<string, unknown>) => Answer;
+type Route = (body: Record<string, unknown>) => Answer | Promise<Answer>;
 
 const MAX_BODY_BYTES = 256 * 1024;
 // A server no page has polled for this long was forgotten, so it stops itself.
 const IDLE_MS = 30 * 60 * 1000;
 export const PAGE = path.join(import.meta.dirname, 'page');
+const STYLE = { file: 'style.css', type: 'text/css; charset=utf-8' };
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
   '': { file: 'index.html', type: 'text/html; charset=utf-8' },
   'app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },
-  'style.css': { file: 'style.css', type: 'text/css; charset=utf-8' },
+  'style.css': STYLE,
+};
+const LIST_FILES: Record<string, { file: string; type: string }> = {
+  '': { file: 'list.html', type: 'text/html; charset=utf-8' },
+  'list.js': { file: 'list.js', type: 'text/javascript; charset=utf-8' },
+  'style.css': STYLE,
 };
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 // The page loads and calls nothing but this server, and no other page can frame it or learn its address.
@@ -65,12 +72,13 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-/** The page address of the walkthrough in `dir`, starting its server when it is not running. */
-export async function ensureServer(dir: string): Promise<string> {
+/** The page address of the walkthrough in `dir`, or with `list` of the list of the repo whose state is `dir`, starting its server when it is not running. */
+export async function ensureServer(dir: string, list = false): Promise<string> {
   const running = readRecord(dir);
   if (running && alive(running)) return running.url;
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
-  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir], {
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
     detached: true,
     stdio: ['ignore', log, log],
   });
@@ -97,22 +105,25 @@ export async function stopServer(dir: string): Promise<boolean> {
   return true;
 }
 
-/** Runs the server of the walkthrough in `dir` in this process until it is stopped. */
-export function serve(dir: string): void {
+/** Runs the server of the walkthrough in `dir`, or with `list` of the list in the repo state `dir`, in this process until it is stopped. */
+export function serve(dir: string, list = false): void {
   const token = pageToken(dir);
-  const routes: Record<string, Route> = {
-    '/decide': fields => answered(decide(dir, fields)),
-    '/read': ({ step }) => answered(markRead(dir, step)),
-    '/ask': fields => answered(ask(dir, fields)),
-    '/reply': ({ to, text }) => answered(reply(dir, to, text)),
-    '/stop': () => ({ status: 200, body: { stopped: true }, after: shutDown }),
-  };
+  const stop: Route = () => ({ status: 200, body: { stopped: true }, after: shutDown });
+  const routes: Record<string, Route> = list
+    ? { '/open': ({ id }) => open(dir, id), '/stop': stop }
+    : {
+        '/decide': fields => answered(decide(dir, fields)),
+        '/read': ({ step }) => answered(markRead(dir, step)),
+        '/ask': fields => answered(ask(dir, fields)),
+        '/reply': ({ to, text }) => answered(reply(dir, to, text)),
+        '/stop': stop,
+      };
   let seen = Date.now();
   const server = http.createServer((req, res) => {
     // The page polls, so a request under its private address means a page is still open.
     if (req.url?.startsWith(`/s/${token}/`)) seen = Date.now();
     try {
-      gate(req, res, { dir, token, port: String((server.address() as AddressInfo).port), routes });
+      gate(req, res, { dir, list, token, port: String((server.address() as AddressInfo).port), routes });
     } catch (error) {
       failRequest(res, error);
     }
@@ -140,6 +151,12 @@ export function serve(dir: string): void {
 }
 
 const answered = (view: object | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
+
+/** The page address of a walkthrough on the list in `repoDir`, its server started when it is not running. */
+async function open(repoDir: string, id: unknown): Promise<Answer> {
+  const listed = listView(repoDir).find(one => one.id === id);
+  return listed ? { status: 200, body: { url: await ensureServer(path.join(repoDir, listed.id)) } } : { status: 400 };
+}
 
 const logged = (error: unknown) => {
   console.error(`walkthrough server: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
@@ -172,20 +189,21 @@ function serveChangedFile(dir: string, file: string, res: http.ServerResponse): 
     .end(content);
 }
 
-function serveFile(dir: string, what: string, query: URLSearchParams, res: http.ServerResponse): void {
-  if (what === 'file') {
+function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
+  if (!list && what === 'file') {
     serveChangedFile(dir, query.get('path') ?? '', res);
     return;
   }
-  if (what === 'data/walkthrough.json') {
-    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(walkthroughView(dir)));
+  const data: Record<string, () => unknown> = list
+    ? { 'data/list.json': () => listView(dir) }
+    : { 'data/walkthrough.json': () => walkthroughView(dir), 'data/session.json': () => sessionView(dir) };
+  const view = Object.hasOwn(data, what) ? data[what] : undefined;
+  if (view) {
+    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));
     return;
   }
-  if (what === 'data/session.json') {
-    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(sessionView(dir)));
-    return;
-  }
-  const known = Object.hasOwn(PAGE_FILES, what) ? PAGE_FILES[what] : undefined;
+  const files = list ? LIST_FILES : PAGE_FILES;
+  const known = Object.hasOwn(files, what) ? files[what] : undefined;
   if (!known) {
     res.writeHead(404).end();
     return;
@@ -218,10 +236,10 @@ function readBody(req: http.IncomingMessage, res: http.ServerResponse, onBody: (
   });
 }
 
-type Gate = { dir: string; token: string; port: string; routes: Record<string, Route> };
+type Gate = { dir: string; list: boolean; token: string; port: string; routes: Record<string, Route> };
 
 /** Only this machine's own page, with the token, sending JSON, reaches a route; every answer carries the security headers. */
-function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, token, port, routes }: Gate): void {
+function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, token, port, routes }: Gate): void {
   const prefix = `/s/${token}/`;
   const url = new URL(req.url ?? '', 'http://127.0.0.1');
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
@@ -240,7 +258,7 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, token,
     return;
   }
   if (req.method === 'GET' && url.pathname.startsWith(prefix)) {
-    serveFile(dir, url.pathname.slice(prefix.length), url.searchParams, res);
+    serveFile(dir, list, url.pathname.slice(prefix.length), url.searchParams, res);
     return;
   }
   const given = Buffer.from(url.searchParams.get('token') ?? '');
@@ -258,13 +276,15 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, token,
   }
   readBody(req, res, body => {
     const fields = body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
-    try {
-      const { status, body: said, after } = route(fields);
-      if (after) res.once('finish', after);
-      if (said === undefined) res.writeHead(status).end();
-      else res.writeHead(status, JSON_HEADERS).end(JSON.stringify(said));
-    } catch (error) {
-      failRequest(res, error);
-    }
+    Promise.resolve()
+      .then(() => route(fields))
+      .then(({ status, body: said, after }) => {
+        if (after) res.once('finish', after);
+        if (said === undefined) res.writeHead(status).end();
+        else res.writeHead(status, JSON_HEADERS).end(JSON.stringify(said));
+      })
+      .catch((error: unknown) => {
+        failRequest(res, error);
+      });
   });
 }
