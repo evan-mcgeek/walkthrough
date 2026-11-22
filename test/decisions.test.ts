@@ -262,6 +262,20 @@ describe('decisions', () => {
 
     expect((await shownAt(repo.url())).decided).toMatchObject({ 'step:1': null, 'step:2': null });
   });
+
+  test('a checklist item recorded again with other text is reopened with the decision it had', async () => {
+    started();
+    repo.record([{ item: { type: 'checklist', id: '1' }, actions: [{ id: 'no', label: 'Disagree', note: true }] }], 'actions');
+    await decide({ item: { type: 'checklist', id: '1' }, action: 'no', note: 'Not yet.' });
+
+    repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'A person can log in, not yet shown.' }] }, 'checklist');
+
+    const view = await shownAt(repo.url());
+    expect(view.decided['checklist:1']).toBeNull();
+    expect(view.reopened['checklist:1']).toMatchObject({ action: 'no', note: 'Not yet.' });
+    const listed = handed(repo.run('decisions').stdout).find(line => JSON.stringify(line.item).includes('checklist'));
+    expect(listed).toMatchObject({ decision: null, reopened: { action: 'no', note: 'Not yet.' } });
+  });
 });
 
 describe('read steps', () => {

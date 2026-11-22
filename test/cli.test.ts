@@ -28,6 +28,18 @@ describe('walkthrough start', () => {
     expect(git(repo.dir, 'worktree', 'list').split('\n')).toHaveLength(1);
   });
 
+  test('a target with no remote branch of its name is the local branch', () => {
+    repo = makeRepo();
+    git(repo.dir, 'branch', 'release', repo.base);
+
+    const started = repo.run('start', '--target', 'release');
+
+    expect(started.stderr).toBe('');
+    expect(started.stdout).toContain(
+      `Walkthrough of feature/login against release: ${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`,
+    );
+  });
+
   test('leaves uncommitted edits out and warns about them', async () => {
     repo = makeRepo();
     fs.writeFileSync(path.join(repo.dir, 'app.ts'), 'export const app = 3;\n');

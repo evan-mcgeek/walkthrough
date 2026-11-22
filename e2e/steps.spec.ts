@@ -37,7 +37,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(first.getByText('Files: login.ts, login.test.ts', { exact: true })).toBeVisible();
   const assumed = first.getByRole('list', { name: 'Assumed, not read' });
   await expect(assumed.getByRole('listitem')).toHaveText(['Nothing else calls login yet.', 'Tests run without a network.']);
-  await expect(first.locator('.d2h-ins')).toContainText(["test('login', () => {});", 'export const login = () => true;']);
+  await expect(first.locator('.d2h-ins')).toContainText(['export const login = () => true;', "test('login', () => {});"]);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Next' }).click();

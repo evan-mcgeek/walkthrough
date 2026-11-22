@@ -130,6 +130,22 @@ describe('walkthrough steps', () => {
 
     expect((await shownAt(repo.url())).steps[0]?.diff).toContain('rename from auth.ts');
   });
+
+  test("shows a step's files in the order the session gave them", async () => {
+    repo = makeRepo({
+      start: { 'auth.ts': 'export const auth = 1;\nexport const two = 2;\n' },
+      feature: { '[id]*.ts': 'export const page = 1;\n', 'zone.ts': 'export const zone = 1;\n' },
+    });
+    git(repo.dir, 'mv', 'auth.ts', 'session.ts');
+    git(repo.dir, 'commit', '-m', 'Rename auth');
+    repo.run('start');
+    const order = ['zone.ts', 'session.ts', 'login.ts', '[id]*.ts', 'app.ts'];
+
+    repo.record([{ title: 'All', explanation: 'Everything.', files: order }]);
+
+    const diff = (await shownAt(repo.url())).steps[0]?.diff ?? '';
+    expect([...diff.matchAll(/^diff --git a\/.* b\/(.*)$/gm)].map(match => match[1])).toEqual(order);
+  });
 });
 
 describe('folded steps', () => {

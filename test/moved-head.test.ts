@@ -102,9 +102,11 @@ describe('a new head', () => {
     moveHead({ 'login.ts': 'export const login = () => false;\n' });
 
     const again = repo.run('start', ...range);
+    const { decided } = await shown();
+    repo.run('stop', ...range);
 
     expect(again.stdout).toContain('The head moved: 1 of 2 steps still decided, 0 reopened.');
-    expect((await shown()).decided['step:2']).toMatchObject({ action: 'approve' });
+    expect(decided['step:2']).toMatchObject({ action: 'approve' });
   });
 });
 

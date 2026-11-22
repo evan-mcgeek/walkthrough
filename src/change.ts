@@ -10,7 +10,7 @@ export type Source =
   | { kind: 'range'; base: string; head: string; label: string };
 
 export type Change = {
-  /** The revision the base is the merge-base with: a remote-tracking branch such as origin/main, or a range's base as given. */
+  /** The revision the base is the merge-base with: a remote-tracking branch such as origin/main, a local branch with none, or a range's base as given. */
   target: string;
   base: string;
   head: string;
@@ -52,10 +52,10 @@ function commitOf(cwd: string, rev: string): string | null {
   }
 }
 
-/** The change from the merge-base of the target and the head to the head; a branch's target is `origin/<target>`, the remote's default branch unless given. */
+/** The change from the merge-base of the target and the head to the head; a branch's target is `origin/<target>`, or the local branch without one, and the remote's default branch unless given. */
 export function changeOf(cwd: string, source: Source): Change {
   const range = source.kind === 'range';
-  const target = range ? source.base : source.target ? `origin/${source.target}` : defaultTarget(cwd);
+  const target = range ? source.base : source.target ? targetBranch(cwd, source.target) : defaultTarget(cwd);
   if (!commitOf(cwd, target))
     throw new Error(range ? `there is no commit ${target}` : `there is no ${target}; pass --target <branch>`);
   const head = commitOf(cwd, range ? source.head : 'HEAD');
@@ -93,16 +93,21 @@ export function changedFiles(cwd: string, base: string, head: string): ChangedFi
   return files;
 }
 
-/** The diff of just these files; a renamed file needs its base path too for the rename to show. */
+// An order file line is a wildmatch pattern, so each path is escaped to match only itself.
+const orderOf = (files: ChangedFile[]) => files.map(file => file.path.replace(/[\\*?[\]#!]/g, '\\$&')).join('\n');
+
+/** The diff of just these files, in their order; a renamed file needs its base path too for the rename to show. */
 export const diffOf = (cwd: string, base: string, head: string, files: ChangedFile[]) =>
   files.length === 0
     ? ''
-    : git(
+    : gitWith(
         cwd,
+        orderOf(files),
         'diff',
         '--no-color',
         '--no-ext-diff',
         '-M',
+        '-O/dev/stdin',
         base,
         head,
         '--',
@@ -114,6 +119,9 @@ export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
   const result = spawnSync('git', ['cat-file', 'blob', `${rev}:${file}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
   return result.status === 0 ? result.stdout : null;
 }
+
+const targetBranch = (cwd: string, name: string) =>
+  !commitOf(cwd, `origin/${name}`) && commitOf(cwd, `refs/heads/${name}`) ? name : `origin/${name}`;
 
 function defaultTarget(cwd: string): string {
   try {
