@@ -4,8 +4,9 @@ import type { Walkthrough } from '../src/walkthrough';
 import { makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
-afterEach(() => {
+afterEach(async () => {
   repo.run('stop');
+  await repo.settled();
 });
 
 const post = (page: string, route: string, body: unknown) =>
@@ -153,7 +154,7 @@ describe('the session status', () => {
 
 describe('the page server', () => {
   test('stops itself once no page has polled it for a while, and ends the listener', async () => {
-    repo = makeRepo({ WALKTHROUGH_IDLE_MS: '1500' });
+    repo = makeRepo({ env: { WALKTHROUGH_IDLE_MS: '1500' } });
     repo.run('start');
     const listener = await listening();
     const polledUntil = Date.now() + 2500;

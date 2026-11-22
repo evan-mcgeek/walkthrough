@@ -1,10 +1,12 @@
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
 import { prune, pruneDaily } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { listen, say } from './session';
-import { openWalkthrough, readWalkthrough, walkthroughDir } from './walkthrough';
+import { buildSteps, changeFiles, parseSteps } from './steps';
+import { openWalkthrough, readWalkthrough, recordSteps, type Walkthrough, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
@@ -37,16 +39,43 @@ async function start(args: string[]): Promise<void> {
   );
 }
 
-/** The folder of the current branch's walkthrough, which must have been started. */
-function currentDir(): string {
-  const current = currentBranch(process.cwd());
-  const dir = walkthroughDir(current);
-  if (!readWalkthrough(dir)) throw new Error(`there is no walkthrough of ${current.branch}; run walkthrough start`);
-  return dir;
+/** The current branch's walkthrough and its folder; it must have been started. */
+function current(): { dir: string; walkthrough: Walkthrough } {
+  const branch = currentBranch(process.cwd());
+  const dir = walkthroughDir(branch);
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) throw new Error(`there is no walkthrough of ${branch.branch}; run walkthrough start`);
+  return { dir, walkthrough };
+}
+
+function files(): void {
+  const { files: changed, mechanical } = changeFiles(current().walkthrough, process.cwd());
+  const lines = ['Group these files into steps:'];
+  for (const { path } of changed) if (!mechanical.has(path)) lines.push(`  ${path}`);
+  if (mechanical.size > 0) lines.push('Mechanical, collapsed into the last step by walkthrough itself:');
+  for (const [path, reason] of mechanical) lines.push(`  ${path} (${reason})`);
+  console.log(lines.join('\n'));
+}
+
+function steps(): void {
+  const cwd = process.cwd();
+  const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
+  const { steps: recorded } = recordSteps(walkthroughDir(currentBranch(cwd)), walkthrough =>
+    buildSteps(cwd, walkthrough, inputs),
+  );
+  const mechanical = recorded.at(-1);
+  if (mechanical?.kind !== 'mechanical') {
+    console.log(`Recorded ${plural(recorded.length, 'step')}.`);
+    return;
+  }
+  console.log(
+    `Recorded ${plural(recorded.length, 'step')}, the last one mechanical with ${plural(mechanical.files.length, 'file')}.`,
+  );
+  for (const problem of mechanical.problems) console.log(`Consistency problem: ${problem}`);
 }
 
 async function listenCommand(): Promise<void> {
-  const dir = currentDir();
+  const { dir } = current();
   const taken = await listen(dir, () => serverRunning(dir));
   if (taken === 'replaced') {
     console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
@@ -63,12 +92,15 @@ function sayCommand(args: string[]): void {
   });
   const text = positionals.join(' ').trim();
   if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question] <text>');
-  say(currentDir(), text, values);
+  say(current().dir, text, values);
   console.log('Said on the page.');
 }
 
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
+  files,
+  // The skill's steps, as a JSON array on standard input.
+  steps,
   listen: listenCommand,
   say: sayCommand,
   stop: async () => {
@@ -88,7 +120,10 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
 const [name = '', ...rest] = process.argv.slice(2);
 const command = COMMANDS[name];
 try {
-  if (!command) throw new Error('usage: walkthrough start [--target <branch>] | listen | say [--answer <id>] [--question] <text> | stop | prune');
+  if (!command)
+    throw new Error(
+      'usage: walkthrough start [--target <branch>] | files | steps < steps.json | listen | say [--answer <id>] [--question] <text> | stop | prune',
+    );
   await command(rest);
 } catch (error) {
   console.error(`walkthrough: ${(error as Error).message}`);

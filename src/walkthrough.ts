@@ -6,7 +6,13 @@ import { stateDir } from './paths';
 
 export const DECISIONS = ['approved'] as const;
 export type Decision = (typeof DECISIONS)[number];
-export type Step = { id: string; title: string; diff: string; decision: Decision | null };
+export type MechanicalFile = { path: string; reason: string };
+/** `whole` is the entire change until the skill records its steps; `mechanical` is always last. */
+export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
+  | { kind: 'whole' }
+  | { kind: 'logical'; what: string; why: string; files: string[]; tests: string[] }
+  | { kind: 'mechanical'; files: MechanicalFile[]; problems: string[] }
+);
 export type Walkthrough = {
   kind: 'branch';
   branch: string;
@@ -41,10 +47,21 @@ export function openWalkthrough(change: Change): {
       target: change.target,
       base: change.base,
       head: change.head,
-      steps: [{ id: 'change', title: 'The whole change', diff: change.diff, decision: null }],
+      steps: [{ id: 'change', kind: 'whole', title: 'The whole change', diff: change.diff, decision: null }],
     };
     writeJson(file(dir), walkthrough);
     return { dir, walkthrough, opened: saved ? 'replaced' : 'new' };
+  });
+}
+
+/** Replaces the steps, and with them every decision; `build` sees the saved walkthrough under the lock. */
+export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
+  return locked(file(dir), () => {
+    const walkthrough = readWalkthrough(dir);
+    if (!walkthrough) throw new Error('there is no walkthrough of this branch yet; run walkthrough start first');
+    walkthrough.steps = build(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return walkthrough;
   });
 }
 

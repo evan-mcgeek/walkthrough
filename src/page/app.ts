@@ -45,16 +45,32 @@ async function post(route: string, body: unknown): Promise<Response | null> {
   }
 }
 
+const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+
 let walkthrough: Walkthrough;
 let session: SessionView;
 /** What the person typed and has not sent, by box, so a redraw keeps it. */
 const drafts = new Map<string, string>();
+
+/** The step named in the address, else the first undecided one. */
+function currentStep({ steps }: Walkthrough): Step | undefined {
+  const named = decodeURIComponent(location.hash.slice(1));
+  return steps.find(step => step.id === named) ?? steps.find(step => !step.decision) ?? steps[0];
+}
+
+/** Each step is its own address, so the browser's back and forward move between steps too. */
+function show(step: Step | undefined): void {
+  if (!step) return;
+  location.hash = encodeURIComponent(step.id);
+}
 
 async function decide(step: Step, decision: Decision): Promise<void> {
   const answer = await post('decide', { step: step.id, decision });
   if (!answer) return;
   walkthrough = (await answer.json()) as Walkthrough;
   render();
+  const at = walkthrough.steps.findIndex(one => one.id === step.id);
+  show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !one.decision));
 }
 
 /** Sends what the person typed in the box `draft`; it is kept when the walkthrough could not take it. */
@@ -176,20 +192,83 @@ function diffView(step: Step): HTMLElement {
   return view;
 }
 
-function stepView(step: Step): HTMLElement {
+const paths = (label: string, files: string[]) =>
+  el('p', { className: 'paths' }, `${label}: `, ...files.flatMap((file, at) => [at ? ', ' : '', el('code', {}, file)]));
+
+/** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
+const opened = new Set<string>();
+
+/** What the step says about itself before its diff, and the diff, by kind of step. */
+function stepBody(step: Step): HTMLElement[] {
+  switch (step.kind) {
+    case 'whole':
+      return [diffView(step)];
+    case 'logical':
+      return [
+        el(
+          'div',
+          { className: 'about' },
+          el('p', {}, step.what),
+          el('p', {}, el('strong', {}, 'Why: '), step.why),
+          paths('Files', step.files),
+          step.tests.length ? paths('Tests', step.tests) : el('p', { className: 'untested' }, 'No tests in this step.'),
+        ),
+        diffView(step),
+      ];
+    case 'mechanical': {
+      const details = el('details', { open: opened.has(step.id) }, el('summary', {}, 'Show the diff'));
+      details.ontoggle = () => {
+        if (details.open) opened.add(step.id);
+        else opened.delete(step.id);
+      };
+      return [
+        el(
+          'div',
+          { className: 'about' },
+          el('p', {}, 'Checked for consistency, not line by line.'),
+          step.problems.length
+            ? el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', {}, problem)))
+            : el('p', { className: 'consistent' }, 'No consistency problems found.'),
+          step.files.length
+            ? el('ul', {}, ...step.files.map(file => el('li', {}, `${file.path} (${file.reason})`)))
+            : el('p', {}, 'No mechanical files changed.'),
+        ),
+        ...(step.diff ? [details] : []),
+      ];
+    }
+  }
+}
+
+function stepView(step: Step, steps: Step[]): HTMLElement {
   const title = el('h2', { id: `step-${step.id}` }, step.title);
   const decision = step.decision
     ? el('span', { className: 'decision approved' }, 'Approved')
     : el('button', { type: 'button', onclick: () => void decide(step, 'approved') }, 'Approve');
+  const at = steps.indexOf(step);
+  const move = (label: string, to: Step | undefined) =>
+    el('button', { type: 'button', className: 'quiet', disabled: !to, onclick: () => { show(to); } }, label);
   const section = el(
     'section',
     { className: 'step' },
     el('div', { className: 'step-head' }, title, decision),
-    diffView(step),
+    ...stepBody(step),
     askView(step),
   );
   section.setAttribute('aria-labelledby', title.id);
-  return section;
+  const pager = el('div', { className: 'pager' }, move('Previous', steps[at - 1]), move('Next', steps[at + 1]));
+  return el('div', {}, section, pager);
+}
+
+function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
+  const items = steps.map((step, at) => {
+    const href = `#${encodeURIComponent(step.id)}`;
+    const link = el('a', { href, className: step.decision ? 'decided' : '' }, `${String(at + 1)}. ${step.title}`);
+    if (step === current) link.setAttribute('aria-current', 'step');
+    return el('li', {}, link);
+  });
+  const nav = el('nav', { className: 'steps' }, el('ol', {}, ...items));
+  nav.setAttribute('aria-label', 'Steps');
+  return nav;
 }
 
 function render(): void {
@@ -198,7 +277,10 @@ function render(): void {
   const typing = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
+  const { steps } = walkthrough;
   const pinned = `${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
+  const decided = steps.filter(step => step.decision).length;
+  const progress = `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left`;
   header.replaceChildren(
     el(
       'div',
@@ -206,6 +288,7 @@ function render(): void {
       el('h1', {}, walkthrough.branch),
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
+    el('p', { className: 'progress' }, progress),
     el(
       'div',
       { className: 'actions' },
@@ -213,12 +296,18 @@ function render(): void {
       el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop'),
     ),
   );
-  main.replaceChildren(...sessionMessages(), ...walkthrough.steps.map(stepView));
+  const current = currentStep(walkthrough);
+  main.replaceChildren(...sessionMessages(), stepsNav(steps, current), ...(current ? [stepView(current, steps)] : []));
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
   box?.setSelectionRange(...caret);
 }
+
+window.addEventListener('hashchange', () => {
+  render();
+  window.scrollTo(0, 0);
+});
 
 const [shownWalkthrough, shownSession] = await Promise.all(
   ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),

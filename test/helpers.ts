@@ -14,8 +14,13 @@ export function git(cwd: string, ...args: string[]): string {
   return result.stdout.trim();
 }
 
-const commit = (cwd: string, message: string, files: Record<string, string>) => {
-  for (const [name, text] of Object.entries(files)) fs.writeFileSync(path.join(cwd, name), text);
+type Files = Record<string, string>;
+
+const commit = (cwd: string, message: string, files: Files) => {
+  for (const [name, text] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(cwd, name)), { recursive: true });
+    fs.writeFileSync(path.join(cwd, name), text);
+  }
   git(cwd, 'add', '-A');
   git(cwd, 'commit', '-m', message);
   return git(cwd, 'rev-parse', 'HEAD');
@@ -25,9 +30,14 @@ export type Repo = ReturnType<typeof makeRepo>;
 
 /**
  * `feature/login` branched from main at `base`, adding `login.ts` and changing `app.ts`; main moved on after it.
+ * `start` adds files to main's first commit and `feature` to the branch's commit; `env` is added to the CLI's environment.
  * The working copy is left on the feature branch.
  */
-export function makeRepo(extraEnv: Record<string, string> = {}) {
+export function makeRepo({
+  start = {},
+  feature = {},
+  env: extraEnv = {},
+}: { start?: Files; feature?: Files; env?: Record<string, string> } = {}) {
   const root = fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', 'repo-'));
   const dir = path.join(root, 'shop');
   const state = path.join(root, 'state');
@@ -38,13 +48,14 @@ export function makeRepo(extraEnv: Record<string, string> = {}) {
   git(root, 'init', '--bare', '-b', 'main', 'origin.git');
   git(dir, 'init', '-b', 'main');
   git(dir, 'remote', 'add', 'origin', path.join(root, 'origin.git'));
-  const base = commit(dir, 'Start the shop', { 'app.ts': 'export const app = 1;\n' });
+  const base = commit(dir, 'Start the shop', { 'app.ts': 'export const app = 1;\n', ...start });
   git(dir, 'push', '-u', 'origin', 'main');
   git(dir, 'remote', 'set-head', 'origin', 'main');
   git(dir, 'checkout', '-b', 'feature/login');
   const head = commit(dir, 'Add login', {
     'login.ts': 'export const login = () => true;\n',
     'app.ts': 'export const app = 2;\n',
+    ...feature,
   });
   git(dir, 'checkout', 'main');
   commit(dir, 'Main moves on', { 'other.ts': 'export const other = 1;\n' });
@@ -58,6 +69,7 @@ export function makeRepo(extraEnv: Record<string, string> = {}) {
     mode: 0o755,
   });
   const env = { ...process.env, PATH: `${bin}:${process.env['PATH'] ?? ''}`, WALKTHROUGH_STATE: state, ...extraEnv };
+  const running: Promise<unknown>[] = [];
   const lines = (name: string) =>
     fs.existsSync(log(name)) ? fs.readFileSync(log(name), 'utf8').trim().split('\n') : [];
 
@@ -87,8 +99,14 @@ export function makeRepo(extraEnv: Record<string, string> = {}) {
           resolve({ status, stdout, stderr });
         }),
       );
+      running.push(ended);
       return { child, ended };
     },
+    /** Waits for every background CLI to end, so none writes into the sandbox while it is removed. */
+    settled: () => Promise.all(running),
+    /** Records the steps the way the skill does, as JSON on standard input. */
+    record: (steps: unknown) =>
+      spawnSync(CLI, ['steps'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(steps) }),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */

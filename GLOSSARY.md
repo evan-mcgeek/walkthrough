@@ -34,6 +34,10 @@ A walkthrough over the threads of a pull request where the other side has moved:
 One logical piece of the change, possibly across several files, shown with what changed, why, and which AC it serves.
 _Avoid_: Hunk, chunk, file
 
+**Mechanical step**:
+The last step of a change walkthrough, holding the files nobody writes by hand (lockfiles, generated code, snapshots, vendored code), checked for consistency rather than line by line.
+_Avoid_: Generated step, noise
+
 **Finding**:
 A problem a reviewer agent reports in the change, stated as a concrete failure: what input or state leads to what wrong result.
 _Avoid_: Comment, issue, suggestion, nit

@@ -15,8 +15,12 @@ export type Change = {
   uncommitted: number;
 };
 
-function git(cwd: string, ...args: string[]): string {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+export function git(cwd: string, ...args: string[]): string {
+  return gitWith(cwd, undefined, ...args);
+}
+
+export function gitWith(cwd: string, input: string | undefined, ...args: string[]): string {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', input, maxBuffer: 256 * 1024 * 1024 });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr.trim() || `git ${args.join(' ')} failed`);
   return result.stdout;
@@ -53,6 +57,46 @@ export function currentChange(cwd: string, targetBranch?: string): Change {
     diff: git(cwd, 'diff', '--no-color', '--no-ext-diff', base, head),
     uncommitted: git(cwd, 'status', '--porcelain').split('\n').filter(Boolean).length,
   };
+}
+
+/** A changed file at its head path; `from` is its base path when it was renamed. */
+export type ChangedFile = { path: string; from?: string };
+
+export function changedFiles(cwd: string, base: string, head: string): ChangedFile[] {
+  const fields = git(cwd, 'diff', '--name-status', '-z', '-M', '--no-ext-diff', base, head).split('\0');
+  const files: ChangedFile[] = [];
+  for (let at = 0; at < fields.length - 1; ) {
+    const status = fields[at++] ?? '';
+    const first = fields[at++] ?? '';
+    if (status.startsWith('R')) files.push({ path: fields[at++] ?? '', from: first });
+    else files.push({ path: first });
+  }
+  return files;
+}
+
+/** The diff of just these files; a renamed file needs its base path too for the rename to show. */
+export const diffOf = (cwd: string, base: string, head: string, files: ChangedFile[]) =>
+  files.length === 0
+    ? ''
+    : git(
+        cwd,
+        'diff',
+        '--no-color',
+        '--no-ext-diff',
+        '-M',
+        base,
+        head,
+        '--',
+        ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])),
+      );
+
+/** The file's text at `rev`, or null when it does not exist there. */
+export function fileAt(cwd: string, rev: string, file: string): string | null {
+  try {
+    return git(cwd, 'cat-file', 'blob', `${rev}:${file}`);
+  } catch {
+    return null;
+  }
 }
 
 function defaultTarget(cwd: string): string {

@@ -118,6 +118,7 @@ h2 {
 }
 
 .notice {
+  grid-column: 1 / -1;
   color: var(--muted);
 }
 
@@ -169,6 +170,7 @@ h2 {
 }
 
 .messages {
+  grid-column: 1 / -1;
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 24px;
@@ -216,4 +218,104 @@ h2 {
   color: var(--fg);
   font: inherit;
   resize: vertical;
+}
+
+header {
+  flex-wrap: wrap;
+}
+
+.title {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.progress {
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.steps ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps a {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--fg);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.steps a:hover {
+  background: var(--panel);
+}
+
+.steps a[aria-current='step'] {
+  background: var(--panel);
+  box-shadow: inset 3px 0 0 var(--accent);
+  font-weight: 600;
+}
+
+.steps a.decided::after {
+  content: ' \2713';
+  color: var(--ok);
+}
+
+.about {
+  padding: 12px 16px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.about p,
+.about ul {
+  margin: 0 0 8px;
+}
+
+.paths,
+.untested,
+.consistent {
+  color: var(--muted);
+}
+
+.untested {
+  font-style: italic;
+}
+
+.problems {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+details summary {
+  padding: 8px 16px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
