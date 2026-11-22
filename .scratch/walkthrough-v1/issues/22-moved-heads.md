@@ -12,3 +12,4 @@ Notes and asks whose step or lines no longer exist are kept and shown as detache
 - [ ] A step whose files changed is reopened.
 - [ ] New files appear in new steps.
 - [ ] Notes and asks that lost their anchor show as detached, not dropped.
+- [ ] Checklist links to a step that no longer exists show as detached, not silently hidden; the checklist survives a new head.

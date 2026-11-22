@@ -313,3 +313,51 @@ button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
+.side {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.checklist h2 {
+  margin-bottom: 8px;
+  padding: 0 10px;
+}
+
+.checklist ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.checklist .status {
+  display: inline-block;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.checklist p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
+.checklist .links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+
+.checklist a {
+  color: var(--accent);
+}

@@ -13,11 +13,19 @@ const example = [
   },
 ];
 
+const checklistExample = {
+  title: 'Acceptance criteria',
+  items: [
+    { status: 'met', text: 'Sessions survive a restart.', steps: ['1'] },
+    { status: 'not shown', text: 'Expired sessions are removed.', steps: [] },
+  ],
+};
+
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
   With no options it is of the current branch against origin/<target>, the remote's default branch unless given.
   With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
-  Either way the change runs from the merge-base of the two to the head.
+  Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
@@ -34,6 +42,15 @@ walkthrough steps < steps.json
     {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
   Example:
 ${JSON.stringify(example, null, 2)}
+
+walkthrough checklist < checklist.json
+  Records the checklist shown beside the steps, replacing the one recorded before; re-recording the steps keeps it.
+  Standard input is a JSON object with a title and items in reading order.
+  Title, status and text are the session's own words.
+  An item's steps are the ids of the steps it links to ("1" for the first step); every id must exist, otherwise nothing is recorded ("steps" may be left out).
+    {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
+  Example checklist:
+${JSON.stringify(checklistExample, null, 2)}
 
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:

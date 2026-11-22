@@ -14,7 +14,6 @@ export type Change = {
   target: string;
   base: string;
   head: string;
-  diff: string;
   /** Uncommitted and untracked paths when the head is checked out, which the change leaves out. */
   uncommitted: number;
 };
@@ -67,11 +66,13 @@ export function changeOf(cwd: string, source: Source): Change {
   } catch {
     throw new Error(`${target} and ${range ? source.head : source.branch} share no history`);
   }
+  // No steps means the session is still preparing them, so a change without files would never be ready.
+  if (changedFiles(cwd, base, head).length === 0)
+    throw new Error(`nothing changed from ${target} to ${range ? source.head : source.branch}`);
   return {
     target,
     base,
     head,
-    diff: git(cwd, 'diff', '--no-color', '--no-ext-diff', base, head),
     uncommitted:
       commitOf(cwd, 'HEAD') === head ? git(cwd, 'status', '--porcelain').split('\n').filter(Boolean).length : 0,
   };

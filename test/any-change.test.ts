@@ -3,7 +3,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { SessionView } from '../src/session';
 import type { Walkthrough } from '../src/walkthrough';
-import { git, makeRepo, type Repo } from './helpers';
+import { git, makeRepo, ONE_STEP, type Repo } from './helpers';
 
 const LOGIN = ['--base', 'origin/main', '--head', 'feature/login', '--label', 'Login'];
 
@@ -56,8 +56,7 @@ describe('walkthrough start of a range', () => {
     expect(git(repo.dir, 'rev-parse', 'HEAD')).toBe(git(repo.dir, 'rev-parse', 'main'));
     const shown = await shownAt(repo.url());
     expect(shown).toMatchObject({ kind: 'range', label: 'Login', base: repo.base, head: repo.head });
-    expect(shown.steps[0]?.diff).toContain('+export const login');
-    expect(shown.steps[0]?.diff).not.toContain('other');
+    expect(repo.run('files', ...LOGIN).stdout.trim().split('\n').sort()).toEqual(['app.ts', 'login.ts']);
   });
 
   test('without a label it is named by its range', () => {
@@ -67,6 +66,22 @@ describe('walkthrough start of a range', () => {
     repo.run('stop', '--base', repo.base, '--head', 'feature/login');
 
     expect(started.stdout).toContain(`Walkthrough of ${repo.base}..feature/login against ${repo.base}`);
+  });
+
+  test('refuses a change with no changed file', () => {
+    const repo = newRepo();
+
+    for (const [base, head] of [
+      ['feature/login', 'feature/login'],
+      ['origin/main', repo.base],
+    ] as const) {
+      const started = repo.run('start', '--base', base, '--head', head);
+      expect(started.status).toBe(1);
+      expect(started.stderr.trim()).toBe(`walkthrough: nothing changed from ${base} to ${head}`);
+    }
+    git(repo.dir, 'checkout', '-b', 'feature/empty', 'origin/main');
+    expect(repo.run('start').stderr.trim()).toBe('walkthrough: nothing changed from origin/main to feature/empty');
+    expect(repo.opened()).toEqual([]);
   });
 
   test('refuses a range that is half given, mixed with a target, or names no commit', () => {
@@ -87,13 +102,14 @@ describe('where a walkthrough is kept', () => {
     const first = newRepo();
     const second = newRepo({ env: { WALKTHROUGH_STATE: first.state } });
     first.run('start');
+    first.record(ONE_STEP);
     const firstPage = first.url();
-    expect((await post(firstPage, '/decide', { step: 'change', decision: 'approved' })).status).toBe(200);
+    expect((await post(firstPage, '/decide', { step: '1', decision: 'approved' })).status).toBe(200);
 
     const started = second.run('start');
 
     expect(started.stdout).not.toContain('Resumed');
-    expect((await shownAt(second.url())).steps[0]?.decision).toBeNull();
+    expect((await shownAt(second.url())).steps).toEqual([]);
     expect(second.run('stop').stdout).toContain('Stopped the walkthrough page.');
     expect((await shownAt(firstPage)).steps[0]?.decision).toBe('approved');
   });
@@ -106,9 +122,9 @@ describe('where a walkthrough is kept', () => {
     const rangePage = repo.url();
 
     expect(repo.run('files', ...LOGIN).stdout.trim().split('\n').sort()).toEqual(['app.ts', 'login.ts']);
-    expect(repo.record([{ title: 'Login', explanation: 'Login.', files: ['login.ts', 'app.ts'] }], ...LOGIN).status).toBe(0);
+    expect(repo.record(ONE_STEP, 'steps', ...LOGIN).status).toBe(0);
     expect((await shownAt(rangePage)).steps.map(step => step.title)).toEqual(['Login']);
-    expect((await shownAt(branchPage)).steps.map(step => step.title)).toEqual(['The whole change']);
+    expect((await shownAt(branchPage)).steps.map(step => step.title)).toEqual([]);
 
     expect(repo.run('say', ...LOGIN, 'Hello range').status).toBe(0);
     expect((await sessionAt(rangePage)).conversation.map(entry => entry.text)).toEqual(['Hello range']);
