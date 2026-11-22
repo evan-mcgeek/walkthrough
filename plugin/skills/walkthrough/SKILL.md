@@ -1,6 +1,6 @@
 ---
 name: walkthrough
-description: Walk through the current branch's change on a local page, one step at a time. Use when the person runs /walkthrough or asks to walk through or review their branch.
+description: Walk through a change, the current branch or any base and head, on a local page, one step at a time. Use when the person runs /walkthrough or asks to walk through or review their branch or a change.
 allowed-tools: Bash(walkthrough *)
 ---
 
@@ -12,7 +12,9 @@ Until a review policy exists, use your own judgement and tell the person in one 
 Run any reviewer in a fresh context, and never treat the author session's own summary of the change as evidence (ADR 0002).
 
 1. Run `walkthrough start` in the repo.
-   If the person names the branch their change targets, pass `--target <branch>`.
+   With no options it walks through the current branch; if the person names the branch their change targets, pass `--target <branch>`.
+   For any other change (a range of commits, a colleague's change you fetched as the policy says), pass `--base <rev> --head <rev>` and a short `--label` to name it.
+   Pass the same options to every later `walkthrough` command; they find the walkthrough by them.
 2. Tell the person, in one or two lines, what the output says: the branch, the pinned base and head, and any warning.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
