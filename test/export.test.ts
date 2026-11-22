@@ -45,6 +45,15 @@ describe('walkthrough export', () => {
     expect(repo.run('start').stdout).not.toContain('uncommitted');
   });
 
+  test('walkthrough guide names export and list', () => {
+    repo = makeRepo();
+
+    const guide = repo.run('guide').stdout;
+
+    expect(guide).toContain('walkthrough export [--out <file>]');
+    expect(guide).toContain('walkthrough stop --list ends it');
+  });
+
   test('of a walkthrough never started is refused', () => {
     repo = makeRepo();
 
