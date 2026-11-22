@@ -45,8 +45,11 @@ async function gitAsync(cwd: string, input: string, ...args: string[]): Promise<
 }
 
 // Shared by all its worktrees; the hash of its git folder keeps two repos of the same name apart.
+export const commonDir = (cwd: string) =>
+  fs.realpathSync(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim());
+
 export function currentRepo(cwd: string): string {
-  const common = fs.realpathSync(git(cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir').trim());
+  const common = commonDir(cwd);
   const hash = crypto.createHash('sha256').update(common).digest('hex').slice(0, 8);
   return `${path.basename(path.dirname(common))}-${hash}`;
 }

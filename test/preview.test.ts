@@ -50,3 +50,17 @@ test('serves nothing outside the change, nothing it cannot preview, and nothing 
   expect((await fileAt('../state/token')).status).toBe(404);
   expect((await fetch(new URL('/file?path=logo.png', repo.url()))).status).toBe(404);
 });
+
+test('previews still load after the worktree the walkthrough was started in is removed', async () => {
+  repo = makeRepo({ feature: { 'docs/guide.md': '# Guide\n' } });
+  const worktree = path.join(path.dirname(repo.dir), 'login-worktree');
+  git(repo.dir, 'checkout', 'main');
+  git(repo.dir, 'worktree', 'add', worktree, 'feature/login');
+  repo.runIn(worktree, 'start');
+  git(repo.dir, 'worktree', 'remove', worktree);
+
+  const markdown = await fileAt('docs/guide.md');
+
+  expect(markdown.status).toBe(200);
+  expect(await markdown.text()).toBe('# Guide\n');
+});

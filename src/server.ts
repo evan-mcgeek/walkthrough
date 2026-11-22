@@ -6,7 +6,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { changedFiles, fileAt } from './change';
+import { changedFiles, commonDir, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
 import { previewType } from './preview';
 import { alive, psStart } from './processes';
@@ -77,6 +77,8 @@ export async function ensureServer(dir: string, list = false): Promise<string> {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
+    // Not the folder start ran in, which may be a worktree removed while the page is open.
+    cwd: commonDir(process.cwd()),
     detached: true,
     stdio: ['ignore', log, log],
   });
