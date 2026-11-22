@@ -16,6 +16,9 @@ export function git(cwd: string, ...args: string[]): string {
 
 type Files = Record<string, string>;
 
+/** The default change as one step, recorded as step 1. */
+export const ONE_STEP = [{ title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts'] }];
+
 const commit = (cwd: string, message: string, files: Files) => {
   for (const [name, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(cwd, name)), { recursive: true });

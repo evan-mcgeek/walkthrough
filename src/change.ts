@@ -10,7 +10,6 @@ export type Change = {
   target: string;
   base: string;
   head: string;
-  diff: string;
   /** Uncommitted and untracked paths, which the change leaves out. */
   uncommitted: number;
 };
@@ -54,7 +53,6 @@ export function currentChange(cwd: string, targetBranch?: string): Change {
     target,
     base,
     head,
-    diff: git(cwd, 'diff', '--no-color', '--no-ext-diff', base, head),
     uncommitted: git(cwd, 'status', '--porcelain').split('\n').filter(Boolean).length,
   };
 }
