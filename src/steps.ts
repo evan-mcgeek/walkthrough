@@ -1,26 +1,18 @@
 // The session groups, orders and folds the change into steps; this checks only that every changed file is in exactly one step.
 import { changedFiles, diffOf } from './change';
+import { filled, parseList } from './input';
 import type { FoldedFile, Step, Walkthrough } from './walkthrough';
 
 export type StepInput =
   | { title: string; explanation: string; assumptions: string[]; files: string[] }
   | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
 
-export const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 const isFoldedFile = (file: unknown): file is FoldedFile =>
   typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
 
 export function parseSteps(text: string): StepInput[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
-  }
-  if (!Array.isArray(parsed)) throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
-  return parsed.map((one: unknown, at) => {
-    const step = (one ?? {}) as Record<string, unknown>;
-    const name = `step ${String(at + 1)}`;
+  return parseList(text, 'the steps', (step, number): StepInput => {
+    const name = `step ${String(number)}`;
     const { title, explanation, files, folded, problems = [], assumptions = [] } = step;
     if (!filled(title)) throw new Error(`${name} needs a title`);
     if (!Array.isArray(files)) throw new Error(`${name}: files must be a list`);

@@ -1,6 +1,7 @@
 // The session pins notes to a step or to lines of a file in it; this checks only that the place is in the walkthrough.
 import { parse } from 'diff2html/lib-esm/diff-parser';
-import { filled, pathsOf } from './steps';
+import { filled, parseList } from './input';
+import { pathsOf } from './steps';
 import type { Step, Walkthrough } from './walkthrough';
 
 /** The first and last line, numbered as in the file at the head. */
@@ -49,16 +50,8 @@ export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: 
 }
 
 export function parseNotes(text: string, walkthrough: Walkthrough | null): NoteInput[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    parsed = null;
-  }
-  if (!Array.isArray(parsed)) throw new Error('the notes must be a JSON array on standard input; see walkthrough guide');
-  return parsed.map((one: unknown, at) => {
-    const note = (one ?? {}) as Record<string, unknown>;
-    const name = `note ${String(at + 1)}`;
+  return parseList(text, 'the notes', (note, number) => {
+    const name = `note ${String(number)}`;
     const { label, text: said, low = false } = note;
     if (!filled(label)) throw new Error(`${name} needs a label`);
     if (!filled(said)) throw new Error(`${name} needs text`);

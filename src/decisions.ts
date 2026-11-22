@@ -4,7 +4,7 @@ import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { cleanText, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
 import { anchorOf } from './notes';
-import { filled } from './steps';
+import { fieldsOf, filled, parseList } from './input';
 import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
@@ -81,18 +81,10 @@ const nameOfItem = (item: Item) =>
   item.type === 'walkthrough' ? 'the walkthrough' : `${item.type === 'checklist' ? 'checklist item' : item.type} ${item.id}`;
 
 export function parseActions(text: string, walkthrough: Walkthrough, conversation: Entry[]): { item: Item; actions: Action[] }[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    parsed = null;
-  }
-  if (!Array.isArray(parsed)) throw new Error('the actions must be a JSON array on standard input; see walkthrough guide');
   const known = new Map(itemsOf(walkthrough, conversation).map(one => [one.key, one.item]));
-  return parsed.map((one: unknown, at) => {
-    const fail = (problem: string) => new Error(`entry ${String(at + 1)}: ${problem}`);
-    const { item, actions } = (one ?? {}) as Record<string, unknown>;
-    const { type } = (item ?? {}) as Record<string, unknown>;
+  return parseList(text, 'the actions', ({ item, actions }, number) => {
+    const fail = (problem: string) => new Error(`entry ${String(number)}: ${problem}`);
+    const { type } = fieldsOf(item);
     if (typeof type !== 'string' || !ITEM_TYPES.has(type))
       throw fail('the item must be a step, a note, a checklist item or the walkthrough');
     const found = known.get(keyOf(item));
@@ -103,7 +95,7 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
       item: found,
       actions: actions.map((fields: unknown, number) => {
         const name = `action ${String(number + 1)}`;
-        const { id, label, note = false, edit = false } = (fields ?? {}) as Record<string, unknown>;
+        const { id, label, note = false, edit = false } = fieldsOf(fields);
         if (!filled(id)) throw fail(`${name} needs an id`);
         if (!filled(label)) throw fail(`${name} needs a label`);
         if (typeof note !== 'boolean') throw fail(`${name}: note must be true or false`);
