@@ -12,7 +12,7 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'esm',
-  target: 'node20',
+  target: 'node22',
   outfile: path.join(out, 'walkthrough.mjs'),
 });
 await build({
