@@ -1,5 +1,8 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
 import { ColorSchemeType } from 'diff2html/lib-esm/types';
+import { parse } from 'diff2html/lib-esm/diff-parser';
+import { previewType } from '../preview';
+import { renderMarkdown } from './markdown';
 import type { Entry, SessionMessage, SessionState, SessionView } from '../session';
 import type { Checklist, Decision, Step, Walkthrough } from '../walkthrough';
 
@@ -193,12 +196,68 @@ function diffView(step: Step): HTMLElement {
     colorScheme: ColorSchemeType.AUTO,
     fileContentToggle: false,
   }).draw();
+  // diff2html draws one wrapper per file, in the order it parses them.
+  const files = parse(step.diff);
+  view.querySelectorAll('.d2h-file-wrapper').forEach((wrapper, at) => {
+    const file = files[at];
+    if (file && !file.isDeleted) addPreview(wrapper, step.id, file.newName);
+  });
   drawn.set(step.id, { diff: step.diff, view });
   return view;
 }
 
+/** Files the person switched to their preview, by step id and path, so a redraw keeps them so. */
+const previewed = new Set<string>();
+
+/** A Diff / Preview switch on a file the page can preview, which shows the file as it is at the head commit. */
+function addPreview(wrapper: Element, stepId: string, file: string): void {
+  const type = previewType(file);
+  const diff = wrapper.querySelector<HTMLElement>('.d2h-file-diff');
+  if (!type || !diff) return;
+  const source = `file?path=${encodeURIComponent(file)}`;
+  const preview = el('div', { className: 'preview', hidden: true });
+  preview.setAttribute('role', 'region');
+  preview.setAttribute('aria-label', `Preview of ${file}`);
+  const fill = async () => {
+    if (type.startsWith('image/')) {
+      preview.replaceChildren(el('img', { src: source, alt: file }));
+      return;
+    }
+    preview.replaceChildren(el('p', { className: 'notice' }, 'Loading the preview.'));
+    const answer = await fetch(source).catch(() => null);
+    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text());
+    else preview.replaceChildren(el('p', { className: 'notice' }, 'Could not load the preview.'));
+  };
+  const choices = (['Diff', 'Preview'] as const).map(label =>
+    el('button', { type: 'button', className: 'quiet', onclick: () => void choose(label === 'Preview') }, label),
+  );
+  const key = JSON.stringify([stepId, file]);
+  const choose = async (previewing: boolean) => {
+    if (previewing) previewed.add(key);
+    else previewed.delete(key);
+    for (const [at, button] of choices.entries()) button.setAttribute('aria-pressed', String(previewing === (at === 1)));
+    diff.hidden = previewing;
+    preview.hidden = !previewing;
+    if (previewing && !preview.hasChildNodes()) await fill();
+  };
+  const toggle = el('div', { className: 'switch' }, ...choices);
+  toggle.setAttribute('role', 'group');
+  toggle.setAttribute('aria-label', `Show ${file} as`);
+  void choose(previewed.has(key));
+  wrapper.querySelector('.d2h-file-header')?.append(toggle);
+  diff.after(preview);
+}
+
 const paths = (label: string, files: string[]) =>
   el('p', { className: 'paths' }, `${label}: `, ...files.flatMap((file, at) => [at ? ', ' : '', el('code', {}, file)]));
+
+function assumedView(stepId: string, assumptions: string[]): HTMLElement[] {
+  if (!assumptions.length) return [];
+  const label = el('p', { id: `assumed-${stepId}` }, el('strong', {}, 'Assumed, not read'));
+  const list = el('ul', {}, ...assumptions.map(assumption => el('li', {}, assumption)));
+  list.setAttribute('aria-labelledby', label.id);
+  return [label, list];
+}
 
 /** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
 const opened = new Set<string>();
@@ -212,6 +271,7 @@ function stepBody(step: Step): HTMLElement[] {
           'div',
           { className: 'about' },
           ...step.explanation.split(/\n\s*\n/).map(paragraph => el('p', {}, paragraph.trim())),
+          ...assumedView(step.id, step.assumptions),
           paths('Files', step.files),
         ),
         diffView(step),

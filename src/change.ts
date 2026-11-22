@@ -88,13 +88,10 @@ export const diffOf = (cwd: string, base: string, head: string, files: ChangedFi
         ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])),
       );
 
-/** The file's text at `rev`, or null when it does not exist there. */
-export function fileAt(cwd: string, rev: string, file: string): string | null {
-  try {
-    return git(cwd, 'cat-file', 'blob', `${rev}:${file}`);
-  } catch {
-    return null;
-  }
+/** The file's content at `rev`, or null when it does not exist there. */
+export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
+  const result = spawnSync('git', ['cat-file', 'blob', `${rev}:${file}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
+  return result.status === 0 ? result.stdout : null;
 }
 
 function defaultTarget(cwd: string): string {

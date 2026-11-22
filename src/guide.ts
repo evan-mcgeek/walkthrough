@@ -3,6 +3,7 @@ const example = [
   {
     title: 'Session store',
     explanation: 'Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.',
+    assumptions: ['Sessions are only read by the login handler.'],
     files: ['src/session-store.ts', 'test/session-store.test.ts'],
   },
   {
@@ -28,8 +29,8 @@ walkthrough steps < steps.json
   Records the steps, replacing the steps and decisions recorded before.
   Standard input is a JSON array of steps in reading order.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
-  A step:
-    {"title": string, "explanation": string, "files": [path, ...]}
+  A step, with what the session assumed rather than read ("assumptions" may be left out):
+    {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
   A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
     {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
   Example:
