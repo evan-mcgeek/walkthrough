@@ -34,6 +34,19 @@ const checklistExample = {
   ],
 };
 
+const actionsExample = [
+  {
+    item: { type: 'note', id: '5f0c2a9e' },
+    actions: [
+      { id: 'accept', label: 'Accept' },
+      { id: 'edit', label: 'Edit first', edit: true },
+      { id: 'drop', label: 'Drop', note: true },
+    ],
+  },
+  { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'fix', label: 'Needs a fix', note: true }] },
+  { item: { type: 'walkthrough' }, actions: [{ id: 'post', label: 'Post my comments' }] },
+];
+
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
   With no options it is of the current branch against origin/<target>, the remote's default branch unless given.
@@ -77,16 +90,37 @@ walkthrough checklist < checklist.json
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
 
+walkthrough actions < actions.json
+  Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
+  Standard input is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
+  An item is a step, a note (by the id walkthrough note printed), a checklist item ("1" for the first) or the whole walkthrough:
+    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
+  An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
+    [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
+  A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
+  Other items offer nothing until actions are recorded on them; the walkthrough's actions show beside the steps.
+  Recording the steps or the checklist again drops the actions recorded on them.
+  When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
+  Example actions, for a note with the id 5f0c2a9e:
+${JSON.stringify(actionsExample, null, 2)}
+
+walkthrough decisions
+  Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
+    {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
+  A decision stays on an item until what it was about changes: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
     {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
     {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer shows on those lines
     {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a note or to a question the session asked
+    {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
+  The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
 walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
-  Puts the session's Markdown on the page: an answer to the ask or reply with that id, a question the person replies to, or else a note at the top.
+  Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
-  Until every ask and reply that listen handed over has its answer, the page shows the session working.
+  Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
 `;

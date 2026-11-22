@@ -33,15 +33,15 @@ test('an approved step stays approved when the page is opened again', async ({ p
   repo.record(ONE_STEP);
   const step = page.getByRole('region', { name: 'Login' });
   await step.getByRole('button', { name: 'Approve' }).click();
-  await expect(step.getByText('Approved', { exact: true })).toBeVisible();
+  await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
 
   await page.close();
   const reopened = await context.newPage();
   await reopened.goto(url);
 
   const again = reopened.getByRole('region', { name: 'Login' });
-  await expect(again.getByText('Approved', { exact: true })).toBeVisible();
-  await expect(again.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+  await expect(again.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(again.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the Stop button ends the server', async ({ page, request, url }) => {
@@ -83,8 +83,7 @@ test('a walkthrough of a range is headed by its label', async ({ page, repo }) =
 test('a request without the token is refused', async ({ request, url }) => {
   const { origin } = new URL(url);
 
-  expect((await request.post(`${origin}/decide`, { data: { step: '1', decision: 'approved' } })).status()).toBe(
-    404,
-  );
+  const approve = { item: { type: 'step', id: '1' }, action: 'approve' };
+  expect((await request.post(`${origin}/decide`, { data: approve })).status()).toBe(404);
   expect((await request.get(`${origin}/s/${'0'.repeat(48)}/`)).status()).toBe(404);
 });

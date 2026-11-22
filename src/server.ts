@@ -10,8 +10,9 @@ import { changedFiles, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
 import { previewType } from './preview';
 import { alive, psStart } from './processes';
-import { ask, reply, type SessionView, sessionView } from './session';
-import { type Decision, DECISIONS, decide as walkthroughDecide, readWalkthrough } from './walkthrough';
+import { decide, markRead, walkthroughView } from './decisions';
+import { ask, reply, sessionView } from './session';
+import { readWalkthrough } from './walkthrough';
 
 type ServerRecord = { pid: number; started: string; url: string };
 type Answer = { status: number; body?: unknown; after?: () => void };
@@ -100,11 +101,8 @@ export async function stopServer(dir: string): Promise<boolean> {
 export function serve(dir: string): void {
   const token = pageToken(dir);
   const routes: Record<string, Route> = {
-    '/decide': ({ step, decision }) => {
-      const known = typeof step === 'string' && DECISIONS.some(one => one === decision);
-      const decided = known ? walkthroughDecide(dir, step, decision as Decision) : null;
-      return decided ? { status: 200, body: decided } : { status: 400 };
-    },
+    '/decide': fields => answered(decide(dir, fields)),
+    '/read': ({ step }) => answered(markRead(dir, step)),
     '/ask': fields => answered(ask(dir, fields)),
     '/reply': ({ to, text }) => answered(reply(dir, to, text)),
     '/stop': () => ({ status: 200, body: { stopped: true }, after: shutDown }),
@@ -141,7 +139,7 @@ export function serve(dir: string): void {
   });
 }
 
-const answered = (view: SessionView | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
+const answered = (view: object | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
 
 const logged = (error: unknown) => {
   console.error(`walkthrough server: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
@@ -180,7 +178,7 @@ function serveFile(dir: string, what: string, query: URLSearchParams, res: http.
     return;
   }
   if (what === 'data/walkthrough.json') {
-    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(readWalkthrough(dir)));
+    res.writeHead(200, JSON_HEADERS).end(JSON.stringify(walkthroughView(dir)));
     return;
   }
   if (what === 'data/session.json') {

@@ -109,8 +109,36 @@ h2 {
   font-weight: 600;
 }
 
-.decision.approved {
+.decide {
+  display: grid;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.note .decide,
+.checklist .decide,
+.whole .decide {
+  padding: 8px 0 0;
+  border-bottom: 0;
+}
+
+.decide p {
+  margin: 0;
+}
+
+.decision {
+  color: var(--muted);
+}
+
+.decision.decided {
   color: var(--ok);
+  font-weight: 600;
+}
+
+.choices button[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
   font-weight: 600;
 }
 
@@ -284,6 +312,36 @@ main {
   background: var(--panel);
   box-shadow: inset 3px 0 0 var(--accent);
   font-weight: 600;
+}
+
+.steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.steps li a {
+  flex: 1;
+  min-width: 0;
+}
+
+.steps .mark {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.decided-steps summary {
+  padding: 6px 10px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.whole h2 {
+  padding: 0 10px;
+}
+
+.whole .decide {
+  padding: 0 10px;
 }
 
 .steps a.decided::after {
@@ -576,4 +634,16 @@ button:disabled {
 
 .diff tr.selected > td {
   background-color: color-mix(in srgb, var(--accent) 16%, var(--bg));
+}
+
+.decide .choices {
+  margin-bottom: 0;
+}
+
+.draft.taking {
+  flex-wrap: wrap;
+}
+
+.draft.taking textarea {
+  flex: 1 1 100%;
 }

@@ -1,14 +1,13 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
 import type { Change, Source } from './change';
+import { type Action, type Item, itemKey } from './items';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
-export const DECISIONS = ['approved'] as const;
-export type Decision = (typeof DECISIONS)[number];
 export type FoldedFile = { path: string; reason: string };
 /** A `folded` step is one the session marked so. */
-export type Step = { id: string; title: string; diff: string; decision: Decision | null } & (
+export type Step = { id: string; title: string; diff: string } & (
   | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
@@ -22,6 +21,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   /** Empty until the session records its steps. */
   steps: Step[];
   checklist?: Checklist;
+  /** The actions the session defined, by item key. */
+  actions?: Record<string, Action[]>;
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
@@ -69,36 +70,51 @@ export function openWalkthrough(
   });
 }
 
-/** Replaces the steps, and with them every decision; `build` sees the saved walkthrough under the lock. */
-export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
+/** Changes the saved walkthrough under its lock. */
+function update<T>(dir: string, change: (walkthrough: Walkthrough) => T): T {
   return locked(file(dir), () => {
     const walkthrough = readWalkthrough(dir);
     if (!walkthrough) throw new Error('there is no such walkthrough yet; run walkthrough start first');
+    const changed = change(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return changed;
+  });
+}
+
+/** The actions kept on items `keep` passes. */
+function keepActions(walkthrough: Walkthrough, keep: (key: string) => boolean): Record<string, Action[]> {
+  return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
+}
+
+/** Replaces the steps and drops the actions defined on them; `build` sees the saved walkthrough under the lock. */
+export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Step[]): Walkthrough {
+  return update(dir, walkthrough => {
     walkthrough.steps = build(walkthrough);
-    writeJson(file(dir), walkthrough);
+    // Step ids are positions, so actions recorded on them may now name other steps.
+    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:'));
     return walkthrough;
   });
 }
 
-/** Replaces the checklist; `build` sees the saved walkthrough under the lock. */
+/** Replaces the checklist and drops the actions defined on its items; `build` sees the saved walkthrough under the lock. */
 export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Checklist {
-  return locked(file(dir), () => {
-    const walkthrough = readWalkthrough(dir);
-    if (!walkthrough) throw new Error('there is no walkthrough of this branch yet; run walkthrough start first');
-    walkthrough.checklist = build(walkthrough);
-    writeJson(file(dir), walkthrough);
-    return walkthrough.checklist;
+  return update(dir, walkthrough => {
+    const checklist = build(walkthrough);
+    walkthrough.checklist = checklist;
+    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('checklist:'));
+    return checklist;
   });
 }
 
-/** The walkthrough with the decision recorded, or null when it has no such step. */
-export function decide(dir: string, stepId: string, decision: Decision): Walkthrough | null {
-  return locked(file(dir), () => {
-    const walkthrough = readWalkthrough(dir);
-    const step = walkthrough?.steps.find(one => one.id === stepId);
-    if (!walkthrough || !step) return null;
-    step.decision = decision;
-    writeJson(file(dir), walkthrough);
-    return walkthrough;
+/** Replaces the actions of each item `build` names, an empty list removing them; other items keep theirs. */
+export function recordActions(dir: string, build: (walkthrough: Walkthrough) => { item: Item; actions: Action[] }[]) {
+  return update(dir, walkthrough => {
+    const recorded = build(walkthrough);
+    const named = new Map(recorded.map(({ item, actions }) => [itemKey(item), actions]));
+    walkthrough.actions = {
+      ...keepActions(walkthrough, key => !named.has(key)),
+      ...Object.fromEntries([...named].filter(([, actions]) => actions.length)),
+    };
+    return recorded;
   });
 }
