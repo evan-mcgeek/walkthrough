@@ -126,7 +126,14 @@ The tool itself knows only git, its own state and the page, so it works for any 
 - **Server**: plain `node:http`, localhost only, private URL token, host and origin check, JSON-only POST bodies, strict CSP.
 - **Page**: plain TypeScript and the DOM, no framework, bundled with esbuild, diffs by diff2html in line-by-line mode; each region is redrawn from state by one render function; it polls for state.
 - **Review policy template**: a Markdown file shipped with the plugin, written for agents, naming no specific agent, plugin, tracker or code host.
-  It carries the defaults: step order (what others depend on first), writing rules (short sentences, no verdict words, one idea per step, the why and the rejected alternative), how findings are checked before they are shown, which notes are low priority, how drafts for colleagues are written and marked as agent-written, and which actions to offer.
+  It carries the defaults, all editable:
+  - step order (what others depend on first) and writing rules (short sentences, no verdict words, one idea per step, the why and the rejected alternative);
+  - reviewers run in a fresh context, and a finding is shown only when it states a concrete failure and a second agent confirmed it; the rest are low priority;
+  - drafts for colleagues are one or two sentences and start with an agent-written marker, kept even when edited;
+  - a rejected finding is proposed as a convention in the project's agent instructions, shown as a diff and written only on the person's yes, left uncommitted;
+  - on the person's own change, flagged items become a fix list handed to an author session; the walkthrough session never edits code;
+  - for a review the person received, and for replies to a review they left, the session walks the threads and drafts replies; threads are resolved on the code host only after the person's review is confirmed submitted;
+  - which actions to offer on each kind of item.
 
 ### The change
 
@@ -182,7 +189,7 @@ The tool itself knows only git, its own state and the page, so it works for any 
 
 ### Theme
 
-- Pending the person's answer: light only, or light and dark following the system setting.
+- Light and dark, following the system setting.
 
 ## Testing Decisions
 

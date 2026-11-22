@@ -9,7 +9,7 @@ The skill reads the policy and the project's instructions on every walkthrough a
 
 **Status:** ready-for-agent
 
-- [ ] The template carries step order, writing rules, finding checks, low-priority rules, draft rules with an agent-written marker, and actions.
+- [ ] The template carries every default listed under "Review policy template" in the spec, including settled findings as conventions, the fix-list hand-over, and received-review and reply walkthroughs.
 - [ ] First run offers the template and an interview; an unchanged template is offered again later.
 - [ ] SKILL.md holds no review rule of its own; every judgement points at the policy or project instructions.
 - [ ] The CLI never reads the policy.
