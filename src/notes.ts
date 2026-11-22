@@ -1,0 +1,59 @@
+// The session pins notes to a step or to lines of a file in it; this checks only that the place is in the walkthrough.
+import { parse } from 'diff2html/lib-esm/diff-parser';
+import { filled } from './steps';
+import type { Walkthrough } from './walkthrough';
+
+/** The first and last line, numbered as in the file at the head. */
+export type Lines = [number, number];
+/** A step, or lines of a file that the step's diff shows. */
+export type Place = { step: string; file?: string; lines?: Lines };
+export type NoteMark = Place & { label: string; low?: true };
+export type NoteInput = NoteMark & { text: string };
+
+const isLines = (value: unknown): value is Lines =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every(line => Number.isInteger(line) && (line as number) >= 1) &&
+  (value[0] as number) <= (value[1] as number);
+
+/** The place `fields` name in the walkthrough, or an error saying why it is not there. */
+export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: Record<string, unknown>): Place {
+  const found = walkthrough?.steps.find(one => one.id === step);
+  if (!found) throw new Error(`the walkthrough has no step ${String(step)}`);
+  if (file === undefined && lines === undefined) return { step: found.id };
+  if (!filled(file)) throw new Error('lines need a file');
+  if (!isLines(lines)) throw new Error('a file needs lines, as [first, last]');
+  const shown = parse(found.diff).find(one => one.newName === file);
+  if (!shown) throw new Error(`step ${found.id} does not change ${file}`);
+  const numbers = new Set(shown.blocks.flatMap(block => block.lines.map(line => line.newNumber)));
+  const [first, last] = lines;
+  if (!numbers.has(first) || !numbers.has(last))
+    throw new Error(`lines ${String(first)}-${String(last)} of ${file} are not in the diff of step ${found.id}`);
+  return { step: found.id, file, lines: [first, last] };
+}
+
+/** The notes the session sent, in its order, or an error naming the first that does not fit the walkthrough. */
+export function parseNotes(text: string, walkthrough: Walkthrough | null): NoteInput[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = null;
+  }
+  if (!Array.isArray(parsed)) throw new Error('the notes must be a JSON array on standard input; see walkthrough guide');
+  return parsed.map((one: unknown, at) => {
+    const note = (one ?? {}) as Record<string, unknown>;
+    const name = `note ${String(at + 1)}`;
+    const { label, text: said, low = false } = note;
+    if (!filled(label)) throw new Error(`${name} needs a label`);
+    if (!filled(said)) throw new Error(`${name} needs text`);
+    if (typeof low !== 'boolean') throw new Error(`${name}: low must be true or false`);
+    let place: Place;
+    try {
+      place = placeIn(walkthrough, note);
+    } catch (error) {
+      throw new Error(`${name}: ${(error as Error).message}`);
+    }
+    return { ...place, label, text: said, ...(low && { low: true as const }) };
+  });
+}

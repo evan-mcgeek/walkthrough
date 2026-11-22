@@ -1,3 +1,3 @@
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig({ test: { include: ['test/**/*.test.ts'], setupFiles: ['test/sandbox.ts'] } });
+export default defineConfig({ test: { include: ['test/**/*.test.ts'], setupFiles: ['test/sandbox.ts'], testTimeout: 15_000 } });

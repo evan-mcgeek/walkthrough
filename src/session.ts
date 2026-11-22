@@ -3,16 +3,25 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
+import { type NoteInput, type NoteMark, type Place, placeIn } from './notes';
 import { alive, psStart } from './processes';
 import { readWalkthrough } from './walkthrough';
 
 /** What the person sends from the page; `listen` hands these to the session. */
 export type PageRequest = { id: string; from: 'page'; at: string; text: string } & (
-  | { kind: 'ask'; step: string }
+  | ({ kind: 'ask' } & Place)
   | { kind: 'reply'; to: string }
 );
-/** What the session says on the page: an answer to an ask, a question for the person, or a note. */
-export type SessionMessage = { id: string; from: 'session'; at: string; text: string; answer?: string; question?: true };
+/** What the session says on the page: an answer, a question for the person, a note pinned to a place, or else a note at the top. */
+export type SessionMessage = {
+  id: string;
+  from: 'session';
+  at: string;
+  text: string;
+  answer?: string;
+  question?: true;
+  note?: NoteMark;
+};
 export type Entry = PageRequest | SessionMessage;
 export type SessionState = 'listening' | 'working' | 'needs-you' | 'quiet';
 export type SessionView = { state: SessionState; conversation: Entry[] };
@@ -86,18 +95,26 @@ function request(dir: string, entry: PageRequest): SessionView {
   });
 }
 
-/** The person's question about a step, or null when there is no such step or no question. */
-export function ask(dir: string, step: unknown, text: unknown): SessionView | null {
+/** The person's question about a step or lines of it, or null when there is no such place or no question. */
+export function ask(dir: string, { text, ...where }: Record<string, unknown>): SessionView | null {
   const said = cleanText(text);
-  const known = readWalkthrough(dir)?.steps.some(one => one.id === step);
-  if (!said || !known || typeof step !== 'string') return null;
-  return request(dir, { id: newId(), from: 'page', at: stamp(), kind: 'ask', step, text: said });
+  let place: Place;
+  try {
+    place = placeIn(readWalkthrough(dir), where);
+  } catch {
+    return null;
+  }
+  if (!said) return null;
+  return request(dir, { id: newId(), from: 'page', at: stamp(), kind: 'ask', ...place, text: said });
 }
 
-/** The person's reply to an open question of the session, or null when there is no such question or no reply. */
+/** The person's reply to a note or an open question of the session, or null when there is no such one or no reply. */
 export function reply(dir: string, to: unknown, text: unknown): SessionView | null {
   const said = cleanText(text);
-  const open = openQuestions(readLines<Entry>(files(dir).conversation)).some(question => question.id === to);
+  const conversation = readLines<Entry>(files(dir).conversation);
+  const open =
+    openQuestions(conversation).some(question => question.id === to) ||
+    conversation.some(entry => entry.from === 'session' && entry.note && entry.id === to);
   if (!said || !open || typeof to !== 'string') return null;
   return request(dir, { id: newId(), from: 'page', at: stamp(), kind: 'reply', to, text: said });
 }
@@ -117,6 +134,17 @@ export function say(dir: string, text: string, { answer, question }: { answer?: 
       ...(question && { question: true as const }),
     });
   });
+}
+
+/** Pins the session's notes to their places on the page, in order. */
+export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note: NoteMark })[] {
+  return hold(dir, () =>
+    notes.map(({ text, ...mark }) => {
+      const entry = { id: newId(), from: 'session', at: stamp(), text, note: mark } satisfies SessionMessage;
+      append(files(dir).conversation, entry);
+      return entry;
+    }),
+  );
 }
 
 /**

@@ -4,7 +4,8 @@ import { parseArgs } from 'node:util';
 import { changedFiles, currentBranch, currentChange } from './change';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
-import { listen, say } from './session';
+import { parseNotes } from './notes';
+import { listen, note, say } from './session';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
 import { openWalkthrough, readWalkthrough, recordSteps, type Walkthrough, walkthroughDir } from './walkthrough';
@@ -64,6 +65,13 @@ function steps(): void {
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}.`);
 }
 
+function notes(): void {
+  const { dir, walkthrough } = current();
+  const noted = note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
+  const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
+  console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
+}
+
 async function listenCommand(): Promise<void> {
   const { dir } = current();
   const taken = await listen(dir, () => serverRunning(dir));
@@ -91,6 +99,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   files,
   // The session's steps, as a JSON array on standard input.
   steps,
+  // The session's notes, as a JSON array on standard input.
+  note: notes,
   guide: () => {
     process.stdout.write(GUIDE);
   },
@@ -119,7 +129,7 @@ const command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      'usage: walkthrough start [--target <branch>] | guide | files | steps < steps.json | listen | say [--answer <id>] [--question] <text> | stop | prune [<branch>]',
+      'usage: walkthrough start [--target <branch>] | guide | files | steps < steps.json | note < notes.json | listen | say [--answer <id>] [--question] <text> | stop | prune [<branch>]',
     );
   await command(rest);
 } catch (error) {

@@ -6,7 +6,7 @@ export type StepInput =
   | { title: string; explanation: string; files: string[] }
   | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
 
-const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
+export const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 const isFoldedFile = (file: unknown): file is FoldedFile =>
   typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
 

@@ -98,6 +98,9 @@ export function makeRepo({
     /** Records the steps the way the skill does, as JSON on standard input. */
     record: (steps: unknown) =>
       spawnSync(CLI, ['steps'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(steps) }),
+    /** Records notes the way the skill does, as JSON on standard input. */
+    note: (notes: unknown) =>
+      spawnSync(CLI, ['note'], { cwd: dir, encoding: 'utf8', env, input: JSON.stringify(notes) }),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
     /** The page address the last start opened. */
