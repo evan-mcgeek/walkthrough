@@ -93,6 +93,26 @@ describe('walkthrough prune', () => {
     expect(saved('feature/login')).toBe(false);
   });
 
+  test('runs on start at most once a day', () => {
+    twoWalkthroughs();
+    pullRequests({ 'feature/login': ['MERGED'] });
+    const asked = repo.ghCalls().length;
+
+    const again = repo.run('start');
+
+    expect(again.stdout).not.toContain('Removed');
+    expect(repo.ghCalls()).toHaveLength(asked);
+    expect(saved('feature/login')).toBe(true);
+
+    const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(path.join(repo.state, 'shop', 'last-prune.json'), JSON.stringify({ at: dayAgo }));
+    const nextDay = repo.run('start');
+
+    expect(nextDay.stdout).toContain('Removed the walkthrough of feature/login: its pull request is merged.');
+    expect(saved('feature/login')).toBe(false);
+    expect(saved('feature/cart')).toBe(true);
+  });
+
   test('says so when the repo has no saved walkthrough', () => {
     repo = makeRepo();
 

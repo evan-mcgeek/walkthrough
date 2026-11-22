@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { currentRepo } from './change';
+import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 import { stopServer } from './server';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
@@ -13,6 +14,7 @@ function over(cwd: string, { branch }: Walkthrough): string | null {
   const list = spawnSync('gh', ['pr', 'list', '--head', branch, '--state', 'all', '--json', 'state'], {
     cwd,
     encoding: 'utf8',
+    timeout: 15_000,
   });
   if (list.status !== 0) return null;
   let states: unknown[];
@@ -41,4 +43,18 @@ export async function prune(cwd: string): Promise<string[]> {
     removed.push(`Removed the walkthrough of ${walkthrough.branch}: ${why}.`);
   }
   return removed;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Prunes the repo's walkthroughs unless that was done in the last day. */
+export async function pruneDaily(cwd: string): Promise<string[]> {
+  const marker = path.join(stateDir(), currentRepo(cwd), 'last-prune.json');
+  const due = locked(marker, () => {
+    const { at = '' } = readJson<{ at?: string }>(marker, {});
+    if (Date.now() - Date.parse(at) < DAY_MS) return false;
+    writeJson(marker, { at: new Date().toISOString() });
+    return true;
+  });
+  return due ? prune(cwd) : [];
 }

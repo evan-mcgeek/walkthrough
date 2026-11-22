@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { currentBranch, currentChange } from './change';
+import { prune, pruneDaily } from './prune';
 import { ensureServer, serve, stopServer } from './server';
-import { prune } from './prune';
 import { openWalkthrough, walkthroughDir } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
@@ -11,6 +11,7 @@ const plural = (count: number, word: string) => `${String(count)} ${word}${count
 async function start(args: string[]): Promise<void> {
   const { values } = parseArgs({ args, options: { target: { type: 'string' } } });
   const change = currentChange(process.cwd(), values.target);
+  for (const line of await pruneDaily(process.cwd())) console.log(line);
   const { dir, walkthrough, opened } = openWalkthrough(change);
   const { steps } = walkthrough;
   console.log(
