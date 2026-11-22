@@ -65,7 +65,6 @@ export function buildSteps(cwd: string, { base, head }: Walkthrough, inputs: Ste
       id: String(at + 1),
       title: input.title,
       diff: diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
-      decision: null,
     };
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }

@@ -57,7 +57,6 @@ describe('walkthrough steps', () => {
       kind: 'step',
       explanation: 'Adds a login function that lets everyone in, with its test.',
       files: ['login.ts', 'login.test.ts'],
-      decision: null,
     });
     expect(steps[0]?.diff).toContain('+export const login = () => true;');
     expect(steps[0]?.diff).toContain("+test('login', () => {});");
@@ -157,7 +156,6 @@ describe('folded steps', () => {
       title: 'Regenerated files',
       files: [{ path: 'schema.json', reason: 'Regenerated from the schema source.' }],
       problems: ['schema.json still lists the removed field.'],
-      decision: null,
     });
     expect(steps[1]?.diff).toContain('+{"field": 1}');
     expect(steps[1]?.diff).not.toContain('login');

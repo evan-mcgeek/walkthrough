@@ -72,9 +72,9 @@ test('shows how many steps are decided and left, and approving moves on to the n
 
   await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Steps' }).getByRole('link', { name: '1. Login check' })).toHaveClass(
-    /decided/,
-  );
+  const nav = page.getByRole('navigation', { name: 'Steps' });
+  await nav.getByText('1 decided').click();
+  await expect(nav.getByRole('link', { name: '1. Login check' })).toHaveClass(/decided/);
 
   await page.reload();
   await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();

@@ -6,10 +6,19 @@ import { parseChecklist } from './checklist';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
-import { listen, note, say, starting } from './session';
+import { conversationOf, listen, note, say, starting } from './session';
+import { decisionsOf, parseActions, walkthroughView } from './decisions';
 import { GUIDE } from './guide';
 import { buildSteps, parseSteps } from './steps';
-import { nameOf, openWalkthrough, readWalkthrough, recordChecklist, recordSteps, walkthroughDir } from './walkthrough';
+import {
+  nameOf,
+  openWalkthrough,
+  readWalkthrough,
+  recordActions,
+  recordChecklist,
+  recordSteps,
+  walkthroughDir,
+} from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
@@ -53,10 +62,11 @@ async function start(args: string[]): Promise<void> {
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
-  if (opened === 'resumed')
-    console.log(
-      `Resumed: ${String(steps.filter(step => step.decision).length)} of ${plural(steps.length, 'step')} decided.`,
-    );
+  if (opened === 'resumed') {
+    const decided = walkthroughView(dir)?.decided ?? {};
+    const count = steps.filter(step => decided[`step:${step.id}`]).length;
+    console.log(`Resumed: ${String(count)} of ${plural(steps.length, 'step')} decided.`);
+  }
   if (opened === 'replaced') console.log('The head moved since the last walkthrough, so it starts over.');
   if (change.uncommitted > 0)
     console.log(
@@ -106,6 +116,21 @@ function checklist(args: string[]): void {
   console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}.`);
 }
 
+function actions(args: string[]): void {
+  const text = fs.readFileSync(0, 'utf8');
+  const { dir } = located(args);
+  const recorded = recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
+  console.log(`Recorded the actions of ${plural(recorded.length, 'item')}.`);
+}
+
+function decisions(args: string[]): void {
+  const { dir, walkthrough } = current(args);
+  for (const { item, decision } of decisionsOf(walkthrough, conversationOf(dir))) {
+    const { id, at, action, note, text } = decision ?? {};
+    console.log(JSON.stringify({ item, decision: decision && { id, at, action, note, text } }));
+  }
+}
+
 async function listenCommand(args: string[]): Promise<void> {
   const { dir } = current(args);
   const taken = await listen(dir, () => serverRunning(dir));
@@ -113,7 +138,8 @@ async function listenCommand(args: string[]): Promise<void> {
     console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
     process.exitCode = 3;
   } else if (taken === 'stopped') console.log(JSON.stringify({ kind: 'stopped' }));
-  else for (const request of taken) console.log(JSON.stringify(request));
+  // The fingerprint only matches a decision to its item.
+  else for (const request of taken) console.log(JSON.stringify({ ...request, on: undefined }));
 }
 
 function sayCommand(args: string[]): void {
@@ -136,6 +162,9 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   note: notes,
   // The session's checklist, as a JSON object on standard input.
   checklist,
+  // The session's actions, as a JSON array on standard input.
+  actions,
+  decisions,
   guide: () => {
     process.stdout.write(GUIDE);
   },
@@ -169,6 +198,7 @@ try {
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> [--label <text>]]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
+        '    | actions < actions.json | decisions\n' +
         '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
         '  every command but guide finds the walkthrough from the options start was given: none for the current branch',
     );

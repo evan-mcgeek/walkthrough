@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import type { SessionView } from '../src/session';
-import type { Walkthrough } from '../src/walkthrough';
+import type { WalkthroughView } from '../src/decisions';
 import { ONE_STEP, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
@@ -15,7 +15,7 @@ const post = (page: string, route: string, body: unknown) =>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as Walkthrough;
+const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as WalkthroughView;
 const sessionAt = async (page: string) => (await (await fetch(`${page}data/session.json`)).json()) as SessionView;
 
 async function until(what: string, done: () => Promise<boolean>, ms = 5000) {
@@ -117,7 +117,7 @@ describe('walkthrough say', () => {
       expect.objectContaining({ from: 'page', kind: 'ask', step: '1', text: 'Why is app 2 now?' }),
       expect.objectContaining({ from: 'session', answer: asked?.['id'], text: 'Login needs the second app.' }),
     ]);
-    expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();
+    expect((await shownAt(repo.url())).decided['step:1']).toBeNull();
   });
 
   test('refuses an answer to a request the page never sent', () => {

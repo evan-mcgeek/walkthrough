@@ -5,12 +5,16 @@ import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { type NoteInput, type NoteMark, type Place, placeIn } from './notes';
 import { alive, psStart } from './processes';
+import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
 
+/** An action the person took on an item, with their note and edited text; `on` fingerprints the item as it was. */
+export type Taken = { kind: 'decision'; item: Item; action: string; note?: string; text?: string; on: string };
 /** What the person sends from the page; `listen` hands these to the session. */
-export type PageRequest = { id: string; from: 'page'; at: string; text: string } & (
-  | ({ kind: 'ask' } & Place)
-  | { kind: 'reply'; to: string }
+export type PageRequest = { id: string; from: 'page'; at: string } & (
+  | ({ kind: 'ask'; text: string } & Place)
+  | { kind: 'reply'; to: string; text: string }
+  | Taken
 );
 /** What the session says on the page: an answer to a request, a question with the answers it offers, a note pinned to a place, or else a note at the top. */
 export type SessionMessage = {
@@ -67,7 +71,7 @@ const append = (file: string, entry: Entry) => {
 };
 const newId = () => crypto.randomBytes(4).toString('hex');
 const stamp = () => new Date().toISOString();
-const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '');
+export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '');
 
 /** Questions the session asked that the person has not replied to. */
 const openQuestions = (conversation: Entry[]) =>
@@ -99,9 +103,11 @@ function presence(listener: Listener | null, conversation: Entry[]): Exclude<Ses
   }
 }
 
+export const conversationOf = (dir: string) => readLines<Entry>(files(dir).conversation);
+
 export function sessionView(dir: string): SessionView {
-  const { conversation: file, listener } = files(dir);
-  const conversation = readLines<Entry>(file);
+  const conversation = conversationOf(dir);
+  const { listener } = files(dir);
   const state = openQuestions(conversation).length
     ? 'needs-you'
     : presence(readJson<Listener | null>(listener, null), conversation);
@@ -117,7 +123,11 @@ export function starting(dir: string): void {
   });
 }
 
-function request(dir: string, entry: PageRequest): SessionView {
+type Fields<T> = T extends unknown ? Omit<T, 'id' | 'from' | 'at'> : never;
+
+/** Hands what the person sent to the session, by way of the conversation and the inbox `listen` empties. */
+export function request(dir: string, fields: Fields<PageRequest>): SessionView {
+  const entry = { id: newId(), from: 'page', at: stamp(), ...fields } as PageRequest;
   return hold(dir, () => {
     append(files(dir).conversation, entry);
     append(files(dir).inbox, entry);
@@ -135,18 +145,18 @@ export function ask(dir: string, { text, ...where }: Record<string, unknown>): S
     return null;
   }
   if (!said) return null;
-  return request(dir, { id: newId(), from: 'page', at: stamp(), kind: 'ask', ...place, text: said });
+  return request(dir, { kind: 'ask', ...place, text: said });
 }
 
 /** The person's reply to a note or an open question of the session, or null when there is no such one or no reply. */
 export function reply(dir: string, to: unknown, text: unknown): SessionView | null {
   const said = cleanText(text);
-  const conversation = readLines<Entry>(files(dir).conversation);
+  const conversation = conversationOf(dir);
   const open =
     openQuestions(conversation).some(question => question.id === to) ||
     conversation.some(entry => entry.from === 'session' && entry.note && entry.id === to);
   if (!said || !open || typeof to !== 'string') return null;
-  return request(dir, { id: newId(), from: 'page', at: stamp(), kind: 'reply', to, text: said });
+  return request(dir, { kind: 'reply', to, text: said });
 }
 
 /** Puts the session's words on the page; `answer` names the request they answer, `choices` the answers a question offers. */

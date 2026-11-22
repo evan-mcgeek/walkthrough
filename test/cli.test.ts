@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
+import type { WalkthroughView } from '../src/decisions';
 import type { Walkthrough } from '../src/walkthrough';
 import { git, ONE_STEP, makeRepo, type Repo } from './helpers';
 
@@ -66,7 +67,8 @@ const post = (page: string, route: string, body: unknown, token = new URL(page).
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as Walkthrough;
+const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as WalkthroughView;
+const approve = { item: { type: 'step', id: '1' }, action: 'approve' };
 
 describe('deciding on a step', () => {
   test('an approve decision is saved and resumed after the page server restarts', async () => {
@@ -74,20 +76,20 @@ describe('deciding on a step', () => {
     repo.run('start');
     repo.record(ONE_STEP);
 
-    const answer = await post(repo.url(), '/decide', { step: '1', decision: 'approved' });
+    const answer = await post(repo.url(), '/decide', approve);
     expect(answer.status).toBe(200);
     repo.run('stop');
     const again = repo.run('start');
 
     expect(again.stdout).toContain('Resumed: 1 of 1 step decided.');
-    expect((await shownAt(repo.url())).steps[0]?.decision).toBe('approved');
+    expect((await shownAt(repo.url())).decided['step:1']).toMatchObject({ action: 'approve' });
   });
 
   test('a new head starts the walkthrough over and says so', async () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    await post(repo.url(), '/decide', { step: '1', decision: 'approved' });
+    await post(repo.url(), '/decide', approve);
     fs.writeFileSync(path.join(repo.dir, 'login.ts'), 'export const login = () => false;\n');
     git(repo.dir, 'commit', '-am', 'Fix login');
 
@@ -97,14 +99,14 @@ describe('deciding on a step', () => {
     expect((await shownAt(repo.url())).steps).toEqual([]);
   });
 
-  test('a decision on an unknown step or of an unknown kind is refused', async () => {
+  test('a decision on an unknown step or of an unknown action is refused', async () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
 
-    expect((await post(repo.url(), '/decide', { step: 'nope', decision: 'approved' })).status).toBe(400);
-    expect((await post(repo.url(), '/decide', { step: '1', decision: 'merged' })).status).toBe(400);
-    expect((await shownAt(repo.url())).steps[0]?.decision).toBeNull();
+    expect((await post(repo.url(), '/decide', { ...approve, item: { type: 'step', id: 'nope' } })).status).toBe(400);
+    expect((await post(repo.url(), '/decide', { ...approve, action: 'merged' })).status).toBe(400);
+    expect((await shownAt(repo.url())).decided['step:1']).toBeNull();
   });
 });
 
@@ -130,7 +132,6 @@ describe('the page server', () => {
     const token = pathname.split('/')[2] ?? '';
     const wrong = '0'.repeat(48);
     const json = { 'content-type': 'application/json' };
-    const decide = { step: '1', decision: 'approved' };
 
     expect(await statusOf(page, `/s/${wrong}/`, 'GET', {})).toBe(404);
     expect(await statusOf(page, `/s/${wrong}/data/walkthrough.json`, 'GET', {})).toBe(404);
@@ -140,8 +141,8 @@ describe('the page server', () => {
     expect(await statusOf(page, pathname, 'GET', { host: `attacker.example:${new URL(page).port}` })).toBe(403);
     expect(await statusOf(page, pathname, 'GET', { origin: 'http://attacker.example' })).toBe(403);
     expect(await statusOf(page, pathname, 'GET', { origin: `http://${host}` })).toBe(200);
-    expect((await post(page, '/decide', decide, wrong)).status).toBe(404);
-    expect((await shownAt(page)).steps[0]?.decision).toBeNull();
+    expect((await post(page, '/decide', approve, wrong)).status).toBe(404);
+    expect((await shownAt(page)).decided['step:1']).toBeNull();
   });
 });
 

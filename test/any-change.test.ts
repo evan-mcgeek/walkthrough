@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { SessionView } from '../src/session';
-import type { Walkthrough } from '../src/walkthrough';
+import type { WalkthroughView as Walkthrough } from '../src/decisions';
 import { git, makeRepo, ONE_STEP, type Repo } from './helpers';
 
 const LOGIN = ['--base', 'origin/main', '--head', 'feature/login', '--label', 'Login'];
@@ -104,14 +104,14 @@ describe('where a walkthrough is kept', () => {
     first.run('start');
     first.record(ONE_STEP);
     const firstPage = first.url();
-    expect((await post(firstPage, '/decide', { step: '1', decision: 'approved' })).status).toBe(200);
+    expect((await post(firstPage, '/decide', { item: { type: 'step', id: '1' }, action: 'approve' })).status).toBe(200);
 
     const started = second.run('start');
 
     expect(started.stdout).not.toContain('Resumed');
     expect((await shownAt(second.url())).steps).toEqual([]);
     expect(second.run('stop').stdout).toContain('Stopped the walkthrough page.');
-    expect((await shownAt(firstPage)).steps[0]?.decision).toBe('approved');
+    expect((await shownAt(firstPage)).decided['step:1']).toMatchObject({ action: 'approve' });
   });
 
   test('every command finds the walkthrough of a range by the options start was given', async () => {

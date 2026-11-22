@@ -3,8 +3,10 @@ import { parse } from 'diff2html/lib-esm/diff-parser';
 import { ColorSchemeType } from 'diff2html/lib-esm/types';
 import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
+import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import type { Checklist, Decision, Step, Walkthrough } from '../walkthrough';
+import { type Action, type Item, itemKey } from '../items';
+import type { Checklist, Step } from '../walkthrough';
 import { renderMarkdown } from './markdown';
 
 const token = location.pathname.split('/')[2] ?? '';
@@ -62,15 +64,20 @@ async function post(route: string, body: unknown): Promise<Response | null> {
 
 const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
 
-let walkthrough: Walkthrough;
+let walkthrough: WalkthroughView;
 let session: SessionView;
 /** What the person typed and has not sent, by box, so a redraw keeps it. */
 const drafts = new Map<string, string>();
 
+const decisionOf = (item: Item) => walkthrough.decided[itemKey(item)] ?? null;
+const stepDecided = (step: Step) => decisionOf({ type: 'step', id: step.id }) !== null;
+/** The label of the item's action `id`, or the id when the session no longer offers it. */
+const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
+
 /** The step named in the address, else the first undecided one. */
-function currentStep({ steps }: Walkthrough): Step | undefined {
+function currentStep({ steps }: WalkthroughView): Step | undefined {
   const named = decodeURIComponent(location.hash.slice(1));
-  return steps.find(step => step.id === named) ?? steps.find(step => !step.decision) ?? steps[0];
+  return steps.find(step => step.id === named) ?? steps.find(step => !stepDecided(step)) ?? steps[0];
 }
 
 /** Each step is its own address, so the browser's back and forward move between steps too. */
@@ -79,13 +86,35 @@ function show(step: Step | undefined): void {
   location.hash = encodeURIComponent(step.id);
 }
 
-async function decide(step: Step, decision: Decision): Promise<void> {
-  const answer = await post('decide', { step: step.id, decision });
+/** The action being taken whose note or text the person is still writing, by item key and action id. */
+let taking: { key: string; action: string } | null = null;
+
+/** Sends the person's decision; deciding a step moves on to the next undecided one. */
+async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
+  const answer = await post('decide', { item, action, ...fields });
   if (!answer) return;
-  walkthrough = (await answer.json()) as Walkthrough;
+  ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
+  for (const field of ['note', 'text']) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
+  taking = null;
   render();
-  const at = walkthrough.steps.findIndex(one => one.id === step.id);
-  show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !one.decision));
+  if (item.type !== 'step') return;
+  const at = walkthrough.steps.findIndex(one => one.id === item.id);
+  show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !stepDecided(one)));
+}
+
+/** Steps whose reading the page is telling the walkthrough about. */
+const reading = new Set<string>();
+
+/** Tells the walkthrough the page has shown the step. */
+async function markRead(step: Step): Promise<void> {
+  if (walkthrough.read.includes(step.id) || reading.has(step.id)) return;
+  reading.add(step.id);
+  const answer = await post('read', { step: step.id });
+  reading.delete(step.id);
+  if (!answer) return;
+  // Only what was read: a decision sent meanwhile may have answered with newer decisions.
+  walkthrough = { ...walkthrough, read: ((await answer.json()) as WalkthroughView).read };
+  render();
 }
 
 /** Sends what the person said; the box `draft` it came from is kept when the walkthrough could not take it. */
@@ -140,7 +169,7 @@ function draftBox(draft: string, label: string, action: string, onSend: () => vo
 
 /** The person's words as they typed them; the session's as Markdown. */
 const said = (entry: Entry) =>
-  entry.from === 'session' ? markdown(entry.text, 'said session') : el('p', { className: 'said person' }, entry.text);
+  entry.from === 'session' ? markdown(entry.text, 'said session') : el('p', { className: 'said person' }, entry.text ?? '');
 
 /** What followed `root`: replies to it, answers to those, and so on, in the order they came. */
 function followUps(root: Entry): Entry[] {
@@ -172,6 +201,80 @@ function askThread(asked: Ask): HTMLElement {
 const linesLabel = ([first, last]: Lines) =>
   first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
 
+/** The item's decision, the session's answers to it, and the actions it offers; `text` is what an action that edits starts from. */
+function decideView(item: Item, text = ''): HTMLElement[] {
+  const key = itemKey(item);
+  const actions = walkthrough.actions[key] ?? [];
+  if (!actions.length) return [];
+  const decision = walkthrough.decided[key] ?? null;
+  const buttons = actions.map(action => {
+    const button = el('button', { type: 'button', className: 'quiet' }, action.label);
+    button.setAttribute('aria-pressed', String(decision?.action === action.id));
+    button.onclick = () => {
+      if (action.note || action.edit) {
+        taking = { key, action: action.id };
+        render();
+      } else void decide(item, action.id);
+    };
+    return button;
+  });
+  const group = el('div', { className: 'choices' }, ...buttons);
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Decide');
+  const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
+  return [
+    el(
+      'div',
+      { className: 'decide' },
+      el(
+        'div',
+        { className: 'decide-row' },
+        el('p', { className: decision ? 'decision decided' : 'decision' }, decision ? `Decided: ${labelOf(item, decision.action)}` : 'Undecided'),
+        group,
+      ),
+      ...(decision ? decisionSaid(decision) : []),
+      ...(taken ? [takingForm(item, taken, text)] : []),
+    ),
+  ];
+}
+
+/** What the person sent with their decision, and what the session answered. */
+function decisionSaid(decision: Decision): HTMLElement[] {
+  return [
+    ...(decision.note ? [el('p', { className: 'said person' }, decision.note)] : []),
+    ...(decision.text ? [markdown(decision.text, 'said person')] : []),
+    ...followUps(decision).map(said),
+  ];
+}
+
+/** Collects the note and edited text an action asks for before sending it. */
+function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
+  const draft = (field: string) => `decide:${itemKey(item)}:${action.id}:${field}`;
+  const box = (field: string, label: string, start = '') => {
+    const area = el('textarea', { rows: 3, value: drafts.get(draft(field)) ?? start, placeholder: label });
+    area.dataset['draft'] = draft(field);
+    area.setAttribute('aria-label', label);
+    area.oninput = () => drafts.set(draft(field), area.value);
+    return area;
+  };
+  const form = el(
+    'form',
+    { className: 'draft taking' },
+    ...(action.edit ? [box('text', 'Text', text)] : []),
+    ...(action.note ? [box('note', 'Note')] : []),
+    el('button', { type: 'submit' }, 'Send'),
+    el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'),
+  );
+  form.onsubmit = event => {
+    event.preventDefault();
+    void decide(item, action.id, {
+      ...(action.note && { note: drafts.get(draft('note')) ?? '' }),
+      ...(action.edit && { text: drafts.get(draft('text')) ?? text }),
+    });
+  };
+  return form;
+}
+
 function noteView(note: Note): HTMLElement {
   const { label, lines } = note.note;
   const draft = `reply:${note.id}`;
@@ -185,6 +288,7 @@ function noteView(note: Note): HTMLElement {
       ...(lines ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
     ),
     markdown(note.text, 'note-text'),
+    ...decideView({ type: 'note', id: note.id }, note.text),
     ...followUps(note).map(said),
     draftBox(draft, 'Reply', 'Reply', () => {
       void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft);
@@ -479,16 +583,14 @@ function stepBody(step: Step): HTMLElement[] {
 
 function stepView(step: Step, steps: Step[]): HTMLElement {
   const title = el('h2', { id: `step-${step.id}` }, step.title);
-  const decision = step.decision
-    ? el('span', { className: 'decision approved' }, 'Approved')
-    : el('button', { type: 'button', onclick: () => void decide(step, 'approved') }, 'Approve');
   const at = steps.indexOf(step);
   const move = (label: string, to: Step | undefined) =>
     el('button', { type: 'button', className: 'quiet', disabled: !to, onclick: () => { show(to); } }, label);
   const section = el(
     'section',
     { className: 'step' },
-    el('div', { className: 'step-head' }, title, decision),
+    el('div', { className: 'step-head' }, title),
+    ...decideView({ type: 'step', id: step.id }),
     ...stepBody(step),
     askView(step),
   );
@@ -497,16 +599,44 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
   return el('div', {}, section, pager);
 }
 
+/** Undecided steps in order, each marked once read; decided steps collapse behind a count. */
 function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
-  const items = steps.map((step, at) => {
+  const item = (step: Step) => {
+    const decision = decisionOf({ type: 'step', id: step.id });
     const href = `#${encodeURIComponent(step.id)}`;
-    const link = el('a', { href, className: step.decision ? 'decided' : '' }, `${String(at + 1)}. ${step.title}`);
+    const link = el('a', { href, className: decision ? 'decided' : '' }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
     if (step === current) link.setAttribute('aria-current', 'step');
-    return el('li', {}, link);
-  });
-  const nav = el('nav', { className: 'steps' }, el('ol', {}, ...items));
+    const read = walkthrough.read.includes(step.id) ? 'Read' : '';
+    const mark = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : read;
+    return el('li', {}, link, ...(mark ? [el('span', { className: 'mark' }, mark)] : []));
+  };
+  const nav = el('nav', { className: 'steps' }, el('ol', {}, ...steps.filter(step => !stepDecided(step)).map(item)));
+  const decided = steps.filter(stepDecided);
+  if (decided.length) {
+    const group = el(
+      'details',
+      { className: 'decided-steps', open: opened.has('decided') || (current !== undefined && decided.includes(current)) },
+      el('summary', {}, `${String(decided.length)} decided`),
+      el('ol', {}, ...decided.map(item)),
+    );
+    group.ontoggle = () => {
+      if (group.open) opened.add('decided');
+      else opened.delete('decided');
+    };
+    nav.append(group);
+  }
   nav.setAttribute('aria-label', 'Steps');
   return nav;
+}
+
+/** The actions the session offers on the whole walkthrough, beside the steps. */
+function wholeView(): HTMLElement[] {
+  const decide = decideView({ type: 'walkthrough' });
+  if (!decide.length) return [];
+  const heading = el('h2', { id: 'whole' }, 'Whole walkthrough');
+  const section = el('section', { className: 'whole' }, heading, ...decide);
+  section.setAttribute('aria-labelledby', heading.id);
+  return [section];
 }
 
 function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement {
@@ -524,6 +654,7 @@ function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement 
       el('span', { className: 'status' }, item.status),
       markdown(item.text, 'item-text'),
       ...(links.length ? [el('p', { className: 'links' }, ...links)] : []),
+      ...decideView({ type: 'checklist', id: item.id }, item.text),
     );
   });
   const section = el('section', { className: 'checklist' }, heading, el('ul', {}, ...rows));
@@ -540,8 +671,8 @@ function render(): void {
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const { steps } = walkthrough;
   const pinned = `${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  const decided = steps.filter(step => step.decision).length;
-  const progress = `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left`;
+  const decided = steps.filter(stepDecided).length;
+  const progress = `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`;
   header.replaceChildren(
     el(
       'div',
@@ -562,12 +693,14 @@ function render(): void {
   main.replaceChildren(
     ...sessionMessages(),
     ...(current
-      ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist), stepView(current, steps)]
+      ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)]
       : [
           el('p', { className: 'notice' }, 'The session is preparing the steps; they appear here as it records them.'),
           ...checklist,
+          ...wholeView(),
         ]),
   );
+  if (current) void markRead(current);
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
@@ -582,7 +715,7 @@ window.addEventListener('hashchange', () => {
 const [shownWalkthrough, shownSession] = await Promise.all(
   ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
 );
-walkthrough = shownWalkthrough as Walkthrough;
+walkthrough = shownWalkthrough as WalkthroughView;
 session = shownSession as SessionView;
 render();
 
@@ -601,7 +734,7 @@ const poller = setInterval(() => {
   Promise.all([fetchText('data/walkthrough.json'), fetchText('data/session.json')])
     .then(([walkthroughText, sessionText]) => {
       if (since !== posted || (walkthroughText === lastWalkthrough && sessionText === lastSession)) return;
-      walkthrough = JSON.parse(walkthroughText) as Walkthrough;
+      walkthrough = JSON.parse(walkthroughText) as WalkthroughView;
       session = JSON.parse(sessionText) as SessionView;
       render();
     })
