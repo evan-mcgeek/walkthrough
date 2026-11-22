@@ -87,3 +87,17 @@ test('the session is gone once its listener stops and has not come back', async 
 
   await expect(chip).toHaveText('Gone');
 });
+
+test('a question over 4000 characters is refused with the reason and stays in its box', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  const step = page.getByRole('region', { name: 'Login' });
+  const box = step.getByRole('textbox', { name: 'Ask about this step' });
+  await box.fill('a'.repeat(4001));
+
+  await step.getByRole('button', { name: 'Ask' }).click();
+
+  await expect(page.getByRole('alert')).toHaveText('That text is 4001 characters long; the most it can be is 4000.');
+  await expect(box).toHaveValue('a'.repeat(4001));
+  await expect(step.getByText('Waiting for the session to answer.')).toHaveCount(0);
+});

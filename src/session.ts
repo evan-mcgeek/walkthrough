@@ -3,20 +3,18 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
-import { type NoteInput, type NoteMark, type Place, placeIn } from './notes';
+import { type NoteInput, type NoteMark, type Place, placeIn, placeOnly } from './notes';
 import { alive, psStart } from './processes';
 import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
 
-/** An action the person took on an item, with their note and edited text; `on` fingerprints the item as it was. */
+/** `on` fingerprints the item as it was decided. */
 export type Taken = { kind: 'decision'; item: Item; action: string; note?: string; text?: string; on: string };
-/** What the person sends from the page; `listen` hands these to the session. */
 export type PageRequest = { id: string; from: 'page'; at: string } & (
   | ({ kind: 'ask'; text: string } & Place)
   | { kind: 'reply'; to: string; text: string }
   | Taken
 );
-/** What the session says on the page: an answer to a request, a question with the answers it offers, a note pinned to a place, or else a note at the top. */
 export type SessionMessage = {
   id: string;
   from: 'session';
@@ -31,14 +29,12 @@ export type Entry = PageRequest | SessionMessage;
 export type SessionState = 'listening' | 'working' | 'needs-you' | 'gone';
 export type SessionView = { state: SessionState; conversation: Entry[] };
 
-/** What the session's listener last did: started the walkthrough, listens, handed requests over, or stopped. */
 type Listener =
   | { state: 'starting' }
   | { state: 'listening'; pid: number; started: string }
   | { state: 'handed'; requests: string[] }
   | { state: 'stopped' };
 
-const MAX_TEXT = 4000;
 // A session answers and then listens again; until this has passed it has not had the chance to come back.
 const BACK_WITHIN_MS = 60 * 1000;
 const LISTEN_EVERY_MS = 500;
@@ -71,9 +67,8 @@ const append = (file: string, entry: Entry) => {
 };
 const newId = () => crypto.randomBytes(4).toString('hex');
 const stamp = () => new Date().toISOString();
-export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '');
+export const cleanText = (text: unknown) => (typeof text === 'string' ? text.trim() : '');
 
-/** Questions the session asked that the person has not replied to. */
 const openQuestions = (conversation: Entry[]) =>
   conversation.filter(
     entry =>
@@ -82,7 +77,6 @@ const openQuestions = (conversation: Entry[]) =>
       !conversation.some(reply => reply.from === 'page' && reply.kind === 'reply' && reply.to === entry.id),
   );
 
-/** Whether the session listens, works on what it was handed or on starting, or is gone, from what its listener did. */
 function presence(listener: Listener | null, conversation: Entry[]): Exclude<SessionState, 'needs-you'> {
   switch (listener?.state) {
     case 'starting':
@@ -115,8 +109,8 @@ export function sessionView(dir: string): SessionView {
 }
 
 /** The session started the walkthrough, so it works on it until it listens; a running listener keeps listening. */
-export function starting(dir: string): void {
-  hold(dir, () => {
+export async function starting(dir: string): Promise<void> {
+  await hold(dir, () => {
     const { listener } = files(dir);
     const now = readJson<Listener | null>(listener, null);
     if (now?.state !== 'listening' || !alive(now)) writeJson(listener, { state: 'starting' } satisfies Listener);
@@ -125,8 +119,7 @@ export function starting(dir: string): void {
 
 type Fields<T> = T extends unknown ? Omit<T, 'id' | 'from' | 'at'> : never;
 
-/** Hands what the person sent to the session, by way of the conversation and the inbox `listen` empties. */
-export function request(dir: string, fields: Fields<PageRequest>): SessionView {
+export function request(dir: string, fields: Fields<PageRequest>): Promise<SessionView> {
   const entry = { id: newId(), from: 'page', at: stamp(), ...fields } as PageRequest;
   return hold(dir, () => {
     append(files(dir).conversation, entry);
@@ -135,8 +128,7 @@ export function request(dir: string, fields: Fields<PageRequest>): SessionView {
   });
 }
 
-/** The person's question about a step or lines of it, or null when there is no such place or no question. */
-export function ask(dir: string, { text, ...where }: Record<string, unknown>): SessionView | null {
+export async function ask(dir: string, { text, ...where }: Record<string, unknown>): Promise<SessionView | null> {
   const said = cleanText(text);
   let place: Place;
   try {
@@ -148,8 +140,7 @@ export function ask(dir: string, { text, ...where }: Record<string, unknown>): S
   return request(dir, { kind: 'ask', ...place, text: said });
 }
 
-/** The person's reply to a note or an open question of the session, or null when there is no such one or no reply. */
-export function reply(dir: string, to: unknown, text: unknown): SessionView | null {
+export async function reply(dir: string, to: unknown, text: unknown): Promise<SessionView | null> {
   const said = cleanText(text);
   const conversation = conversationOf(dir);
   const open =
@@ -159,20 +150,25 @@ export function reply(dir: string, to: unknown, text: unknown): SessionView | nu
   return request(dir, { kind: 'reply', to, text: said });
 }
 
-/** Puts the session's words on the page; `answer` names the request they answer, `choices` the answers a question offers. */
-export function say(
+// An answer to a question about lines is a note on those lines, so the person can reply to it and the session can offer actions on it.
+export async function say(
   dir: string,
   text: string,
-  { answer, question, choice = [] }: { answer?: string; question?: boolean; choice?: string[] },
-): void {
+  { answer, question, choice = [], label }: { answer?: string; question?: boolean; choice?: string[]; label?: string | undefined },
+): Promise<SessionMessage> {
   const choices = choice.map(one => one.trim());
   if (choices.length && !question) throw new Error('--choice needs --question');
   if (choices.some(one => !one)) throw new Error('a choice needs text');
-  hold(dir, () => {
+  return hold(dir, () => {
     const { conversation } = files(dir);
-    if (answer && !readLines<Entry>(conversation).some(entry => entry.from === 'page' && entry.id === answer))
-      throw new Error(`the page sent no request ${answer}`);
-    append(conversation, {
+    const request = readLines<Entry>(conversation).find(
+      (entry): entry is PageRequest => answer !== undefined && entry.from === 'page' && entry.id === answer,
+    );
+    if (answer && !request) throw new Error(`the page sent no request ${answer}`);
+    const onLines = request?.kind === 'ask' && request.lines ? request : undefined;
+    if (label !== undefined && !onLines) throw new Error('--as is for an answer to a question about lines');
+    const place = onLines && placeOnly(onLines);
+    const entry: SessionMessage = {
       id: newId(),
       from: 'session',
       at: stamp(),
@@ -180,12 +176,14 @@ export function say(
       ...(answer && { answer }),
       ...(question && { question: true as const }),
       ...(choices.length && { choices }),
-    });
+      ...(place && { note: { ...place, label: label?.trim() || 'Answer' } }),
+    };
+    append(conversation, entry);
+    return entry;
   });
 }
 
-/** Pins the session's notes to their places on the page, in order. */
-export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note: NoteMark })[] {
+export function note(dir: string, notes: NoteInput[]): Promise<(SessionMessage & { note: NoteMark })[]> {
   return hold(dir, () =>
     notes.map(({ text, ...mark }) => {
       const entry = { id: newId(), from: 'session', at: stamp(), text, note: mark } satisfies SessionMessage;
@@ -195,32 +193,27 @@ export function note(dir: string, notes: NoteInput[]): (SessionMessage & { note:
   );
 }
 
-/**
- * Waits for the person to act on the page and returns what they sent.
- * A newer listener takes over from this one ('replaced'); a page server that is not running ends it ('stopped').
- */
+// A newer listener takes over from this one ('replaced'); a page server that is not running ends it ('stopped').
 export async function listen(dir: string, pageRunning: () => boolean): Promise<PageRequest[] | 'stopped' | 'replaced'> {
   const { inbox, listener } = files(dir);
   const mine = () => {
     const now = readJson<Listener | null>(listener, null);
     return now?.state === 'listening' && now.pid === process.pid;
   };
-  hold(dir, () => {
+  await hold(dir, () => {
     writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
   });
-  const release = () => {
+  const release = () =>
     hold(dir, () => {
       if (mine()) writeJson(listener, { state: 'stopped' } satisfies Listener);
     });
-  };
   // Claude Code stops a background command with a signal; the page should not show it listening after that.
   for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const)
     process.once(signal, () => {
-      release();
-      process.exit(0);
+      void release().finally(() => process.exit(0));
     });
   for (;;) {
-    const taken = hold(dir, () => {
+    const taken = await hold(dir, () => {
       if (!mine()) return 'replaced';
       const requests = readLines<PageRequest>(inbox);
       if (!requests.length) return null;
@@ -230,7 +223,7 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<P
     });
     if (taken) return taken;
     if (!pageRunning()) {
-      release();
+      await release();
       return 'stopped';
     }
     await new Promise(resolve => setTimeout(resolve, LISTEN_EVERY_MS));

@@ -65,6 +65,29 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
+test('j and k, and the right and left arrows, move between steps, but not while typing', async ({ page }) => {
+  const region = (name: string) => page.getByRole('region', { name });
+  await expect(region('Login check')).toBeVisible();
+
+  await page.keyboard.press('j');
+  await expect(region('Regenerated schema')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(region('App version')).toBeVisible();
+  await page.keyboard.press('j');
+  await expect(region('App version')).toBeVisible();
+  await page.keyboard.press('k');
+  await expect(region('Regenerated schema')).toBeVisible();
+  await page.keyboard.press('ArrowLeft');
+  await expect(region('Login check')).toBeVisible();
+
+  const ask = region('Login check').getByRole('textbox', { name: 'Ask about this step' });
+  await ask.focus();
+  await page.keyboard.press('j');
+  await page.keyboard.press('ArrowRight');
+  await expect(ask).toHaveValue('j');
+  await expect(region('Login check')).toBeVisible();
+});
+
 test('shows how many steps are decided and left, and approving moves on to the next open step', async ({ page }) => {
   await expect(page.getByText('0 of 3 steps decided, 3 left')).toBeVisible();
 

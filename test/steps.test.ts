@@ -203,15 +203,16 @@ describe('walkthrough guide', () => {
     expect(guide.stderr).toBe('');
     expect(guide.status).toBe(0);
     for (const shape of [
-      'walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]',
+      'walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>]',
       'walkthrough steps',
       '{"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}',
       '{"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}',
       'walkthrough listen',
       '{"kind": "ask", "id": string, "step": string, "text": string}',
       '{"kind": "reply", "id": string, "to": string, "text": string}',
+      '{"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}',
       '{"kind": "stopped"}',
-      'walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>',
+      'walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>',
     ])
       expect(guide.stdout).toContain(shape);
   });

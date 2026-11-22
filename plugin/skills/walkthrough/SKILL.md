@@ -63,19 +63,20 @@ Recording again replaces the steps and prints their ids; a step keeps its id by 
 
 When the review policy asks for a checklist, record it after the steps with `walkthrough checklist` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
 Its links name the step ids `walkthrough steps` printed; a link to a step that is gone shows as gone, so record the checklist again when you merge or drop steps.
+An item keeps its id, and the person's decision, while its text is the same; when you reword an item, give it its id so its decision reopens instead of being lost.
 
 ## Notes
 
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
 Notes name step ids, so record them after the steps.
-A note whose step or lines leave the change stays on the page as detached.
+A note whose step or lines leave the change, or whose lines change, stays on the page as detached.
 
 ## Actions
 
 Record the actions the page offers on steps, notes, checklist items and the whole walkthrough with `walkthrough actions` in the shape `walkthrough guide` prints, after the items they are on.
 Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
-Recording the checklist again drops the actions on its items, and a step that is gone takes its actions with it, so record those again too.
+A step or checklist item that is gone takes its actions with it, so record actions on new ones.
 `walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
 ## Listening for the page
@@ -86,10 +87,10 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    Never run it in the foreground: it blocks until the person acts on the page.
 2. When it exits you are woken with its output, one JSON line per thing the person sent, in the shapes `walkthrough guide` prints.
    - An ask: answer it from the change at the pinned head with `walkthrough say --answer <id> "<answer>"`.
-     An ask with a file and lines is about those lines, and the answer shows on them.
+     An ask with a file and lines is about those lines, and the answer is a note on them, labelled with `--as "<label>"` as the review policy names it ("Answer" without one); `say` prints its id, so you can record actions on it.
      An answer never decides the step for the person.
      For text with quotes or several lines, pass it as `"$(cat <<'EOF' ... EOF)"`.
-   - A reply: the person's reply to a question you asked or to a note; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
+   - A reply: the person's reply to a question you asked or to a note, which comes with the note's label and text; act on it, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
    - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> "<what you did>"`.
      A later decision on the same item replaces the earlier one.
    - Stopped: tell the person in one line and do not listen again.

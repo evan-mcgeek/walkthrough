@@ -59,6 +59,24 @@ test('notes whose step or lines are gone show detached, still open to a reply', 
   await expect(page.getByRole('region', { name: 'Login check' }).getByText('Is three needed?')).toHaveCount(0);
 });
 
+test('changed files in no step yet are named until the session records steps for them', async ({ page, repo }) => {
+  fs.writeFileSync(path.join(repo.dir, 'cart.ts'), 'export const cart = [];\n');
+  git(repo.dir, 'add', 'cart.ts');
+  git(repo.dir, 'commit', '-m', 'Add cart');
+  repo.run('start');
+  const notice = page.getByRole('region', { name: 'In no step yet' });
+
+  await expect(notice).toContainText('cart.ts');
+  await expect(notice).not.toContainText('login.ts');
+
+  record(repo, [
+    { title: 'Login check', explanation: 'Adds a login function.', files: ['login.ts'] },
+    { title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] },
+  ]);
+
+  await expect(notice).toHaveCount(0);
+});
+
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   await expect(item.getByRole('link')).toHaveText(['Step 1']);

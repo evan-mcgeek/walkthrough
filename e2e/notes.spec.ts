@@ -83,13 +83,50 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(pinned.getByText('Why three constants?')).toBeVisible();
   await expect(pinned.getByText('Waiting for the session to answer.')).toBeVisible();
 
-  repo.run('say', '--answer', asked.id, 'Each is used once.');
+  repo.run('say', '--answer', asked.id, '--as', 'Finding', 'Each is used *once*.');
 
-  await expect(pinned.getByText('Each is used once.')).toBeVisible();
+  const answer = pinned.getByRole('article', { name: 'Finding' });
+  await expect(answer.locator('em', { hasText: 'once' })).toBeVisible();
+  await expect(answer).toContainText('Lines 2-4');
   await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
+  await expect(pinned.getByRole('article')).toHaveCount(1);
+
+  const replying = repo.background('listen');
+  await answer.getByRole('textbox', { name: 'Reply' }).fill('Then merge them.');
+  await answer.getByRole('button', { name: 'Reply' }).click();
+
+  expect(JSON.parse((await replying.ended).stdout)).toMatchObject({ kind: 'reply', text: 'Then merge them.' });
+  await expect(answer.getByText('Then merge them.')).toBeVisible();
+  await expect(pinned.getByText('Then merge them.')).toHaveCount(1);
 });
 
-test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, repo }) => {
+test('lines can be picked from the keyboard to ask about them', async ({ page }) => {
+  const number = (line: number) => row(page, 'cart.ts', line).locator('td.d2h-code-linenumber');
+  await number(2).focus();
+
+  await page.keyboard.press('Enter');
+  await expect(row(page, 'cart.ts', 2)).toHaveClass(/selected/);
+  await expect(page.getByRole('textbox', { name: /^Ask about cart.ts/ })).toHaveCount(0);
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(number(4)).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2-4' });
+  await expect(box).toBeFocused();
+  await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
+
+  await page.keyboard.press('Escape');
+  await expect(box).toHaveCount(0);
+  await expect(row(page, 'cart.ts', 3)).not.toHaveClass(/selected/);
+  await expect(number(4)).toBeFocused();
+
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Shift+Enter');
+  await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
+});
+
+test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {
   pin(repo, [
     {
       step: '1',
@@ -102,6 +139,8 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
         '| a    | b     |',
         '',
         '[docs](https://example.com/docs)',
+        '',
+        '![Dot](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==)',
       ].join('\n'),
     },
   ]);
@@ -109,6 +148,7 @@ test('session Markdown shows no raw HTML and keeps to the CSP', async ({ page, r
 
   await expect(note).toContainText('Raw <b id="raw">bold</b> and <img src=x onerror="document.title=1">.');
   await expect(note.locator('#raw, img')).toHaveCount(0);
+  await expect(note).toContainText('Dot');
   await expect(note.locator('td.align-right')).toHaveText('b');
   await expect(note.locator('[style]')).toHaveCount(0);
   await expect(note.getByRole('link', { name: 'docs' })).toHaveAttribute('target', '_blank');

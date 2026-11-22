@@ -10,11 +10,13 @@ import { parseNotes } from './notes';
 import { conversationOf, listen, note, say, starting } from './session';
 import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
+import { listView } from './list';
 import { GUIDE } from './guide';
+import { plural } from './words';
+import { nameOf } from './items';
 import { stateDir } from './paths';
-import { buildSteps, carrySteps, parseSteps, pathsOf } from './steps';
+import { buildSteps, carrySteps, parseSteps } from './steps';
 import {
-  nameOf,
   openWalkthrough,
   readWalkthrough,
   recordActions,
@@ -24,7 +26,6 @@ import {
 } from './walkthrough';
 
 const short = (sha: string) => sha.slice(0, 7);
-const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
 
 type Options = NonNullable<ParseArgsConfig['options']>;
 const SOURCE_OPTIONS = {
@@ -34,7 +35,7 @@ const SOURCE_OPTIONS = {
   label: { type: 'string' },
 } as const satisfies Options;
 
-/** The command's own arguments, and the walkthrough its source options name, the same way for every command; `branch` stands in for the current one. */
+// `branch` stands in for the current branch.
 function located<T extends Options>(
   args: string[],
   {
@@ -51,16 +52,18 @@ function located<T extends Options>(
     source = { kind: 'branch', branch: branch ?? currentBranch(cwd), ...(target !== undefined && { target }) };
   else if (!base || !head) throw new Error('--base and --head go together, and --label needs them');
   else if (target !== undefined) throw new Error('--target is for the current branch; a range has its --base');
-  else source = { kind: 'range', base, head, label: label ?? `${base}..${head}` };
+  // Two changes fetched to the same name, such as FETCH_HEAD, would otherwise share one walkthrough.
+  else if (!label?.trim()) throw new Error('--base and --head need a --label that names the change');
+  else source = { kind: 'range', base, head, label };
   return { ...parsed, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
 }
 
 async function start(args: string[]): Promise<void> {
   const { cwd, source, dir } = located(args);
-  const change = changeOf(cwd, source);
+  const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
-  starting(dir);
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
+  await starting(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
@@ -72,10 +75,8 @@ async function start(args: string[]): Promise<void> {
     console.log(
       `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
     );
-    const placed = new Set(steps.flatMap(pathsOf));
-    const left = changedFiles(cwd, change.base, change.head).filter(file => !placed.has(file.path));
-    if (left.length > 0)
-      console.log(`In no step yet: ${left.map(file => file.path).join(', ')}. Record the steps again with these in new steps.`);
+    const left = walkthrough.unplaced ?? [];
+    if (left.length > 0) console.log(`In no step yet: ${left.join(', ')}. Record the steps again with these in new steps.`);
   }
   if (change.uncommitted > 0)
     console.log(
@@ -94,7 +95,6 @@ function openPage(url: string, what: string, dir: string): void {
   );
 }
 
-/** The state folder of the repo the CLI runs in, which holds its walkthroughs and the list's server. */
 const repoDir = () => path.join(stateDir(), currentRepo(process.cwd()));
 
 async function list(args: string[]): Promise<void> {
@@ -102,7 +102,6 @@ async function list(args: string[]): Promise<void> {
   openPage(await ensureServer(repoDir(), true), 'The list of walkthroughs', repoDir());
 }
 
-/** As `located`, for a walkthrough that must have been started. */
 function current<T extends Options>(args: string[], config: { options?: T; allowPositionals?: boolean } = {}) {
   const found = located(args, config);
   const walkthrough = readWalkthrough(found.dir);
@@ -110,37 +109,38 @@ function current<T extends Options>(args: string[], config: { options?: T; allow
   return { ...found, walkthrough };
 }
 
-function files(args: string[]): void {
+async function files(args: string[]): Promise<void> {
   const { base, head } = current(args).walkthrough;
-  for (const { path } of changedFiles(process.cwd(), base, head)) console.log(path);
+  for (const { path } of await changedFiles(process.cwd(), base, head)) console.log(path);
 }
 
-function steps(args: string[]): void {
+async function steps(args: string[]): Promise<void> {
   const { cwd, dir } = located(args);
   const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
-  const { steps: recorded } = recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
+  const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter(step => step.kind === 'folded').length;
   const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
 }
 
-function notes(args: string[]): void {
+async function notes(args: string[]): Promise<void> {
   const { dir, walkthrough } = current(args);
-  const noted = note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
+  const noted = await note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
   const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
   console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
 }
 
-function checklist(args: string[]): void {
+async function checklist(args: string[]): Promise<void> {
   const text = fs.readFileSync(0, 'utf8');
-  const { title, items } = recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
-  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}.`);
+  const { title, items } = await recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
+  const ids = items.map(item => item.id).join(', ');
+  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}${items.length ? `: ${ids}` : ''}.`);
 }
 
-function actions(args: string[]): void {
+async function actions(args: string[]): Promise<void> {
   const text = fs.readFileSync(0, 'utf8');
   const { dir } = located(args);
-  const recorded = recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
+  const recorded = await recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
   console.log(`Recorded the actions of ${plural(recorded.length, 'item')}.`);
 }
 
@@ -165,31 +165,49 @@ async function listenCommand(args: string[]): Promise<void> {
     console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
     process.exitCode = 3;
   } else if (taken === 'stopped') console.log(JSON.stringify({ kind: 'stopped' }));
-  // The fingerprint only matches a decision to its item.
-  else for (const request of taken) console.log(JSON.stringify({ ...request, on: undefined }));
+  else {
+    const conversation = conversationOf(dir);
+    // A reply carries its note, so the session need not look it up.
+    const about = (to: string) => {
+      const noted = conversation.find(entry => entry.id === to && entry.from === 'session' && entry.note);
+      return noted?.from === 'session' && noted.note ? { label: noted.note.label, text: noted.text } : undefined;
+    };
+    for (const request of taken)
+      // Fingerprints only match a decision to its item and a question to its lines.
+      console.log(
+        JSON.stringify({
+          ...request,
+          on: undefined,
+          linesHash: undefined,
+          ...(request.kind === 'reply' && { about: about(request.to) }),
+        }),
+      );
+  }
 }
 
-function sayCommand(args: string[]): void {
+async function sayCommand(args: string[]): Promise<void> {
   const { values, positionals, dir } = current(args, {
-    options: { answer: { type: 'string' }, question: { type: 'boolean' }, choice: { type: 'string', multiple: true } },
+    options: {
+      answer: { type: 'string' },
+      as: { type: 'string' },
+      question: { type: 'boolean' },
+      choice: { type: 'string', multiple: true },
+    },
     allowPositionals: true,
   });
   const text = positionals.join(' ').trim();
-  if (!text) throw new Error('usage: walkthrough say [--answer <request id>] [--question [--choice <answer>]...] <text>');
-  say(dir, text, values);
-  console.log('Said on the page.');
+  if (!text)
+    throw new Error('usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] <text>');
+  const said = await say(dir, text, { ...values, label: values.as });
+  console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : 'Said on the page.');
 }
 
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
-  // The session's steps, as a JSON array on standard input.
   steps,
-  // The session's notes, as a JSON array on standard input.
   note: notes,
-  // The session's checklist, as a JSON object on standard input.
   checklist,
-  // The session's actions, as a JSON array on standard input.
   actions,
   decisions,
   list,
@@ -218,7 +236,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     const { positionals } = parseArgs({ args, allowPositionals: true, options: SOURCE_OPTIONS });
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === 'range') throw new Error('name a branch or a range, not both');
-    console.log(await pruneOne(dir, nameOf(source)));
+    const listed = readWalkthrough(dir) ? undefined : listView(repoDir()).find(one => one.id === positionals[0]);
+    console.log(await (listed ? pruneOne(path.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = '', mode]) => {
@@ -231,10 +250,10 @@ const command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> [--label <text>]]\n' +
+      'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
-        '    | listen | say [--answer <id>] [--question [--choice <answer>]...] <text> | stop | prune [<branch>]\n' +
+        '    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list\n' +
         '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
     );

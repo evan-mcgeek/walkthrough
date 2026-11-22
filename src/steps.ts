@@ -1,27 +1,18 @@
 // The session groups, orders and folds the change into steps; this checks only that every changed file is in exactly one step.
 import { changedFiles, diffOf } from './change';
+import { filled, parseList } from './input';
 import type { FoldedFile, Step, Walkthrough } from './walkthrough';
 
 export type StepInput =
   | { title: string; explanation: string; assumptions: string[]; files: string[] }
   | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
 
-export const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 const isFoldedFile = (file: unknown): file is FoldedFile =>
   typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
 
-/** The steps the session sent, in its order, or an error naming what is wrong with their shape. */
 export function parseSteps(text: string): StepInput[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
-  }
-  if (!Array.isArray(parsed)) throw new Error('the steps must be a JSON array on standard input; see walkthrough guide');
-  return parsed.map((one: unknown, at) => {
-    const step = (one ?? {}) as Record<string, unknown>;
-    const name = `step ${String(at + 1)}`;
+  return parseList(text, 'the steps', (step, number): StepInput => {
+    const name = `step ${String(number)}`;
     const { title, explanation, files, folded, problems = [], assumptions = [] } = step;
     if (!filled(title)) throw new Error(`${name} needs a title`);
     if (!Array.isArray(files)) throw new Error(`${name}: files must be a list`);
@@ -48,10 +39,7 @@ export function parseSteps(text: string): StepInput[] {
 const pathOf = (file: string | FoldedFile) => (typeof file === 'string' ? file : file.path);
 export const pathsOf = (step: StepInput | Step) => step.files.map(pathOf);
 
-/**
- * The id of each step in `inputs`: that of the step recorded before it shares the most files with, the earlier on a tie,
- * else one never given out, so a step's decisions, notes and links follow its files rather than its place.
- */
+// Ids follow files rather than places, so decisions, notes and links follow them; a gone id is never reused.
 function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): string[] {
   let next = Math.max(lastStep, ...steps.map(step => Number(step.id)));
   const free = new Map(steps.map(step => [step.id, new Set(pathsOf(step))]));
@@ -69,10 +57,9 @@ function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): str
   });
 }
 
-/** The steps of the walkthrough's change as `inputs` group them, or an error naming every file out of place. */
-export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Step[] {
+export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Promise<Step[]> {
   const { base, head } = walkthrough;
-  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
+  const changed = new Map((await changedFiles(cwd, base, head)).map(file => [file.path, file]));
   const problems: string[] = [];
   const placed = new Set<string>();
   for (const one of inputs.flatMap(pathsOf)) {
@@ -84,29 +71,33 @@ export function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepIn
   if (left.length > 0) problems.push(`no step has ${left.join(', ')}`);
   if (problems.length > 0) throw new Error(`the steps were not recorded:\n  ${[...new Set(problems)].join('\n  ')}`);
   const ids = stepIds(walkthrough, inputs);
-  return inputs.map((input, at) => {
+  return Promise.all(inputs.map(async (input, at): Promise<Step> => {
     const common = {
       id: ids[at] ?? '',
       title: input.title,
-      diff: diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
+      diff: await diffOf(cwd, base, head, pathsOf(input).flatMap(one => changed.get(one) ?? [])),
     };
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
       : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files };
-  });
+  }));
 }
 
-/** The steps at the walkthrough's base and head: each keeps the files that still change, and a step with none left is gone. */
-export function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Step[] {
-  const changed = new Map(changedFiles(cwd, base, head).map(file => [file.path, file]));
+export async function carrySteps(cwd: string, { base, head, steps }: Walkthrough): Promise<{ steps: Step[]; unplaced: string[] }> {
+  const changed = new Map((await changedFiles(cwd, base, head)).map(file => [file.path, file]));
   const diff = (files: (string | FoldedFile)[]) =>
     diffOf(cwd, base, head, files.flatMap(one => changed.get(pathOf(one)) ?? []));
-  return steps.flatMap((step): Step[] => {
-    if (step.kind === 'folded') {
-      const files = step.files.filter(one => changed.has(one.path));
-      return files.length ? [{ ...step, files, diff: diff(files) }] : [];
-    }
-    const files = step.files.filter(one => changed.has(one));
-    return files.length ? [{ ...step, files, diff: diff(files) }] : [];
-  });
+  const carried = await Promise.all(
+    steps.map(async (step): Promise<Step | null> => {
+      if (step.kind === 'folded') {
+        const files = step.files.filter(one => changed.has(one.path));
+        return files.length ? { ...step, files, diff: await diff(files) } : null;
+      }
+      const files = step.files.filter(one => changed.has(one));
+      return files.length ? { ...step, files, diff: await diff(files) } : null;
+    }),
+  );
+  const kept = carried.filter(step => step !== null);
+  const placed = new Set(kept.flatMap(pathsOf));
+  return { steps: kept, unplaced: [...changed.keys()].filter(file => !placed.has(file)) };
 }

@@ -47,14 +47,14 @@ const actionsExample = [
   { item: { type: 'walkthrough' }, actions: [{ id: 'post', label: 'Post my comments' }] },
 ];
 
-export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> [--label <text>]]
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
-  With --base and --head it is of that range, named by the label, or by "<base>..<head>" without one.
+  With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
   When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
-  and start prints the changed files that no step has yet; record the steps again with those in new steps.
+  and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
 walkthrough files
@@ -75,37 +75,40 @@ ${JSON.stringify(example, null, 2)}
 
 walkthrough note < notes.json
   Pins notes to the page, after those pinned before, and prints each note's id.
-  Standard input is a JSON array of notes; their text is Markdown, shown without any raw HTML.
+  Standard input is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
   "step" is a step id as walkthrough steps printed it.
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
-  A note whose step or lines later leave the change is kept and shown as detached; a note on lines follows its file to the step that has it.
+  A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
 ${JSON.stringify(notesExample, null, 2)}
 
 walkthrough checklist < checklist.json
-  Records the checklist shown beside the steps, replacing the one recorded before; recording the steps again or a new head keeps it.
+  Records the checklist shown beside the steps, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
   Standard input is a JSON object with a title and items in reading order.
+  An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
+  To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
   Title, status and text are the session's own words.
   An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
   A link to a step that is later gone shows as gone.
     {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
+    {"id": string, "status": string, "text": string, "steps": [step id, ...]}   an item kept under a new text
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
 
 walkthrough actions < actions.json
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
   Standard input is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item ("1" for the first) or the whole walkthrough:
+  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
     [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
   Other items offer nothing until actions are recorded on them; the walkthrough's actions show beside the steps.
-  Recording the checklist again drops the actions on its items; a step's actions last while its id does.
+  A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
 [
@@ -121,15 +124,18 @@ walkthrough decisions
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
     {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
-    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer shows on those lines
-    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a note or to a question the session asked
+    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer is a note on those lines
+    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
+    {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
-walkthrough say [--answer <id>] [--question [--choice <answer>]...] <text>
+walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>
   Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
+  An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
+  the person can reply to it like any note, and you can record actions on it.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
   Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
 

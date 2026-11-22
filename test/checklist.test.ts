@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import type { Walkthrough } from '../src/walkthrough';
+import type { WalkthroughView } from '../src/decisions';
 import { makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
@@ -9,7 +9,24 @@ afterEach(() => {
 
 const recordChecklist = (checklist: unknown) => repo.record(checklist, 'checklist');
 
-const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as Walkthrough;
+const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as WalkthroughView;
+const decide = (id: string) =>
+  fetch(new URL(`/decide?token=${new URL(repo.url()).pathname.split('/')[2] ?? ''}`, repo.url()), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ item: { type: 'checklist', id }, action: 'ok' }),
+  });
+const item = (text: string, more: Record<string, unknown> = {}) => ({ status: 'met', text, ...more });
+/** A checklist of A ("1") and B ("2"), each offering OK, both decided OK. */
+async function decidedChecklist() {
+  repo = makeRepo();
+  repo.run('start');
+  repo.record(steps);
+  recordChecklist({ title: 'Criteria', items: [item('A.'), item('B.')] });
+  const ok = [{ id: 'ok', label: 'OK' }];
+  repo.record([{ item: { type: 'checklist', id: '1' }, actions: ok }, { item: { type: 'checklist', id: '2' }, actions: ok }], 'actions');
+  for (const id of ['1', '2']) expect((await decide(id)).status).toBe(200);
+}
 
 const steps = [
   { title: 'Login check', explanation: 'Adds a login function.', files: ['login.ts'] },
@@ -35,7 +52,7 @@ describe('walkthrough checklist', () => {
 
     expect(recorded.stderr).toBe('');
     expect(recorded.status).toBe(0);
-    expect(recorded.stdout).toContain('Recorded the checklist Acceptance criteria with 3 items.');
+    expect(recorded.stdout).toContain('Recorded the checklist Acceptance criteria with 3 items: 1, 2, 3.');
     expect((await shownAt(repo.url())).checklist).toEqual({
       title: 'Acceptance criteria',
       items: [
@@ -57,7 +74,7 @@ describe('walkthrough checklist', () => {
 
     expect((await shownAt(repo.url())).checklist).toEqual({
       title: 'Open questions',
-      items: [{ id: '1', status: 'asked', text: 'Why now?', steps: ['2'] }],
+      items: [{ id: '4', status: 'asked', text: 'Why now?', steps: ['2'] }],
     });
   });
 
@@ -98,6 +115,50 @@ describe('walkthrough checklist', () => {
       expect(refused.status).toBe(1);
       expect(refused.stderr).toContain(problem);
     }
+  });
+
+  test('an item keeps its id, decision and actions by its text wherever it moves; a new item gets an id never given before', async () => {
+    await decidedChecklist();
+
+    const recorded = recordChecklist({ title: 'Criteria', items: [item('B.'), item('C.')] });
+
+    expect(recorded.stdout).toContain('with 2 items: 2, 3.');
+    const view = await shownAt(repo.url());
+    expect(view.checklist?.items.map(one => [one.id, one.text])).toEqual([
+      ['2', 'B.'],
+      ['3', 'C.'],
+    ]);
+    expect(view.decided).toMatchObject({ 'checklist:2': { action: 'ok' }, 'checklist:3': null });
+    expect(view.reopened).toEqual({});
+    expect(Object.keys(view.actions)).toContain('checklist:2');
+    expect(Object.keys(view.actions)).not.toContain('checklist:3');
+    expect(recordChecklist({ title: 'Criteria', items: [item('A.'), item('B.')] }).stdout).toContain('items: 4, 2.');
+  });
+
+  test('an item recorded with its id keeps it under a new text, and only its own decision reopens', async () => {
+    await decidedChecklist();
+
+    const recorded = recordChecklist({ title: 'Criteria', items: [item('B.'), item('A, shown now.', { id: '1' })] });
+
+    expect(recorded.stdout).toContain('items: 2, 1.');
+    const view = await shownAt(repo.url());
+    expect(view.decided).toMatchObject({ 'checklist:1': null, 'checklist:2': { action: 'ok' } });
+    expect(Object.keys(view.reopened)).toEqual(['checklist:1']);
+  });
+
+  test('refuses an id that names no item of the checklist, or one kept twice', async () => {
+    await decidedChecklist();
+
+    for (const [items, problem] of [
+      [[item('A.', { id: '9' })], 'item 1: the checklist has no item 9 to keep'],
+      [[item('A.', { id: '1' }), item('B.', { id: '1' })], 'item 2: item 1 is kept twice'],
+      [[item('A.', { id: 1 })], 'item 1: id must be the id of an item, as walkthrough checklist printed it'],
+    ] as const) {
+      const refused = recordChecklist({ title: 'Criteria', items });
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toContain(problem);
+    }
+    expect((await shownAt(repo.url())).checklist?.items.map(one => one.id)).toEqual(['1', '2']);
   });
 
   test('is absent until the session records one', async () => {

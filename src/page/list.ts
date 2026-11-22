@@ -1,35 +1,13 @@
 import type { Listed } from '../list';
-import { el } from './dom';
+import { plural } from '../words';
+import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
 
-const token = location.pathname.split('/')[2] ?? '';
-const header = document.getElementById('header') as HTMLElement;
-const alertBox = document.getElementById('alert') as HTMLElement;
-const main = document.getElementById('main') as HTMLElement;
+const header = region('header');
+const main = region('main');
 
-const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
-const UNREACHABLE = 'Could not reach the list. Run walkthrough list again to reopen it.';
+const PAGE: PageName = { name: 'list', reopen: 'Run walkthrough list again to reopen it.' };
+const post = (route: string, body: Record<string, unknown>) => postTo(PAGE, route, body);
 
-function showAlert(message: string | null): void {
-  alertBox.textContent = message;
-  alertBox.hidden = message === null;
-}
-
-async function post(route: string, body: unknown): Promise<Response | null> {
-  try {
-    const answer = await fetch(`/${route}?token=${token}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    showAlert(answer.ok ? null : `The list could not do that (${String(answer.status)}).`);
-    return answer.ok ? answer : null;
-  } catch {
-    showAlert(UNREACHABLE);
-    return null;
-  }
-}
-
-/** Opens the walkthrough's page here, its server started when it is not running. */
 async function open(one: Listed): Promise<void> {
   const answer = await post('open', { id: one.id });
   if (answer) location.assign(((await answer.json()) as { url: string }).url);
@@ -49,6 +27,8 @@ function row(one: Listed): HTMLTableRowElement {
     'tr',
     {},
     el('td', {}, el('button', { type: 'button', className: 'quiet', onclick: () => void open(one) }, one.name)),
+    // What walkthrough prune takes to remove this one.
+    el('td', {}, el('code', {}, one.id)),
     el('td', {}, one.steps ? progress : 'Preparing'),
     el('td', {}, el('time', { dateTime: one.last }, last.toLocaleString())),
   );
@@ -66,7 +46,7 @@ function render(list: Listed[]): void {
     main.replaceChildren(el('p', { className: 'notice' }, 'This repo has no walkthroughs; run /walkthrough to start one.'));
     return;
   }
-  const head = el('tr', {}, ...['Walkthrough', 'Progress', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
+  const head = el('tr', {}, ...['Walkthrough', 'Id', 'Progress', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
   main.replaceChildren(el('table', { className: 'walkthroughs' }, el('thead', {}, head), el('tbody', {}, ...list.map(row))));
 }
 
@@ -84,6 +64,6 @@ const poller = setInterval(() => {
       if (text !== shown) render(JSON.parse(text) as Listed[]);
     })
     .catch(() => {
-      showAlert(UNREACHABLE);
+      showAlert(unreachable(PAGE));
     });
 }, 5000);

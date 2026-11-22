@@ -25,8 +25,8 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Walkthroughs');
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login change', 'Preparing', /\d/]);
-  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/login', '1 of 1 step decided, 1 read', /\d/]);
+  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login change', 'range-Login%20change', 'Preparing', /\d/]);
+  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/login', 'branch-feature~login', '1 of 1 step decided, 1 read', /\d/]);
 
   await rows.nth(2).getByRole('button', { name: 'feature/login' }).click();
 

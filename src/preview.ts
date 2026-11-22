@@ -14,7 +14,6 @@ const TYPES: Record<string, string> = {
   webp: 'image/webp',
 };
 
-/** The type a file is previewed as, or undefined when the page has no preview for it. */
 export function previewType(file: string): string | undefined {
   const extension = /\.([^./]+)$/.exec(file)?.[1]?.toLowerCase() ?? '';
   return Object.hasOwn(TYPES, extension) ? TYPES[extension] : undefined;

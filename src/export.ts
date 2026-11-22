@@ -13,7 +13,6 @@ function inline(html: string, tag: string, replacement: string): string {
   return html.replace(tag, () => replacement);
 }
 
-/** The HTML of the walkthrough in `dir` as it is now, loading nothing and sending nothing. */
 export function exportPage(dir: string): string {
   const read = (file: string) => fs.readFileSync(path.join(PAGE, file), 'utf8');
   // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.

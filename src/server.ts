@@ -6,7 +6,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { changedFiles, fileAt } from './change';
+import { changedFiles, commonDir, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
 import { previewType } from './preview';
 import { alive, psStart } from './processes';
@@ -14,6 +14,7 @@ import { decide, markRead, walkthroughView } from './decisions';
 import { listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
+import { tooLong } from './words';
 
 type ServerRecord = { pid: number; started: string; url: string };
 type Answer = { status: number; body?: unknown; after?: () => void };
@@ -61,7 +62,6 @@ function pageToken(dir: string): string {
   return token;
 }
 
-/** Whether the page server of the walkthrough in `dir` runs. */
 export function serverRunning(dir: string): boolean {
   const record = readRecord(dir);
   return !!record && alive(record);
@@ -72,13 +72,14 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-/** The page address of the walkthrough in `dir`, or with `list` of the list of the repo whose state is `dir`, starting its server when it is not running. */
 export async function ensureServer(dir: string, list = false): Promise<string> {
   const running = readRecord(dir);
   if (running && alive(running)) return running.url;
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
+    // Not the folder start ran in, which may be a worktree removed while the page is open.
+    cwd: commonDir(process.cwd()),
     detached: true,
     stdio: ['ignore', log, log],
   });
@@ -91,7 +92,6 @@ export async function ensureServer(dir: string, list = false): Promise<string> {
   throw new Error(`the page server did not start; see ${path.join(dir, 'server.log')}`);
 }
 
-/** Whether a server was running; it is stopped either way. */
 export async function stopServer(dir: string): Promise<boolean> {
   const record = readRecord(dir);
   if (!record || !alive(record)) {
@@ -105,17 +105,16 @@ export async function stopServer(dir: string): Promise<boolean> {
   return true;
 }
 
-/** Runs the server of the walkthrough in `dir`, or with `list` of the list in the repo state `dir`, in this process until it is stopped. */
 export function serve(dir: string, list = false): void {
   const token = pageToken(dir);
   const stop: Route = () => ({ status: 200, body: { stopped: true }, after: shutDown });
   const routes: Record<string, Route> = list
     ? { '/open': ({ id }) => open(dir, id), '/stop': stop }
     : {
-        '/decide': fields => answered(decide(dir, fields)),
-        '/read': ({ step }) => answered(markRead(dir, step)),
-        '/ask': fields => answered(ask(dir, fields)),
-        '/reply': ({ to, text }) => answered(reply(dir, to, text)),
+        '/decide': async fields => answered(await decide(dir, fields)),
+        '/read': async ({ step }) => answered(await markRead(dir, step)),
+        '/ask': async fields => answered(await ask(dir, fields)),
+        '/reply': async ({ to, text }) => answered(await reply(dir, to, text)),
         '/stop': stop,
       };
   let seen = Date.now();
@@ -152,7 +151,6 @@ export function serve(dir: string, list = false): void {
 
 const answered = (view: object | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
 
-/** The page address of a walkthrough on the list in `repoDir`, its server started when it is not running. */
 async function open(repoDir: string, id: unknown): Promise<Answer> {
   const listed = listView(repoDir).find(one => one.id === id);
   return listed ? { status: 200, body: { url: await ensureServer(path.join(repoDir, listed.id)) } } : { status: 400 };
@@ -169,11 +167,13 @@ function failRequest(res: http.ServerResponse, error: unknown): void {
 }
 
 /** A changed file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
-function serveChangedFile(dir: string, file: string, res: http.ServerResponse): void {
+async function serveChangedFile(dir: string, file: string, res: http.ServerResponse): Promise<void> {
   const walkthrough = readWalkthrough(dir);
   const type = previewType(file);
   const changed =
-    walkthrough && type && changedFiles(process.cwd(), walkthrough.base, walkthrough.head).some(one => one.path === file);
+    walkthrough &&
+    type &&
+    (await changedFiles(process.cwd(), walkthrough.base, walkthrough.head)).some(one => one.path === file);
   const content = changed ? fileAt(process.cwd(), walkthrough.head, file) : null;
   if (!type || !content) {
     res.writeHead(404).end();
@@ -191,7 +191,9 @@ function serveChangedFile(dir: string, file: string, res: http.ServerResponse): 
 
 function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
   if (!list && what === 'file') {
-    serveChangedFile(dir, query.get('path') ?? '', res);
+    serveChangedFile(dir, query.get('path') ?? '', res).catch((error: unknown) => {
+      failRequest(res, error);
+    });
     return;
   }
   const data: Record<string, () => unknown> = list
@@ -238,7 +240,6 @@ function readBody(req: http.IncomingMessage, res: http.ServerResponse, onBody: (
 
 type Gate = { dir: string; list: boolean; token: string; port: string; routes: Record<string, Route> };
 
-/** Only this machine's own page, with the token, sending JSON, reaches a route; every answer carries the security headers. */
 function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, token, port, routes }: Gate): void {
   const prefix = `/s/${token}/`;
   const url = new URL(req.url ?? '', 'http://127.0.0.1');
@@ -276,6 +277,11 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, 
   }
   readBody(req, res, body => {
     const fields = body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : {};
+    const problem = tooLong(fields);
+    if (problem) {
+      res.writeHead(400, JSON_HEADERS).end(JSON.stringify({ error: problem }));
+      return;
+    }
     Promise.resolve()
       .then(() => route(fields))
       .then(({ status, body: said, after }) => {

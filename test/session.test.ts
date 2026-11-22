@@ -99,6 +99,23 @@ describe('walkthrough listen', () => {
     expect((await post(repo.url(), '/reply', { to: 'nope', text: 'Yes' })).status).toBe(400);
     expect((await sessionAt(repo.url())).conversation).toEqual([]);
   });
+
+  test('refuses text over 4000 characters, saying so, rather than cutting it', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+
+    const refused = await post(repo.url(), '/ask', { step: '1', text: 'a'.repeat(4001) });
+    const decided = await post(repo.url(), '/decide', { item: { type: 'step', id: '1' }, action: 'flag', note: 'b'.repeat(4001) });
+
+    for (const answer of [refused, decided]) {
+      expect(answer.status).toBe(400);
+      expect(await answer.json()).toEqual({ error: 'That text is 4001 characters long; the most it can be is 4000.' });
+    }
+    expect((await sessionAt(repo.url())).conversation).toEqual([]);
+    expect((await post(repo.url(), '/ask', { step: '1', text: 'a'.repeat(4000) })).status).toBe(200);
+    expect((await sessionAt(repo.url())).conversation[0]?.text).toHaveLength(4000);
+  });
 });
 
 describe('walkthrough say', () => {

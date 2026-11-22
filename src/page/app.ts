@@ -5,12 +5,12 @@ import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, type Item, itemKey } from '../items';
+import { type Action, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, Step } from '../walkthrough';
-import { el } from './dom';
+import { plural } from '../words';
+import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
 import { renderMarkdown } from './markdown';
 
-const token = location.pathname.split('/')[2] ?? '';
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
 const exported = document.getElementById('exported')?.textContent;
 const readOnly = exported !== undefined;
@@ -22,41 +22,17 @@ function markdown(text: string, className: string): HTMLElement {
   return box;
 }
 
-function region(id: string): HTMLElement {
-  const found = document.getElementById(id);
-  if (!found) throw new Error(`the page has no #${id}`);
-  return found;
-}
 const header = region('header');
-const alertBox = region('alert');
 const main = region('main');
-
-function showAlert(message: string | null): void {
-  alertBox.textContent = message;
-  alertBox.hidden = message === null;
-}
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
 let posted = 0;
 
-/** The server's answer, or null once the person has been told why there is none. */
-async function post(route: string, body: unknown): Promise<Response | null> {
+const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough again to reopen it.' };
+const post = (route: string, body: Record<string, unknown>) => {
   posted++;
-  try {
-    const answer = await fetch(`/${route}?token=${token}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    showAlert(answer.ok ? null : `The walkthrough could not do that (${String(answer.status)}).`);
-    return answer.ok ? answer : null;
-  } catch {
-    showAlert('Could not reach the walkthrough. Run /walkthrough again to reopen it.');
-    return null;
-  }
-}
-
-const plural = (count: number, word: string) => `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+  return postTo(PAGE, route, body);
+};
 
 let walkthrough: WalkthroughView;
 let session: SessionView;
@@ -68,7 +44,6 @@ const stepDecided = (step: Step) => decisionOf({ type: 'step', id: step.id }) !=
 /** The label of the item's action `id`, or the id when the session no longer offers it. */
 const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
 
-/** The step named in the address, else the first undecided one. */
 function currentStep({ steps }: WalkthroughView): Step | undefined {
   const named = decodeURIComponent(location.hash.slice(1));
   return steps.find(step => step.id === named) ?? steps.find(step => !stepDecided(step)) ?? steps[0];
@@ -80,10 +55,8 @@ function show(step: Step | undefined): void {
   location.hash = encodeURIComponent(step.id);
 }
 
-/** The action being taken whose note or text the person is still writing, by item key and action id. */
 let taking: { key: string; action: string } | null = null;
 
-/** Sends the person's decision; deciding a step moves on to the next undecided one. */
 async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
   const answer = await post('decide', { item, action, ...fields });
   if (!answer) return;
@@ -96,10 +69,8 @@ async function decide(item: Item, action: string, fields: { note?: string; text?
   show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !stepDecided(one)));
 }
 
-/** Steps whose reading the page is telling the walkthrough about. */
 const reading = new Set<string>();
 
-/** Tells the walkthrough the page has shown the step. */
 async function markRead(step: Step): Promise<void> {
   if (readOnly || walkthrough.read.includes(step.id) || reading.has(step.id)) return;
   reading.add(step.id);
@@ -111,7 +82,6 @@ async function markRead(step: Step): Promise<void> {
   render();
 }
 
-/** Sends what the person said; the box `draft` it came from is kept when the walkthrough could not take it. */
 async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
   const answer = await post(route, body);
   if (!answer) return false;
@@ -150,13 +120,16 @@ function sessionChip(): HTMLElement {
 /** Nothing in an exported file is sent anywhere, so it has no boxes to type into. */
 const writable = (form: HTMLFormElement) => (readOnly ? [] : [form]);
 
-/** A box the person types into, with its draft kept across redraws, and the button that sends it. */
-function draftBox(draft: string, label: string, action: string, onSend: () => void): HTMLFormElement {
-  const box = el('textarea', { rows: 2, value: drafts.get(draft) ?? '', placeholder: label });
+function draftArea(draft: string, label: string, start = '', rows = 2): HTMLTextAreaElement {
+  const box = el('textarea', { rows, value: drafts.get(draft) ?? start, placeholder: label });
   box.dataset['draft'] = draft;
   box.setAttribute('aria-label', label);
   box.oninput = () => drafts.set(draft, box.value);
-  const form = el('form', { className: 'draft' }, box, el('button', { type: 'submit' }, action));
+  return box;
+}
+
+function draftForm(boxes: HTMLTextAreaElement[], action: string, onSend: () => void): HTMLFormElement {
+  const form = el('form', { className: 'draft' }, ...boxes, el('button', { type: 'submit' }, action));
   form.onsubmit = event => {
     event.preventDefault();
     onSend();
@@ -164,11 +137,13 @@ function draftBox(draft: string, label: string, action: string, onSend: () => vo
   return form;
 }
 
+const draftBox = (draft: string, label: string, action: string, onSend: () => void) =>
+  draftForm([draftArea(draft, label)], action, onSend);
+
 /** The person's words as they typed them; the session's as Markdown. */
 const said = (entry: Entry) =>
   entry.from === 'session' ? markdown(entry.text, 'said session') : el('p', { className: 'said person' }, entry.text ?? '');
 
-/** What followed `root`: replies to it, answers to those, and so on, in the order they came. */
 function followUps(root: Entry): Entry[] {
   const thread = new Set([root.id]);
   return session.conversation.filter(entry => {
@@ -190,20 +165,25 @@ const anchorOf = (entry: Note | Ask) => {
   return at === undefined ? placeOf(entry).step : at;
 };
 
+/** A note that answers an ask shows in the ask's thread, with its own replies. */
+const answersAsk = (entry: Entry) => isNote(entry) && entry.answer !== undefined;
+
 function askThread(asked: Ask): HTMLElement {
   const answers = followUps(asked);
+  const inNotes = new Set(answers.filter(isNote).flatMap(note => followUps(note).map(entry => entry.id)));
   return el(
     'div',
     { className: 'thread' },
     said(asked),
-    ...(answers.length ? answers.map(said) : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
+    ...(answers.length
+      ? answers.filter(entry => !inNotes.has(entry.id)).map(entry => (isNote(entry) ? noteView(entry) : said(entry)))
+      : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
   );
 }
 
 const linesLabel = ([first, last]: Lines) =>
   first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
 
-/** The item's decision, the session's answers to it, and the actions it offers; `text` is what an action that edits starts from. */
 function decideView(item: Item, text = ''): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
@@ -248,7 +228,6 @@ function decideView(item: Item, text = ''): HTMLElement[] {
   ];
 }
 
-/** What the person sent with their decision, and what the session answered. */
 function decisionSaid(decision: Decision): HTMLElement[] {
   return [
     ...(decision.note ? [el('p', { className: 'said person' }, decision.note)] : []),
@@ -257,35 +236,23 @@ function decisionSaid(decision: Decision): HTMLElement[] {
   ];
 }
 
-/** Collects the note and edited text an action asks for before sending it. */
 function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
   const draft = (field: string) => `decide:${itemKey(item)}:${action.id}:${field}`;
-  const box = (field: string, label: string, start = '') => {
-    const area = el('textarea', { rows: 3, value: drafts.get(draft(field)) ?? start, placeholder: label });
-    area.dataset['draft'] = draft(field);
-    area.setAttribute('aria-label', label);
-    area.oninput = () => drafts.set(draft(field), area.value);
-    return area;
-  };
-  const form = el(
-    'form',
-    { className: 'draft taking' },
-    ...(action.edit ? [box('text', 'Text', text)] : []),
-    ...(action.note ? [box('note', 'Note')] : []),
-    el('button', { type: 'submit' }, 'Send'),
-    el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'),
-  );
-  form.onsubmit = event => {
-    event.preventDefault();
+  const boxes = [
+    ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
+    ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
+  ];
+  const form = draftForm(boxes, 'Send', () => {
     void decide(item, action.id, {
       ...(action.note && { note: drafts.get(draft('note')) ?? '' }),
       ...(action.edit && { text: drafts.get(draft('text')) ?? text }),
     });
-  };
+  });
+  form.classList.add('taking');
+  form.append(el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'));
   return form;
 }
 
-/** Where a detached note or ask was. */
 function wasView(entry: Note | Ask): HTMLElement {
   const { file, lines } = placeOf(entry);
   const where = file !== undefined && lines ? `${file}, ${linesLabel(lines).toLowerCase()}` : 'a step no longer in the change';
@@ -317,7 +284,6 @@ function noteView(note: Note): HTMLElement {
   return view;
 }
 
-/** Notes in the order pinned, the low-priority ones behind a count the person opens; `place` keeps it open across redraws. */
 function notesView(notes: Note[], place: string): HTMLElement[] {
   const views = notes.filter(note => !note.note.low).map(noteView);
   const low = notes.filter(note => note.note.low);
@@ -345,20 +311,46 @@ function askView(step: Step): HTMLElement[] {
   )];
 }
 
-/** The lines the person picked to ask about; `from` is the line picked first. */
-let picked: { step: string; file: string; from: number; lines: Lines } | null = null;
+/** `ended` once the last line is picked too; from the keyboard the first line is picked on its own first. */
+let picked: { step: string; file: string; from: number; lines: Lines; ended: boolean } | null = null;
 
-/** A click on a line number picks that line; with Shift, the lines from the one picked before. */
-function pickLine(step: Step, event: MouseEvent): void {
+function lineAt(event: Event): { cell: HTMLElement; file: string; line: number } | null {
   const target = event.target instanceof Element ? event.target : null;
-  const row = target?.closest<HTMLTableRowElement>('tr[data-line]');
+  const cell = target?.closest<HTMLElement>('.d2h-code-linenumber');
+  const row = cell?.closest<HTMLTableRowElement>('tr[data-line]');
   const file = row?.dataset['file'];
-  if (readOnly || !row || file === undefined || !target?.closest('.d2h-code-linenumber')) return;
-  const line = Number(row.dataset['line']);
-  const from = event.shiftKey && picked?.step === step.id && picked.file === file ? picked.from : line;
-  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)] };
+  return readOnly || !cell || !row || file === undefined ? null : { cell, file, line: Number(row.dataset['line']) };
+}
+
+function pick(step: Step, file: string, line: number, extend: boolean, ended: boolean): void {
+  const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line;
+  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended };
   render();
-  document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+  if (ended) document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+}
+
+function pickLine(step: Step, event: MouseEvent): void {
+  const at = lineAt(event);
+  if (at) pick(step, at.file, at.line, event.shiftKey, true);
+}
+
+function pickByKey(step: Step, event: KeyboardEvent): void {
+  const at = lineAt(event);
+  if (!at) return;
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    const cells = [...(event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('tr[data-line] .d2h-code-linenumber')];
+    const next = cells[cells.indexOf(at.cell) + (event.key === 'ArrowDown' ? 1 : -1)];
+    if (!next) return;
+    event.preventDefault();
+    at.cell.tabIndex = -1;
+    next.tabIndex = 0;
+    next.focus();
+    return;
+  }
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  const started = picked?.step === step.id && picked.file === at.file && !picked.ended;
+  pick(step, at.file, at.line, started, event.shiftKey || (started && picked?.from !== at.line));
 }
 
 function unpick(): void {
@@ -378,7 +370,6 @@ function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
   return form;
 }
 
-/** The answers a question offers, each sent as the person's reply. */
 function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
   if (!choices.length) return [];
   const buttons = choices.map(choice =>
@@ -387,7 +378,6 @@ function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
   return [el('div', { className: 'choices' }, ...buttons)];
 }
 
-/** What the session said that answers no ask: its notes, and its questions with the person's replies and its answers to them. */
 function sessionMessages(): HTMLElement[] {
   const messages = session.conversation.filter(
     (entry): entry is SessionMessage => entry.from === 'session' && !entry.answer && !entry.note,
@@ -419,7 +409,6 @@ function sessionMessages(): HTMLElement[] {
   return [section];
 }
 
-/** Where a line shows in a step's diff, by file and line number at the head. */
 const lineKey = (file: string, line: number) => JSON.stringify([file, line]);
 type Drawn = { diff: string; view: HTMLElement; rows: Map<string, HTMLTableRowElement> };
 // Kept across redraws: the page redraws whenever the session's state changes, and drawing a diff is the slow part.
@@ -455,12 +444,22 @@ function drawDiff(step: Step): Drawn {
   view.onclick = event => {
     pickLine(step, event);
   };
+  if (!readOnly) {
+    const cells = [...view.querySelectorAll<HTMLElement>('tr[data-line] .d2h-code-linenumber')];
+    // One line number is in the tab order, and the arrows move from it, so the diff is one stop.
+    cells.forEach((cell, at) => {
+      cell.tabIndex = at === 0 ? 0 : -1;
+      cell.setAttribute('aria-label', `Ask about line ${cell.closest('tr')?.dataset['line'] ?? ''} of ${cell.closest('tr')?.dataset['file'] ?? ''}`);
+    });
+    view.onkeydown = event => {
+      pickByKey(step, event);
+    };
+  }
   const made = { diff: step.diff, view, rows };
   drawn.set(step.id, made);
   return made;
 }
 
-/** The step's diff with its notes, asks and picked lines shown after the last line each is about. */
 function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll('.pinned-row')) old.remove();
@@ -479,7 +478,7 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
       const line = Number(row.dataset['line']);
       if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) row.classList.add('selected');
     }
-    if (!at.has(pickKey)) at.set(pickKey, []);
+    if (pick.ended && !at.has(pickKey)) at.set(pickKey, []);
   }
   for (const [key, entries] of at) {
     const shown = el(
@@ -487,7 +486,7 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
       { className: 'pinned' },
       ...notesView(entries.filter(isNote), `more:${step.id}:${key}`),
       ...entries.filter(isAsk).map(askThread),
-      ...(pick && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
+      ...(pick?.ended && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
     );
     rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
   }
@@ -497,7 +496,6 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
 /** Files the person switched to their preview, by step id and path, so a redraw keeps them so. */
 const previewed = new Set<string>();
 
-/** A Diff / Preview switch on a file the page can preview, which shows the file as it is at the head commit. */
 function addPreview(wrapper: Element, stepId: string, file: string): void {
   const type = previewType(file);
   const diff = wrapper.querySelector<HTMLElement>('.d2h-file-diff');
@@ -514,7 +512,7 @@ function addPreview(wrapper: Element, stepId: string, file: string): void {
     }
     preview.replaceChildren(el('p', { className: 'notice' }, 'Loading the preview.'));
     const answer = await fetch(source).catch(() => null);
-    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text());
+    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), { images: true });
     else preview.replaceChildren(el('p', { className: 'notice' }, 'Could not load the preview.'));
   };
   const choices = (['Diff', 'Preview'] as const).map(label =>
@@ -551,10 +549,9 @@ function assumedView(stepId: string, assumptions: string[]): HTMLElement[] {
 /** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
 const opened = new Set<string>();
 
-/** What the step says about itself, its notes, and its diff, by kind of step. */
 function stepBody(step: Step): HTMLElement[] {
   const pinned = session.conversation.filter(
-    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === step.id,
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === step.id,
   );
   const stepNotes = pinned.filter(isNote).filter(note => !note.note.lines);
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
@@ -620,7 +617,6 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
   return el('div', {}, section, pager);
 }
 
-/** Undecided steps in order, each marked once read; decided steps collapse behind a count. */
 function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
   const item = (step: Step) => {
     const decision = decisionOf({ type: 'step', id: step.id });
@@ -651,7 +647,6 @@ function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
   return nav;
 }
 
-/** The actions the session offers on the whole walkthrough, beside the steps. */
 function wholeView(): HTMLElement[] {
   const decide = decideView({ type: 'walkthrough' });
   if (!decide.length) return [];
@@ -686,10 +681,24 @@ function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement 
   return section;
 }
 
-/** Notes and asks whose step or lines left the change, kept with where they were. */
+function unplacedView(): HTMLElement[] {
+  const files = walkthrough.unplaced ?? [];
+  if (!files.length) return [];
+  const title = el('h2', { id: 'unplaced' }, 'In no step yet');
+  const section = el(
+    'section',
+    { className: 'messages conversation' },
+    title,
+    el('p', { className: 'notice' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
+    paths('Files', files),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return [section];
+}
+
 function detachedView(): HTMLElement[] {
   const gone = session.conversation.filter(
-    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && anchorOf(entry) === null,
+    (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null,
   );
   if (!gone.length) return [];
   const title = el('h2', { id: 'detached' }, 'Detached');
@@ -708,7 +717,8 @@ function render(): void {
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
-  const typing = document.activeElement instanceof HTMLTextAreaElement ? document.activeElement : null;
+  const focused = document.activeElement;
+  const typing = focused instanceof HTMLTextAreaElement ? focused : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const { steps } = walkthrough;
@@ -719,7 +729,7 @@ function render(): void {
     el(
       'div',
       { className: 'title' },
-      el('h1', {}, walkthrough.kind === 'branch' ? walkthrough.branch : walkthrough.label),
+      el('h1', {}, nameOf(walkthrough)),
       el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
     ),
     ...(steps.length ? [el('p', { className: 'progress' }, progress)] : []),
@@ -736,6 +746,7 @@ function render(): void {
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
+    ...unplacedView(),
     ...detachedView(),
     ...(current
       ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)]
@@ -746,11 +757,35 @@ function render(): void {
         ]),
   );
   if (current) void markRead(current);
+  // A diff is kept across redraws, so a line number focused in it is still there to focus again.
+  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
   box?.setSelectionRange(...caret);
 }
+
+const isTyping = (target: EventTarget | null) =>
+  target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+function stepBy(delta: number): void {
+  const { steps } = walkthrough;
+  const current = currentStep(walkthrough);
+  show(current && steps[steps.indexOf(current) + delta]);
+}
+
+document.addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.key === 'Escape' && picked) {
+    const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
+    unpick();
+    end?.querySelector<HTMLElement>('.d2h-code-linenumber')?.focus();
+    return;
+  }
+  if (isTyping(event.target)) return;
+  if (event.key === 'j' || event.key === 'ArrowRight') stepBy(1);
+  else if (event.key === 'k' || event.key === 'ArrowLeft') stepBy(-1);
+});
 
 window.addEventListener('hashchange', () => {
   render();
@@ -787,7 +822,7 @@ const poller = readOnly ? undefined : setInterval(() => {
       render();
     })
     .catch(() => {
-      showAlert('Could not reach the walkthrough. Run /walkthrough again to reopen it.');
+      showAlert(unreachable(PAGE));
     })
     .finally(() => {
       polling = false;

@@ -134,8 +134,7 @@ test('a checklist item the session records again after a decision shows reopened
   await item.getByRole('button', { name: 'Send' }).click();
   const decided = await decisionOf(repo, listener);
 
-  record(repo, { title: 'Criteria', items: [{ status: 'not met', text: 'Only staff can log in.' }] }, 'checklist');
-  record(repo, disagree, 'actions');
+  record(repo, { title: 'Criteria', items: [{ id: '1', status: 'not met', text: 'Only staff can log in.' }] }, 'checklist');
   repo.run('say', '--answer', String(decided['id']), 'Marked it not met.');
 
   await expect(item.getByText('Reopened: changed since you chose Disagree', { exact: true })).toBeVisible();

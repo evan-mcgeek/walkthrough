@@ -20,9 +20,7 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
     XDG_STATE_HOME: path.join(home, '.local', 'state'),
     XDG_CONFIG_HOME: path.join(home, '.config'),
     WALKTHROUGH_STATE: path.join(sandbox, 'state'),
-    WALKTHROUGH_CONFIG_DIR: path.join(sandbox, 'config'),
   });
-  delete process.env['CLAUDE_CODE_SESSION_ID'];
   process.on('exit', () => {
     fs.rmSync(sandbox, { recursive: true, force: true });
   });

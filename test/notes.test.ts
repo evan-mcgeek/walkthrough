@@ -39,12 +39,15 @@ describe('walkthrough note', () => {
     expect(noted.stderr).toBe('');
     expect(noted.status).toBe(0);
     expect(noted.stdout).toMatch(/^Recorded 2 notes: [0-9a-f]{8} \(Risk\), [0-9a-f]{8} \(Finding\)\.\n$/);
-    expect((await sessionAt(repo.url())).conversation).toEqual([
+    const { conversation } = await sessionAt(repo.url());
+    const hash = conversation[1]?.from === 'session' ? conversation[1].note?.linesHash : undefined;
+    expect(hash).toMatch(/^[0-9a-f]{16}$/);
+    expect(conversation).toEqual([
       expect.objectContaining({ from: 'session', text: 'Login lets **everyone** in.', note: { step: '1', label: 'Risk' } }),
       expect.objectContaining({
         from: 'session',
         text: 'These could be one.',
-        note: { step: '1', file: 'cart.ts', lines: [2, 4], label: 'Finding', low: true },
+        note: { step: '1', file: 'cart.ts', lines: [2, 4], linesHash: hash, label: 'Finding', low: true },
       }),
     ]);
   });
@@ -70,7 +73,7 @@ describe('walkthrough note', () => {
     expect((await sessionAt(repo.url())).conversation).toEqual([]);
   });
 
-  test('takes a reply to a note to the listener, and the session answers it', async () => {
+  test('takes a reply to a note to the listener with the note it is about, and the session answers it', async () => {
     repo = started();
     note([{ step: '1', label: 'Risk', text: 'Login lets everyone in.' }]);
     const [pinned] = (await sessionAt(repo.url())).conversation;
@@ -79,7 +82,12 @@ describe('walkthrough note', () => {
     expect((await post(repo.url(), '/reply', { to: pinned?.id, text: 'On purpose for now.' })).status).toBe(200);
 
     const [replied] = handed((await listener.ended).stdout);
-    expect(replied).toMatchObject({ kind: 'reply', to: pinned?.id, text: 'On purpose for now.' });
+    expect(replied).toMatchObject({
+      kind: 'reply',
+      to: pinned?.id,
+      text: 'On purpose for now.',
+      about: { label: 'Risk', text: 'Login lets everyone in.' },
+    });
     expect(repo.run('say', '--answer', String(replied?.['id']), 'Then I leave it.').status).toBe(0);
     expect((await sessionAt(repo.url())).conversation.map(entry => entry.text)).toEqual([
       'Login lets everyone in.',
@@ -149,6 +157,48 @@ describe('an ask about lines', () => {
     expect(handed((await listener.ended).stdout)).toEqual([
       expect.objectContaining({ kind: 'ask', step: '1', file: 'cart.ts', lines: [1, 3], text: 'Why three?' }),
     ]);
+  });
+
+  test('is answered with a note on those lines, labelled by the session, that takes replies and actions', async () => {
+    repo = started();
+    const listener = repo.background('listen');
+    await post(repo.url(), '/ask', { step: '1', file: 'cart.ts', lines: [1, 3], text: 'Why three?' });
+    const [asked] = handed((await listener.ended).stdout);
+
+    const said = repo.run('say', '--answer', String(asked?.['id']), '--as', 'Finding', 'They could be one.');
+    const plain = repo.run('say', '--answer', String(asked?.['id']), 'Or kept apart.');
+
+    expect(said.stderr).toBe('');
+    expect(said.stdout).toMatch(/^Said on the page as note [0-9a-f]{8} \(Finding\)\.\n$/);
+    const answers = (await sessionAt(repo.url())).conversation.flatMap(entry => (entry.from === 'session' ? [entry] : []));
+    expect(answers.map(entry => [entry.answer, entry.note?.label, entry.note?.lines])).toEqual([
+      [asked?.['id'], 'Finding', [1, 3]],
+      [asked?.['id'], 'Answer', [1, 3]],
+    ]);
+    expect(plain.stdout).toMatch(/\(Answer\)/);
+    const noteId = /note ([0-9a-f]{8})/.exec(said.stdout)?.[1] ?? '';
+    const replying = repo.background('listen');
+    expect((await post(repo.url(), '/reply', { to: noteId, text: 'Agreed.' })).status).toBe(200);
+    expect(handed((await replying.ended).stdout)[0]).toMatchObject({
+      kind: 'reply',
+      to: noteId,
+      about: { label: 'Finding', text: 'They could be one.' },
+    });
+    const actions = repo.record([{ item: { type: 'note', id: noteId }, actions: [{ id: 'fix', label: 'Fix it' }] }], 'actions');
+    expect(actions.stderr).toBe('');
+  });
+
+  test('takes a label with --as only on an answer to a question about lines', async () => {
+    repo = started();
+    const listener = repo.background('listen');
+    await post(repo.url(), '/ask', { step: '1', text: 'Why a cart?' });
+    const [asked] = handed((await listener.ended).stdout);
+
+    for (const args of [['--as', 'Finding', 'Text'], ['--answer', String(asked?.['id']), '--as', 'Finding', 'Text']]) {
+      const refused = repo.run('say', ...args);
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toContain('--as is for an answer to a question about lines');
+    }
   });
 
   test('is refused when the lines are not in the step', async () => {
