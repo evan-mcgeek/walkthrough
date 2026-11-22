@@ -689,7 +689,7 @@ function unplacedView(): HTMLElement[] {
   const title = el('h2', { id: 'unplaced' }, 'In no step yet');
   const section = el(
     'section',
-    { className: 'messages' },
+    { className: 'messages conversation' },
     title,
     el('p', { className: 'notice' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
     paths('Files', files),
