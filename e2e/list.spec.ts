@@ -19,7 +19,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   // Away from the page first, whose polls would fail once its server stops.
   await page.goto('about:blank');
   repo.run('stop');
-  repo.run('start', ...RANGE);
+  repo.run('start', ...RANGE, '--kind', 'requested');
   repo.run('stop', ...RANGE);
 
   expect(repo.run('list').stdout).toContain('The list of walkthroughs is open in your browser.');
@@ -33,7 +33,9 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Last activity']);
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerange-Login%20change', 'Preparing', /now|ago/]);
+  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerequestedrange-Login%20change', 'Preparing', /now|ago/]);
+  await expect(rows.nth(1).locator('.kind')).toHaveAttribute('title', 'The kind of walkthrough');
+  await expect(rows.nth(2).locator('.kind')).toHaveCount(0);
   await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', /now|ago/]);
   // A decided segment is filled in violet, as the mark is.
   const violet = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);

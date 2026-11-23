@@ -1,5 +1,5 @@
 /*
-  The 48px header: .logo, the mono .session-label, the segmented .progress bar with its .progress-count,
+  The 48px header: .logo, the mono .session-label and the session's .kind, the segmented .progress bar with its .progress-count,
   then .header-end (layout switch, .status, Stop) pushed to the right.
 */
 
@@ -37,6 +37,10 @@
   font-variant-ligatures: none;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.app-header .kind {
+  flex: none;
 }
 
 .progress {
@@ -175,6 +179,8 @@
     padding-bottom: var(--s2);
   }
 
+  /* The first row has no room to spare beside the label. */
+  .app-header .kind,
   .header-end > :is(.stop, .layout-switch) {
     display: none;
   }

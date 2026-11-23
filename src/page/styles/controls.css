@@ -2,7 +2,7 @@
   Base elements and controls (docs/design/DESIGN.md, Components).
   Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
-  Pills: .tag, .tag.decided, .tag.reopened, .counter, .file-chip.
+  Pills: .tag, .tag.decided, .tag.reopened, .counter, .kind, .file-chip.
   Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box; .menu floats under its button.
 */
 
@@ -305,7 +305,8 @@ select:disabled {
 /* ---------- pills ---------- */
 
 .tag,
-.counter {
+.counter,
+.kind {
   display: inline-block;
   padding: 0 var(--s2);
   border-radius: var(--r-pill);
@@ -329,7 +330,8 @@ select:disabled {
   color: var(--amber);
 }
 
-.counter {
+.counter,
+.kind {
   background: var(--surface-tint);
   color: var(--muted);
   font-weight: 500;

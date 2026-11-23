@@ -8,7 +8,7 @@ import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } fr
 import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
+import { el, kindView, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
 import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
@@ -472,7 +472,12 @@ function drawHeader(): void {
   around(
     header,
     headerEnd,
-    [el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'), el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)), ...progressView()],
+    [
+      el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
+      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
+      ...kindView(walkthrough.kindLabel),
+      ...progressView(),
+    ],
     [],
   );
 }
