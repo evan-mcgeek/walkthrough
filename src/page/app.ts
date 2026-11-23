@@ -276,15 +276,21 @@ const SESSION: Record<SessionState, readonly [string, string]> = {
   gone: ['Gone', 'The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code.'],
 };
 
+// A live region is announced when what it holds changes, not when it is put in the page, so this one stays and changes in place.
+const status = el('span', { className: 'status' });
+status.setAttribute('role', 'status');
+status.setAttribute('aria-label', 'Session');
+const headerEnd = el('div', { className: 'header-end' });
+
 function statusView(): HTMLElement {
   const state = stopped ? 'gone' : session.state;
   const [label, about] = stopped ? ['Stopped', 'The walkthrough has stopped.'] : SESSION[state];
+  if (status.dataset['state'] === state && status.textContent === label) return status;
   const mark = state === 'working' ? icon('spinner') : el('span', { className: 'dot' });
   if (state === 'needs-you') mark.dataset['motion'] = 'pulse';
-  const status = el('span', { className: 'status', title: about }, mark, label);
+  status.replaceChildren(mark, label);
+  status.title = about;
   status.dataset['state'] = state;
-  status.setAttribute('role', 'status');
-  status.setAttribute('aria-label', 'Session');
   return status;
 }
 
@@ -420,21 +426,28 @@ function moreMenu(): HTMLElement {
   return box;
 }
 
-function headerView(): HTMLElement[] {
+/** Redraws `parent` around `kept`, which never leaves the page. */
+function around(parent: HTMLElement, kept: HTMLElement, before: Node[], after: Node[]): void {
+  for (const child of [...parent.childNodes]) if (child !== kept) child.remove();
+  if (kept.parentNode !== parent) parent.append(kept);
+  kept.before(...before);
+  kept.after(...after);
+}
+
+function drawHeader(): void {
   const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  return [
-    el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
-    el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
-    ...progressView(),
-    el(
-      'div',
-      { className: 'header-end' },
-      layoutSwitch(),
-      statusView(),
-      ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop')]),
-      moreMenu(),
-    ),
-  ];
+  around(
+    headerEnd,
+    statusView(),
+    [layoutSwitch()],
+    [...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop')]), moreMenu()],
+  );
+  around(
+    header,
+    headerEnd,
+    [el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'), el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)), ...progressView()],
+    [],
+  );
 }
 
 function draftArea(draft: string, label: string, start = '', rows = 2): HTMLTextAreaElement {
@@ -2094,7 +2107,7 @@ function render(): void {
     : wasSplit
       ? [el('section', { className: 'step split' }, el('div', { className: 'prose' }, ...prosePane.childNodes), el('div', { className: 'code' }, ...codePane.childNodes))]
       : [...main.childNodes].filter(node => node !== leavingPane);
-  header.replaceChildren(...headerView());
+  drawHeader();
   queue.replaceChildren(...queueView(view));
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
   const split = layout === 'split' && view.kind === 'step';

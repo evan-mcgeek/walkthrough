@@ -165,3 +165,17 @@ test('a redraw waits while the person composes with an input method, and comes a
   await expect(box).toHaveValue('ろぐいん');
   await expect(box).toBeFocused();
 });
+
+test('the session status stays in the page and changes in place, so a screen reader announces each new state', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  const status = page.getByRole('status', { name: 'Session' });
+  await expect(status).toHaveText('Working');
+  await status.evaluate(region => Object.assign(region, { kept: true }));
+
+  repo.background('listen');
+  await expect(status).toHaveText('Listening');
+  repo.record(ONE_STEP);
+  await expect(page.getByRole('region', { name: 'Login' })).toBeVisible();
+
+  expect(await status.evaluate(region => 'kept' in region)).toBe(true);
+});
