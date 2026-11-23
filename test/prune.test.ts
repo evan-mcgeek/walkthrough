@@ -145,6 +145,23 @@ describe('walkthrough prune', () => {
     expect(fs.existsSync(path.join(repoState(), 'range-Login'))).toBe(false);
   });
 
+  test('keeps the walkthrough of a range whose base names no branch when that revision moves on', () => {
+    repo = makeRepo();
+    const LAST = ['--base', 'HEAD~1', '--head', 'HEAD', '--label', 'Last'];
+    expect(repo.run('start', ...LAST).stdout).toContain(`against ${repo.base.slice(0, 7)}:`);
+    repo.run('stop', ...LAST);
+    for (const name of ['one', 'two']) {
+      fs.writeFileSync(path.join(repo.dir, `${name}.ts`), `export const ${name} = 1;\n`);
+      git(repo.dir, 'add', '-A');
+      git(repo.dir, 'commit', '-m', name);
+    }
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stdout).toContain('No walkthrough to remove.');
+    expect(fs.existsSync(path.join(repoState(), 'range-Last'))).toBe(true);
+  });
+
   test('removes the walkthrough of a range named by the options it was started with, and ends its page', async () => {
     repo = makeRepo();
     repo.run('start', ...LOGIN);

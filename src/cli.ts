@@ -14,7 +14,7 @@ import { listView } from './list';
 import { GUIDE } from './guide';
 import { policyCommand } from './policy';
 import { plural } from './words';
-import { nameOf } from './items';
+import { nameOf, targetName } from './items';
 import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
@@ -69,7 +69,7 @@ async function start(args: string[]): Promise<void> {
   const inbox = makeInbox(dir);
   const { steps } = walkthrough;
   console.log(
-    `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
+    `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
   const view = walkthroughView(dir);
   const count = (of: Record<string, unknown> = {}) => String(steps.filter(step => of[`step:${step.id}`]).length);

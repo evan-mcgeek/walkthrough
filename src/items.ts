@@ -19,5 +19,8 @@ export const builtIn = (actions: Action[]) =>
 
 export const itemKey = (item: Item) => (item.type === 'walkthrough' ? item.type : `${item.type}:${item.id}`);
 
+/** A range's target is a commit when its base named no branch. */
+export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target);
+
 export const nameOf = (named: { kind: 'branch'; branch: string } | { kind: 'range'; label: string }) =>
   named.kind === 'branch' ? named.branch : named.label;

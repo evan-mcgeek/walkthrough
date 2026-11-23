@@ -5,7 +5,7 @@ import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, builtIn, type Item, itemKey, nameOf } from '../items';
+import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
@@ -415,7 +415,7 @@ function moreMenu(): HTMLElement {
 }
 
 function headerView(): HTMLElement[] {
-  const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
+  const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   return [
     el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
     el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),

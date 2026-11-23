@@ -6,7 +6,7 @@ import { currentRepo } from './change';
 import { locked, readJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 import { stopServer } from './server';
-import { nameOf } from './items';
+import { nameOf, targetName } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 const gitStatus = (cwd: string, ...args: string[]) => spawnSync('git', args, { cwd, stdio: 'ignore' }).status;
@@ -15,7 +15,7 @@ function over(cwd: string, walkthrough: Walkthrough): string | null {
   const { target, head } = walkthrough;
   if (walkthrough.kind === 'branch' && gitStatus(cwd, 'show-ref', '--exists', `refs/heads/${walkthrough.branch}`) === 2)
     return 'its branch is gone';
-  if (gitStatus(cwd, 'merge-base', '--is-ancestor', head, target) === 0) return `its head is merged into ${target}`;
+  if (gitStatus(cwd, 'merge-base', '--is-ancestor', head, target) === 0) return `its head is merged into ${targetName(target)}`;
   return null;
 }
 

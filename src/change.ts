@@ -10,7 +10,7 @@ export type Source =
   | { kind: 'range'; base: string; head: string; label: string };
 
 export type Change = {
-  /** The revision the base is the merge-base with: a remote-tracking branch such as origin/main, a local branch with none, or a range's base as given. */
+  /** The revision the base is the merge-base with: a remote-tracking branch such as origin/main, a local branch with none, or a range's base branch, else its commit. */
   target: string;
   base: string;
   head: string;
@@ -68,6 +68,12 @@ function commitOf(cwd: string, rev: string): string | null {
   }
 }
 
+// A revision such as HEAD~1 or FETCH_HEAD means another commit later, so prune could not tell from it when a range is over.
+function branchOf(cwd: string, rev: string): string | null {
+  const name = git(cwd, 'rev-parse', '--symbolic-full-name', rev).trim();
+  return /^refs\/(heads|remotes)\//.test(name) ? name.replace(/^refs\/(heads|remotes)\//, '') : null;
+}
+
 export async function changeOf(cwd: string, source: Source): Promise<Change> {
   const range = source.kind === 'range';
   const target = range ? source.base : source.target ? targetBranch(cwd, source.target) : defaultTarget(cwd);
@@ -85,7 +91,7 @@ export async function changeOf(cwd: string, source: Source): Promise<Change> {
   if ((await changedFiles(cwd, base, head)).length === 0)
     throw new Error(`nothing changed from ${target} to ${range ? source.head : source.branch}`);
   return {
-    target,
+    target: range ? (branchOf(cwd, target) ?? commitOf(cwd, target) ?? target) : target,
     base,
     head,
     uncommitted:
