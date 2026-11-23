@@ -50,6 +50,11 @@ const ICONS = {
   'chevron-down': [line('M4 6l4 4 4-4')],
   previous: [line('M10 3.5L5.5 8l4.5 4.5')],
   next: [line('M6 3.5L10.5 8 6 12.5')],
+  minus: [line('M3.5 8h9', 1.6)],
+  keyboard: [
+    ['rect', { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
+    line('M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6', 1.4),
+  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ['path', { d: 'M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8', ...round, 'stroke-width': 2.3 }],

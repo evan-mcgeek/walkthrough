@@ -127,3 +127,45 @@
   color: var(--ink);
   font-weight: 600;
 }
+
+/* ---------- the shortcut sheet ---------- */
+
+.popover.sheet {
+  inset: 90px 0 auto;
+  width: 420px;
+  margin: 0 auto;
+}
+
+.keys {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--text-body-ui);
+  font-size: 13px;
+}
+
+.keys td {
+  padding: 5px 0;
+  border-top: 1px solid var(--rule-soft);
+  color: var(--ink-secondary);
+  vertical-align: middle;
+}
+
+.keys tr:first-child td {
+  border-top: 0;
+}
+
+.keys td:first-child {
+  padding-right: var(--s3);
+  white-space: nowrap;
+}
+
+.keys kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--control-edge);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--text-key);
+}

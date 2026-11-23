@@ -14,6 +14,7 @@ import { appearanceDialog, loadViewer, showViewer } from './appearance';
 import { icon, type IconName } from './icons';
 import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
+import { bind, isTyping, runShortcut, shortcutSheet, withKey } from './shortcuts';
 import { animate, now, play, reduced, replay } from './motion';
 
 /** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
@@ -420,7 +421,7 @@ function moreMenu(): HTMLElement {
   if (menuOpen !== 'more') return box;
   const appearance: [string, () => void] = ['Appearance', () => { appearanceDialog(moreButton); }];
   const choices: [string, () => void][] = !phone.matches
-    ? [appearance]
+    ? [appearance, ['Keyboard shortcuts', () => { shortcutSheet(moreButton); }]]
     : stopped
       ? [appearance]
       : [
@@ -606,11 +607,19 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   const button = el('button', { type: 'button', className: classes.join(' ') }, ...(look === 'offer' ? [icon('message')] : []), action.label);
   button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
   button.dataset['key'] = `action:${key}:${action.id}`;
+  const shortcut = item.type === 'step' && STEP_KEYS[action.id];
+  if (shortcut) button.title = withKey(shortcut.tip(action.label), shortcut.key);
   button.onclick = () => {
     take(item, action);
   };
   return button;
 }
+
+/** The step actions a key takes, and the tooltip that names it. */
+const STEP_KEYS: Record<string, { key: string; tip: (label: string) => string }> = {
+  approve: { key: 'A', tip: label => `${label} and go to the next step` },
+  flag: { key: 'F', tip: label => label },
+};
 
 /** An action that asks for words opens its form; any other decides at once. */
 function take(item: Item, action: Action): void {
@@ -1257,7 +1266,7 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
   if (taken) return [el('div', { className: 'action-bar' }, takingForm(item, taken, ''))];
   const draft = `ask:${step.id}`;
-  const ask = lineBox(draft, 'Ask about this step', 'Ask about this step…', () => {
+  const ask = lineBox(draft, 'Ask about this step', 'Ask about this step… ( / )', () => {
     void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
   });
   const decided = stepDecided(step) && !changing.has(key);
@@ -2316,9 +2325,6 @@ function moveDecided(newly: string[], counts: Map<string, string>, before = new 
       play(key, 'tick', reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out' });
 }
 
-const isTyping = (target: EventTarget | null) =>
-  target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-
 /** j and k walk the steps, and past the last one to the end of the walkthrough. */
 function stepBy(delta: number): void {
   const view = currentView();
@@ -2335,11 +2341,43 @@ document.addEventListener('keydown', event => {
     end?.querySelector<HTMLElement>('.d2h-code-linenumber')?.focus();
     return;
   }
-  if (isTyping(event.target)) return;
+  if (runShortcut(event) || isTyping(event.target) || document.querySelector('dialog[open]')) return;
   // Inside what scrolls sideways the arrows scroll it, so long lines stay reachable from the keyboard.
-  const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu') !== null;
-  if (event.key === 'j' || (event.key === 'ArrowRight' && !sideways)) stepBy(1);
-  else if (event.key === 'k' || (event.key === 'ArrowLeft' && !sideways)) stepBy(-1);
+  const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu, dialog') !== null;
+  if (event.key === 'ArrowRight' && !sideways) stepBy(1);
+  else if (event.key === 'ArrowLeft' && !sideways) stepBy(-1);
+});
+
+/** Takes the open step's action `id`, while the step is undecided or its decision is being changed. */
+function takeStepAction(id: string): void {
+  const step = currentStep();
+  if (!step || readOnly || stopped) return;
+  const item: Item = { type: 'step', id: step.id };
+  const key = itemKey(item);
+  const action = walkthrough.actions[key]?.find(one => one.id === id);
+  if (action && (!stepDecided(step) || changing.has(key))) take(item, action);
+}
+
+/** Where the focus goes back to once a popover closes: the control that had it, or the one a redraw put in its place. */
+function focusNow(): () => Element | null {
+  const had = document.activeElement;
+  const key = had instanceof HTMLElement ? had.dataset['key'] : undefined;
+  return () => (had?.isConnected ? had : key === undefined ? null : document.querySelector(`[data-key="${CSS.escape(key)}"]`));
+}
+
+bind('j', () => { stepBy(1); });
+bind('k', () => { stepBy(-1); });
+bind('a', () => { takeStepAction('approve'); });
+bind('f', () => { takeStepAction('flag'); });
+bind('/', () => {
+  const step = currentStep();
+  if (step) document.querySelector<HTMLElement>(`[data-draft="${CSS.escape(`ask:${step.id}`)}"]`)?.focus();
+});
+bind('g s', () => {
+  if (walkthrough.steps.length) go('end');
+});
+bind('?', () => {
+  shortcutSheet(focusNow());
 });
 
 phone.addEventListener('change', render);
