@@ -90,7 +90,8 @@ for (const layout of LAYOUTS)
     expect(await heard(asking)).toMatchObject({ kind: 'ask', step: '2', text: 'Why bump it?' });
     await expect(second.getByText('Waiting for the session to answer.')).toBeVisible();
 
-    await second.locator('tr[data-line="1"] .d2h-code-linenumber').click();
+    await second.locator('tr[data-line="1"] .line-num2').click();
+    await second.getByRole('button', { name: 'Ask about lines' }).click();
     await expect(second.getByRole('textbox', { name: 'Ask about app.ts line 1' })).toBeFocused();
     await page.keyboard.press('Escape');
 

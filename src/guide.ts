@@ -15,7 +15,7 @@ const example = [
 ];
 
 const notesExample = [
-  { step: '1', label: 'Risk', text: 'Sessions never expire, so a stolen one works **forever**.' },
+  { step: '1', label: 'Risk', text: 'Sessions never expire, so a stolen one works **forever**.', finding: true },
   {
     step: '1',
     file: 'src/session-store.ts',
@@ -47,11 +47,13 @@ const actionsExample = [
   { item: { type: 'walkthrough' }, actions: [{ id: 'post', label: 'Post my comments' }] },
 ];
 
-export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>]
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>] [--comments <text>]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
   --kind gives the walkthrough the session's own label for what kind it is, such as "own" or "requested";
   the page header and the list show it as given, nothing else reads it, and a later start keeps it unless it gives another.
-  It is start's alone: the other commands find the walkthrough without it.
+  --comments gives the session's own words for what becomes of the person's line comments, such as "Joins the fix list";
+  the page shows them under each comment, and a later start keeps them unless it gives others.
+  Both are start's alone: the other commands find the walkthrough without them.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
@@ -93,6 +95,8 @@ walkthrough note --file <file>
     {"step": string, "label": string, "text": string, "low": boolean}
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
+  "finding": true flags the note as a finding, whatever its label; it may be left out.
+  The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
@@ -144,10 +148,24 @@ walkthrough listen
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
+    {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
+    {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
+    {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Act on a clear as the review policy says, and answer it with say --answer like any decision.
+  A comment is the person's own words, never yours: act on it, its edits and its deletion as the review policy says, and answer each with say --answer.
+  Files the person collapses or marks viewed are their own reading marks and never reach the session.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
+
+walkthrough comments
+  Prints each of the person's comments as it is now, edits applied and deleted ones left out, one JSON line each:
+    {"id": string, "step": string, "file": path, "lines": [first, last], "text": string, "posted": true}   "posted" only once marked posted
+
+walkthrough posted <comment id>...
+  Marks the person's comments posted, once they have gone out as the review policy says;
+  the page then shows them as posted and no longer lets the person edit or delete them.
+  An id that names no comment is refused, and nothing is marked.
 
 walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
   Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.

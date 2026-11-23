@@ -81,9 +81,12 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    Each step is a part of the change with its diff and the session's explanation, in reading order.
    What the session assumed rather than read is listed separately.
    Files nobody writes by hand go into a folded step, each with the reason it was folded.
+   Each file collapses from its header; large files start collapsed, and marking a file Viewed collapses it too, which is never a decision.
 2. **Notes.**
    The session pins findings, answers and drafts to a step or to lines in it.
    Low-priority notes are grouped behind "N more", and you can reply to any note.
+   Lines with notes are marked in the gutter and on a slim overview stripe beside each file, findings in amber.
+   While a step has open findings, Approve steps down and the step says how many are open.
 3. **Checklist.**
    A list of whatever your policy tracks, each item with a status and links to the steps.
    The template tracks the ticket's acceptance criteria.
@@ -93,12 +96,16 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    A step with nothing else recorded offers Approve and Flag.
 5. **Ask.**
    Every step has an Ask box.
-   To ask about specific lines, click a line number and Shift-click another, and the answer comes back as a note on those lines.
+   To ask about specific lines, click a line number and Shift-click another, choose Ask about lines, and the answer comes back as a note on those lines.
    When the session has a question for you, it shows up on the page as well, often with buttons for the likely answers.
-6. **Undo.**
+6. **Your own comments.**
+   Choose Comment on picked lines, or the "+" beside a line number, to write a comment of your own.
+   It is yours, never marked `[AI]`, and stays editable and deletable until the session marks it posted.
+   On your own change it joins the fix list; on a review request it goes out with your review.
+7. **Undo.**
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
-7. **The change moves.**
+8. **The change moves.**
    When you push fixes, the same walkthrough goes on.
    Steps whose diff didn't change keep your decisions, changed steps reopen, and new files go into new steps.
    Notes whose lines changed stay on the page as detached, never dropped.

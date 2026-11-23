@@ -39,6 +39,9 @@
   --diff-del-gutter: #f6d6d3;
   --line-pick: #efebfd;
   --line-pick-gutter: #ddd5f9;
+  --stripe-add: #3c9a5f;
+  --stripe-del: #c8473b;
+  --marker-note: #6b737d;
 
   --shadow-float: 0 1px 2px rgb(20 24 30 / 6%), 0 8px 24px rgb(20 24 30 / 10%);
 
@@ -112,6 +115,9 @@
     --diff-del-gutter: #3f1f20;
     --line-pick: #241e44;
     --line-pick-gutter: #342b66;
+    --stripe-add: #4fbf7a;
+    --stripe-del: #ef7e6f;
+    --marker-note: #9aa2ac;
 
     --shadow-float: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 35%);
   }

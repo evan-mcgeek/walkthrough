@@ -14,6 +14,7 @@ When they ask instead to review a change someone else asked them to review, `/wa
 2. Run `walkthrough start --kind own` in the repo.
    With no other options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
    For a range of commits, add `--base <rev> --head <rev>` and a short `--label` to name it.
+   Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "My change" part, such as `--comments 'Joins the fix list'`.
 3. Go on as "Walking through" says, until the walkthrough stops.
    It ends as the policy's "My change" part says, such as with a fix list the person hands to an author session.
 
@@ -88,6 +89,7 @@ An item keeps its id, and the person's decision, while its text is the same; whe
 
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note --file <file>` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
+Flag each note the review policy calls a finding with `"finding": true`; the flag, never the label's words, is what the page marks as a finding and counts as open until the person decides it.
 Notes name step ids, so record them after the steps.
 A note whose step or lines leave the change, or whose lines change, stays on the page as detached.
 
@@ -113,6 +115,10 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
      A later decision on the same item replaces the earlier one.
      A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
+   - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.
+     Act on it as the review policy says, such as putting it on the fix list or into the review to post, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
+     An `edit-comment` or `delete-comment` changes or takes back the comment it names; follow it the same way and answer it.
+     Once comments have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them; `walkthrough comments` lists them as they are now, such as after a restart.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.

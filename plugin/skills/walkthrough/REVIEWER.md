@@ -48,9 +48,13 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Run one reviewer for the project's own rules, which quotes the rule behind each finding, and one for each of these concerns: contracts, error handling, state, tests.
 - A finding states a concrete failure: what input or state leads to what wrong result, at which file and lines.
 - Give each finding to a second fresh-context agent, which confirms or refutes it against the code at the head.
-- Pin each confirmed finding as a note labelled "Finding" on its lines.
+- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
 - Pin the unconfirmed ones, and anything that is a matter of taste, with the low-priority flag.
 - A finding that goes against a convention in the project's instructions is settled; leave it out.
+
+### My own comments
+
+- My line comments are mine: never mark them "[AI]", never reword them, and follow my edits and deletions.
 
 ### Drafts
 
@@ -77,7 +81,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Fix list
 
 - Offer "Hand over fixes" on the whole walkthrough.
-- Flagged steps and accepted findings go on a fix list: for each, the step, the file and lines, my note and the finding.
+- Flagged steps, accepted findings and my own line comments go on a fix list: for each, the step, the file and lines, my note, the finding or my comment.
 - When I take Hand over fixes, give me the fix list in the chat as one message, ready to paste into an author session.
 - The author session makes the fixes; the walkthrough session's work ends at the fix list.
 
@@ -105,8 +109,9 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### My review
 
 - Turn each flagged step and accepted finding into a draft comment on its lines.
+- My own line comments go into the review as line comments, as I wrote them.
 - Offer "Send my review" on the whole walkthrough.
-- When I take Send my review, put the posted drafts into one pending review on your code host, joining my existing pending review when there is one; I submit it myself.
+- When I take Send my review, put the posted drafts and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself.
 - The author's branch and the change's description stay as they are.
 
 ### Rejected findings

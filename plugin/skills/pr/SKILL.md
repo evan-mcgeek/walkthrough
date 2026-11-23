@@ -15,8 +15,9 @@ For their own change, `/walkthrough` is the procedure instead.
 2. Fetch the change as the policy's "Someone else's change" part says, into a local ref, never checking it out; the person approves those commands as usual.
 3. Run `walkthrough start --kind requested --base <rev> --head <rev> --label <label>` in the repo, with a short label naming the change, such as its number.
    Give the same label whenever the person opens this change again, so the walkthrough goes on with their decisions; fetch its head again first.
+   Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "Someone else's change" part, such as `--comments 'Posted with your review'`.
 4. Go on as "Walking through" says, until the walkthrough stops.
-   Your comments are drafts marked "[AI]" that the person posts, edits or drops on the page; what they post goes out as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
+   Your comments are drafts marked "[AI]" that the person posts, edits or drops on the page, apart from the person's own comments, which are never marked; what they post goes out as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
 
 ## Walking through
 
@@ -89,6 +90,7 @@ An item keeps its id, and the person's decision, while its text is the same; whe
 
 Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note --file <file>` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
 Labels, what counts as low priority, and what to note at all come from the review policy.
+Flag each note the review policy calls a finding with `"finding": true`; the flag, never the label's words, is what the page marks as a finding and counts as open until the person decides it.
 Notes name step ids, so record them after the steps.
 A note whose step or lines leave the change, or whose lines change, stays on the page as detached.
 
@@ -114,6 +116,10 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
      A later decision on the same item replaces the earlier one.
      A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
+   - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.
+     Act on it as the review policy says, such as putting it on the fix list or into the review to post, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
+     An `edit-comment` or `delete-comment` changes or takes back the comment it names; follow it the same way and answer it.
+     Once comments have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them; `walkthrough comments` lists them as they are now, such as after a restart.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
