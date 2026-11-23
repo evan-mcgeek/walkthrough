@@ -32,7 +32,7 @@ test('the progress bar has a segment per step coloured by its state, with a coun
   await expect(page.getByText('1/3', { exact: true })).toBeVisible();
   expect(await segments(page)).toEqual(['decided', 'current', 'unread']);
 
-  await page.getByRole('link', { name: '3. Cart' }).click();
+  await page.getByRole('link', { name: 'Cart' }).click();
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '1 of 3 steps decided, 2 left, 3 read');
   expect(await segments(page)).toEqual(['decided', 'read', 'current']);
 });

@@ -75,14 +75,16 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
-test('the rail is reached and used from the keyboard', async ({ page }) => {
+test('the rail is reached and used from the keyboard', async ({ page, browserName }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  // Safari moves between links with Option-Tab, as its own setting leaves plain Tab to form controls.
+  const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
 
   await rail.getByRole('link', { name: 'Login check' }).focus();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tab);
   await expect(rail.getByRole('link', { name: 'Regenerated schema' })).toBeFocused();
-  await page.keyboard.press('Tab');
+  await page.keyboard.press(tab);
   await page.keyboard.press('Enter');
 
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
@@ -97,6 +99,10 @@ test('j and k, and the right and left arrows, move between steps, but not while 
   await page.keyboard.press('ArrowRight');
   await expect(region('App version')).toBeVisible();
   await page.keyboard.press('j');
+  await expect(region('0 of 3 steps decided')).toBeVisible();
+  await page.keyboard.press('j');
+  await expect(region('0 of 3 steps decided')).toBeVisible();
+  await page.keyboard.press('k');
   await expect(region('App version')).toBeVisible();
   await page.keyboard.press('k');
   await expect(region('Regenerated schema')).toBeVisible();

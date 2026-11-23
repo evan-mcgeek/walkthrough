@@ -36,12 +36,14 @@ test('an approved step stays approved when the page is opened again', async ({ p
   repo.record(ONE_STEP);
   const step = page.getByRole('region', { name: 'Login' });
   await step.getByRole('button', { name: 'Approve' }).click();
-  await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'All 1 step decided' })).toBeVisible();
 
   await page.close();
   const reopened = await context.newPage();
   await reopened.goto(url);
 
+  await expect(reopened.getByRole('region', { name: 'All 1 step decided' })).toBeVisible();
+  await reopened.getByRole('region', { name: 'All 1 step decided' }).getByRole('link', { name: 'Login' }).click();
   const again = reopened.getByRole('region', { name: 'Login' });
   await expect(again.getByText('Decided: Approve', { exact: true })).toBeVisible();
   await again.getByRole('button', { name: 'Change decision' }).click();
