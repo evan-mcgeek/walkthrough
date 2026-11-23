@@ -39,6 +39,7 @@ _Avoid_: Button, command
 
 **Decision**:
 The action a person took on an item, with their note, sent to the session and kept with the walkthrough.
+Taking it back with Undo is sent the same way and leaves the item undecided.
 
 ### Whose rules
 

@@ -25,6 +25,7 @@
 }
 
 .panes {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -741,10 +742,6 @@
 }
 
 /* ---------- undo toast ---------- */
-
-.panes {
-  position: relative;
-}
 
 /* Over the main pane, just above its docked action bar (16px + 34px + 24px and its rule). */
 .toast-region {
