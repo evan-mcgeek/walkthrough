@@ -74,6 +74,7 @@ test('asking about selected lines sends the range, and the answer lands on those
 
   await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
   await expect(row(page, 'cart.ts', 5)).not.toHaveClass(/selected/);
+  await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask about lines' }).click();
   const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
   await expect(box).toBeFocused();
   await box.fill('Why three constants?');
@@ -116,6 +117,8 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
   await page.keyboard.press('ArrowDown');
   await expect(number(4)).toBeFocused();
   await page.keyboard.press('Enter');
+  await expect(rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask about lines' })).toBeFocused();
+  await page.keyboard.press('Enter');
 
   const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
   await expect(box).toBeFocused();
@@ -128,12 +131,14 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
 
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('Shift+Enter');
+  await page.keyboard.press('Enter');
   await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
 });
 
-test('one line is picked from the keyboard with Enter on it twice', async ({ page }) => {
+test('one line is picked from the keyboard with Enter on it twice, then asked about', async ({ page }) => {
   await row(page, 'cart.ts', 2).locator('td.d2h-code-linenumber').focus();
 
+  await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
 

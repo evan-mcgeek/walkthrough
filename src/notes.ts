@@ -9,7 +9,8 @@ import type { Step, Walkthrough } from './walkthrough';
 export type Lines = [number, number];
 /** `linesHash` fingerprints the lines as they were when pinned. */
 export type Place = { step: string; file?: string; lines?: Lines; linesHash?: string };
-export type NoteMark = Place & { label: string; low?: true };
+/** `finding` is the session's flag, whatever the label says. */
+export type NoteMark = Place & { label: string; low?: true; finding?: true };
 export type NoteInput = NoteMark & { text: string };
 
 export const placeOnly = ({ step, file, lines, linesHash }: Place): Place => ({
@@ -69,16 +70,17 @@ export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: 
 export function parseNotes(text: string, walkthrough: Walkthrough | null): NoteInput[] {
   return parseList(text, 'the notes', (note, number) => {
     const name = `note ${String(number)}`;
-    const { label, text: said, low = false } = note;
+    const { label, text: said, low = false, finding = false } = note;
     if (!filled(label)) throw new Error(`${name} needs a label`);
     if (!filled(said)) throw new Error(`${name} needs text`);
     if (typeof low !== 'boolean') throw new Error(`${name}: low must be true or false`);
+    if (typeof finding !== 'boolean') throw new Error(`${name}: finding must be true or false`);
     let place: Place;
     try {
       place = placeIn(walkthrough, note);
     } catch (error) {
       throw new Error(`${name}: ${(error as Error).message}`);
     }
-    return { ...place, label, text: said, ...(low && { low: true as const }) };
+    return { ...place, label, text: said, ...(low && { low: true as const }), ...(finding && { finding: true as const }) };
   });
 }

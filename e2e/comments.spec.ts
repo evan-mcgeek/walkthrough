@@ -1,0 +1,107 @@
+import type { Page } from '@playwright/test';
+import type { Repo } from '../test/helpers';
+import { expect, test } from './walkthrough';
+
+const cart = ['const a = 1;', 'const b = 2;', 'const c = 3;', 'const d = 4;', 'const e = 5;', ''].join('\n');
+test.use({ files: { 'cart.ts': cart } });
+
+const row = (page: Page, line: number) => page.locator('.d2h-file-wrapper[data-file="cart.ts"] tr', { has: page.locator('.line-num2', { hasText: new RegExp(`^${String(line)}$`) }) });
+const rowAfter = (page: Page, line: number) => row(page, line).locator('xpath=following-sibling::tr[1]');
+/** The last thing the page sent before the listener woke. */
+const heard = async (listener: ReturnType<Repo['background']>) =>
+  JSON.parse((await listener.ended).stdout.trim().split('\n').at(-1) ?? '') as Record<string, unknown>;
+
+test.beforeEach(async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record([{ title: 'Cart', explanation: 'Adds a cart.', files: ['login.ts', 'app.ts', 'cart.ts'] }]);
+  await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
+});
+
+test('a picked range offers Ask or Comment, and a comment saved there reaches the session as yours', async ({ page, repo }) => {
+  repo.run('start', '--comments', 'Joins the fix list');
+  await row(page, 2).locator('.line-num2').click();
+  await row(page, 4).locator('.line-num2').click({ modifiers: ['Shift'] });
+  const picked = rowAfter(page, 4);
+  await expect(picked.getByText('Lines 2–4', { exact: true })).toBeVisible();
+  await expect(picked.getByRole('button')).toHaveText(['Ask about lines', 'Comment']);
+  const listener = repo.background('listen');
+
+  await picked.getByRole('button', { name: 'Comment' }).click();
+  const box = picked.getByRole('textbox', { name: 'Your comment' });
+  await expect(box).toBeFocused();
+  await expect(picked.getByText('Joins the fix list')).toBeVisible();
+  await box.fill('Name the `constants`.');
+  await picked.getByRole('button', { name: 'Save comment' }).click();
+
+  const sent = await heard(listener);
+  expect(sent).toMatchObject({ kind: 'comment', step: '1', file: 'cart.ts', lines: [2, 4], text: 'Name the `constants`.' });
+  const mine = rowAfter(page, 4).getByRole('article', { name: 'Your comment' });
+  await expect(mine).toContainText('lines 2–4');
+  await expect(mine.locator('code')).toHaveText('constants');
+  await expect(mine).toContainText('Joins the fix list');
+  await expect(mine).not.toContainText('[AI]');
+  await expect(row(page, 4).locator('.gutter-mark.own')).toHaveCount(1);
+  await expect(page.locator('.overview-stripe .tick-own')).toHaveCount(1);
+  await expect(row(page, 3)).not.toHaveClass(/selected/);
+});
+
+test('the “+” beside a line starts a comment on it, which stays editable and deletable until posted', async ({ page, repo }) => {
+  await row(page, 3).locator('.line-num2').hover();
+  await row(page, 3).locator('.add-comment').click();
+  await rowAfter(page, 3).getByRole('textbox', { name: 'Your comment' }).fill('C is odd.');
+  await rowAfter(page, 3).getByRole('button', { name: 'Save comment' }).click();
+  const mine = rowAfter(page, 3).getByRole('article', { name: 'Your comment' });
+  await expect(mine).toContainText('C is odd.');
+  const id = (JSON.parse(repo.run('comments').stdout) as { id: string }).id;
+  expect(await heard(repo.background('listen'))).toMatchObject({ kind: 'comment', id });
+  const listener = repo.background('listen');
+
+  await mine.getByRole('button', { name: 'Edit comment' }).click();
+  await expect(mine.getByRole('textbox', { name: 'Your comment' })).toHaveValue('C is odd.');
+  await mine.getByRole('textbox', { name: 'Your comment' }).fill('C is three.');
+  await mine.getByRole('button', { name: 'Save comment' }).click();
+
+  expect(await heard(listener)).toMatchObject({ kind: 'edit-comment', comment: id, text: 'C is three.' });
+  await expect(mine).toContainText('C is three.');
+  repo.run('posted', id);
+  await expect(mine.getByText('Posted', { exact: true })).toBeVisible();
+  await expect(mine.getByRole('button', { name: 'Edit comment' })).toHaveCount(0);
+  await expect(mine.getByRole('button', { name: 'Delete comment' })).toHaveCount(0);
+});
+
+test('deleting a comment takes it off the page and tells the session', async ({ page, repo }) => {
+  await row(page, 2).locator('.line-num2').hover();
+  await row(page, 2).locator('.add-comment').click();
+  await rowAfter(page, 2).getByRole('textbox', { name: 'Your comment' }).fill('Drop me.');
+  await rowAfter(page, 2).getByRole('button', { name: 'Save comment' }).click();
+  const mine = page.getByRole('article', { name: 'Your comment' });
+  await expect(mine).toBeVisible();
+  const listener = repo.background('listen');
+
+  await mine.getByRole('button', { name: 'Delete comment' }).click();
+
+  expect(await heard(listener)).toMatchObject({ kind: 'delete-comment' });
+  await expect(mine).toHaveCount(0);
+  await expect(row(page, 2).locator('.gutter-mark')).toHaveCount(0);
+});
+
+test('C comments on the focused line or on the picked range, from the keyboard', async ({ page }) => {
+  await row(page, 2).locator('td.d2h-code-linenumber').focus();
+
+  await page.keyboard.press('c');
+
+  const box = rowAfter(page, 2).getByRole('textbox', { name: 'Your comment' });
+  await expect(box).toBeFocused();
+  await expect(rowAfter(page, 2)).toContainText('line 2');
+  await page.keyboard.press('Escape');
+  await expect(box).toHaveCount(0);
+
+  await row(page, 3).locator('td.d2h-code-linenumber').focus();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(rowAfter(page, 4).getByRole('button', { name: 'Ask about lines' })).toBeFocused();
+  await page.keyboard.press('c');
+  await expect(rowAfter(page, 4).getByRole('textbox', { name: 'Your comment' })).toBeFocused();
+  await expect(rowAfter(page, 4)).toContainText('lines 3–4');
+});

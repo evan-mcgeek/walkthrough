@@ -7,4 +7,4 @@ Design: docs/design/DESIGN.md and the round 2 boards in docs/design/screens.html
 
 **Blocked by:** 36 Two flows, two commands
 
-**Status:** ready-for-agent
+**Status:** done

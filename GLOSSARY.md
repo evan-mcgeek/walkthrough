@@ -36,7 +36,19 @@ _Avoid_: Mechanical step, generated step
 
 **Note**:
 Something the agent pins to a step or to a line of it: a finding, an answer, a comment thread, anything the person should see in place.
-_Avoid_: Comment, annotation
+_Avoid_: Annotation
+
+**Finding**:
+A note the session flags as a finding under the review policy, whatever its label; it is marked in the line gutter and on the overview stripe, and is open until the person decides it.
+
+### What the person puts on the page
+
+**Comment**:
+The person's own words on lines of a step, never marked `[AI]`; it reaches the session and stays editable and deletable until the session marks it posted.
+_Avoid_: Note (a note is the agent's)
+
+**Viewed**:
+The person's mark on a file they have read, which collapses it; a reading mark, never a decision.
 
 **Checklist**:
 A list the agent shows beside the steps, each item with a status and links to steps; what it lists (acceptance criteria, open questions, anything) is up to the review policy.

@@ -15,10 +15,10 @@ const SHORTCUTS = [
   { caps: '?', does: 'This sheet' },
 ] as const;
 
-const bound = new Map<string, () => void>();
+const bound = new Map<string, (event: KeyboardEvent) => void>();
 
 /** `key` is a KeyboardEvent key, or two separated by a space for a sequence such as "g s". */
-export function bind(key: string, run: () => void): void {
+export function bind(key: string, run: (event: KeyboardEvent) => void): void {
   bound.set(key, run);
 }
 
@@ -43,7 +43,7 @@ export function runShortcut(event: KeyboardEvent): boolean {
   }
   // So "/" opens no quick find and lands in no box it focuses.
   event.preventDefault();
-  run();
+  run(event);
   return true;
 }
 

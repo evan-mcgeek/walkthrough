@@ -39,7 +39,24 @@
 }
 
 .diff .d2h-file-wrapper + .d2h-file-wrapper {
-  margin-top: var(--s5);
+  margin-top: var(--s4);
+}
+
+/* Collapsed files stack with no gap; a collapsed file keeps only its header. */
+.diff .d2h-file-wrapper.closed + .d2h-file-wrapper.closed {
+  margin-top: 0;
+}
+
+.diff .d2h-file-wrapper.closed > :not(.d2h-file-header) {
+  display: none;
+}
+
+.diff .d2h-file-wrapper.closed > .d2h-file-header {
+  border-bottom-color: transparent;
+}
+
+.diff .d2h-file-wrapper.viewed .d2h-file-name {
+  color: var(--muted);
 }
 
 /* Stuck to the scroll box's own edge, past its top padding, so no scrolled line shows above it. */
@@ -48,10 +65,10 @@
   top: calc(-1 * var(--pane-top, 0px));
   z-index: 1;
   align-items: center;
-  gap: var(--s3);
+  gap: var(--s2);
   height: auto;
-  min-height: 0;
-  padding: var(--s2) 0 var(--s2) 2px;
+  min-height: 36px;
+  padding: 0 0 0 2px;
   border-bottom: 1px solid var(--rule-soft);
   font: var(--text-body-ui);
 }
@@ -81,8 +98,111 @@
   padding: var(--s3) 0 var(--s3) 2px;
 }
 
-.diff .d2h-file-header .segmented {
+.diff .d2h-file-header .segmented,
+.diff .d2h-file-header .viewed-toggle {
   margin-left: auto;
+}
+
+.diff .d2h-file-header .segmented + .viewed-toggle {
+  margin-left: 0;
+}
+
+/* The chevron turns to point down while the file is open. */
+.file-toggle {
+  margin-left: calc(-1 * var(--s1));
+}
+
+.file-toggle .icon {
+  transition: transform var(--fast) var(--ease-out);
+}
+
+.file-toggle[aria-expanded='true'] .icon {
+  transform: rotate(90deg);
+}
+
+/* Viewed is a reading mark, never a decision: pressed is neutral, never the accent. */
+.viewed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--s1) var(--s2);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--muted);
+  font: 500 12px/1.4 var(--font-ui);
+  cursor: pointer;
+  transition:
+    background-color var(--fast) linear,
+    color var(--fast) linear;
+}
+
+.viewed-toggle .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.viewed-toggle:hover {
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+}
+
+.viewed-toggle[aria-pressed='true'] {
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+}
+
+.viewed-toggle[aria-pressed='false'] span {
+  display: none;
+}
+
+/* ---------- overview stripe ---------- */
+
+/* The stripe is pinned at the file's right edge, so the code scrolls sideways beside it. */
+.diff-body {
+  position: relative;
+  padding-right: 14px;
+}
+
+.overview-stripe {
+  position: absolute;
+  top: 0;
+  right: 0;
+  box-sizing: border-box;
+  width: 10px;
+  height: 100%;
+  border-left: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.overview-stripe rect {
+  shape-rendering: crispEdges;
+}
+
+.overview-stripe .run-add {
+  fill: var(--stripe-add);
+  opacity: 0.55;
+}
+
+.overview-stripe .run-del {
+  fill: var(--stripe-del);
+  opacity: 0.6;
+}
+
+.overview-stripe .tick {
+  cursor: pointer;
+}
+
+.overview-stripe .tick-finding {
+  fill: var(--amber);
+}
+
+.overview-stripe .tick-own {
+  fill: var(--accent);
+}
+
+.overview-stripe .tick-note {
+  fill: var(--marker-note);
 }
 
 /* ---------- lines ---------- */
@@ -169,6 +289,63 @@
   outline-offset: -2px;
 }
 
+/* ---------- gutter marks and the "+" ---------- */
+
+/* Both sit at the left of the new line's number, the second of the gutter's two 46px columns. */
+.gutter-mark {
+  position: absolute;
+  top: 2px;
+  left: 44px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.gutter-mark .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.gutter-mark.finding {
+  color: var(--amber);
+}
+
+.gutter-mark.own {
+  color: var(--accent-text);
+}
+
+.gutter-mark.note {
+  color: var(--marker-note);
+}
+
+.add-comment {
+  position: absolute;
+  z-index: 1;
+  top: 1px;
+  left: 32px;
+  display: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+  cursor: pointer;
+}
+
+.add-comment .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.d2h-code-linenumber:is(:hover, :focus) > .add-comment {
+  display: grid;
+}
+
 /* ---------- rows in the diff ---------- */
 
 /* diff2html places line numbers absolutely; anchored here they scroll with the pane and the file. */
@@ -203,6 +380,114 @@
 
 .pinned .more[open] > summary {
   border-bottom: 1px solid var(--rule);
+}
+
+.picked-choose {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: -1px;
+  padding: var(--s2) var(--s3) var(--s2) var(--code-column);
+  border-top: 1px solid var(--accent-line);
+  border-bottom: 1px solid var(--accent-line);
+  background: var(--accent-wash);
+  font: var(--text-body-ui);
+}
+
+.picked-lines {
+  color: var(--accent-text);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.picked-choose .btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- your own comments ---------- */
+
+/* The one surface the accent fills: the person's own words. */
+.mine {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  box-sizing: border-box;
+  max-width: 70ch;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-xl);
+  background: var(--accent-wash);
+  font: 400 14px/1.55 var(--font-ui);
+}
+
+.pinned > .mine,
+.pinned > form.mine {
+  margin: var(--s2) var(--s3) var(--s2) var(--code-column);
+}
+
+.mine-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-text);
+  font-weight: 650;
+}
+
+.mine .icon-button {
+  color: var(--accent-text);
+}
+
+.mine .comment-text {
+  color: var(--ink);
+}
+
+.mine .comment-text > * {
+  margin: 0;
+}
+
+.mine textarea {
+  margin-top: var(--s1);
+  min-height: 64px;
+  background: var(--canvas);
+}
+
+.mine-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+/* ---------- findings ---------- */
+
+.note-head .label.finding {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--amber);
+}
+
+.note-head .label.finding .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.open-findings {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--amber);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.open-findings .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .picked-ask {

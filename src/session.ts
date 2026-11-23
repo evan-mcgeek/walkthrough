@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { type NoteInput, type NoteMark, type Place, placeIn, placeOnly } from './notes';
+import { commentsOf } from './comments';
 import { alive, psStart } from './processes';
 import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
@@ -15,6 +16,9 @@ export type Cleared = { kind: 'decision'; item: Item; clear: true; note?: never;
 export type PageRequest = { id: string; from: 'page'; at: string } & (
   | ({ kind: 'ask'; text: string } & Place)
   | { kind: 'reply'; to: string; text: string }
+  | ({ kind: 'comment'; text: string } & Place)
+  | { kind: 'edit-comment'; comment: string; text: string }
+  | { kind: 'delete-comment'; comment: string; text?: never }
   | Taken
   | Cleared
 );
@@ -44,6 +48,7 @@ const LISTEN_EVERY_MS = 500;
 
 const files = (dir: string) => ({
   conversation: path.join(dir, 'conversation.jsonl'),
+  posted: path.join(dir, 'posted.json'),
   inbox: path.join(dir, 'inbox.jsonl'),
   listener: path.join(dir, 'listener.json'),
 });
@@ -151,6 +156,36 @@ export async function reply(dir: string, to: unknown, text: unknown): Promise<Se
     conversation.some(entry => entry.from === 'session' && entry.note && entry.id === to);
   if (!said || !open || typeof to !== 'string') return null;
   return request(dir, { kind: 'reply', to, text: said });
+}
+
+/** The ids of the comments the session marked posted; those no longer change. */
+export const postedOf = (dir: string) => readJson<string[]>(files(dir).posted, []);
+
+export async function markPosted(dir: string, ids: string[]): Promise<void> {
+  await hold(dir, () => {
+    const known = new Set(commentsOf(conversationOf(dir)).map(one => one.id));
+    const unknown = ids.find(id => !known.has(id));
+    if (unknown !== undefined) throw new Error(`the page sent no comment ${unknown}`);
+    const posted = postedOf(dir);
+    writeJson(files(dir).posted, [...posted, ...ids.filter(id => !posted.includes(id))]);
+  });
+}
+
+/** A new comment on lines, or with `comment` an edit or deletion of one not yet posted. */
+export async function comment(dir: string, { comment: id, text, delete: deleting, ...where }: Record<string, unknown>): Promise<SessionView | null> {
+  const said = cleanText(text);
+  if (id === undefined) {
+    let place: Place;
+    try {
+      place = placeIn(readWalkthrough(dir), where);
+    } catch {
+      return null;
+    }
+    return said && place.lines ? request(dir, { kind: 'comment', ...place, text: said }) : null;
+  }
+  if (typeof id !== 'string' || postedOf(dir).includes(id) || !commentsOf(conversationOf(dir)).some(one => one.id === id)) return null;
+  if (deleting === true && text === undefined) return request(dir, { kind: 'delete-comment', comment: id });
+  return said && deleting === undefined ? request(dir, { kind: 'edit-comment', comment: id, text: said }) : null;
 }
 
 // An answer to a question about lines is a note on those lines, so the person can reply to it and the session can offer actions on it.
