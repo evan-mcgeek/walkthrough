@@ -10,7 +10,7 @@
 .deck {
   position: relative;
   flex: 1 0 340px;
-  max-height: 480px;
+  max-height: 600px;
   margin-bottom: var(--s2);
   touch-action: pan-y;
 }
