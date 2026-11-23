@@ -10,7 +10,10 @@ export type Step = { id: string; title: string; diff: string } & (
   | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
-export type ChecklistItem = { id: string; status: string; text: string; steps: string[] };
+/** The icon the page shows beside an item's status; the session chooses it, since a status is its own free text. */
+export const MARKS = ['met', 'partly', 'not-met', 'unchecked'] as const;
+export type Mark = (typeof MARKS)[number];
+export type ChecklistItem = { id: string; status: string; mark?: Mark; text: string; steps: string[] };
 export type Checklist = { title: string; items: ChecklistItem[] };
 export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
