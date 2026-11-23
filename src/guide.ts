@@ -55,16 +55,23 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
   When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
   and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
+  It prints the walkthrough's inbox, a folder for the files the session records from.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+
+Recording from files
+  steps, checklist, note, actions, say and policy save read what they record from the file --file names, or from standard input without it.
+  Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
+  The command removes a file from the inbox once it has read it, so each recording is a new file there.
+  Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.
 
 walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
-walkthrough steps < steps.json
+walkthrough steps --file <file>
   Records the steps, replacing those recorded before, and prints each step's id and title in order.
   A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, or else a new id; its notes and checklist links follow the id.
   A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
-  Standard input is a JSON array of steps in reading order; a step shows its files in the order given.
+  The file is a JSON array of steps in reading order; a step shows its files in the order given.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
     {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
@@ -73,9 +80,9 @@ walkthrough steps < steps.json
   Example:
 ${JSON.stringify(example, null, 2)}
 
-walkthrough note < notes.json
+walkthrough note --file <file>
   Pins notes to the page, after those pinned before, and prints each note's id.
-  Standard input is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
+  The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
   "step" is a step id as walkthrough steps printed it.
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}
@@ -86,9 +93,9 @@ walkthrough note < notes.json
   Example:
 ${JSON.stringify(notesExample, null, 2)}
 
-walkthrough checklist < checklist.json
+walkthrough checklist --file <file>
   Records the checklist shown beside the steps, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
-  Standard input is a JSON object with a title and items in reading order.
+  The file is a JSON object with a title and items in reading order.
   An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
   To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
   Title, status and text are the session's own words.
@@ -99,9 +106,9 @@ walkthrough checklist < checklist.json
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
 
-walkthrough actions < actions.json
+walkthrough actions --file <file>
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
-  Standard input is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
+  The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
@@ -132,8 +139,8 @@ walkthrough listen
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
-walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>
-  Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
+walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
+  Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
   An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
   the person can reply to it like any note, and you can record actions on it.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
@@ -142,6 +149,16 @@ walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]..
 walkthrough export [--out <file>]
   Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist and decisions.
   The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
+  With --out the person approves the command, since it writes where it names.
+
+walkthrough policy [show | init | save --file <file>]
+  The person's review policy; this compares and copies its bytes and never reads its rules.
+  With no action it prints its state and path on the first line, then the inbox to write a new version to:
+    none: there is no review policy at <path>, so the template applies.
+    template: the review policy at <path> is the unchanged template.
+    yours: the review policy at <path> is the person's own.
+  show prints the policy, or the template when there is none; init copies the template there when there is none;
+  save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list
   Opens a page of the repo's walkthroughs with their progress and last activity; opening one starts its page when it is not running.
