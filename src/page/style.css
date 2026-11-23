@@ -10,6 +10,7 @@
 @import './styles/controls.css';
 @import './styles/header.css';
 @import './styles/panes.css';
+@import './styles/layouts.css';
 
 #alert {
   margin: 0;

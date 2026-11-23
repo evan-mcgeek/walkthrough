@@ -1,0 +1,262 @@
+/*
+  The four layouts (docs/design/DESIGN.md, Layout), chosen by body[data-layout]: queue ("What's left", the default),
+  three (the 288px .side pane), split (the 400px .prose pane beside the .code pane, no rail) and panel (.tools tabs under the step).
+  The header's .layout-switch picks one; .center stacks the main pane over the tool panel.
+*/
+
+.center {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.center > .main {
+  flex: 1;
+  min-height: 0;
+}
+
+.side,
+.tools {
+  display: none;
+}
+
+/* ---------- three columns ---------- */
+
+[data-layout='three'] .side:not(:empty) {
+  display: block;
+  flex: none;
+  width: 288px;
+  box-sizing: border-box;
+  padding: var(--s5) var(--s4);
+  overflow-y: auto;
+  border-left: 1px solid var(--rule);
+}
+
+/* ---------- explanation beside code ---------- */
+
+[data-layout='split'] .queue {
+  display: none;
+}
+
+.step-nav {
+  display: flex;
+  gap: var(--s1);
+  margin: calc(-1 * var(--s1)) 0 var(--s2) calc(-1 * var(--s1));
+}
+
+.main.split {
+  padding: 0;
+  overflow: hidden;
+}
+
+.main.split > .step {
+  flex: 1 1 0;
+  flex-direction: row;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.split > .prose {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 400px;
+  box-sizing: border-box;
+  padding: var(--s5) var(--s6);
+  overflow-y: auto;
+  border-right: 1px solid var(--rule);
+}
+
+.split > .code {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s5) var(--s6);
+  overflow: auto;
+  background: var(--surface);
+}
+
+.split > .code > .block:first-child {
+  margin-top: 0;
+}
+
+.split .d2h-file-header {
+  background: var(--surface);
+}
+
+/* The prose pane flows: its action bar is a row under the step, not a bar docked to the pane's foot. */
+.split > .prose > .action-bar {
+  position: static;
+  margin: var(--s5) 0 0;
+  padding: var(--s4) 0 0;
+}
+
+.split > .prose .line-box {
+  flex-basis: 100%;
+}
+
+.split > .prose > .checklist {
+  margin-top: var(--s5);
+}
+
+/* The row's own padding would push its icon off the checklist's icon column. */
+.split > .prose > .queue-item {
+  margin: var(--s4) calc(-1 * var(--s2)) 0;
+}
+
+.split > .prose > .notice,
+.split > .prose > .question-box {
+  margin-bottom: var(--s4);
+}
+
+.split > .prose > .detached-box {
+  margin-bottom: var(--s5);
+}
+
+/* ---------- tool panel ---------- */
+
+[data-layout='panel'] .tools {
+  display: block;
+  flex: none;
+  max-height: 40%;
+  padding: 0 var(--s6) var(--s3);
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  margin: 0 calc(-1 * var(--s6)) var(--s2);
+  padding: 0 var(--s5);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--s2) var(--s3);
+  border: 0;
+  background: none;
+  color: var(--ink-secondary);
+  font: 400 13px/1.4 var(--font-ui);
+  cursor: pointer;
+  transition: color var(--fast) linear;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--indigo);
+}
+
+.tab:focus-visible {
+  outline-offset: -2px;
+}
+
+/* The tab names the checklist; its own heading stays only as the list's accessible name. */
+.tool-body .checklist > .section-head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tool-body .checklist > ul {
+  columns: 2;
+  column-gap: var(--s6);
+}
+
+.tool-body .checklist li {
+  break-inside: avoid;
+}
+
+.tool-body > .muted {
+  margin: var(--s2) 0;
+}
+
+.note-index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s2) 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: var(--text-body-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-link .label {
+  flex: none;
+  font-weight: 650;
+}
+
+.note-link .lines {
+  flex: none;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.note-link .gist {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.note-link:hover .gist {
+  color: var(--ink);
+}
+
+/* Until the phone layout: every pane stacks in page order and the page scrolls as one. */
+@media (max-width: 760px) {
+  [data-layout='split'] .queue {
+    display: flex;
+  }
+
+  [data-layout='three'] .side:not(:empty) {
+    width: auto;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+
+  [data-layout='panel'] .tools {
+    max-height: none;
+  }
+
+  .main.split {
+    overflow: visible;
+  }
+
+  .main.split > .step {
+    flex-direction: column;
+  }
+
+  .split > .prose {
+    width: auto;
+    border-right: 0;
+  }
+}
