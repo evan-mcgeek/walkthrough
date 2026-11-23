@@ -96,8 +96,13 @@ test('a press on an action survives the page redrawing before the release', asyn
   const approve = page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' });
   await approve.hover();
   await page.mouse.down();
+  const polled = page.waitForResponse(
+    async response => response.url().includes('/data/session.json') && (await response.text()).includes('Reading along.'),
+  );
   repo.run('say', 'Reading along.');
-  await page.waitForTimeout(2000);
+  await polled;
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await expect(page.getByRole('link', { name: /From the session/ })).toBeHidden();
 
   await page.mouse.up();
 

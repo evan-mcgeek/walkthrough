@@ -116,7 +116,9 @@ test('Needs you pulses twice, assumptions and more notes reveal, and a redraw fr
   repo.run('say', 'Still reading.');
   await expect(page.getByRole('link', { name: /From the session/ })).toBeVisible();
   // Two more polls, the second with nothing new.
-  await page.waitForTimeout(3200);
+  await page.waitForResponse('**/data/walkthrough.json');
+  await page.waitForResponse('**/data/walkthrough.json');
+  await page.evaluate(() => new Promise(requestAnimationFrame));
   expect((await played(page)).length).toBe(before);
 });
 
