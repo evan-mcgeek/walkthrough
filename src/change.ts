@@ -85,7 +85,10 @@ export async function changeOf(cwd: string, source: Source): Promise<Change> {
   try {
     base = git(cwd, 'merge-base', target, head).trim();
   } catch {
-    throw new Error(`${target} and ${range ? source.head : source.branch} share no history`);
+    const shallow = git(cwd, 'rev-parse', '--is-shallow-repository').trim() === 'true';
+    throw new Error(
+      `${target} and ${range ? source.head : source.branch} share no history${shallow ? ' this clone has; it is shallow, so run git fetch --unshallow first' : ''}`,
+    );
   }
   // No steps means the session is still preparing them, so a change without files would never be ready.
   if ((await changedFiles(cwd, base, head)).length === 0)

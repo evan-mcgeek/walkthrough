@@ -56,6 +56,21 @@ describe('walkthrough start', () => {
     expect(shown.steps[0]?.diff).not.toContain('draft');
   });
 
+  test('says a shallow clone hides the history the change starts from, and how to fetch it', () => {
+    repo = makeRepo();
+    git(repo.dir, 'push', 'origin', 'feature/login');
+    const shallow = path.join(path.dirname(repo.dir), 'shallow');
+    git(path.dirname(repo.dir), 'clone', '--depth', '1', '--no-single-branch', `file://${path.join(path.dirname(repo.dir), 'origin.git')}`, shallow);
+    git(shallow, 'checkout', 'feature/login');
+
+    const started = repo.runIn(shallow, 'start');
+
+    expect(started.status).toBe(1);
+    expect(started.stderr).toBe(
+      'walkthrough: origin/main and feature/login share no history this clone has; it is shallow, so run git fetch --unshallow first\n',
+    );
+  });
+
   test('serves the page on localhost behind a private token and opens it in the browser', async () => {
     repo = makeRepo();
 
