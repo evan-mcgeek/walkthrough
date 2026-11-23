@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { Walkthrough } from '../src/walkthrough';
 import { git, makeRepo, type Repo } from './helpers';
@@ -63,6 +65,29 @@ describe('walkthrough steps', () => {
     expect(steps[0]?.diff).not.toContain('app = 2');
     expect(steps[1]?.diff).toContain('+export const app = 2;');
     expect(steps[1]?.diff).not.toContain('login');
+  });
+
+  test('records each file by its path from the repo top, from a folder inside it too, and no other file a path could match', async () => {
+    repo = makeRepo({ feature: { 'src/a[1].ts': 'export const bracketed = 1;\n', 'src/a1.ts': 'export const plain = 1;\n' } });
+    const inside = path.join(repo.dir, 'src');
+    repo.runIn(inside, 'start');
+    const input = path.join(path.dirname(repo.dir), 'steps.json');
+    fs.writeFileSync(
+      input,
+      JSON.stringify([
+        { title: 'Bracketed', explanation: 'One file.', files: ['src/a[1].ts'] },
+        { title: 'Rest', explanation: 'The rest.', files: ['src/a1.ts', 'login.ts', 'app.ts'] },
+      ]),
+    );
+
+    const recorded = repo.runIn(inside, 'steps', '--file', input);
+
+    expect(recorded.stderr).toBe('');
+    const { steps } = await shownAt(repo.url());
+    expect(steps[0]?.diff).toContain('+export const bracketed = 1;');
+    expect(steps[0]?.diff).not.toContain('plain');
+    expect(steps[1]?.diff).toContain('+export const plain = 1;');
+    expect(steps[1]?.diff).toContain('+export const login = () => true;');
   });
 
   test('refuses steps that leave a changed file out, repeat one, or name one outside the change, and keeps the old steps', async () => {

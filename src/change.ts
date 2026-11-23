@@ -132,7 +132,8 @@ export const diffOf = async (cwd: string, base: string, head: string, files: Cha
         base,
         head,
         '--',
-        ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])),
+        // Paths are from the repo top and name only themselves, wherever the command runs.
+        ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])).map(one => `:(top,literal)${one}`),
       );
 
 export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
