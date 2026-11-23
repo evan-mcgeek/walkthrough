@@ -1542,12 +1542,21 @@ function settle(): void {
 
 /** Flies the top card out, then approves its step, or asks for the Flag note. */
 function fling(deck: HTMLElement, step: Step, to: 1 | -1): void {
+  // A second tap while the card flies would decide twice.
+  if (deck.classList.contains('flying')) return;
   swiping = true;
   deck.classList.remove('dragging');
   deck.classList.add('flying');
   moveCard(deck, to * (innerWidth + 120));
   setTimeout(() => {
     const item: Item = { type: 'step', id: step.id };
+    const top = deckTop();
+    // The session changed the card or its actions meanwhile, so it comes back to show what the swipe would decide now.
+    if (top?.id !== step.id || top.diff !== step.diff || !builtIn(walkthrough.actions[itemKey(item)] ?? [])) {
+      swiping = false;
+      render();
+      return;
+    }
     flung = { step: step.id, to };
     if (to < 0) taking = { key: itemKey(item), action: 'flag' };
     swiping = false;

@@ -260,3 +260,41 @@ test('the deck ends when every step is decided', async ({ page }) => {
   await page.getByRole('link', { name: 'See the end of the walkthrough' }).click();
   await expect(page.getByRole('heading', { name: 'All 2 steps decided' })).toBeVisible();
 });
+
+test('a second tap on Approve while the card flies sends no second decision', async ({ page }) => {
+  const sent: string[] = [];
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/decide') sent.push(request.url());
+  });
+  await openDeck(page);
+  await card(page, 1, 'Login check').waitFor();
+
+  await page.getByRole('group', { name: 'Decide' }).getByRole('button', { name: 'Approve' }).dblclick();
+
+  await expect(card(page, 2, 'App version')).toBeVisible();
+  // Longer than a card's flight, so a second one would have landed.
+  await page.waitForTimeout(400);
+  expect(sent).toHaveLength(1);
+});
+
+test('a card swiped while the session changed its actions comes back undecided, with the new actions', async ({ page, repo }) => {
+  await openDeck(page);
+  const first = card(page, 1, 'Login check');
+  await first.waitFor();
+  const box = await first.boundingBox();
+  if (!box) throw new Error('the card is not shown');
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 60, y, { steps: 5 });
+
+  const polled = page.waitForResponse(answer => answer.url().includes('data/walkthrough.json') && answer.status() === 200);
+  record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Ship' }, { id: 'hold', label: 'Hold' }] }], 'actions');
+  await polled;
+  await page.mouse.move(x + 160, y, { steps: 5 });
+  await page.mouse.up();
+
+  await expect(page.getByRole('group', { name: 'Decide' }).getByRole('button')).toHaveText(['Hold', 'Ship']);
+  await expect(first).toBeVisible();
+  expect(decided(repo)).toEqual([null, null]);
+});
