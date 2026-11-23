@@ -3,7 +3,7 @@
   Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
   Pills: .tag, .tag.decided, .tag.reopened, .counter, .file-chip.
-  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box.
+  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box; .menu floats under its button.
 */
 
 body {
@@ -394,6 +394,42 @@ select:disabled {
   padding: var(--s3);
   border: 1px dashed var(--control-edge);
   border-radius: var(--r-xl);
+}
+
+/* A menu of [role=menuitem] buttons, floating under the control that opened it. */
+.menu {
+  position: absolute;
+  top: calc(100% + var(--s1));
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  padding: var(--s1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+  box-shadow: var(--shadow-float);
+}
+
+.menu [role='menuitem'] {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink);
+  font: var(--text-body-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu [role='menuitem']:hover,
+.menu [role='menuitem']:focus-visible {
+  background: var(--surface-tint);
+}
+
+.menu [role='menuitem']:focus-visible {
+  outline-offset: -2px;
 }
 
 /* Reduced motion keeps opacity and colour only. */

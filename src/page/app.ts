@@ -207,6 +207,58 @@ function progressView(): HTMLElement[] {
   return [bar, count];
 }
 
+/** The header's More menu, which holds what the header has no room for at phone width. */
+let menuOpen = false;
+
+function closeMenu(): void {
+  menuOpen = false;
+  render();
+}
+
+function moreMenu(): HTMLElement {
+  const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
+    menuOpen = !menuOpen;
+    render();
+    document.querySelector<HTMLElement>('.menu [role=menuitem]')?.focus();
+  } }, icon('more'));
+  button.setAttribute('aria-label', 'More');
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', String(menuOpen));
+  button.dataset['key'] = 'more';
+  const box = el('div', { className: 'more-menu' }, button);
+  if (!menuOpen) return box;
+  const choices: [string, () => void][] = [
+    ...(walkthrough.steps.length && currentView().kind !== 'deck' ? [['Swipe to decide', () => { go('deck'); }] as [string, () => void]] : []),
+    ['Stop', () => void stop()],
+  ];
+  const items = choices.map(([label, choose]) => {
+    const item = el('button', { type: 'button', tabIndex: -1, onclick: () => { closeMenu(); choose(); } }, label);
+    item.setAttribute('role', 'menuitem');
+    item.dataset['key'] = `menu:${label}`;
+    return item;
+  });
+  const menu = el('div', { className: 'menu' }, ...items);
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', 'More');
+  menu.onkeydown = event => {
+    const at = items.indexOf(event.target as HTMLButtonElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      items.at((at + (event.key === 'ArrowDown' ? 1 : -1)) % items.length)?.focus();
+    } else if (event.key === 'Escape' || event.key === 'Tab') {
+      closeMenu();
+      if (event.key === 'Tab') return;
+      document.querySelector<HTMLElement>('[data-key="more"]')?.focus();
+    } else return;
+    event.preventDefault();
+  };
+  box.append(menu);
+  return box;
+}
+
+document.addEventListener('click', event => {
+  if (menuOpen && !(event.target instanceof Element && event.target.closest('.more-menu'))) closeMenu();
+});
+
 function headerView(): HTMLElement[] {
   const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   return [
@@ -220,7 +272,7 @@ function headerView(): HTMLElement[] {
         ? [el('span', { className: 'header-note' }, 'Exported, read-only')]
         : [
             statusView(),
-            ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
+            ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop'), moreMenu()]),
           ]),
     ),
   ];
