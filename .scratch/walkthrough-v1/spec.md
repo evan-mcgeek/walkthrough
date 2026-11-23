@@ -139,7 +139,7 @@ The tool itself knows only git, its own state and the page, so it works for any 
 
 ### The change
 
-- `start` with no range uses the current branch against its target branch (merge-base to head); with a base and head it uses those revisions and an optional label.
+- `start` with no range uses the current branch against its target branch (merge-base to head); with a base and head it uses those revisions and needs a label that names the change, since two changes fetched to the same name, such as FETCH_HEAD, would otherwise share one walkthrough.
 - Getting a colleague's change into the repo (fetching a pull request ref, for example) is the session's job, following the policy.
 - Uncommitted edits are excluded and reported as a warning.
 - Nothing is checked out; diffs and file contents are read from git objects at the pinned commits.
