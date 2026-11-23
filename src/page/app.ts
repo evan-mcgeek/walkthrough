@@ -820,8 +820,6 @@ function leftItems(): ChecklistItem[] {
   });
 }
 
-const MARK_ICON = { met: 'met', partly: 'partly', 'not-met': 'not-met', unchecked: 'unchecked' } as const satisfies Record<string, IconName>;
-
 function queueView(view: View): HTMLElement[] {
   const { steps } = walkthrough;
   const current = view.kind === 'step' ? view.step : undefined;
@@ -834,7 +832,7 @@ function queueView(view: View): HTMLElement[] {
   }
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
-    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', MARK_ICON[item.mark ?? 'unchecked'], plain(item.text), { text: 'Checklist' }, at && 'page'));
+    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
   }
   const counted = steps.length > 0 || rows.length > 0;
   const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [el('span', { className: 'counter' }, String(rows.length))] : []));
@@ -881,7 +879,7 @@ function checklistView({ title, items }: Checklist, view: View): HTMLElement {
     const row = el(
       'li',
       { className: view.kind === 'checklist' && view.item === item.id ? 'current' : '' },
-      icon(MARK_ICON[mark]),
+      icon(mark),
       el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), el('span', { className: 'item-status' }, item.status)),
       ...links,
       ...(gone
