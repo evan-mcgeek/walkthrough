@@ -67,3 +67,26 @@ test('a tick on the overview stripe jumps to its note', async ({ page, repo }) =
 
   await expect(note).toBeInViewport();
 });
+
+test('beside the step head, In this step names its files, counts its notes and lists the criteria linked to it', async ({ page, repo }) => {
+  pin(repo, [
+    { step: '1', file: 'cart.ts', lines: [2, 2], label: 'Bug', text: 'Off by one.', finding: true },
+    { step: '1', file: 'cart.ts', lines: [5, 5], label: 'Nit', text: 'A name.' },
+  ]);
+  const items = [
+    { status: 'no', mark: 'not-met', text: 'Has a cart', steps: ['1'] },
+    { status: 'yes', mark: 'met', text: 'Logs in', steps: ['1'] },
+    { status: '?', text: 'Elsewhere' },
+  ];
+  repo.record({ title: 'Criteria', items }, 'checklist');
+  const facts = page.getByRole('complementary', { name: 'In this step' });
+
+  await expect(facts.getByRole('link')).toHaveText(['login.ts', 'app.ts', 'cart.ts']);
+  await expect(facts.getByRole('listitem')).toHaveText(['login.ts+1 −0', 'app.ts+1 −1', 'cart.ts+120 −0', '1 finding', '1 note', 'Has a cart', 'Logs in']);
+
+  const login = page.locator('.d2h-file-wrapper[data-file="login.ts"]');
+  await login.getByRole('button', { name: 'Collapse login.ts' }).click();
+  await facts.getByRole('link', { name: 'login.ts' }).click();
+
+  await expect(login.getByRole('button', { name: 'Collapse login.ts' })).toBeInViewport();
+});

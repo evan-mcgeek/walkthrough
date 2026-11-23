@@ -217,7 +217,7 @@ test('the tool panel puts the step notes, the session and what is detached in ta
   await panel.getByRole('tab', { name: /^From the session/ }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(panel.getByRole('tab', { name: /^Notes/ })).toBeFocused();
-  await expect(panel.getByRole('tabpanel').getByRole('button')).toHaveText(['RiskEveryone gets in.', 'NitLine 1A name.']);
+  await expect(panel.getByRole('tabpanel').getByRole('button')).toHaveText(['RiskEveryone gets in.', 'Nitline 1A name.']);
   const nit = step(page, 'Login check').getByRole('article', { name: 'Nit' });
   await expect(nit).toBeHidden();
 

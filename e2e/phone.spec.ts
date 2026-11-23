@@ -172,6 +172,18 @@ test('a card swiped right approves its step, and the next card takes its place',
   expect(new URL(page.url()).hash).toBe('#deck');
 });
 
+test('a card calls out the step’s finding, and no other note', async ({ page, repo }) => {
+  record(repo, [{ step: '1', label: 'Thread', text: 'A question.' }], 'note');
+  await openDeck(page);
+  const top = card(page, 1, 'Login check');
+  await expect(top.getByText('1 file · 1 note')).toBeVisible();
+  await expect(top.locator('.card-note')).toHaveCount(0);
+
+  record(repo, [{ step: '1', label: 'Bug', text: 'Off by one.', finding: true }], 'note');
+
+  await expect(top.locator('.card-note')).toHaveText('Bug: Off by one.');
+});
+
 test('a card swiped left by touch flags its step with the note the Flag asks for', async ({ page, repo }) => {
   await openDeck(page);
   await swipe(card(page, 1, 'Login check'), -160);

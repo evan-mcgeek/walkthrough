@@ -80,6 +80,7 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
 1. **Steps.**
    Each step is a part of the change with its diff and the session's explanation, in reading order.
    What the session assumed rather than read is listed separately.
+   Beside the explanation, "In this step" lists the step's files, counts its findings, notes and your comments, and shows the checklist items it touches.
    Files nobody writes by hand go into a folded step, each with the reason it was folded.
    Each file collapses from its header; large files start collapsed, and marking a file Viewed collapses it too, which is never a decision.
 2. **Notes.**
@@ -162,7 +163,7 @@ The file carries no page address or token.
 
 ![An exported walkthrough](docs/images/export.png)
 
-Ask which walkthroughs you have open, and it opens a page with this repo's walkthroughs, their progress and last activity.
+Ask which walkthroughs you have open, and it opens a page with this repo's walkthroughs, their kind, progress, verdict and last activity.
 
 ![The list of walkthroughs](docs/images/list.png)
 
@@ -195,13 +196,15 @@ The session runs the `walkthrough` CLI for you, so you rarely type it yourself.
 
 | Command | What it does |
 | --- | --- |
-| `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page; `--kind <label>` names its kind for the page. |
+| `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page; `--kind <label>` names its kind for the page, and `--comments <text>` says what becomes of your comments. |
 | `files` | Lists the changed files. |
 | `steps`, `note`, `checklist`, `actions` | Record what the session wrote, from a file in the walkthrough's inbox (`--file`) or standard input. |
 | `listen` | Waits in the background for what you do on the page. |
 | `say` | Puts the session's answer, question or note on the page. |
 | `policy` | Says whether your review policy is missing, the unchanged template or your own; `show`, `init` and `save --file` print, create and replace it. |
 | `decisions` | Prints your latest decision on every item. |
+| `comments` | Prints your own line comments as they are now. |
+| `posted` | Marks your comments posted once they have gone out, so the page no longer lets you edit them. |
 | `export` | Writes the walkthrough to one read-only HTML file. |
 | `list` | Opens a page of this repo's walkthroughs. |
 | `stop` | Ends the page and the listener; `stop --list` ends the list page. |
