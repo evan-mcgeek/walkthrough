@@ -29,7 +29,7 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
   process.on('exit', () => {
     try {
       // macOS gives the Documents, Downloads and Library folders it creates in a home an "everyone deny delete" ACL.
-      if (process.platform === 'darwin') spawnSync('chmod', ['-R', '-N', sandbox]);
+      if (process.platform === 'darwin') spawnSync('chmod', ['-R', '-N', home]);
       fs.rmSync(sandbox, { recursive: true, force: true, maxRetries: 5 });
     } catch (error) {
       console.error(`could not remove the test sandbox: ${String(error)}`);
