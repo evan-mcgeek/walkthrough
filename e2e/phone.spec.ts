@@ -40,3 +40,24 @@ test('the header keeps Stop in a More menu, which Escape closes', async ({ page 
   await page.getByRole('menuitem', { name: 'Stop' }).click();
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
 });
+
+test('the rail becomes a select of what is left, with decided steps and the end after it', async ({ page }) => {
+  const rail = page.getByRole('navigation', { name: "What's left" });
+  await expect(rail.getByRole('link')).toHaveCount(0);
+  const select = rail.getByRole('combobox', { name: 'Step' });
+  await expect(select.locator('option')).toHaveText(['Left 2 · Login check', 'App version', 'End of the walkthrough']);
+  await expect(select).toHaveValue('1');
+
+  await select.selectOption('2');
+  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  expect(new URL(page.url()).hash).toBe('#2');
+  await expect(select.locator('option:checked')).toHaveText('Left 2 · App version');
+
+  await page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Approve' }).click();
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  await expect(select.locator('optgroup')).toHaveAttribute('label', '1 decided');
+  await expect(select.locator('option')).toHaveText(['Left 1 · Login check', 'App version', 'End of the walkthrough']);
+  await select.selectOption('end');
+  await expect(page.getByRole('heading', { name: '1 of 2 steps decided' })).toBeVisible();
+  await expect(select.locator('option:checked')).toHaveText('Left 1 · End of the walkthrough');
+});

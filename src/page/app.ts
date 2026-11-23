@@ -8,7 +8,7 @@ import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } fr
 import { type Action, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
+import { el, type PageName, post as postTo, region, selectBox, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
 import { renderMarkdown } from './markdown';
 
@@ -872,19 +872,63 @@ function leftItems(): ChecklistItem[] {
   });
 }
 
+/** The address and title of what the main pane shows, as the phone's select names it. */
+function viewAddress(view: View): [string, string] | null {
+  switch (view.kind) {
+    case 'step':
+      return [view.step.id, view.step.title];
+    case 'session':
+      return ['session', 'From the session'];
+    case 'checklist': {
+      const item = walkthrough.checklist?.items.find(one => one.id === view.item);
+      return item ? [`checklist-${item.id}`, plain(item.text)] : ['checklist', walkthrough.checklist?.title ?? ''];
+    }
+    case 'end':
+      return ['end', 'End of the walkthrough'];
+    case 'preparing':
+      return null;
+  }
+}
+
+/** The rail at phone width: a select of the rows left, then the decided steps and the end. */
+function queueSelect(view: View, left: [string, string][], decided: Step[]): HTMLElement {
+  const shown = viewAddress(view);
+  const option = ([address, title]: [string, string]) =>
+    el('option', { value: address, selected: address === shown?.[0] }, address === shown?.[0] ? `Left ${String(left.length)} · ${title}` : title);
+  const known = [...left, ...decided.map(step => [step.id, step.title]), ['end', '']].some(([address]) => address === shown?.[0]);
+  const select = el(
+    'select',
+    { onchange: () => { go(select.value); } },
+    ...(shown && !known ? [option(shown)] : []),
+    ...(walkthrough.steps.length || left.length ? [] : [el('option', { disabled: true, selected: true }, 'No steps yet')]),
+    ...left.map(option),
+    ...(decided.length ? [el('optgroup', { label: `${String(decided.length)} decided` }, ...decided.map(step => option([step.id, step.title])))] : []),
+    ...(walkthrough.steps.length ? [option(['end', 'End of the walkthrough'])] : []),
+  );
+  select.setAttribute('aria-label', 'Step');
+  select.dataset['key'] = 'queue-select';
+  const box = selectBox(select);
+  box.classList.add('queue-select');
+  return box;
+}
+
 function queueView(view: View): HTMLElement[] {
   const { steps } = walkthrough;
   const current = view.kind === 'step' ? view.step : undefined;
-  const rows = steps.filter(step => !stepDecided(step)).map(step => stepRow(step, step === current));
+  const undecided = steps.filter(step => !stepDecided(step));
+  const rows = undecided.map(step => stepRow(step, step === current));
+  const left: [string, string][] = undecided.map(step => [step.id, step.title]);
   const messages = sessionMessages().length;
   const unplaced = walkthrough.unplaced?.length ?? 0;
   if (messages || unplaced) {
     const sub = [...(messages ? [plural(messages, 'message')] : []), ...(unplaced ? [`${plural(unplaced, 'file')} not in a step`] : [])];
     rows.push(queueRow('session', 'message', 'message', 'From the session', { text: sub.join(', ') }, view.kind === 'session' && 'page'));
+    left.push(['session', 'From the session']);
   }
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
     rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
+    left.push([`checklist-${item.id}`, plain(item.text)]);
   }
   const counted = steps.length > 0 || rows.length > 0;
   const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [el('span', { className: 'counter' }, String(rows.length))] : []));
@@ -910,7 +954,7 @@ function queueView(view: View): HTMLElement[] {
         ),
       ]
     : [];
-  return [head, ...rows, ...empty, ...foot];
+  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot];
 }
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;

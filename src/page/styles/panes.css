@@ -701,25 +701,44 @@
   border-top: 1px solid var(--rule-soft);
 }
 
-/* Until the phone layout: the rail stacks above the step and the page scrolls as one. */
-@media (max-width: 760px) {
-  .walkthrough {
-    height: auto;
-  }
+/* The rail's phone form, shown only at phone width. */
+.queue-select {
+  display: none;
+}
 
+/* ---------- phone ---------- */
+
+@media (max-width: 760px) {
   .panes {
     flex-direction: column;
   }
 
   .queue {
+    flex-direction: row;
     width: auto;
+    padding: var(--s2) var(--s3);
     border-right: 0;
     border-bottom: 1px solid var(--rule);
+    overflow: visible;
+  }
+
+  .queue > :not(.queue-select) {
+    display: none;
+  }
+
+  .queue-select {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .queue-select select {
+    min-width: 0;
+    text-overflow: ellipsis;
   }
 
   .main {
     padding: var(--s4) var(--s4) 0;
-    overflow: visible;
   }
 
   .main > :last-child {
