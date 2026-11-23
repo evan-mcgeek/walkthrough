@@ -10,6 +10,7 @@ import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
+import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
 
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
@@ -29,6 +30,11 @@ const plain = (text: string) => markdown(text, '').textContent.replace(/\s+/g, '
 const header = region('header');
 const queue = region('queue');
 const main = region('main');
+const side = region('side');
+const tools = region('tools');
+
+/** An exported file keeps the default, since it has no switch to change it. */
+let layout: Layout = readOnly ? 'queue' : storedLayout();
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
 let posted = 0;
@@ -207,6 +213,25 @@ function progressView(): HTMLElement[] {
   return [bar, count];
 }
 
+function layoutSwitch(): HTMLElement {
+  const choices = LAYOUTS.map(({ id, label, icon: shape }) => {
+    const button = el('button', { type: 'button', title: label }, icon(shape));
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-pressed', String(id === layout));
+    button.dataset['key'] = `layout:${id}`;
+    button.onclick = () => {
+      layout = id;
+      storeLayout(id);
+      render();
+    };
+    return button;
+  });
+  const group = el('div', { className: 'segmented icons layout-switch' }, ...choices);
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Layout');
+  return group;
+}
+
 function headerView(): HTMLElement[] {
   const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   return [
@@ -219,6 +244,7 @@ function headerView(): HTMLElement[] {
       ...(readOnly
         ? [el('span', { className: 'header-note' }, 'Exported, read-only')]
         : [
+            layoutSwitch(),
             statusView(),
             ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
           ]),
@@ -441,6 +467,7 @@ function noteView(note: Note): HTMLElement {
     })),
   );
   view.setAttribute('aria-label', label);
+  view.id = `note-${note.id}`;
   return view;
 }
 
@@ -701,8 +728,8 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
   return [el('div', { className: 'block' }, summary, files, ...found, ...(step.diff ? [details] : []))];
 }
 
-/** A step's explanation, what was said about its decision, then its assumptions, notes and files. */
-function stepBody(step: Step): HTMLElement[] {
+/** A step's explanation, what was said about its decision, its assumptions and notes as prose; its files as code. */
+function stepBody(step: Step): { prose: HTMLElement[]; code: HTMLElement[] } {
   const said = stepDecisionView(step);
   const pinned = session.conversation.filter(
     (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === step.id,
@@ -711,9 +738,15 @@ function stepBody(step: Step): HTMLElement[] {
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
   switch (step.kind) {
     case 'step':
-      return [markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes, el('div', { className: 'block' }, diffView(step, pinned))];
+      return {
+        prose: [markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes],
+        code: [el('div', { className: 'block' }, diffView(step, pinned))],
+      };
     case 'folded':
-      return [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...said, ...notes, ...foldedView(step, pinned)];
+      return {
+        prose: [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...said, ...notes],
+        code: foldedView(step, pinned),
+      };
   }
 }
 
@@ -759,17 +792,28 @@ function actionBar(step: Step): HTMLElement[] {
   return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
 }
 
-function stepView(step: Step): HTMLElement {
+// The split step and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
+const prosePane = el('div', { className: 'prose' });
+const codePane = el('div', { className: 'code' });
+const splitStep = el('section', { className: 'step split' }, prosePane, codePane);
+
+/** In "Explanation beside code" the prose pane leads with the notices, then the step, its actions and the checklist; the files fill the code pane. */
+function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
   const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
-  const section = el(
-    'section',
-    { className: 'step' },
+  const { prose, code } = stepBody(step);
+  const parts = [
     el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
-    ...stepBody(step),
+    ...prose,
+    ...(layout === 'split' ? [] : code),
     ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
     ...actionBar(step),
-  );
+  ];
+  let section = splitStep;
+  if (layout === 'split') {
+    prosePane.replaceChildren(...notices, navRow(view), ...parts, ...besideChecklist(view), ...sessionRow(view));
+    codePane.replaceChildren(...code);
+  } else section = el('section', { className: 'step' }, ...parts);
   section.setAttribute('aria-labelledby', title.id);
   return section;
 }
@@ -820,16 +864,19 @@ function leftItems(): ChecklistItem[] {
   });
 }
 
+/** The row that opens what the session said outside any step, when it said anything or files are in no step. */
+function sessionRow(view: View): HTMLElement[] {
+  const messages = sessionMessages().length;
+  const unplaced = walkthrough.unplaced?.length ?? 0;
+  if (!messages && !unplaced) return [];
+  const sub = [...(messages ? [plural(messages, 'message')] : []), ...(unplaced ? [`${plural(unplaced, 'file')} not in a step`] : [])];
+  return [queueRow('session', 'message', 'message', 'From the session', { text: sub.join(', ') }, view.kind === 'session' && 'page')];
+}
+
 function queueView(view: View): HTMLElement[] {
   const { steps } = walkthrough;
   const current = view.kind === 'step' ? view.step : undefined;
-  const rows = steps.filter(step => !stepDecided(step)).map(step => stepRow(step, step === current));
-  const messages = sessionMessages().length;
-  const unplaced = walkthrough.unplaced?.length ?? 0;
-  if (messages || unplaced) {
-    const sub = [...(messages ? [plural(messages, 'message')] : []), ...(unplaced ? [`${plural(unplaced, 'file')} not in a step`] : [])];
-    rows.push(queueRow('session', 'message', 'message', 'From the session', { text: sub.join(', ') }, view.kind === 'session' && 'page'));
-  }
+  const rows = [...steps.filter(step => !stepDecided(step)).map(step => stepRow(step, step === current)), ...sessionRow(view)];
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
     rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
@@ -863,6 +910,10 @@ function queueView(view: View): HTMLElement[] {
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
 
+/** Counted only when the session marks items, since a status alone says nothing the page can count. */
+const metCount = (items: ChecklistItem[]) =>
+  items.some(item => item.mark !== undefined) ? `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}` : null;
+
 function checklistView({ title, items }: Checklist, view: View): HTMLElement {
   const heading = el('h2', { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' }, title);
   const rows = items.map(item => {
@@ -892,9 +943,8 @@ function checklistView({ title, items }: Checklist, view: View): HTMLElement {
     return row;
   });
   const head = view.kind === 'checklist' ? el('div', { className: 'title-row' }, heading) : heading;
-  // Counted only when the session marks items, since a status alone says nothing the page can count.
-  if (items.some(item => item.mark !== undefined))
-    head.append(el('span', { className: 'counter' }, `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}`));
+  const met = metCount(items);
+  if (met !== null) head.append(el('span', { className: 'counter' }, met));
   const section = el('section', { className: 'checklist' }, head, el('ul', {}, ...rows));
   section.setAttribute('aria-labelledby', heading.id);
   return section;
@@ -950,18 +1000,18 @@ function endView(): HTMLElement {
   return section;
 }
 
-function sessionView(): HTMLElement {
-  const title = el('h2', { className: 'step-title', id: 'from-session' }, 'From the session');
+/** What the session said outside any step, each with its replies; a question still waiting shows in its own box instead. */
+function sessionThreads(): HTMLElement[] {
   const waiting = new Set(waitingQuestions().map(message => message.id));
   const threads = sessionMessages()
     .filter(message => !waiting.has(message.id))
     .map(message => el('div', { className: 'thread' }, said(message), ...followUps(message).map(said)));
-  const section = el(
-    'section',
-    { className: 'messages' },
-    el('div', { className: 'title-row' }, title),
-    ...(threads.length ? threads : [el('p', { className: 'muted' }, 'Nothing from the session yet.')]),
-  );
+  return threads.length ? threads : [el('p', { className: 'muted' }, 'Nothing from the session yet.')];
+}
+
+function sessionView(): HTMLElement {
+  const title = el('h2', { className: 'step-title', id: 'from-session' }, 'From the session');
+  const section = el('section', { className: 'messages' }, el('div', { className: 'title-row' }, title), ...sessionThreads());
   section.setAttribute('aria-labelledby', title.id);
   return section;
 }
@@ -1042,10 +1092,10 @@ function detachedView(): HTMLElement[] {
   return [section];
 }
 
-function viewBody(view: View): HTMLElement {
+function viewBody(view: View, notices: HTMLElement[]): HTMLElement {
   switch (view.kind) {
     case 'step':
-      return stepView(view.step);
+      return stepView(view.step, notices, view);
     case 'session':
       return sessionView();
     case 'checklist':
@@ -1057,6 +1107,131 @@ function viewBody(view: View): HTMLElement {
   }
 }
 
+/** The checklist sits beside the step in every layout but the default, unless the main pane shows it already. */
+function besideChecklist(view: View): HTMLElement[] {
+  const { checklist } = walkthrough;
+  if (layout === 'queue' || !checklist || view.kind === 'checklist' || view.kind === 'end') return [];
+  return [checklistView(checklist, view)];
+}
+
+/** Where Previous and Next lead: the steps in order, then the end; from a page of its own, back to the steps. */
+function neighbours(view: View): [string | null, string | null] {
+  const { steps } = walkthrough;
+  if (view.kind === 'step') {
+    const at = steps.indexOf(view.step);
+    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? 'end'];
+  }
+  if (view.kind === 'end') return [steps.at(-1)?.id ?? null, null];
+  return [null, steps.find(step => !stepDecided(step))?.id ?? (steps.length ? 'end' : null)];
+}
+
+/** "Explanation beside code" has no rail, so the prose pane walks the steps with Previous and Next. */
+function navRow(view: View): HTMLElement {
+  const [previous, next] = neighbours(view);
+  const button = (label: string, shape: IconName, to: string | null) => {
+    const made = el('button', { type: 'button', className: 'icon-button', title: label, disabled: to === null }, icon(shape));
+    made.setAttribute('aria-label', label);
+    made.dataset['key'] = `nav:${shape}`;
+    made.onclick = () => {
+      if (to !== null) go(to);
+    };
+    return made;
+  };
+  const nav = el('nav', { className: 'step-nav' }, button('Previous step', 'previous', previous), button('Next step', 'next', next));
+  nav.setAttribute('aria-label', 'Steps');
+  return nav;
+}
+
+type Tool = 'notes' | 'checklist' | 'session';
+/** The tool panel's tab the person chose; until then the checklist, or the notes when there is none. */
+let tool: Tool | null = null;
+
+const stepNotesOf = (step: Step) =>
+  session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+
+/** Opens whatever hides a note in the step and brings it into view. */
+function showNote(step: Step, note: Note): void {
+  if (step.kind === 'folded') {
+    opened.add(`fold:${step.id}`);
+    opened.add(step.id);
+  }
+  render();
+  const shown = document.getElementById(`note-${note.id}`);
+  if (!shown) return;
+  for (let hidden = shown.closest('details'); hidden; hidden = hidden.parentElement?.closest('details') ?? null) hidden.open = true;
+  shown.tabIndex = -1;
+  shown.focus();
+}
+
+function noteIndex(step: Step, notes: Note[]): HTMLElement[] {
+  if (!notes.length) return [el('p', { className: 'muted' }, 'No notes on this step.')];
+  const rows = notes.map(note => {
+    const { label, lines } = note.note;
+    const button = el(
+      'button',
+      { type: 'button', className: 'note-link' },
+      el('span', { className: 'label' }, label),
+      ...(lines ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
+      el('span', { className: 'gist' }, plain(note.text)),
+    );
+    button.dataset['key'] = `note-link:${note.id}`;
+    button.onclick = () => {
+      showNote(step, note);
+    };
+    return el('li', {}, button);
+  });
+  return [el('ul', { className: 'note-index' }, ...rows)];
+}
+
+/** "Tool panel": the step's notes, the checklist and what the session said, as tabs under the step. */
+function toolPanel(view: View): HTMLElement[] {
+  const step = view.kind === 'step' ? view.step : undefined;
+  const checklist = besideChecklist(view);
+  const tabs: { id: Tool; label: string; count: string; body: () => HTMLElement[] }[] = [];
+  if (step) {
+    const notes = stepNotesOf(step);
+    tabs.push({ id: 'notes', label: 'Notes', count: String(notes.length), body: () => noteIndex(step, notes) });
+  }
+  const items = walkthrough.checklist?.items ?? [];
+  if (checklist.length) tabs.push({ id: 'checklist', label: 'Checklist', count: metCount(items) ?? String(items.length), body: () => checklist });
+  tabs.push({ id: 'session', label: 'From the session', count: String(sessionMessages().length), body: sessionThreads });
+  const chosen = tool ?? (walkthrough.checklist ? 'checklist' : 'notes');
+  const shown = tabs.find(tab => tab.id === chosen) ?? tabs[0];
+  if (!shown) return [];
+  const select = (id: Tool) => {
+    tool = id;
+    render();
+    document.querySelector<HTMLElement>(`[data-key="tab:${id}"]`)?.focus();
+  };
+  const buttons = tabs.map(tab => {
+    const selected = tab === shown;
+    const button = el('button', { type: 'button', className: 'tab', id: `tab-${tab.id}`, tabIndex: selected ? 0 : -1 }, tab.label, el('span', { className: 'counter' }, tab.count));
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(selected));
+    if (selected) button.setAttribute('aria-controls', 'tool-body');
+    button.dataset['key'] = `tab:${tab.id}`;
+    button.onclick = () => {
+      select(tab.id);
+    };
+    return button;
+  });
+  const list = el('div', { className: 'tabs' }, ...buttons);
+  list.setAttribute('role', 'tablist');
+  list.setAttribute('aria-label', 'Tool panel');
+  list.onkeydown = event => {
+    const at = tabs.indexOf(shown);
+    const to = { ArrowRight: at + 1, ArrowLeft: at - 1 + tabs.length, Home: 0, End: tabs.length - 1 }[event.key];
+    if (to === undefined) return;
+    event.preventDefault();
+    const tab = tabs[to % tabs.length];
+    if (tab) select(tab.id);
+  };
+  const body = el('div', { className: `tool-body ${shown.id}`, id: 'tool-body' }, ...shown.body());
+  body.setAttribute('role', 'tabpanel');
+  body.setAttribute('aria-labelledby', `tab-${shown.id}`);
+  return [list, body];
+}
+
 function render(): void {
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
@@ -1066,15 +1241,24 @@ function render(): void {
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const view = currentView();
+  document.body.dataset['layout'] = layout;
+  // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
+  const panes = [queue, main, prosePane, codePane, side, tools];
+  const scrolled = panes.map(pane => pane.scrollTop);
   header.replaceChildren(...headerView());
   queue.replaceChildren(...queueView(view));
-  main.replaceChildren(
-    ...waitingQuestions().map(questionBox),
-    ...goneNotice(),
-    ...unplacedNotice(),
-    ...detachedView(),
-    viewBody(view),
-  );
+  const notices = [...waitingQuestions().map(questionBox), ...goneNotice(), ...unplacedNotice(), ...detachedView()];
+  const split = layout === 'split' && view.kind === 'step';
+  main.classList.toggle('split', split);
+  const shown = [...(split ? [] : [...(layout === 'split' && view.kind !== 'preparing' ? [navRow(view)] : []), ...notices]), viewBody(view, notices)];
+  // Putting the split step back would lose where its panes were scrolled.
+  if (shown.length !== main.children.length || shown.some((part, at) => main.children[at] !== part)) main.replaceChildren(...shown);
+  side.replaceChildren(...(layout === 'three' ? besideChecklist(view) : []));
+  side.hidden = !side.hasChildNodes();
+  tools.replaceChildren(...(layout === 'panel' ? toolPanel(view) : []));
+  panes.forEach((pane, at) => {
+    pane.scrollTop = scrolled[at] ?? 0;
+  });
   if (view.kind === 'step') void markRead(view.step);
   // A diff is kept across redraws, so a line number focused in it is still there to focus again; a redrawn control is found by its key.
   const kept = focused instanceof HTMLElement && !focused.isConnected && focused.dataset['key'] !== undefined
@@ -1092,17 +1276,10 @@ const isTyping = (target: EventTarget | null) =>
 
 /** j and k walk the steps, and past the last one to the end of the walkthrough. */
 function stepBy(delta: number): void {
-  const { steps } = walkthrough;
   const view = currentView();
-  if (view.kind === 'end' && delta < 0) {
-    const last = steps.at(-1);
-    if (last) go(last.id);
-    return;
-  }
-  if (view.kind !== 'step') return;
-  const next = steps[steps.indexOf(view.step) + delta];
-  if (next) go(next.id);
-  else if (delta > 0) go('end');
+  if (view.kind !== 'step' && view.kind !== 'end') return;
+  const to = neighbours(view)[delta > 0 ? 1 : 0];
+  if (to) go(to);
 }
 
 document.addEventListener('keydown', event => {
@@ -1123,6 +1300,8 @@ window.addEventListener('hashchange', () => {
   taking = null;
   render();
   main.scrollTo(0, 0);
+  prosePane.scrollTop = 0;
+  codePane.scrollTop = 0;
   const view = currentView();
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });
