@@ -25,7 +25,7 @@ samp,
 }
 
 :focus-visible {
-  outline: 2px solid var(--violet);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -90,16 +90,16 @@ samp,
 }
 
 .btn.primary {
-  border-color: var(--violet);
-  background: var(--violet);
-  color: var(--on-violet);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
 .btn.primary:hover,
 .btn.primary:active {
-  border-color: var(--violet-hover);
-  background: var(--violet-hover);
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
 }
 
 .btn.ghost {
@@ -144,8 +144,8 @@ samp,
 }
 
 .btn.primary:disabled:hover {
-  border-color: var(--violet);
-  background: var(--violet);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .icon-button {
@@ -174,7 +174,7 @@ samp,
   border: 0;
   border-radius: var(--r-xs);
   background: none;
-  color: var(--violet-text);
+  color: var(--accent-text);
   font: 400 13px/1.4 var(--font-ui);
   cursor: pointer;
 }
@@ -212,8 +212,8 @@ samp,
 }
 
 .segmented button[aria-pressed='true'] {
-  background: var(--violet-wash);
-  color: var(--violet-text);
+  background: var(--surface-tint);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -230,7 +230,7 @@ samp,
 }
 
 .segmented.icons button[aria-pressed='true'] {
-  color: var(--violet-text);
+  color: var(--ink);
 }
 
 /* ---------- fields ---------- */
@@ -245,7 +245,7 @@ select {
   background: var(--canvas);
   color: var(--ink);
   font: var(--text-body-ui);
-  caret-color: var(--violet);
+  caret-color: var(--accent);
   transition:
     border-color var(--fast) linear,
     box-shadow var(--fast) linear;
@@ -270,9 +270,9 @@ textarea::placeholder {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--violet);
+  border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 0 3px var(--violet-wash);
+  box-shadow: 0 0 0 3px var(--accent-wash);
 }
 
 input:disabled,
@@ -414,7 +414,7 @@ select:disabled {
   border-radius: var(--r-xl);
 }
 
-/* A menu of [role=menuitem] and [role=menuitemradio] buttons, floating under the control that opened it. */
+/* A menu of [role=menuitem] and [role=menuitemcheckbox] buttons, floating under the control that opened it. */
 .menu {
   position: absolute;
   top: calc(100% + var(--s1));
@@ -430,7 +430,11 @@ select:disabled {
   box-shadow: var(--shadow-float);
 }
 
-.menu :is([role='menuitem'], [role='menuitemradio']) {
+.menu [role^='menuitem'] {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  white-space: nowrap;
   padding: 7px 10px;
   border: 0;
   border-radius: var(--r-sm);
@@ -442,18 +446,30 @@ select:disabled {
 }
 
 /* Focus moves into a menu as it opens, so the focused item shows whatever opened it. */
-.menu :is([role='menuitem'], [role='menuitemradio']):hover,
-.menu :is([role='menuitem'], [role='menuitemradio']):focus {
+.menu [role^='menuitem']:hover,
+.menu [role^='menuitem']:focus {
   background: var(--surface-tint);
 }
 
-.menu :is([role='menuitem'], [role='menuitemradio']):focus-visible {
+.menu [role^='menuitem']:focus-visible {
   outline-offset: -2px;
 }
 
 .menu [aria-checked='true'] {
-  color: var(--violet-text);
+  color: var(--accent-text);
   font-weight: 600;
+}
+
+.menu [aria-disabled='true'] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.menu-note {
+  margin-left: auto;
+  padding-left: var(--s3);
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* A note's menu lifts into the top layer, out of the diff's scroll box, anchored under its open button. */

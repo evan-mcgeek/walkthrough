@@ -1,5 +1,6 @@
 import type { Listed } from '../list';
 import { plural } from '../words';
+import { loadViewer } from './appearance';
 import { el, kindView, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon } from './icons';
 
@@ -98,6 +99,7 @@ const load = async () => {
   return answer.text();
 };
 
+await loadViewer();
 shown = await load();
 render(JSON.parse(shown) as ListPage);
 // The list changes as sessions record and the person decides, and an open list keeps its server from stopping idle.

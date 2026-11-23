@@ -111,7 +111,7 @@
   transition-delay: 150ms;
 }
 
-/* Gesture feedback, not recorded state: violet toward Approve, amber toward Flag. */
+/* Gesture feedback, not recorded state: the accent toward Approve, amber toward Flag. */
 .decision-chip {
   position: absolute;
   top: var(--s4);
@@ -126,8 +126,8 @@
 
 .decision-chip.approve {
   left: var(--s4);
-  background: var(--violet-wash);
-  color: var(--violet-text);
+  background: var(--accent-wash);
+  color: var(--accent-text);
   opacity: var(--pa, 0);
 }
 
@@ -260,7 +260,7 @@
 }
 
 .deck.past[data-toward='approve'] .edge.right {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .deck.past[data-toward='flag'] .edge.left {
@@ -285,7 +285,7 @@
 }
 
 .deck-view > a {
-  color: var(--violet-text);
+  color: var(--accent-text);
   font: var(--text-body-ui);
 }
 

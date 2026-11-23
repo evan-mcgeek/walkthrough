@@ -1,6 +1,6 @@
 /*
-  The "What's left" layout (docs/design/DESIGN.md, Layout and Queue): the header and any banner over .panes,
-  the 232px .queue rail on the surface tone and the .main pane, which scrolls on its own with the action bar docked to its foot.
+  The panes (docs/design/DESIGN.md, Layout and Queue): the header and any banner over .panes,
+  the 224px .queue rail on the surface tone and the .main pane, which scrolls on its own with the action bar docked to its foot.
 */
 
 .walkthrough {
@@ -54,7 +54,7 @@
   flex: none;
   flex-direction: column;
   gap: 2px;
-  width: 232px;
+  width: 224px;
   box-sizing: border-box;
   padding: var(--s3) var(--s2);
   overflow-y: auto;
@@ -125,7 +125,7 @@
 
 .queue-item[aria-current] > .icon,
 .queue-item[data-state='read'] > .icon {
-  color: var(--violet);
+  color: var(--accent);
 }
 
 .queue-item[data-state='reopened'] > .icon {
@@ -596,7 +596,7 @@
 .preparing-head > .icon-mark {
   width: 20px;
   height: 20px;
-  color: var(--violet);
+  color: var(--accent);
 }
 
 .preparing-head > .icon-mark path {
@@ -715,16 +715,16 @@
 .step-link {
   height: fit-content;
   padding: 0 var(--s1);
-  border: 1px solid var(--violet-line);
+  border: 1px solid var(--accent-line);
   border-radius: var(--r-xs);
-  color: var(--violet-text);
+  color: var(--accent-text);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-decoration: none;
 }
 
 .step-link:hover {
-  background: var(--violet-wash);
+  background: var(--accent-wash);
 }
 
 .checklist .gone {
@@ -770,7 +770,7 @@
 }
 
 .decisions a:hover {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .decisions .decision {
@@ -815,7 +815,7 @@
 
 /* ---------- undo toast ---------- */
 
-/* A strip at the main pane's foot, in every layout. */
+/* A strip at the main pane's foot, whichever panels are open. */
 .toast-anchor {
   position: relative;
   z-index: 4;
@@ -864,7 +864,7 @@
   cursor: pointer;
 }
 
-/* Violet is too close to the ink fill; the toast's own text colour inverts with it. */
+/* The accent can be too close to the ink fill; the toast's own text colour inverts with it. */
 .toast-undo:focus-visible {
   outline-color: var(--canvas);
 }

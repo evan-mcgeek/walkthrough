@@ -15,6 +15,7 @@ import { CHANGED, decide, markRead, markViewed, walkthroughVersion, walkthroughV
 import { listPage, listView } from './list';
 import { ask, comment, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
+import { DEFAULT_VIEWER, mergeViewer, type Viewer } from './viewer';
 import { tooLong } from './words';
 
 type ServerRecord = { pid: number; started: string; url: string };
@@ -50,6 +51,17 @@ const SECURITY_HEADERS = {
   'x-frame-options': 'DENY',
   'cross-origin-resource-policy': 'same-origin',
 };
+
+/** The person's viewer settings sit beside their walkthroughs, since each page server has an origin, and so a browser storage, of its own. */
+const viewerFile = () => path.join(stateDir(), 'viewer.json');
+
+export const readViewer = (file = viewerFile()): Viewer => mergeViewer(DEFAULT_VIEWER, readJson<unknown>(file, {}));
+
+export function saveViewer(change: unknown, file = viewerFile()): Viewer {
+  const saved = mergeViewer(readViewer(file), change);
+  writeJson(file, saved);
+  return saved;
+}
 
 const recordFile = (dir: string) => path.join(dir, 'server.json');
 const readRecord = (dir: string) => readJson<ServerRecord | null>(recordFile(dir), null);
@@ -118,9 +130,11 @@ export function serve(dir: string, list = false): void {
     throw new Error(`serve serves only a walkthrough folder under ${stateDir()}`);
   const token = pageToken(dir);
   const stop: Route = () => ({ status: 200, body: { stopped: true }, after: shutDown });
+  const viewer: Route = change => ({ status: 200, body: saveViewer(change) });
   const routes: Record<string, Route> = list
-    ? { '/open': ({ id }) => open(dir, id), '/stop': stop }
+    ? { '/open': ({ id }) => open(dir, id), '/stop': stop, '/viewer': viewer }
     : {
+        '/viewer': viewer,
         '/decide': async fields => answered(await decide(dir, fields)),
         '/read': async ({ step, on }) => answered(await markRead(dir, step, on)),
         '/viewed': async fields => answered(await markViewed(dir, fields)),
@@ -237,9 +251,10 @@ function serveFile(dir: string, list: boolean, what: string, req: http.IncomingM
     });
     return;
   }
-  const data: Record<string, () => unknown> = list
-    ? { 'data/list.json': () => listPage(dir) }
-    : { 'data/session.json': () => sessionView(dir) };
+  const data: Record<string, () => unknown> = {
+    'data/viewer.json': () => readViewer(),
+    ...(list ? { 'data/list.json': () => listPage(dir) } : { 'data/session.json': () => sessionView(dir) }),
+  };
   const view = Object.hasOwn(data, what) ? data[what] : undefined;
   if (view) {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));

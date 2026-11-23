@@ -9,6 +9,8 @@ const ring = (extra: Record<string, string | number> = {}): Shape =>
 const block = (x: number, y: number, width: number, height: number, opacity = 1): Shape =>
   ['rect', { x, y, width, height, rx: 1, fill: 'currentColor', ...(opacity < 1 && { opacity }) }];
 
+const frame: Shape = ['rect', { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }];
+
 const ICONS = {
   /** Queue and step states. */
   unread: [ring()],
@@ -62,16 +64,21 @@ const ICONS = {
   trash: [line('M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5', 1.4)],
   previous: [line('M10 3.5L5.5 8l4.5 4.5')],
   next: [line('M6 3.5L10.5 8 6 12.5')],
+  minus: [line('M3.5 8h9', 1.6)],
+  keyboard: [
+    ['rect', { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
+    line('M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6', 1.4),
+  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ['path', { d: 'M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8', ...round, 'stroke-width': 2.3 }],
     ['path', { d: 'M11.4 12.8L14.4 3.2', ...round, 'stroke-width': 2.3, opacity: 0.4 }],
   ],
-  /** Layouts. */
-  'layout-queue': [block(1, 2, 5, 12), block(7.3, 2, 7.7, 12, 0.5)],
-  'layout-three': [block(1, 2, 3.5, 12), block(5.8, 2, 5, 12, 0.5), block(12, 2, 3, 12)],
-  'layout-split': [block(1, 2, 6.3, 12, 0.5), block(8.7, 2, 6.3, 12)],
-  'layout-panel': [block(1, 2, 3.5, 12), block(5.8, 2, 9.2, 7.5, 0.5), block(5.8, 10.7, 9.2, 3.3)],
+  /** Panels, as a window with the panel's part filled. */
+  'panel-queue': [frame, block(2.6, 3.6, 3.4, 8.8)],
+  'panel-checklist': [frame, block(10, 3.6, 3.4, 8.8)],
+  'panel-explanation': [frame, block(2.6, 3.6, 5.2, 8.8), ['path', { d: 'M4 6h2.4M4 8h2.4M4 10h1.6', ...round, 'stroke-width': 0.9, class: 'knockout' }]],
+  'panel-tools': [frame, block(2.6, 9.4, 10.8, 3)],
 } satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;

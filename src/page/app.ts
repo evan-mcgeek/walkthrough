@@ -7,16 +7,18 @@ import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
+import { DEFAULT_VIEWER, type Panel, PANELS, type Viewer } from '../viewer';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, kindView, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
+import { appearanceDialog, loadViewer, showViewer } from './appearance';
 import { icon, type IconName } from './icons';
-import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
+import { bind, isTyping, runShortcut, shortcutSheet, withKey } from './shortcuts';
 import { animate, now, play, reduced, replay } from './motion';
 
 /** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
-type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string };
+type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string; viewer?: Viewer };
 const exportedText = document.getElementById('exported')?.textContent;
 const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
@@ -42,9 +44,12 @@ const queue = region('queue');
 const main = region('main');
 const side = region('side');
 const tools = region('tools');
+const leftEdge = region('left-edge');
+const rightEdge = region('right-edge');
+const bottomStrip = region('bottom-strip');
 
-/** An exported file keeps the default, since it has no switch to change it. */
-let layout: Layout = readOnly ? 'queue' : storedLayout();
+/** Which tool windows are open; an exported file keeps the default, as it has no controls to change them. */
+const panels = { ...DEFAULT_VIEWER.panels };
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
 let posted = 0;
@@ -146,7 +151,7 @@ const toast = el(
 );
 const toastRegion = el('div', { className: 'toast-region' });
 toastRegion.setAttribute('role', 'status');
-// Between the main pane and the tool panel, so the toast sits over the main pane's foot in every layout.
+// Between the main pane and the tool panel, so the toast sits over the main pane's foot whichever panels are open.
 if (!readOnly) tools.before(el('div', { className: 'toast-anchor' }, toastRegion));
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 let toastHeld = { pointer: false, focus: false };
@@ -295,6 +300,7 @@ async function stop(): Promise<void> {
   const panes = region('panes');
   panes.classList.add('stopped');
   panes.inert = true;
+  bottomStrip.inert = true;
 }
 
 const SESSION: Record<SessionState, readonly [string, string]> = {
@@ -365,27 +371,74 @@ function progressView(): HTMLElement[] {
   return [bar, count];
 }
 
-function chooseLayout(id: Layout): void {
-  layout = id;
-  storeLayout(id);
+/** Each tool window's name in its title bar and menu item, and the key that shows and hides it. */
+const PANEL: Record<Panel, { title: string; menu: string; key: string }> = {
+  queue: { title: 'To review', menu: "What's left", key: '1' },
+  checklist: { title: 'Checklist', menu: 'Checklist', key: '2' },
+  explanation: { title: 'Explanation', menu: 'Explanation column', key: '3' },
+  tools: { title: 'tool panel', menu: 'Tool panel', key: '4' },
+};
+
+/** The explanation column needs the width a phone does not have. */
+const shows = (panel: Panel) => panels[panel] && (panel !== 'explanation' || !phone.matches);
+
+/** `refocus` moves the focus to the control that undoes this, as the one that did it may be gone. */
+function togglePanel(panel: Panel, refocus = false): void {
+  panels[panel] = !panels[panel];
+  void postQuietly('viewer', { panels: { [panel]: panels[panel] } });
   render();
+  if (refocus) document.querySelector<HTMLElement>(`[data-key="${panels[panel] ? 'hide' : 'show'}:${panel}"]`)?.focus();
 }
 
-function layoutSwitch(): HTMLElement {
-  const choices = LAYOUTS.map(({ id, label, icon: shape }) => {
-    const button = el('button', { type: 'button', title: label }, icon(shape));
-    button.setAttribute('aria-label', label);
-    button.setAttribute('aria-pressed', String(id === layout));
-    button.dataset['key'] = `layout:${id}`;
-    button.onclick = () => {
-      chooseLayout(id);
-    };
-    return button;
+/** A tool window's title bar: its title and the button that hides it to its edge. */
+function panelHead(panel: Panel, ...title: HTMLElement[]): HTMLElement {
+  const name = `Hide ${PANEL[panel].title}`;
+  const hide = el('button', { type: 'button', className: 'icon-button panel-hide', title: withKey(name, PANEL[panel].key) }, icon('minus'));
+  hide.setAttribute('aria-label', name);
+  hide.dataset['key'] = `hide:${panel}`;
+  hide.onclick = () => {
+    togglePanel(panel, true);
+  };
+  return el('div', { className: 'panel-head' }, ...title, hide);
+}
+
+/** The button a hidden window leaves on its edge; for the tool panel there is one per tab, which `onShow` selects. */
+function showButton(panel: Panel, label: string, count: string | null, onShow = () => {}): HTMLButtonElement {
+  const tip = panel === 'tools' ? 'Show the tool panel' : `Show ${PANEL[panel].title}`;
+  const button = el(
+    'button',
+    { type: 'button', className: 'edge-button', title: withKey(tip, PANEL[panel].key) },
+    el('span', {}, label),
+    ...(count === null ? [] : [el('span', { className: 'edge-count' }, count)]),
+  );
+  button.setAttribute('aria-expanded', 'false');
+  button.dataset['key'] = panel === 'tools' ? `show:tools:${label}` : `show:${panel}`;
+  button.onclick = () => {
+    onShow();
+    togglePanel(panel);
+    document.querySelector<HTMLElement>(panel === 'tools' ? '.tab[aria-selected="true"]' : `[data-key="hide:${panel}"]`)?.focus();
+  };
+  return button;
+}
+
+type MenuItem = (label: string, choose: () => void, role?: string) => HTMLButtonElement;
+
+/** At phone width the More menu holds the panels as checkable items; the explanation column waits for a wider screen. */
+function panelItems(item: MenuItem): HTMLButtonElement[] {
+  return PANELS.map(panel => {
+    const { menu, key } = PANEL[panel];
+    const narrow = panel === 'explanation';
+    const made = item(`${menu} (${key})`, () => {
+      if (!narrow) togglePanel(panel);
+    }, 'menuitemcheckbox');
+    made.prepend(icon(`panel-${panel}`));
+    made.setAttribute('aria-checked', String(shows(panel)));
+    if (narrow) {
+      made.setAttribute('aria-disabled', 'true');
+      made.append(el('span', { className: 'menu-note' }, 'Wider screens'));
+    }
+    return made;
   });
-  const group = el('div', { className: 'segmented icons layout-switch' }, ...choices);
-  group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', 'Layout');
-  return group;
 }
 
 /** The data-key of the button whose menu is open, the header's More or a note's actions; one at a time, kept across redraws. */
@@ -402,12 +455,14 @@ document.addEventListener('click', event => {
   if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
 });
 
-/** The header's More menu, which holds what the header has no room for at phone width. */
+const moreButton = () => document.querySelector('[data-key="more"]');
+
+/** The header's More menu: Appearance, and at phone width what the header has no room for. */
 function moreMenu(): HTMLElement {
   const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
     menuOpen = menuOpen === 'more' ? null : 'more';
     render();
-    document.querySelector<HTMLElement>('.menu [role=menuitem]')?.focus();
+    document.querySelector<HTMLElement>('.menu [role^=menuitem]')?.focus();
   } }, icon('more'));
   button.setAttribute('aria-label', 'More');
   button.setAttribute('aria-haspopup', 'menu');
@@ -415,28 +470,23 @@ function moreMenu(): HTMLElement {
   button.dataset['key'] = 'more';
   const box = el('div', { className: 'more-menu' }, button);
   if (menuOpen !== 'more') return box;
-  const choices: [string, () => void][] = stopped
-    ? []
-    : [
-        ...(walkthrough.steps.length && currentView().kind !== 'deck' ? [['Swipe to decide', () => { go('deck'); }] as [string, () => void]] : []),
-        ['Stop', () => void stop()],
-      ];
-  const item = (label: string, choose: () => void, role = 'menuitem') => {
+  const item: MenuItem = (label, choose, role = 'menuitem') => {
     const made = el('button', { type: 'button', tabIndex: -1, onclick: () => { closeMenu(); choose(); } }, label);
     made.setAttribute('role', role);
     made.dataset['key'] = `menu:${label}`;
     return made;
   };
-  const actions = choices.map(([label, choose]) => item(label, choose));
-  const layouts = LAYOUTS.map(({ id, label }) => {
-    const radio = item(label, () => { chooseLayout(id); }, 'menuitemradio');
-    radio.setAttribute('aria-checked', String(id === layout));
-    return radio;
-  });
-  const items = [...actions, ...layouts];
+  const swipe =
+    phone.matches && !stopped && walkthrough.steps.length && currentView().kind !== 'deck' ? [item('Swipe to decide', () => { go('deck'); })] : [];
+  const toggles = phone.matches ? panelItems(item) : [];
+  const after = [
+    item('Appearance', () => { appearanceDialog(moreButton); }),
+    ...(!phone.matches ? [item('Keyboard shortcuts', () => { shortcutSheet(moreButton); })] : stopped ? [] : [item('Stop', () => void stop())]),
+  ];
+  const items = [...swipe, ...toggles, ...after];
   const separator = el('div', { className: 'menu-separator' });
   separator.setAttribute('role', 'separator');
-  const menu = el('div', { className: 'menu' }, ...actions, ...(actions.length ? [separator] : []), ...layouts);
+  const menu = el('div', { className: 'menu' }, ...swipe, ...toggles, ...(toggles.length ? [separator] : []), ...after);
   menu.setAttribute('role', 'menu');
   menu.setAttribute('aria-label', 'More');
   menu.onkeydown = event => {
@@ -467,7 +517,7 @@ function drawHeader(): void {
   around(
     headerEnd,
     statusView(),
-    [layoutSwitch()],
+    [],
     [...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop')]), moreMenu()],
   );
   around(
@@ -475,8 +525,8 @@ function drawHeader(): void {
     headerEnd,
     [
       el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
-      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
       ...kindView(walkthrough.kindLabel),
+      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
       ...progressView(),
     ],
     [],
@@ -599,11 +649,19 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   const button = el('button', { type: 'button', className: classes.join(' ') }, ...(look === 'offer' ? [icon('message')] : []), action.label);
   button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
   button.dataset['key'] = `action:${key}:${action.id}`;
+  const shortcut = item.type === 'step' && STEP_KEYS[action.id];
+  if (shortcut) button.title = withKey(shortcut.tip(action.label), shortcut.key);
   button.onclick = () => {
     take(item, action);
   };
   return button;
 }
+
+/** The step actions a key takes, and the tooltip that names it. */
+const STEP_KEYS: Record<string, { key: string; tip: (label: string) => string }> = {
+  approve: { key: 'A', tip: label => `${label} and go to the next step` },
+  flag: { key: 'F', tip: label => label },
+};
 
 /** An action that asks for words opens its form; any other decides at once. */
 function take(item: Item, action: Action): void {
@@ -1549,7 +1607,7 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
   if (taken) return [el('div', { className: 'action-bar' }, takingForm(item, taken, ''))];
   const draft = `ask:${step.id}`;
-  const ask = lineBox(draft, 'Ask about this step', 'Ask about this step…', () => {
+  const ask = lineBox(draft, 'Ask about this step', 'Ask about this step… ( / )', () => {
     void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
   });
   const decided = stepDecided(step) && !changing.has(key);
@@ -1572,37 +1630,32 @@ function stepAsks(step: Step): HTMLElement[] {
   return asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : [];
 }
 
-// The split step and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
+// The step in the explanation column and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
 const prosePane = el('div', { className: 'prose' });
 const codePane = el('div', { className: 'code' });
 const splitStep = el('section', { className: 'step split' }, prosePane, codePane);
 
-/**
- * In "Explanation beside code" the prose pane leads with the notices, then the step, its actions and the checklist; the files fill the code pane.
- * At phone width the panes stack under the step select: the step, its code, then the checklist, with the actions docked to the foot as in every other layout.
- */
+/** In the explanation column the prose pane leads with the notices, then the step and its actions; the files fill the code pane. */
 function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
   const { prose, code } = stepBody(step);
-  const bar = actionBar(step);
-  const stacked = layout === 'split' && phone.matches;
+  const explaining = shows('explanation');
   const parts = [
     el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
     ...prose,
-    ...(layout === 'split' ? [] : code),
+    ...(explaining ? [] : code),
     ...stepAsks(step),
-    ...(stacked ? [] : bar),
+    ...actionBar(step),
   ];
-  let section = splitStep;
-  if (layout === 'split') {
-    const beside = [...besideChecklist(view), ...sessionRow(view)];
-    prosePane.replaceChildren(...notices, ...(stacked ? [] : [navRow(view)]), ...parts, ...(stacked ? [] : beside));
-    codePane.replaceChildren(...code);
-    while (codePane.nextSibling) codePane.nextSibling.remove();
-    if (stacked) splitStep.append(...(beside.length ? [el('div', { className: 'beside' }, ...beside)] : []), ...bar);
-  } else section = el('section', { className: 'step' }, ...parts);
-  section.setAttribute('aria-labelledby', title.id);
-  return section;
+  if (!explaining) {
+    const section = el('section', { className: 'step' }, ...parts);
+    section.setAttribute('aria-labelledby', title.id);
+    return section;
+  }
+  prosePane.replaceChildren(panelHead('explanation', el('span', {}, PANEL.explanation.title)), ...notices, ...navRow(view), ...parts);
+  codePane.replaceChildren(...code);
+  splitStep.setAttribute('aria-labelledby', title.id);
+  return splitStep;
 }
 
 /** What a state icon says to a screen reader where no text beside it says so already. */
@@ -1734,7 +1787,7 @@ function queueView(view: View): HTMLElement[] {
   const counted = steps.length > 0 || rows.length > 0;
   const leftCount = el('span', { className: 'counter' }, String(rows.length));
   leftCount.dataset['motion'] = 'count:left';
-  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [leftCount] : []));
+  const head = panelHead('queue', el('h2', { className: 'queue-head', id: 'queue-head' }, PANEL.queue.title, ...(counted ? [leftCount] : [])));
   const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
   const decided = steps.filter(stepDecided);
   const open = opened.has('decided') || (current !== undefined && decided.includes(current));
@@ -1859,19 +1912,18 @@ function endView(): HTMLElement {
   return section;
 }
 
-/** What has no step (files in none, detached notes and links), then what the session said outside any step; a question still waiting shows in its own box instead. */
-function sessionThreads(stepless = true): HTMLElement[] {
+/** `notices` (files in no step, what is detached), then what the session said outside any step; a question still waiting shows in its own box instead. */
+function sessionThreads(notices: HTMLElement[]): HTMLElement[] {
   const waiting = new Set(waitingQuestions().map(message => message.id));
   const threads = sessionMessages()
     .filter(message => !waiting.has(message.id))
     .map(message => el('div', { className: 'thread' }, said(message), ...followUps(message).map(said)));
-  const notices = stepless ? [...unplacedNotice(), ...detachedView()] : [];
   return threads.length || notices.length ? [...notices, ...threads] : [el('p', { className: 'muted' }, 'Nothing from the session yet.')];
 }
 
 function sessionView(stepless = true): HTMLElement {
   const title = el('h2', { className: 'step-title', id: 'from-session' }, 'From the session');
-  const section = el('section', { className: 'messages' }, el('div', { className: 'title-row' }, title), ...sessionThreads(stepless));
+  const section = el('section', { className: 'messages' }, el('div', { className: 'title-row' }, title), ...sessionThreads(stepless ? [...unplacedNotice(), ...detachedView()] : []));
   section.setAttribute('aria-labelledby', title.id);
   return section;
 }
@@ -2222,11 +2274,11 @@ function viewBody(view: View, notices: HTMLElement[]): HTMLElement {
   }
 }
 
-/** The checklist sits beside the step in every layout but the default, unless the main pane shows it already. */
-function besideChecklist(view: View): HTMLElement[] {
+/** The checklist panel: the checklist, compact, and the whole walkthrough's actions, unless the main pane shows them already. */
+function checklistPanel(view: View): HTMLElement[] {
+  if (view.kind === 'checklist' || view.kind === 'end') return [];
   const { checklist } = walkthrough;
-  if (layout === 'queue' || !checklist || view.kind === 'checklist' || view.kind === 'end') return [];
-  return [checklistView(checklist, view, true)];
+  return [...(checklist ? [checklistView(checklist, view, true)] : []), ...wholeView()];
 }
 
 /** Where Previous and Next lead: the steps in order, then the end; from a page of its own, back to the steps. */
@@ -2240,11 +2292,12 @@ function neighbours(view: View): [string | null, string | null] {
   return [null, steps.find(step => !stepDecided(step))?.id ?? (steps.length ? 'end' : null)];
 }
 
-/** "Explanation beside code" has no rail, so the prose pane walks the steps with Previous and Next. */
-function navRow(view: View): HTMLElement {
+/** With the queue hidden, Previous and Next walk the steps from above the title. */
+function navRow(view: View): HTMLElement[] {
+  if (shows('queue') || view.kind === 'preparing' || view.kind === 'deck') return [];
   const [previous, next] = neighbours(view);
-  const button = (label: string, shape: IconName, to: string | null) => {
-    const made = el('button', { type: 'button', className: 'icon-button', title: label, disabled: to === null }, icon(shape));
+  const button = (label: string, key: string, shape: IconName, to: string | null) => {
+    const made = el('button', { type: 'button', className: 'icon-button', title: withKey(label, key), disabled: to === null }, icon(shape));
     made.setAttribute('aria-label', label);
     made.dataset['key'] = `nav:${shape}`;
     made.onclick = () => {
@@ -2252,13 +2305,15 @@ function navRow(view: View): HTMLElement {
     };
     return made;
   };
-  const nav = el('nav', { className: 'step-nav' }, button('Previous step', 'previous', previous), button('Next step', 'next', next));
+  const at = view.kind === 'step' ? [el('span', { className: 'step-number' }, `Step ${String(stepNumber(view.step.id))}`)] : [];
+  const nav = el('nav', { className: 'step-nav' }, button('Previous step', 'K', 'previous', previous), ...at, button('Next step', 'J', 'next', next));
   nav.setAttribute('aria-label', 'Steps');
-  return nav;
+  return [nav];
 }
 
-type Tool = 'notes' | 'checklist' | 'session';
-/** The tool panel's tab the person chose; until then the checklist, or the notes when there is none. */
+type Tool = 'notes' | 'session' | 'detached';
+type Tab = { id: Tool; label: string; count: string; body: () => HTMLElement[] };
+/** The tool panel's tab the person chose; until then the first. */
 let tool: Tool | null = null;
 
 const stepNotesOf = (step: Step) =>
@@ -2301,27 +2356,24 @@ function noteIndex(step: Step, notes: Note[]): HTMLElement[] {
   return [el('ul', { className: 'note-index' }, ...rows)];
 }
 
-/** "Tool panel": the step's notes, the checklist and what the session said, as tabs under the step. */
-function toolPanel(view: View): HTMLElement[] {
-  const step = view.kind === 'step' ? view.step : undefined;
-  const checklist = besideChecklist(view);
-  const tabs: { id: Tool; label: string; count: string; body: () => HTMLElement[] }[] = [];
-  if (step) {
+/** The tool panel's tabs: the step's notes, what the session said and what is detached, each but where the main pane shows it. */
+function toolTabs(view: View): Tab[] {
+  const tabs: Tab[] = [];
+  if (view.kind === 'step') {
+    const { step } = view;
     const notes = stepNotesOf(step);
     tabs.push({ id: 'notes', label: 'Notes', count: String(notes.length), body: () => noteIndex(step, notes) });
   }
-  const items = walkthrough.checklist?.items ?? [];
-  if (checklist.length) tabs.push({ id: 'checklist', label: 'Checklist', count: metCount(items) ?? String(items.length), body: () => checklist });
-  // As with the checklist, not again beside the main pane that shows it.
-  if (view.kind !== 'session')
-    tabs.push({
-      id: 'session',
-      label: 'From the session',
-      count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
-      body: () => sessionThreads(),
-    });
-  const chosen = tool ?? (walkthrough.checklist ? 'checklist' : 'notes');
-  const shown = tabs.find(tab => tab.id === chosen) ?? tabs[0];
+  if (view.kind === 'session') return tabs;
+  const said = sessionMessages().length + (walkthrough.unplaced?.length ?? 0);
+  if (said) tabs.push({ id: 'session', label: 'From the session', count: String(said), body: () => sessionThreads(unplacedNotice()) });
+  const gone = detachedCount();
+  if (gone) tabs.push({ id: 'detached', label: 'Detached', count: String(gone), body: detachedView });
+  return tabs;
+}
+
+function toolPanel(tabs: Tab[]): HTMLElement[] {
+  const shown = tabs.find(tab => tab.id === tool) ?? tabs[0];
   if (!shown) return [];
   const select = (id: Tool) => {
     tool = id;
@@ -2340,7 +2392,7 @@ function toolPanel(view: View): HTMLElement[] {
     };
     return button;
   });
-  const list = el('div', { className: 'tabs' }, ...buttons);
+  const list = el('div', { className: 'tab-list' }, ...buttons);
   list.setAttribute('role', 'tablist');
   list.setAttribute('aria-label', 'Tool panel');
   list.onkeydown = event => {
@@ -2354,7 +2406,24 @@ function toolPanel(view: View): HTMLElement[] {
   const body = el('div', { className: `tool-body ${shown.id}`, id: 'tool-body' }, ...shown.body());
   body.setAttribute('role', 'tabpanel');
   body.setAttribute('aria-labelledby', `tab-${shown.id}`);
-  return [list, body];
+  return [panelHead('tools', list), body];
+}
+
+/** The buttons hidden windows leave on their edges; an edge with none is not drawn. */
+function drawEdges(view: View, side: HTMLElement[], tabs: Tab[]): void {
+  const hidden = (panel: Panel) => !shows(panel) && !phone.matches;
+  leftEdge.replaceChildren(
+    ...(hidden('queue') ? [showButton('queue', PANEL.queue.title, queue.querySelector('.queue-head .counter')?.textContent ?? null)] : []),
+    ...(hidden('explanation') && view.kind === 'step' ? [showButton('explanation', PANEL.explanation.title, null)] : []),
+  );
+  const items = walkthrough.checklist?.items ?? [];
+  rightEdge.replaceChildren(...(hidden('checklist') && side.length ? [showButton('checklist', PANEL.checklist.title, metCount(items))] : []));
+  bottomStrip.replaceChildren(
+    ...(hidden('tools')
+      ? tabs.map(tab => showButton('tools', tab.label, tab.count, () => { tool = tab.id; }))
+      : []),
+  );
+  for (const edge of [leftEdge, rightEdge, bottomStrip]) edge.hidden = !edge.hasChildNodes();
 }
 
 /** A redraw under a pressed pointer would swap the control out before its click lands, so it waits for the release. */
@@ -2444,7 +2513,6 @@ function render(): void {
   const typing = focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement ? focused : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
-  document.body.dataset['layout'] = layout;
   document.body.dataset['view'] = view.kind;
   // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
   const panes = [queue, main, prosePane, codePane, side, tools];
@@ -2471,18 +2539,23 @@ function render(): void {
       ? [el('section', { className: 'step split' }, el('div', { className: 'prose' }, ...prosePane.childNodes), el('div', { className: 'code' }, ...codePane.childNodes))]
       : [...main.childNodes].filter(node => node !== leavingPane);
   drawHeader();
+  // Drawn while hidden too, as its edge button counts what it holds.
   queue.replaceChildren(...queueView(view));
+  queue.hidden = !shows('queue');
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
-  const split = layout === 'split' && view.kind === 'step';
-  main.classList.toggle('split', split);
-  const shown = [...(split ? [] : [...(layout === 'split' && view.kind !== 'preparing' ? [navRow(view)] : []), ...notices]), viewBody(view, notices)];
+  const explaining = shows('explanation') && view.kind === 'step';
+  main.classList.toggle('split', explaining);
+  const shown = [...(explaining ? [] : [...navRow(view), ...notices]), viewBody(view, notices)];
   const present = [...main.children].filter(child => child !== leavingPane);
-  // Putting the split step back would lose where its panes were scrolled.
+  // Putting the explanation column's step back would lose where its panes were scrolled.
   if (shown.length !== present.length || shown.some((part, at) => present[at] !== part)) main.replaceChildren(...shown);
-  side.replaceChildren(...(layout === 'three' ? besideChecklist(view) : []));
+  const beside = checklistPanel(view);
+  side.replaceChildren(...(shows('checklist') && beside.length ? [panelHead('checklist', el('span', {}, PANEL.checklist.title)), ...beside] : []));
   side.hidden = !side.hasChildNodes();
-  tools.replaceChildren(...(layout === 'panel' ? toolPanel(view) : []));
+  const tabs = toolTabs(view);
+  tools.replaceChildren(...(shows('tools') ? toolPanel(tabs) : []));
   tools.hidden = !tools.hasChildNodes();
+  drawEdges(view, beside, tabs);
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });
@@ -2616,9 +2689,6 @@ function moveDecided(newly: string[], counts: Map<string, string>, before = new 
       play(key, 'tick', reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out' });
 }
 
-const isTyping = (target: EventTarget | null) =>
-  target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
-
 /** V marks the file the keyboard is in, or else the step's first file not viewed yet. */
 function viewedByKey(step: Step, target: EventTarget | null): void {
   const files = [...main.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].filter(file => !file.hidden && !leavingPane?.contains(file));
@@ -2641,18 +2711,58 @@ document.addEventListener('keydown', event => {
     cancelPick();
     return;
   }
-  if (isTyping(event.target)) return;
-  const step = event.target instanceof Element && event.target.closest('.menu') ? undefined : currentStep();
-  if (step && event.key === 'v') viewedByKey(step, event.target);
-  if (step && event.key === 'c') {
-    const at = lineAt(event);
-    if (picked?.ended && picked.mode === 'choose') choosePicked('comment');
-    else if (at) startComment(step, at.file, at.line);
-  }
+  if (runShortcut(event) || isTyping(event.target) || document.querySelector('dialog[open]')) return;
   // Inside what scrolls sideways the arrows scroll it, so long lines stay reachable from the keyboard.
-  const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu') !== null;
-  if (event.key === 'j' || (event.key === 'ArrowRight' && !sideways)) stepBy(1);
-  else if (event.key === 'k' || (event.key === 'ArrowLeft' && !sideways)) stepBy(-1);
+  const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu, dialog') !== null;
+  if (event.key === 'ArrowRight' && !sideways) stepBy(1);
+  else if (event.key === 'ArrowLeft' && !sideways) stepBy(-1);
+});
+
+/** Takes the open step's action `id`, while the step is undecided or its decision is being changed. */
+function takeStepAction(id: string): void {
+  const step = currentStep();
+  if (!step || readOnly || stopped) return;
+  const item: Item = { type: 'step', id: step.id };
+  const key = itemKey(item);
+  const action = walkthrough.actions[key]?.find(one => one.id === id);
+  if (action && (!stepDecided(step) || changing.has(key))) take(item, action);
+}
+
+/** Where the focus goes back to once a popover closes: the control that had it, or the one a redraw put in its place. */
+function focusNow(): () => Element | null {
+  const had = document.activeElement;
+  const key = had instanceof HTMLElement ? had.dataset['key'] : undefined;
+  return () => (had?.isConnected ? had : key === undefined ? null : document.querySelector(`[data-key="${CSS.escape(key)}"]`));
+}
+
+bind('j', () => { stepBy(1); });
+bind('k', () => { stepBy(-1); });
+bind('a', () => { takeStepAction('approve'); });
+bind('f', () => { takeStepAction('flag'); });
+bind('/', () => {
+  const step = currentStep();
+  if (step) document.querySelector<HTMLElement>(`[data-draft="${CSS.escape(`ask:${step.id}`)}"]`)?.focus();
+});
+bind('v', event => {
+  const step = currentStep();
+  if (step) viewedByKey(step, event.target);
+});
+bind('c', event => {
+  const step = currentStep();
+  const at = lineAt(event);
+  if (picked?.ended && picked.mode === 'choose') choosePicked('comment');
+  else if (step && at) startComment(step, at.file, at.line);
+});
+bind('g s', () => {
+  if (walkthrough.steps.length) go('end');
+});
+bind('?', () => {
+  shortcutSheet(focusNow());
+});
+PANELS.forEach((panel, at) => {
+  bind(String(at + 1), () => {
+    togglePanel(panel);
+  });
 });
 
 phone.addEventListener('change', render);
@@ -2678,6 +2788,9 @@ if (exported) {
   main.className = 'export';
   document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
 }
+
+if (exported?.viewer) showViewer(exported.viewer);
+else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
 
 ({ walkthrough, session } = exported
   ? exported

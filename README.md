@@ -12,7 +12,7 @@ In both cases I want to actually understand the change before I sign off, not sc
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/main-dark.png">
-  <img alt="A walkthrough in the What's left layout: what still needs you on the left, the open step with its explanation, diff and notes on the right" src="docs/images/main-light.png">
+  <img alt="A walkthrough with its default panels: what still needs you on the left, the open step with its explanation, diff and notes on the right" src="docs/images/main-light.png">
 </picture>
 
 ## Install
@@ -111,28 +111,44 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    Notes whose lines changed stay on the page as detached, never dropped.
 
 Changed Markdown and image files get a Diff / Preview switch, with Before and After for images.
-The page follows your system's light or dark theme.
 
-### Layouts
+### Panels
 
-The header switches between four layouts with the same functions: "What's left" (the default, a queue of what still needs you), "Three columns", "Explanation beside code" and "Tool panel".
-The page remembers your choice.
+Around the step sit four panels, shown or hidden on their own: "To review" (the queue of what still needs you), the checklist with the whole walkthrough's actions, the explanation column (the step's explanation beside its code) and the tool panel (the step's notes, what the session said and what is detached, in tabs under the step).
+Each panel hides from the button in its title bar and waits as a labelled button on its edge, so nothing is ever out of reach; the keys `1` to `4` show and hide them too.
+By default only the queue is open.
+Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu.
 
 | | |
 | --- | --- |
-| ![What's left](docs/images/layout-queue.png) | ![Three columns](docs/images/layout-three.png) |
-| ![Explanation beside code](docs/images/layout-split.png) | ![Tool panel](docs/images/layout-panel.png) |
+| ![The default panels: the queue and the step](docs/images/layout-queue.png) | ![The checklist panel at the right](docs/images/layout-three.png) |
+| ![The explanation column beside the code](docs/images/layout-split.png) | ![The tool panel under the step](docs/images/layout-panel.png) |
 
 It works on a phone as well.
-At 390px the actions move to a bottom bar, and "Swipe to decide" in the More menu lets you swipe a step right to approve or left to flag.
+At 390px the actions move to a bottom bar, the panels stack under the step and their switches move into the More menu, and "Swipe to decide" there lets you swipe a step right to approve or left to flag.
 
 <img alt="A walkthrough at 390px wide" src="docs/images/phone.png" width="300">
 
 ### Keyboard
 
-1. `j` and `k`, or the right and left arrows, move between steps; inside a diff or a code block the arrows scroll it instead.
-2. To pick lines, press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
-3. Escape cancels a line pick.
+Press `?` for the shortcut sheet; every tooltip names its key too.
+Keys do nothing while you type, inside a menu or while a popover is open.
+
+| Key | Does |
+| --- | --- |
+| `j` / `k` | Next / previous step; the right and left arrows too, except inside a diff or a code block, which they scroll |
+| `a` | Approve and go to the next step |
+| `f` | Flag (asks for a note) |
+| `/` | Ask about this step |
+| `c` | Comment on the picked lines, or on the line whose number has the focus |
+| `v` | Mark the file the focus is in as viewed, or else the step's first file not viewed yet |
+| `1` to `4` | Show or hide the queue, the checklist, the explanation column or the tool panel |
+| `g` then `s` | Go to the end of the walkthrough |
+| `?` | The shortcut sheet |
+
+To pick lines, click a line number and Shift-click another, or press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
+The picked lines then offer Ask about lines and Comment.
+Escape cancels a line pick.
 
 ### Share it and find it again
 
