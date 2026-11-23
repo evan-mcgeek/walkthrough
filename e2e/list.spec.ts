@@ -26,10 +26,14 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await page.goto(repo.url());
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Walkthroughs');
+  await expect(page.getByRole('banner')).toContainText('shop');
+  await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Last activity']);
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login change', 'range-Login%20change', 'Preparing', /\d/]);
-  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/login', 'branch-feature~login', '1 of 1 step decided, 1 read', /\d/]);
+  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerange-Login%20change', 'Preparing', /now|ago/]);
+  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', /now|ago/]);
+  // The full time stays at hand behind the relative one.
+  await expect(rows.nth(2).locator('time')).toHaveAttribute('datetime', /^\d{4}-\d\d-\d\dT/);
 
   await rows.nth(2).getByRole('button', { name: 'feature/login' }).click();
 
@@ -46,5 +50,6 @@ test('the Stop button ends the list', async ({ page, repo, url }) => {
   await page.getByRole('button', { name: 'Stop' }).click();
 
   await expect(page.getByText('The list has stopped. You can close this tab.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
   await expect(page.request.get(list)).rejects.toThrow();
 });

@@ -2,22 +2,27 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from './walkthrough';
 
+test.use({ files: { 'gen.txt': 'made\n' } });
+
 const steps = [
-  { title: 'Login check', explanation: 'Adds a **login** function.', files: ['login.ts'] },
+  { title: 'Login check', explanation: 'Adds a **login** function.', files: ['login.ts'], assumptions: ['Callers check the result.'] },
   { title: 'App version', explanation: 'Bumps the app constant.', files: ['app.ts'] },
+  { title: 'Generated', folded: true, files: [{ path: 'gen.txt', reason: 'Made by a tool.' }], problems: ['Out of date.'] },
 ];
 
-test('the export shows the walkthrough read-only, offline, from its one file', async ({ page, context, repo, url }) => {
+test('the export shows the whole walkthrough as one read-only document, offline, from its one file', async ({ page, context, repo, url }) => {
   await expect(page).toHaveURL(url);
   repo.record(steps);
-  repo.record({ title: 'Criteria', items: [{ status: 'met', text: 'A person can log in.', steps: ['1'] }] }, 'checklist');
+  repo.record({ title: 'Criteria', items: [{ status: 'met', text: 'A person can log in.', steps: ['1', '2'] }] }, 'checklist');
   repo.record([{ step: '1', file: 'login.ts', lines: [1, 1], label: 'Risk', text: 'Everyone gets in.' }], 'note');
   const step = page.getByRole('region', { name: 'Login check' });
   const note = step.getByRole('article', { name: 'Risk' });
   await note.getByRole('textbox', { name: 'Reply' }).fill('Is that on purpose?');
   await note.getByRole('button', { name: 'Reply' }).click();
   await expect(note.getByText('Is that on purpose?')).toBeVisible();
-  await step.getByRole('button', { name: 'Approve' }).click();
+  await step.getByRole('button', { name: 'Flag' }).click();
+  await page.getByRole('textbox', { name: 'Note' }).fill('Check the password.');
+  await page.getByRole('button', { name: 'Send' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   const out = path.join(path.dirname(repo.dir), 'login.html');
   expect(repo.run('export', '--out', out).status).toBe(0);
@@ -31,27 +36,40 @@ test('the export shows the walkthrough read-only, offline, from its one file', a
   exported.on('request', request => {
     if (!request.url().startsWith('file:')) problems.push(request.url());
   });
-  await exported.goto(`${pathToFileURL(out).href}#1`);
+  await exported.goto(pathToFileURL(out).href);
 
   await expect(exported.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(exported.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
+  await expect(exported.getByText(/^Walkthrough export · .+ · 3 steps, 1 decided$/)).toBeVisible();
   const shown = exported.getByRole('region', { name: 'Login check' });
+  await expect(shown.getByRole('heading', { level: 2 })).toHaveText('1Login checkDecided: Flag');
   await expect(shown.getByRole('strong')).toHaveText('login');
+  await expect(shown.getByText('Check the password.')).toBeVisible();
+  await expect(shown.getByText('Callers check the result.')).toBeVisible();
   await expect(shown.locator('.d2h-ins')).toContainText(['export const login = () => true;']);
-  await expect(shown.getByText('Decided: Approve', { exact: true })).toBeVisible();
   const shownNote = shown.getByRole('article', { name: 'Risk' });
   await expect(shownNote.getByText('Everyone gets in.')).toBeVisible();
   await expect(shownNote.getByText('Is that on purpose?')).toBeVisible();
-  await expect(exported.getByRole('button')).toHaveText(['1 decided']);
+  const other = exported.getByRole('region', { name: 'App version' });
+  await expect(other.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(other.locator('.d2h-del')).toContainText(['export const app = 1;']);
+  const folded = exported.getByRole('region', { name: 'Generated' });
+  await expect(folded.getByRole('list', { name: 'Folded files' })).toContainText('gen.txt');
+  await expect(folded.getByText('Made by a tool.')).toBeVisible();
+  await expect(folded.getByText('Out of date.')).toBeVisible();
+  await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
+  await expect(exported.getByRole('button')).toHaveCount(0);
   await expect(exported.getByRole('textbox')).toHaveCount(0);
   await expect(exported.getByRole('status', { name: 'Session' })).toHaveCount(0);
+  await expect(exported.getByRole('navigation')).toHaveCount(0);
+  // The self-hosted code font comes from the file itself, since nothing was fetched.
+  expect(await exported.evaluate(async () => {
+    await document.fonts.ready;
+    return [...document.fonts].some(font => font.family.includes('JetBrains Mono') && font.status === 'loaded');
+  })).toBe(true);
 
-  await exported.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'App version' }).click();
+  await exported.getByRole('region', { name: 'Criteria' }).getByRole('link', { name: 'Step 2' }).click();
 
-  await expect(exported.getByRole('region', { name: 'App version' }).locator('.d2h-del')).toContainText([
-    'export const app = 1;',
-  ]);
-  await exported.keyboard.press('j');
-  await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
+  await expect(exported).toHaveURL(/#2$/);
+  await expect(other.getByRole('heading', { level: 2 })).toBeInViewport();
   expect(problems).toEqual([]);
 });

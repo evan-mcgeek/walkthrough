@@ -28,6 +28,9 @@ describe('walkthrough export', () => {
     expect(html).toContain('export const login = () => true;');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b[^>]*\b(src|href)=/i);
+    // The self-hosted code font travels inside the file.
+    expect(html).toContain('font-src data:');
+    expect(html).toContain('data:font/woff2;base64,');
     expect(html).not.toContain(tokenOf(repo.url()));
     expect(html).not.toContain(repo.dir);
     expect(html).not.toContain(repo.state);

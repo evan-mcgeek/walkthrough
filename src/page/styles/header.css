@@ -167,8 +167,3 @@
     display: block;
   }
 }
-
-.header-note {
-  color: var(--muted);
-  font-size: 13px;
-}
