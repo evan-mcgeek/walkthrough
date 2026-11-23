@@ -117,10 +117,11 @@ test('a step shows read before the server stores it, and storing it neither redr
     'aria-valuetext',
     '0 of 1 step decided, 1 left, 1 read',
   );
-  await step.getByRole('textbox', { name: 'Ask about this step' }).fill('a'.repeat(4001));
-  await step.getByRole('button', { name: 'Ask' }).click();
+  const box = step.getByRole('textbox', { name: 'Ask about this step' });
+  await box.fill('a'.repeat(4001));
+  await box.press('Enter');
   await expect(page.getByRole('alert')).toBeVisible();
-  const ask = await step.getByRole('button', { name: 'Ask' }).elementHandle();
+  const approve = await step.getByRole('button', { name: 'Approve' }).elementHandle();
 
   const stored = page.waitForResponse('**/read?*');
   release();
@@ -129,5 +130,5 @@ test('a step shows read before the server stores it, and storing it neither redr
   await (await page.waitForRequest('**/data/walkthrough.json')).response();
 
   await expect(page.getByRole('alert')).toBeVisible();
-  expect(await ask.evaluate(node => node.isConnected)).toBe(true);
+  expect(await approve.evaluate(node => node.isConnected)).toBe(true);
 });
