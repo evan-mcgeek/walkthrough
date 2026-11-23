@@ -31,7 +31,7 @@ Every rule here is a default; edit any of it.
 ## Checklist
 
 - When the ticket or spec has acceptance criteria, record them as a checklist titled "Acceptance criteria", one item per criterion, linked to the steps that deliver it.
-- Statuses: "met", "partly met" or "not shown".
+- Statuses: "met", "partly met" or "not shown", marked "met", "partly" and "not-met".
 - Add one last item, "Serves no criterion", linked to every step that delivers none of them.
 
 ## Reviewers and findings
@@ -56,6 +56,7 @@ Every rule here is a default; edit any of it.
 - A finding: Accept, and Reject (asks for a note with the reason).
 - A draft: Post (lets me edit the text first), and Drop.
 - The rest of the actions are listed with each kind of walkthrough below.
+- When I undo a decision, take back what you did for it, such as a fix list entry or a draft, and tell me when something already went out and cannot be taken back.
 
 ## Rejected findings become conventions
 

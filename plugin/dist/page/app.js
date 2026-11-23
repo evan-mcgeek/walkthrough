@@ -110,9 +110,9 @@ var require_core = __commonJS({
        * @param {Tree} parseTree - the parse tree (must support `walk` API)
        * @param {{classPrefix: string}} options
        */
-      constructor(parseTree, options) {
+      constructor(parseTree, options2) {
         this.buffer = "";
-        this.classPrefix = options.classPrefix;
+        this.classPrefix = options2.classPrefix;
         parseTree.walk(this);
       }
       /**
@@ -235,9 +235,9 @@ var require_core = __commonJS({
       /**
        * @param {*} options
        */
-      constructor(options) {
+      constructor(options2) {
         super();
-        this.options = options;
+        this.options = options2;
       }
       /**
        * @param {string} text
@@ -939,7 +939,7 @@ var require_core = __commonJS({
       let SAFE_MODE = true;
       const LANGUAGE_NOT_FOUND = "Could not find the language '{}', did you forget to load/include a language module?";
       const PLAINTEXT_LANGUAGE = { disableAutodetect: true, name: "Plain text", contains: [] };
-      let options = {
+      let options2 = {
         ignoreUnescapedHTML: false,
         throwUnescapedHTML: false,
         noHighlightRe: /^(no-?highlight)$/i,
@@ -952,17 +952,17 @@ var require_core = __commonJS({
         __emitter: TokenTreeEmitter
       };
       function shouldNotHighlight(languageName) {
-        return options.noHighlightRe.test(languageName);
+        return options2.noHighlightRe.test(languageName);
       }
-      function blockLanguage(block2) {
-        let classes = block2.className + " ";
-        classes += block2.parentNode ? block2.parentNode.className : "";
-        const match = options.languageDetectRe.exec(classes);
+      function blockLanguage(block3) {
+        let classes = block3.className + " ";
+        classes += block3.parentNode ? block3.parentNode.className : "";
+        const match = options2.languageDetectRe.exec(classes);
         if (match) {
           const language = getLanguage2(match[1]);
           if (!language) {
             warn(LANGUAGE_NOT_FOUND.replace("{}", match[1]));
-            warn("Falling back to no-highlight mode for this block.", block2);
+            warn("Falling back to no-highlight mode for this block.", block3);
           }
           return language ? match[1] : "no-highlight";
         }
@@ -1253,7 +1253,7 @@ var require_core = __commonJS({
         let result = "";
         let top = continuation || md;
         const continuations = {};
-        const emitter = new options.__emitter(options);
+        const emitter = new options2.__emitter(options2);
         processContinuations();
         let modeBuffer = "";
         let relevance = 0;
@@ -1328,13 +1328,13 @@ var require_core = __commonJS({
           illegal: false,
           relevance: 0,
           _top: PLAINTEXT_LANGUAGE,
-          _emitter: new options.__emitter(options)
+          _emitter: new options2.__emitter(options2)
         };
         result._emitter.addText(code2);
         return result;
       }
       function highlightAuto(code2, languageSubset) {
-        languageSubset = languageSubset || options.languages || Object.keys(languages);
+        languageSubset = languageSubset || options2.languages || Object.keys(languages);
         const plaintext2 = justTextHighlightResult(code2);
         const results = languageSubset.filter(getLanguage2).filter(autoDetection).map(
           (name) => _highlight(name, code2, false)
@@ -1374,13 +1374,13 @@ var require_core = __commonJS({
           return;
         }
         if (element.children.length > 0) {
-          if (!options.ignoreUnescapedHTML) {
+          if (!options2.ignoreUnescapedHTML) {
             console.warn("One of your code blocks includes unescaped HTML. This is a potentially serious security risk.");
             console.warn("https://github.com/highlightjs/highlight.js/wiki/security");
             console.warn("The element with unescaped HTML:");
             console.warn(element);
           }
-          if (options.throwUnescapedHTML) {
+          if (options2.throwUnescapedHTML) {
             const err = new HTMLInjectionError(
               "One of your code blocks includes unescaped HTML.",
               element.innerHTML
@@ -1409,7 +1409,7 @@ var require_core = __commonJS({
         fire("after:highlightElement", { el: element, result, text: text2 });
       }
       function configure(userOptions) {
-        options = inherit(options, userOptions);
+        options2 = inherit(options2, userOptions);
       }
       const initHighlighting = () => {
         highlightAll();
@@ -1431,7 +1431,7 @@ var require_core = __commonJS({
           wantsHighlight = true;
           return;
         }
-        const blocks = document.querySelectorAll(options.cssSelector);
+        const blocks = document.querySelectorAll(options2.cssSelector);
         blocks.forEach(highlightElement);
       }
       function registerLanguage(languageName, languageDefinition) {
@@ -1691,9 +1691,9 @@ var require_compiler = __commonJS({
         filterLine(seenTag, true);
         return tokens;
       };
-      function cleanTripleStache(token2) {
-        if (token2.n.substr(token2.n.length - 1) === "}") {
-          token2.n = token2.n.substring(0, token2.n.length - 1);
+      function cleanTripleStache(token3) {
+        if (token3.n.substr(token3.n.length - 1) === "}") {
+          token3.n = token3.n.substring(0, token3.n.length - 1);
         }
       }
       function trim(s) {
@@ -1715,40 +1715,40 @@ var require_compiler = __commonJS({
       }
       var allowedInSuper = { "_t": true, "\n": true, "$": true, "/": true };
       function buildTree(tokens, kind, stack, customTags) {
-        var instructions = [], opener = null, tail = null, token2 = null;
+        var instructions = [], opener = null, tail = null, token3 = null;
         tail = stack[stack.length - 1];
         while (tokens.length > 0) {
-          token2 = tokens.shift();
-          if (tail && tail.tag == "<" && !(token2.tag in allowedInSuper)) {
+          token3 = tokens.shift();
+          if (tail && tail.tag == "<" && !(token3.tag in allowedInSuper)) {
             throw new Error("Illegal content in < super tag.");
           }
-          if (Hogan4.tags[token2.tag] <= Hogan4.tags["$"] || isOpener(token2, customTags)) {
-            stack.push(token2);
-            token2.nodes = buildTree(tokens, token2.tag, stack, customTags);
-          } else if (token2.tag == "/") {
+          if (Hogan4.tags[token3.tag] <= Hogan4.tags["$"] || isOpener(token3, customTags)) {
+            stack.push(token3);
+            token3.nodes = buildTree(tokens, token3.tag, stack, customTags);
+          } else if (token3.tag == "/") {
             if (stack.length === 0) {
-              throw new Error("Closing tag without opener: /" + token2.n);
+              throw new Error("Closing tag without opener: /" + token3.n);
             }
             opener = stack.pop();
-            if (token2.n != opener.n && !isCloser(token2.n, opener.n, customTags)) {
-              throw new Error("Nesting error: " + opener.n + " vs. " + token2.n);
+            if (token3.n != opener.n && !isCloser(token3.n, opener.n, customTags)) {
+              throw new Error("Nesting error: " + opener.n + " vs. " + token3.n);
             }
-            opener.end = token2.i;
+            opener.end = token3.i;
             return instructions;
-          } else if (token2.tag == "\n") {
-            token2.last = tokens.length == 0 || tokens[0].tag == "\n";
+          } else if (token3.tag == "\n") {
+            token3.last = tokens.length == 0 || tokens[0].tag == "\n";
           }
-          instructions.push(token2);
+          instructions.push(token3);
         }
         if (stack.length > 0) {
           throw new Error("missing closing tag: " + stack.pop().n);
         }
         return instructions;
       }
-      function isOpener(token2, tags) {
+      function isOpener(token3, tags) {
         for (var i = 0, l = tags.length; i < l; i++) {
-          if (tags[i].o == token2.n) {
-            token2.tag = "#";
+          if (tags[i].o == token3.n) {
+            token3.tag = "#";
             return true;
           }
         }
@@ -1774,27 +1774,27 @@ var require_compiler = __commonJS({
         }
         return "partials: {" + partials.join(",") + "}, subs: " + stringifySubstitutions(codeObj.subs);
       }
-      Hogan4.stringify = function(codeObj, text2, options) {
+      Hogan4.stringify = function(codeObj, text2, options2) {
         return "{code: function (c,p,i) { " + Hogan4.wrapMain(codeObj.code) + " }," + stringifyPartials(codeObj) + "}";
       };
       var serialNo = 0;
-      Hogan4.generate = function(tree, text2, options) {
+      Hogan4.generate = function(tree, text2, options2) {
         serialNo = 0;
         var context = { code: "", subs: {}, partials: {} };
         Hogan4.walk(tree, context);
-        if (options.asString) {
-          return this.stringify(context, text2, options);
+        if (options2.asString) {
+          return this.stringify(context, text2, options2);
         }
-        return this.makeTemplate(context, text2, options);
+        return this.makeTemplate(context, text2, options2);
       };
       Hogan4.wrapMain = function(code2) {
         return 'var t=this;t.b(i=i||"");' + code2 + "return t.fl();";
       };
       Hogan4.template = Hogan4.Template;
-      Hogan4.makeTemplate = function(codeObj, text2, options) {
+      Hogan4.makeTemplate = function(codeObj, text2, options2) {
         var template = this.makePartials(codeObj);
         template.code = new Function("c", "p", "i", this.wrapMain(codeObj.code));
-        return new this.template(template, text2, this, options);
+        return new this.template(template, text2, this, options2);
       };
       Hogan4.makePartials = function(codeObj) {
         var key2, template = { subs: {}, partials: codeObj.partials, name: codeObj.name };
@@ -1872,17 +1872,17 @@ var require_compiler = __commonJS({
         }
         return context;
       };
-      Hogan4.parse = function(tokens, text2, options) {
-        options = options || {};
-        return buildTree(tokens, "", [], options.sectionTags || []);
+      Hogan4.parse = function(tokens, text2, options2) {
+        options2 = options2 || {};
+        return buildTree(tokens, "", [], options2.sectionTags || []);
       };
       Hogan4.cache = {};
-      Hogan4.cacheKey = function(text2, options) {
-        return [text2, !!options.asString, !!options.disableLambda, options.delimiters, !!options.modelGet].join("||");
+      Hogan4.cacheKey = function(text2, options2) {
+        return [text2, !!options2.asString, !!options2.disableLambda, options2.delimiters, !!options2.modelGet].join("||");
       };
-      Hogan4.compile = function(text2, options) {
-        options = options || {};
-        var key2 = Hogan4.cacheKey(text2, options);
+      Hogan4.compile = function(text2, options2) {
+        options2 = options2 || {};
+        var key2 = Hogan4.cacheKey(text2, options2);
         var template = this.cache[key2];
         if (template) {
           var partials = template.partials;
@@ -1891,7 +1891,7 @@ var require_compiler = __commonJS({
           }
           return template;
         }
-        template = this.generate(this.parse(this.scan(text2, options.delimiters), text2, options), text2, options);
+        template = this.generate(this.parse(this.scan(text2, options2.delimiters), text2, options2), text2, options2);
         return this.cache[key2] = template;
       };
     })(typeof exports !== "undefined" ? exports : Hogan);
@@ -1903,11 +1903,11 @@ var require_template = __commonJS({
   "node_modules/@profoundlogic/hogan/lib/template.js"(exports) {
     var Hogan4 = {};
     (function(Hogan5) {
-      Hogan5.Template = function(codeObj, text2, compiler, options) {
+      Hogan5.Template = function(codeObj, text2, compiler, options2) {
         codeObj = codeObj || {};
         this.r = codeObj.code || this.r;
         this.c = compiler;
-        this.options = options || {};
+        this.options = options2 || {};
         this.text = text2 || "";
         this.partials = codeObj.partials || {};
         this.subs = codeObj.subs || {};
@@ -3766,7 +3766,7 @@ function clojure(hljs2) {
     end: "[\\]\\}]",
     relevance: 0
   };
-  const KEY = {
+  const KEY2 = {
     className: "symbol",
     begin: "[:]{1,2}" + SYMBOL_RE
   };
@@ -3792,7 +3792,7 @@ function clojure(hljs2) {
     REGEX,
     STRING,
     COMMENT,
-    KEY,
+    KEY2,
     COLLECTION,
     NUMBER,
     LITERAL,
@@ -3837,7 +3837,7 @@ function clojure(hljs2) {
       REGEX,
       STRING,
       COMMENT,
-      KEY,
+      KEY2,
       COLLECTION,
       NUMBER,
       LITERAL
@@ -13306,7 +13306,7 @@ function properties(hljs2) {
   const EQUAL_DELIM = WS0 + "[:=]" + WS0;
   const WS_DELIM = WS1;
   const DELIM = "(" + EQUAL_DELIM + "|" + WS_DELIM + ")";
-  const KEY = "([^\\\\:= \\t\\f\\n]|\\\\.)+";
+  const KEY2 = "([^\\\\:= \\t\\f\\n]|\\\\.)+";
   const DELIM_AND_VALUE = {
     // skip DELIM
     end: DELIM,
@@ -13334,13 +13334,13 @@ function properties(hljs2) {
       {
         returnBegin: true,
         variants: [
-          { begin: KEY + EQUAL_DELIM },
-          { begin: KEY + WS_DELIM }
+          { begin: KEY2 + EQUAL_DELIM },
+          { begin: KEY2 + WS_DELIM }
         ],
         contains: [
           {
             className: "attr",
-            begin: KEY,
+            begin: KEY2,
             endsParent: true
           }
         ],
@@ -13349,7 +13349,7 @@ function properties(hljs2) {
       // case of an empty key
       {
         className: "attr",
-        begin: KEY + WS0 + "$"
+        begin: KEY2 + WS0 + "$"
       }
     ]
   };
@@ -16814,7 +16814,7 @@ function swift(hljs2) {
 function yaml(hljs2) {
   const LITERALS3 = "true false yes no null";
   const URI_CHARACTERS = "[\\w#;/?:@&=+$,.~*'()[\\]]+";
-  const KEY = {
+  const KEY2 = {
     className: "attr",
     variants: [
       // added brackets support and special char support
@@ -16919,7 +16919,7 @@ function yaml(hljs2) {
     relevance: 0
   };
   const MODES4 = [
-    KEY,
+    KEY2,
     {
       className: "meta",
       begin: "^---\\s*$",
@@ -17965,9 +17965,9 @@ function mergeStreams(original, highlighted, value) {
 }
 function closeTags(res) {
   const tokenStack = new Array();
-  res.value = res.value.split("\n").map((line) => {
-    const prepend = tokenStack.map((token2) => `<span class="${token2}">`).join("");
-    const matches = line.matchAll(/(<span class="(.*?)">|<\/span>)/g);
+  res.value = res.value.split("\n").map((line2) => {
+    const prepend = tokenStack.map((token3) => `<span class="${token3}">`).join("");
+    const matches = line2.matchAll(/(<span class="(.*?)">|<\/span>)/g);
     Array.from(matches).forEach((match) => {
       if (match[0] === "</span>")
         tokenStack.shift();
@@ -17975,7 +17975,7 @@ function closeTags(res) {
         tokenStack.unshift(match[2]);
     });
     const append = "</span>".repeat(tokenStack.length);
-    return prepend + line + append;
+    return prepend + line2 + append;
   }).join("\n");
   return res;
 }
@@ -18548,19 +18548,19 @@ function startsWithAny(str, prefixes) {
   return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
 }
 var baseDiffFilenamePrefixes = ["a/", "b/", "i/", "w/", "c/", "o/"];
-function getFilename(line, linePrefix, extraPrefix) {
+function getFilename(line2, linePrefix, extraPrefix) {
   const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes, extraPrefix] : baseDiffFilenamePrefixes;
   const FilenameRegExp = linePrefix ? new RegExp(`^${escapeForRegExp(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
-  const [, filename = ""] = FilenameRegExp.exec(line) || [];
+  const [, filename = ""] = FilenameRegExp.exec(line2) || [];
   const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
   const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
   return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
 }
-function getSrcFilename(line, srcPrefix) {
-  return getFilename(line, "---", srcPrefix);
+function getSrcFilename(line2, srcPrefix) {
+  return getFilename(line2, "---", srcPrefix);
 }
-function getDstFilename(line, dstPrefix) {
-  return getFilename(line, "+++", dstPrefix);
+function getDstFilename(line2, dstPrefix) {
+  return getFilename(line2, "+++", dstPrefix);
 }
 function parse(diffInput, config2 = {}) {
   const files = [];
@@ -18623,21 +18623,21 @@ function parse(diffInput, config2 = {}) {
       addedLines: 0
     };
   }
-  function startBlock(line) {
+  function startBlock(line2) {
     saveBlock();
     let values;
     if (currentFile !== null) {
-      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line)) {
+      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line2)) {
         currentFile.isCombined = false;
         oldLine = parseInt(values[1], 10);
         newLine = parseInt(values[2], 10);
-      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line)) {
+      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line2)) {
         currentFile.isCombined = true;
         oldLine = parseInt(values[1], 10);
         oldLine2 = parseInt(values[2], 10);
         newLine = parseInt(values[3], 10);
       } else {
-        if (line.startsWith(hunkHeaderPrefix)) {
+        if (line2.startsWith(hunkHeaderPrefix)) {
           console.error("Failed to parse lines, starting in 0!");
         }
         oldLine = 0;
@@ -18650,23 +18650,23 @@ function parse(diffInput, config2 = {}) {
       oldStartLine: oldLine,
       oldStartLine2: oldLine2,
       newStartLine: newLine,
-      header: line
+      header: line2
     };
   }
-  function createLine(line) {
+  function createLine(line2) {
     if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
       return;
     const currentLine = {
-      content: line
+      content: line2
     };
     const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
     const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
-    if (startsWithAny(line, addedPrefixes)) {
+    if (startsWithAny(line2, addedPrefixes)) {
       currentFile.addedLines++;
       currentLine.type = LineType.INSERT;
       currentLine.oldNumber = void 0;
       currentLine.newNumber = newLine++;
-    } else if (startsWithAny(line, deletedPrefixes)) {
+    } else if (startsWithAny(line2, deletedPrefixes)) {
       currentFile.deletedLines++;
       currentLine.type = LineType.DELETE;
       currentLine.oldNumber = oldLine++;
@@ -18678,10 +18678,10 @@ function parse(diffInput, config2 = {}) {
     }
     currentBlock.lines.push(currentLine);
   }
-  function existHunkHeader(line, lineIdx) {
+  function existHunkHeader(line2, lineIdx) {
     let idx = lineIdx;
     while (idx < diffLines.length - 3) {
-      if (line.startsWith("diff")) {
+      if (line2.startsWith("diff")) {
         return false;
       }
       if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
@@ -18691,18 +18691,18 @@ function parse(diffInput, config2 = {}) {
     }
     return false;
   }
-  diffLines.forEach((line, lineIndex) => {
-    if (!line || line.startsWith("*")) {
+  diffLines.forEach((line2, lineIndex) => {
+    if (!line2 || line2.startsWith("*")) {
       return;
     }
     let values;
     const prevLine = diffLines[lineIndex - 1];
     const nxtLine = diffLines[lineIndex + 1];
     const afterNxtLine = diffLines[lineIndex + 2];
-    if (line.startsWith("diff --git") || line.startsWith("diff --combined")) {
+    if (line2.startsWith("diff --git") || line2.startsWith("diff --combined")) {
       startFile();
       const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
-      if (values = gitDiffStart.exec(line)) {
+      if (values = gitDiffStart.exec(line2)) {
         possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
         possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
       }
@@ -18712,10 +18712,10 @@ function parse(diffInput, config2 = {}) {
       currentFile.isGitDiff = true;
       return;
     }
-    if (line.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
+    if (line2.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
       startFile();
       const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
-      if (values = unixDiffBinaryStart.exec(line)) {
+      if (values = unixDiffBinaryStart.exec(line2)) {
         possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
         possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
       }
@@ -18725,13 +18725,13 @@ function parse(diffInput, config2 = {}) {
       currentFile.isBinary = true;
       return;
     }
-    if (!currentFile || !currentFile.isGitDiff && currentFile && line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
+    if (!currentFile || !currentFile.isGitDiff && currentFile && line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
       startFile();
     }
     if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
       return;
     }
-    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line.length > config2.diffMaxLineLength)) {
+    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line2.length > config2.diffMaxLineLength)) {
       currentFile.isTooBig = true;
       currentFile.addedLines = 0;
       currentFile.deletedLines = 0;
@@ -18741,87 +18741,87 @@ function parse(diffInput, config2 = {}) {
       startBlock(message);
       return;
     }
-    if (line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
-      if (currentFile && !currentFile.oldName && line.startsWith("--- ") && (values = getSrcFilename(line, config2.srcPrefix))) {
+    if (line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line2.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
+      if (currentFile && !currentFile.oldName && line2.startsWith("--- ") && (values = getSrcFilename(line2, config2.srcPrefix))) {
         currentFile.oldName = values;
         currentFile.language = getExtension(currentFile.oldName, currentFile.language);
         return;
       }
-      if (currentFile && !currentFile.newName && line.startsWith("+++ ") && (values = getDstFilename(line, config2.dstPrefix))) {
+      if (currentFile && !currentFile.newName && line2.startsWith("+++ ") && (values = getDstFilename(line2, config2.dstPrefix))) {
         currentFile.newName = values;
         currentFile.language = getExtension(currentFile.newName, currentFile.language);
         return;
       }
     }
-    if (currentFile && (line.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
-      startBlock(line);
+    if (currentFile && (line2.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
+      startBlock(line2);
       return;
     }
-    if (currentBlock && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
-      createLine(line);
+    if (currentBlock && (line2.startsWith("+") || line2.startsWith("-") || line2.startsWith(" "))) {
+      createLine(line2);
       return;
     }
-    const doesNotExistHunkHeader = !existHunkHeader(line, lineIndex);
+    const doesNotExistHunkHeader = !existHunkHeader(line2, lineIndex);
     if (currentFile === null) {
       throw new Error("Where is my file !!!");
     }
-    if (values = oldMode.exec(line)) {
+    if (values = oldMode.exec(line2)) {
       currentFile.oldMode = values[1];
-    } else if (values = newMode.exec(line)) {
+    } else if (values = newMode.exec(line2)) {
       currentFile.newMode = values[1];
-    } else if (values = deletedFileMode.exec(line)) {
+    } else if (values = deletedFileMode.exec(line2)) {
       currentFile.deletedFileMode = values[1];
       currentFile.isDeleted = true;
-    } else if (values = newFileMode.exec(line)) {
+    } else if (values = newFileMode.exec(line2)) {
       currentFile.newFileMode = values[1];
       currentFile.isNew = true;
-    } else if (values = copyFrom.exec(line)) {
+    } else if (values = copyFrom.exec(line2)) {
       if (doesNotExistHunkHeader) {
         currentFile.oldName = values[1];
       }
       currentFile.isCopy = true;
-    } else if (values = copyTo.exec(line)) {
+    } else if (values = copyTo.exec(line2)) {
       if (doesNotExistHunkHeader) {
         currentFile.newName = values[1];
       }
       currentFile.isCopy = true;
-    } else if (values = renameFrom.exec(line)) {
+    } else if (values = renameFrom.exec(line2)) {
       if (doesNotExistHunkHeader) {
         currentFile.oldName = values[1];
       }
       currentFile.isRename = true;
-    } else if (values = renameTo.exec(line)) {
+    } else if (values = renameTo.exec(line2)) {
       if (doesNotExistHunkHeader) {
         currentFile.newName = values[1];
       }
       currentFile.isRename = true;
-    } else if (values = binaryFiles.exec(line)) {
+    } else if (values = binaryFiles.exec(line2)) {
       currentFile.isBinary = true;
       currentFile.oldName = getFilename(values[1], void 0, config2.srcPrefix);
       currentFile.newName = getFilename(values[2], void 0, config2.dstPrefix);
       startBlock("Binary file");
-    } else if (binaryDiff.test(line)) {
+    } else if (binaryDiff.test(line2)) {
       currentFile.isBinary = true;
-      startBlock(line);
-    } else if (values = similarityIndex.exec(line)) {
+      startBlock(line2);
+    } else if (values = similarityIndex.exec(line2)) {
       currentFile.unchangedPercentage = parseInt(values[1], 10);
-    } else if (values = dissimilarityIndex.exec(line)) {
+    } else if (values = dissimilarityIndex.exec(line2)) {
       currentFile.changedPercentage = parseInt(values[1], 10);
-    } else if (values = index.exec(line)) {
+    } else if (values = index.exec(line2)) {
       currentFile.checksumBefore = values[1];
       currentFile.checksumAfter = values[2];
       if (values[3])
         currentFile.mode = values[3];
-    } else if (values = combinedIndex.exec(line)) {
+    } else if (values = combinedIndex.exec(line2)) {
       currentFile.checksumBefore = [values[2], values[3]];
       currentFile.checksumAfter = values[1];
-    } else if (values = combinedMode.exec(line)) {
+    } else if (values = combinedMode.exec(line2)) {
       currentFile.oldMode = [values[2], values[3]];
       currentFile.newMode = values[1];
-    } else if (values = combinedNewFile.exec(line)) {
+    } else if (values = combinedNewFile.exec(line2)) {
       currentFile.newFileMode = values[1];
       currentFile.isNew = true;
-    } else if (values = combinedDeletedFile.exec(line)) {
+    } else if (values = combinedDeletedFile.exec(line2)) {
       currentFile.deletedFileMode = values[1];
       currentFile.isDeleted = true;
     }
@@ -18833,24 +18833,24 @@ function parse(diffInput, config2 = {}) {
 
 // node_modules/diff/libesm/diff/base.js
 var Diff = class {
-  diff(oldStr, newStr, options = {}) {
+  diff(oldStr, newStr, options2 = {}) {
     let callback;
-    if (typeof options === "function") {
-      callback = options;
-      options = {};
-    } else if ("callback" in options) {
-      callback = options.callback;
+    if (typeof options2 === "function") {
+      callback = options2;
+      options2 = {};
+    } else if ("callback" in options2) {
+      callback = options2.callback;
     }
-    const oldString = this.castInput(oldStr, options);
-    const newString = this.castInput(newStr, options);
-    const oldTokens = this.removeEmpty(this.tokenize(oldString, options));
-    const newTokens = this.removeEmpty(this.tokenize(newString, options));
-    return this.diffWithOptionsObj(oldTokens, newTokens, options, callback);
+    const oldString = this.castInput(oldStr, options2);
+    const newString = this.castInput(newStr, options2);
+    const oldTokens = this.removeEmpty(this.tokenize(oldString, options2));
+    const newTokens = this.removeEmpty(this.tokenize(newString, options2));
+    return this.diffWithOptionsObj(oldTokens, newTokens, options2, callback);
   }
-  diffWithOptionsObj(oldTokens, newTokens, options, callback) {
+  diffWithOptionsObj(oldTokens, newTokens, options2, callback) {
     var _a;
     const done = (value) => {
-      value = this.postProcess(value, options);
+      value = this.postProcess(value, options2);
       if (callback) {
         setTimeout(function() {
           callback(value);
@@ -18863,13 +18863,13 @@ var Diff = class {
     const newLen = newTokens.length, oldLen = oldTokens.length;
     let editLength = 1;
     let maxEditLength = newLen + oldLen;
-    if (options.maxEditLength != null) {
-      maxEditLength = Math.min(maxEditLength, options.maxEditLength);
+    if (options2.maxEditLength != null) {
+      maxEditLength = Math.min(maxEditLength, options2.maxEditLength);
     }
-    const maxExecutionTime = (_a = options.timeout) !== null && _a !== void 0 ? _a : Infinity;
+    const maxExecutionTime = (_a = options2.timeout) !== null && _a !== void 0 ? _a : Infinity;
     const abortAfterTimestamp = Date.now() + maxExecutionTime;
     const bestPath = [{ oldPos: -1, lastComponent: void 0 }];
-    let newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options);
+    let newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options2);
     if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
       return done(this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens));
     }
@@ -18892,11 +18892,11 @@ var Diff = class {
           continue;
         }
         if (!canRemove || canAdd && removePath.oldPos < addPath.oldPos) {
-          basePath = this.addToPath(addPath, true, false, 0, options);
+          basePath = this.addToPath(addPath, true, false, 0, options2);
         } else {
-          basePath = this.addToPath(removePath, false, true, 1, options);
+          basePath = this.addToPath(removePath, false, true, 1, options2);
         }
-        newPos = this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options);
+        newPos = this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options2);
         if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
           return done(this.buildValues(basePath.lastComponent, newTokens, oldTokens)) || true;
         } else {
@@ -18931,9 +18931,9 @@ var Diff = class {
       }
     }
   }
-  addToPath(path, added, removed, oldPosInc, options) {
+  addToPath(path, added, removed, oldPosInc, options2) {
     const last = path.lastComponent;
-    if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
+    if (last && !options2.oneChangePerToken && last.added === added && last.removed === removed) {
       return {
         oldPos: path.oldPos + oldPosInc,
         lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
@@ -18945,28 +18945,28 @@ var Diff = class {
       };
     }
   }
-  extractCommon(basePath, newTokens, oldTokens, diagonalPath, options) {
+  extractCommon(basePath, newTokens, oldTokens, diagonalPath, options2) {
     const newLen = newTokens.length, oldLen = oldTokens.length;
     let oldPos = basePath.oldPos, newPos = oldPos - diagonalPath, commonCount = 0;
-    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options)) {
+    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options2)) {
       newPos++;
       oldPos++;
       commonCount++;
-      if (options.oneChangePerToken) {
+      if (options2.oneChangePerToken) {
         basePath.lastComponent = { count: 1, previousComponent: basePath.lastComponent, added: false, removed: false };
       }
     }
-    if (commonCount && !options.oneChangePerToken) {
+    if (commonCount && !options2.oneChangePerToken) {
       basePath.lastComponent = { count: commonCount, previousComponent: basePath.lastComponent, added: false, removed: false };
     }
     basePath.oldPos = oldPos;
     return newPos;
   }
-  equals(left, right, options) {
-    if (options.comparator) {
-      return options.comparator(left, right);
+  equals(left, right, options2) {
+    if (options2.comparator) {
+      return options2.comparator(left, right);
     } else {
-      return left === right || !!options.ignoreCase && left.toLowerCase() === right.toLowerCase();
+      return left === right || !!options2.ignoreCase && left.toLowerCase() === right.toLowerCase();
     }
   }
   removeEmpty(array) {
@@ -18979,17 +18979,17 @@ var Diff = class {
     return ret;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  castInput(value, options) {
+  castInput(value, options2) {
     return value;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  tokenize(value, options) {
+  tokenize(value, options2) {
     return Array.from(value);
   }
   join(chars) {
     return chars.join("");
   }
-  postProcess(changeObjects, options) {
+  postProcess(changeObjects, options2) {
     return changeObjects;
   }
   get useLongestToken() {
@@ -19037,8 +19037,8 @@ var Diff = class {
 var CharacterDiff = class extends Diff {
 };
 var characterDiff = new CharacterDiff();
-function diffChars(oldStr, newStr, options) {
-  return characterDiff.diff(oldStr, newStr, options);
+function diffChars(oldStr, newStr, options2) {
+  return characterDiff.diff(oldStr, newStr, options2);
 }
 
 // node_modules/diff/libesm/util/string.js
@@ -19173,17 +19173,17 @@ function leadingAndTrailingWs(string, segmenter) {
 var extendedWordChars = "a-zA-Z0-9_\\u{AD}\\u{C0}-\\u{D6}\\u{D8}-\\u{F6}\\u{F8}-\\u{2C6}\\u{2C8}-\\u{2D7}\\u{2DE}-\\u{2FF}\\u{1E00}-\\u{1EFF}";
 var tokenizeIncludingWhitespace = new RegExp(`[${extendedWordChars}]+|\\s+|[^${extendedWordChars}]`, "ug");
 var WordDiff = class extends Diff {
-  equals(left, right, options) {
-    if (options.ignoreCase) {
+  equals(left, right, options2) {
+    if (options2.ignoreCase) {
       left = left.toLowerCase();
       right = right.toLowerCase();
     }
     return left.trim() === right.trim();
   }
-  tokenize(value, options = {}) {
+  tokenize(value, options2 = {}) {
     let parts;
-    if (options.intlSegmenter) {
-      const segmenter = options.intlSegmenter;
+    if (options2.intlSegmenter) {
+      const segmenter = options2.intlSegmenter;
       if (segmenter.resolvedOptions().granularity != "word") {
         throw new Error('The segmenter passed must have a granularity of "word"');
       }
@@ -19214,16 +19214,16 @@ var WordDiff = class extends Diff {
     return tokens;
   }
   join(tokens) {
-    return tokens.map((token2, i) => {
+    return tokens.map((token3, i) => {
       if (i == 0) {
-        return token2;
+        return token3;
       } else {
-        return token2.replace(/^\s+/, "");
+        return token3.replace(/^\s+/, "");
       }
     }).join("");
   }
-  postProcess(changes, options) {
-    if (!changes || options.oneChangePerToken) {
+  postProcess(changes, options2) {
+    if (!changes || options2.oneChangePerToken) {
       return changes;
     }
     let lastKeep = null;
@@ -19236,7 +19236,7 @@ var WordDiff = class extends Diff {
         deletion = change;
       } else {
         if (insertion || deletion) {
-          dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, change, options.intlSegmenter);
+          dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, change, options2.intlSegmenter);
         }
         lastKeep = change;
         insertion = null;
@@ -19244,7 +19244,7 @@ var WordDiff = class extends Diff {
       }
     });
     if (insertion || deletion) {
-      dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options.intlSegmenter);
+      dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options2.intlSegmenter);
     }
     return changes;
   }
@@ -19302,8 +19302,8 @@ var WordsWithSpaceDiff = class extends Diff {
   }
 };
 var wordsWithSpaceDiff = new WordsWithSpaceDiff();
-function diffWordsWithSpace(oldStr, newStr, options) {
-  return wordsWithSpaceDiff.diff(oldStr, newStr, options);
+function diffWordsWithSpace(oldStr, newStr, options2) {
+  return wordsWithSpaceDiff.diff(oldStr, newStr, options2);
 }
 
 // node_modules/diff2html/lib-esm/rematch.js
@@ -19412,11 +19412,11 @@ var matcher = newMatcherFn(distance);
 function isDevNullName(name) {
   return name.indexOf("dev/null") !== -1;
 }
-function removeInsElements(line) {
-  return line.replace(/(<ins[^>]*>((.|\n)*?)<\/ins>)/g, "");
+function removeInsElements(line2) {
+  return line2.replace(/(<ins[^>]*>((.|\n)*?)<\/ins>)/g, "");
 }
-function removeDelElements(line) {
-  return line.replace(/(<del[^>]*>((.|\n)*?)<\/del>)/g, "");
+function removeDelElements(line2) {
+  return line2.replace(/(<del[^>]*>((.|\n)*?)<\/del>)/g, "");
 }
 function toCSSClass(lineType) {
   switch (lineType) {
@@ -19445,11 +19445,11 @@ function prefixLength(isCombined) {
 function escapeForHtml(str) {
   return str.slice(0).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;");
 }
-function deconstructLine(line, isCombined, escape3 = true) {
+function deconstructLine(line2, isCombined, escape3 = true) {
   const indexToSplit = prefixLength(isCombined);
   return {
-    prefix: line.substring(0, indexToSplit),
-    content: escape3 ? escapeForHtml(line.substring(indexToSplit)) : line.substring(indexToSplit)
+    prefix: line2.substring(0, indexToSplit),
+    content: escape3 ? escapeForHtml(line2.substring(indexToSplit)) : line2.substring(indexToSplit)
   };
 }
 function filenameDiff(file) {
@@ -19651,14 +19651,14 @@ var LineByLineRenderer = class {
   }
   generateFileHtml(file) {
     const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
-    return file.blocks.map((block2) => {
+    return file.blocks.map((block3) => {
       let lines = this.hoganUtils.render(genericTemplatesPath, "block-header", {
         CSSLineClass,
-        blockHeader: file.isTooBig ? block2.header : escapeForHtml(block2.header),
+        blockHeader: file.isTooBig ? block3.header : escapeForHtml(block3.header),
         lineClass: "d2h-code-linenumber",
         contentClass: "d2h-code-line"
       });
-      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+      this.applyLineGroupping(block3).forEach(([contextLines, oldLines, newLines]) => {
         if (oldLines.length && newLines.length && !contextLines.length) {
           this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
             const { left, right } = this.processChangedLines(file, file.isCombined, oldLines2, newLines2);
@@ -19666,14 +19666,14 @@ var LineByLineRenderer = class {
             lines += right;
           });
         } else if (contextLines.length) {
-          contextLines.forEach((line) => {
-            const { prefix, content } = deconstructLine(line.content, file.isCombined);
+          contextLines.forEach((line2) => {
+            const { prefix, content } = deconstructLine(line2.content, file.isCombined);
             lines += this.generateSingleLineHtml(file, {
               type: CSSLineClass.CONTEXT,
               prefix,
               content,
-              oldNumber: line.oldNumber,
-              newNumber: line.newNumber
+              oldNumber: line2.oldNumber,
+              newNumber: line2.newNumber
             });
           });
         } else if (oldLines.length || newLines.length) {
@@ -19687,12 +19687,12 @@ var LineByLineRenderer = class {
       return lines;
     }).join("\n");
   }
-  applyLineGroupping(block2) {
+  applyLineGroupping(block3) {
     const blockLinesGroups = [];
     let oldLines = [];
     let newLines = [];
-    for (let i = 0; i < block2.lines.length; i++) {
-      const diffLine = block2.lines[i];
+    for (let i = 0; i < block3.lines.length; i++) {
+      const diffLine = block3.lines[i];
       if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
         blockLinesGroups.push([[], oldLines, newLines]);
         oldLines = [];
@@ -19753,21 +19753,21 @@ var LineByLineRenderer = class {
       right: this.generateSingleLineHtml(file, newLine)
     };
   }
-  generateSingleLineHtml(file, line) {
-    if (line === void 0)
+  generateSingleLineHtml(file, line2) {
+    if (line2 === void 0)
       return "";
     const lineNumberHtml = this.hoganUtils.render(baseTemplatesPath2, "numbers", {
-      oldNumber: line.oldNumber || "",
-      newNumber: line.newNumber || ""
+      oldNumber: line2.oldNumber || "",
+      newNumber: line2.newNumber || ""
     });
     return this.hoganUtils.render(genericTemplatesPath, "line", {
-      type: line.type,
+      type: line2.type,
       lineClass: "d2h-code-linenumber",
       contentClass: "d2h-code-line",
-      prefix: line.prefix === " " ? "&nbsp;" : line.prefix,
-      content: line.content,
+      prefix: line2.prefix === " " ? "&nbsp;" : line2.prefix,
+      content: line2.content,
       lineNumber: lineNumberHtml,
-      line,
+      line: line2,
       file
     });
   }
@@ -19829,12 +19829,12 @@ var SideBySideRenderer = class {
   }
   generateFileHtml(file) {
     const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
-    return file.blocks.map((block2) => {
+    return file.blocks.map((block3) => {
       const fileHtml = {
-        left: this.makeHeaderHtml(block2.header, file),
+        left: this.makeHeaderHtml(block3.header, file),
         right: this.makeHeaderHtml("")
       };
-      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+      this.applyLineGroupping(block3).forEach(([contextLines, oldLines, newLines]) => {
         if (oldLines.length && newLines.length && !contextLines.length) {
           this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
             const { left, right } = this.processChangedLines(file.isCombined, oldLines2, newLines2);
@@ -19842,18 +19842,18 @@ var SideBySideRenderer = class {
             fileHtml.right += right;
           });
         } else if (contextLines.length) {
-          contextLines.forEach((line) => {
-            const { prefix, content } = deconstructLine(line.content, file.isCombined);
+          contextLines.forEach((line2) => {
+            const { prefix, content } = deconstructLine(line2.content, file.isCombined);
             const { left, right } = this.generateLineHtml({
               type: CSSLineClass.CONTEXT,
               prefix,
               content,
-              number: line.oldNumber
+              number: line2.oldNumber
             }, {
               type: CSSLineClass.CONTEXT,
               prefix,
               content,
-              number: line.newNumber
+              number: line2.newNumber
             });
             fileHtml.left += left;
             fileHtml.right += right;
@@ -19871,12 +19871,12 @@ var SideBySideRenderer = class {
       return { left: accomulated.left + html2.left, right: accomulated.right + html2.right };
     }, { left: "", right: "" });
   }
-  applyLineGroupping(block2) {
+  applyLineGroupping(block3) {
     const blockLinesGroups = [];
     let oldLines = [];
     let newLines = [];
-    for (let i = 0; i < block2.lines.length; i++) {
-      const diffLine = block2.lines[i];
+    for (let i = 0; i < block3.lines.length; i++) {
+      const diffLine = block3.lines[i];
       if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
         blockLinesGroups.push([[], oldLines, newLines]);
         oldLines = [];
@@ -19945,16 +19945,16 @@ var SideBySideRenderer = class {
       right: this.generateSingleHtml(newLine)
     };
   }
-  generateSingleHtml(line) {
+  generateSingleHtml(line2) {
     const lineClass = "d2h-code-side-linenumber";
     const contentClass = "d2h-code-side-line";
     return this.hoganUtils.render(genericTemplatesPath2, "line", {
-      type: (line === null || line === void 0 ? void 0 : line.type) || `${CSSLineClass.CONTEXT} d2h-emptyplaceholder`,
-      lineClass: line !== void 0 ? lineClass : `${lineClass} d2h-code-side-emptyplaceholder`,
-      contentClass: line !== void 0 ? contentClass : `${contentClass} d2h-code-side-emptyplaceholder`,
-      prefix: (line === null || line === void 0 ? void 0 : line.prefix) === " " ? "&nbsp;" : line === null || line === void 0 ? void 0 : line.prefix,
-      content: line === null || line === void 0 ? void 0 : line.content,
-      lineNumber: line === null || line === void 0 ? void 0 : line.number
+      type: (line2 === null || line2 === void 0 ? void 0 : line2.type) || `${CSSLineClass.CONTEXT} d2h-emptyplaceholder`,
+      lineClass: line2 !== void 0 ? lineClass : `${lineClass} d2h-code-side-emptyplaceholder`,
+      contentClass: line2 !== void 0 ? contentClass : `${contentClass} d2h-code-side-emptyplaceholder`,
+      prefix: (line2 === null || line2 === void 0 ? void 0 : line2.prefix) === " " ? "&nbsp;" : line2 === null || line2 === void 0 ? void 0 : line2.prefix,
+      content: line2 === null || line2 === void 0 ? void 0 : line2.content,
+      lineNumber: line2 === null || line2 === void 0 ? void 0 : line2.number
     });
   }
 };
@@ -20463,7 +20463,7 @@ var Diff2HtmlUI = class {
     const fileList = this.targetElement.querySelector(".d2h-file-list");
     if (showBtn === null || hideBtn === null || fileList === null)
       return;
-    const show2 = () => {
+    const show = () => {
       showBtn.style.display = "none";
       hideBtn.style.display = "inline";
       fileList.style.display = "block";
@@ -20473,15 +20473,15 @@ var Diff2HtmlUI = class {
       hideBtn.style.display = "none";
       fileList.style.display = "none";
     };
-    showBtn.addEventListener("click", () => show2());
+    showBtn.addEventListener("click", () => show());
     hideBtn.addEventListener("click", () => hide());
     const hashTag = this.getHashTag();
     if (hashTag === "files-summary-show")
-      show2();
+      show();
     else if (hashTag === "files-summary-hide")
       hide();
     else if (startVisible)
-      show2();
+      show();
     else
       hide();
   }
@@ -20521,26 +20521,26 @@ var Diff2HtmlUI = class {
         hljsLanguage = "plaintext";
       }
       const codeLines = file.querySelectorAll(".d2h-code-line-ctn");
-      codeLines.forEach((line) => {
-        const text2 = line.textContent;
-        const lineParent = line.parentNode;
+      codeLines.forEach((line2) => {
+        const text2 = line2.textContent;
+        const lineParent = line2.parentNode;
         if (text2 === null || lineParent === null || !this.isElement(lineParent))
           return;
         const result = closeTags(hljs2.highlight(text2, {
           language: hljsLanguage,
           ignoreIllegals: true
         }));
-        const originalStream = nodeStream(line);
+        const originalStream = nodeStream(line2);
         if (originalStream.length) {
           const resultNode = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
           resultNode.innerHTML = result.value;
           result.value = mergeStreams(originalStream, nodeStream(resultNode), text2);
         }
-        line.classList.add("hljs");
+        line2.classList.add("hljs");
         if (result.language) {
-          line.classList.add(result.language);
+          line2.classList.add(result.language);
         }
-        line.innerHTML = result.value;
+        line2.innerHTML = result.value;
       });
     });
   }
@@ -21249,9 +21249,9 @@ function decodeWithTrie(input, isStrict, isAttribute) {
   const inputLength = input.length;
   let chunkStart = 0;
   let result = "";
-  const root = decodeTree[0];
-  const rootJumpOffset = root & BinTrieFlags.JUMP_TABLE;
-  const rootBranchCount = (root & BinTrieFlags.BRANCH_LENGTH) >> 7;
+  const root2 = decodeTree[0];
+  const rootJumpOffset = root2 & BinTrieFlags.JUMP_TABLE;
+  const rootBranchCount = (root2 & BinTrieFlags.BRANCH_LENGTH) >> 7;
   do {
     const entityStart = offset + 1;
     const firstChar = input.charCodeAt(entityStart);
@@ -21655,8 +21655,8 @@ var LinkifyIt = class {
   * console.log(linkify.match('Site github.com!'))
   * ```
   */
-  constructor(options = {}) {
-    const { rebuilder, ...linkifyOptions } = options;
+  constructor(options2 = {}) {
+    const { rebuilder, ...linkifyOptions } = options2;
     this.__opts__ = {
       ...defaultOptions,
       ...linkifyOptions
@@ -21704,10 +21704,10 @@ var LinkifyIt = class {
   *
   * @param options Recognition options.
   */
-  set(options = {}) {
+  set(options2 = {}) {
     this.__opts__ = {
       ...this.__opts__,
-      ...options
+      ...options2
     };
     this.re.set({
       ...this.__opts__,
@@ -22691,11 +22691,11 @@ var Ruler = class {
   * });
   * ```
   */
-  at(name, fn, options = {}) {
+  at(name, fn, options2 = {}) {
     const index = this.__find__(name);
     if (index === -1) throw new Error(`Parser rule not found: ${name}`);
     this.__rules__[index].fn = fn;
-    this.__rules__[index].alt = options.alt || [];
+    this.__rules__[index].alt = options2.alt || [];
     this.__cache__ = null;
   }
   /**
@@ -22712,14 +22712,14 @@ var Ruler = class {
   * });
   * ```
   */
-  before(beforeName, ruleName, fn, options = {}) {
+  before(beforeName, ruleName, fn, options2 = {}) {
     const index = this.__find__(beforeName);
     if (index === -1) throw new Error(`Parser rule not found: ${beforeName}`);
     this.__rules__.splice(index, 0, {
       name: ruleName,
       enabled: true,
       fn,
-      alt: options.alt || []
+      alt: options2.alt || []
     });
     this.__cache__ = null;
   }
@@ -22737,14 +22737,14 @@ var Ruler = class {
   * });
   * ```
   */
-  after(afterName, ruleName, fn, options = {}) {
+  after(afterName, ruleName, fn, options2 = {}) {
     const index = this.__find__(afterName);
     if (index === -1) throw new Error(`Parser rule not found: ${afterName}`);
     this.__rules__.splice(index + 1, 0, {
       name: ruleName,
       enabled: true,
       fn,
-      alt: options.alt || []
+      alt: options2.alt || []
     });
     this.__cache__ = null;
   }
@@ -22762,12 +22762,12 @@ var Ruler = class {
   * });
   * ```
   */
-  push(ruleName, fn, options = {}) {
+  push(ruleName, fn, options2 = {}) {
     this.__rules__.push({
       name: ruleName,
       enabled: true,
       fn,
-      alt: options.alt || []
+      alt: options2.alt || []
     });
     this.__cache__ = null;
   }
@@ -22843,18 +22843,18 @@ var Ruler = class {
   }
 };
 var default_rules = {};
-default_rules.code_inline = function(tokens, idx, options, env, slf) {
-  const token2 = tokens[idx];
-  return `<code${slf.renderAttrs(token2)}>${escapeHtml(token2.content)}</code>`;
+default_rules.code_inline = function(tokens, idx, options2, env, slf) {
+  const token3 = tokens[idx];
+  return `<code${slf.renderAttrs(token3)}>${escapeHtml(token3.content)}</code>`;
 };
-default_rules.code_block = function(tokens, idx, options, env, slf) {
-  const token2 = tokens[idx];
-  return `<pre${slf.renderAttrs(token2)}><code>${escapeHtml(tokens[idx].content)}</code></pre>
+default_rules.code_block = function(tokens, idx, options2, env, slf) {
+  const token3 = tokens[idx];
+  return `<pre${slf.renderAttrs(token3)}><code>${escapeHtml(tokens[idx].content)}</code></pre>
 `;
 };
-default_rules.fence = function(tokens, idx, options, env, slf) {
-  const token2 = tokens[idx];
-  const info = token2.info ? unescapeAll(token2.info).trim() : "";
+default_rules.fence = function(tokens, idx, options2, env, slf) {
+  const token3 = tokens[idx];
+  const info = token3.info ? unescapeAll(token3.info).trim() : "";
   let langName = "";
   let langAttrs = "";
   if (info) {
@@ -22863,34 +22863,34 @@ default_rules.fence = function(tokens, idx, options, env, slf) {
     langAttrs = arr.slice(2).join("");
   }
   let highlighted;
-  if (options.highlight) highlighted = options.highlight(token2.content, langName, langAttrs) || escapeHtml(token2.content);
-  else highlighted = escapeHtml(token2.content);
+  if (options2.highlight) highlighted = options2.highlight(token3.content, langName, langAttrs) || escapeHtml(token3.content);
+  else highlighted = escapeHtml(token3.content);
   if (highlighted.indexOf("<pre") === 0) return highlighted + "\n";
   if (info) {
-    const i = token2.attrIndex("class");
-    const tmpAttrs = token2.attrs ? token2.attrs.slice() : [];
-    if (i < 0) tmpAttrs.push(["class", `${options.langPrefix}${langName}`]);
+    const i = token3.attrIndex("class");
+    const tmpAttrs = token3.attrs ? token3.attrs.slice() : [];
+    if (i < 0) tmpAttrs.push(["class", `${options2.langPrefix}${langName}`]);
     else {
       tmpAttrs[i] = [tmpAttrs[i][0], tmpAttrs[i][1]];
-      tmpAttrs[i][1] += ` ${options.langPrefix}${langName}`;
+      tmpAttrs[i][1] += ` ${options2.langPrefix}${langName}`;
     }
     const tmpToken = { attrs: tmpAttrs };
     return `<pre><code${slf.renderAttrs(tmpToken)}>${highlighted}</code></pre>
 `;
   }
-  return `<pre><code${slf.renderAttrs(token2)}>${highlighted}</code></pre>
+  return `<pre><code${slf.renderAttrs(token3)}>${highlighted}</code></pre>
 `;
 };
-default_rules.image = function(tokens, idx, options, env, slf) {
-  const token2 = tokens[idx];
-  token2.attrs[token2.attrIndex("alt")][1] = slf.renderInlineAsText(token2.children, options, env);
-  return slf.renderToken(tokens, idx, options);
+default_rules.image = function(tokens, idx, options2, env, slf) {
+  const token3 = tokens[idx];
+  token3.attrs[token3.attrIndex("alt")][1] = slf.renderInlineAsText(token3.children, options2, env);
+  return slf.renderToken(tokens, idx, options2);
 };
-default_rules.hardbreak = function(tokens, idx, options) {
-  return options.xhtmlOut ? "<br />\n" : "<br>\n";
+default_rules.hardbreak = function(tokens, idx, options2) {
+  return options2.xhtmlOut ? "<br />\n" : "<br>\n";
 };
-default_rules.softbreak = function(tokens, idx, options) {
-  return options.breaks ? options.xhtmlOut ? "<br />\n" : "<br>\n" : "\n";
+default_rules.softbreak = function(tokens, idx, options2) {
+  return options2.breaks ? options2.xhtmlOut ? "<br />\n" : "<br>\n" : "\n";
 };
 default_rules.text = function(tokens, idx) {
   return escapeHtml(tokens[idx].content);
@@ -22937,37 +22937,37 @@ var Renderer = class {
   /**
   * Render token attributes to string.
   */
-  renderAttrs(token2) {
+  renderAttrs(token3) {
     let i, l, result;
-    if (!token2.attrs) return "";
+    if (!token3.attrs) return "";
     result = "";
-    for (i = 0, l = token2.attrs.length; i < l; i++) result += ` ${escapeHtml(token2.attrs[i][0])}="${escapeHtml(String(token2.attrs[i][1]))}"`;
+    for (i = 0, l = token3.attrs.length; i < l; i++) result += ` ${escapeHtml(token3.attrs[i][0])}="${escapeHtml(String(token3.attrs[i][1]))}"`;
     return result;
   }
   /**
   * Default token renderer. Can be overriden by custom function
   * in {@link Renderer.rules}.
   */
-  renderToken(tokens, idx, options) {
-    const token2 = tokens[idx];
+  renderToken(tokens, idx, options2) {
+    const token3 = tokens[idx];
     let result = "";
-    if (token2.hidden) return "";
+    if (token3.hidden) return "";
     let prev = idx - 1;
     while (prev >= 0 && tokens[prev].hidden && tokens[prev].nesting === 0) prev--;
-    if (token2.block && token2.nesting !== -1 && prev >= 0 && tokens[prev].hidden && tokens[prev].nesting === -1) result += "\n";
-    result += (token2.nesting === -1 ? "</" : "<") + token2.tag;
-    result += this.renderAttrs(token2);
-    if (token2.nesting === 0 && options.xhtmlOut) result += " /";
+    if (token3.block && token3.nesting !== -1 && prev >= 0 && tokens[prev].hidden && tokens[prev].nesting === -1) result += "\n";
+    result += (token3.nesting === -1 ? "</" : "<") + token3.tag;
+    result += this.renderAttrs(token3);
+    if (token3.nesting === 0 && options2.xhtmlOut) result += " /";
     let needLf = false;
-    if (token2.block) {
+    if (token3.block) {
       needLf = true;
-      if (token2.nesting === 1) {
+      if (token3.nesting === 1) {
         let next = idx + 1;
         while (next < tokens.length && tokens[next].hidden && tokens[next].nesting === 0) next++;
         if (next < tokens.length) {
           const nextToken = tokens[next];
           if (nextToken.type === "inline" || nextToken.hidden) needLf = false;
-          else if (nextToken.nesting === -1 && nextToken.tag === token2.tag) needLf = false;
+          else if (nextToken.nesting === -1 && nextToken.tag === token3.tag) needLf = false;
         }
       }
     }
@@ -22977,13 +22977,13 @@ var Renderer = class {
   /**
   * The same as {@link Renderer.render}, but for single token of `inline` type.
   */
-  renderInline(tokens, options, env) {
+  renderInline(tokens, options2, env) {
     let result = "";
     const rules = this.rules;
     for (let i = 0, len = tokens.length; i < len; i++) {
       const type = tokens[i].type;
-      if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options, env, this);
-      else result += this.renderToken(tokens, i, options);
+      if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options2, env, this);
+      else result += this.renderToken(tokens, i, options2);
     }
     return result;
   }
@@ -22992,7 +22992,7 @@ var Renderer = class {
   * Don't try to use it! Spec requires to show `alt` content with stripped markup,
   * instead of simple escaping.
   */
-  renderInlineAsText(tokens, options, env) {
+  renderInlineAsText(tokens, options2, env) {
     let result = "";
     for (let i = 0, len = tokens.length; i < len; i++) switch (tokens[i].type) {
       case "text":
@@ -23000,7 +23000,7 @@ var Renderer = class {
         result += tokens[i].content;
         break;
       case "image":
-        result += this.renderInlineAsText(tokens[i].children, options, env);
+        result += this.renderInlineAsText(tokens[i].children, options2, env);
         break;
       case "html_inline":
       case "html_block":
@@ -23016,14 +23016,14 @@ var Renderer = class {
   * Takes token stream and generates HTML. Probably, you will never need to call
   * this method directly.
   */
-  render(tokens, options, env) {
+  render(tokens, options2, env) {
     let result = "";
     const rules = this.rules;
     for (let i = 0, len = tokens.length; i < len; i++) {
       const type = tokens[i].type;
-      if (type === "inline") result += this.renderInline(tokens[i].children, options, env);
-      else if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options, env, this);
-      else result += this.renderToken(tokens, i, options);
+      if (type === "inline") result += this.renderInline(tokens[i].children, options2, env);
+      else if (typeof rules[type] !== "undefined") result += rules[type](tokens, i, options2, env, this);
+      else result += this.renderToken(tokens, i, options2);
     }
     return result;
   }
@@ -23047,13 +23047,13 @@ function normalize(state) {
   state.src = str;
 }
 function block(state) {
-  let token2;
+  let token3;
   if (state.inlineMode) {
-    token2 = new state.Token("inline", "", 0);
-    token2.content = state.src;
-    token2.map = [0, 1];
-    token2.children = [];
-    state.tokens.push(token2);
+    token3 = new state.Token("inline", "", 0);
+    token3.content = state.src;
+    token3.map = [0, 1];
+    token3.children = [];
+    state.tokens.push(token3);
   } else state.md.block.parse(state.src, state.md, state.env, state.tokens);
 }
 function strip_references(state) {
@@ -23116,10 +23116,10 @@ function linkify$1(state) {
           else urlText = state.md.normalizeLinkText(urlText);
           const pos = links[ln].index;
           if (pos > lastPos) {
-            const token2 = new state.Token("text", "", 0);
-            token2.content = text2.slice(lastPos, pos);
-            token2.level = level;
-            nodes.push(token2);
+            const token3 = new state.Token("text", "", 0);
+            token3.content = text2.slice(lastPos, pos);
+            token3.level = level;
+            nodes.push(token3);
           }
           const token_o = new state.Token("link_open", "a", 1);
           token_o.attrs = [["href", fullUrl]];
@@ -23139,10 +23139,10 @@ function linkify$1(state) {
           lastPos = links[ln].lastIndex;
         }
         if (lastPos < text2.length) {
-          const token2 = new state.Token("text", "", 0);
-          token2.content = text2.slice(lastPos);
-          token2.level = level;
-          nodes.push(token2);
+          const token3 = new state.Token("text", "", 0);
+          token3.content = text2.slice(lastPos);
+          token3.level = level;
+          nodes.push(token3);
         }
         replacements.push({
           index: i,
@@ -23182,21 +23182,21 @@ function replaceFn(match, name) {
 function replace_scoped(inlineTokens) {
   let inside_autolink = 0;
   for (let i = inlineTokens.length - 1; i >= 0; i--) {
-    const token2 = inlineTokens[i];
-    if (token2.type === "text" && !inside_autolink) token2.content = token2.content.replace(SCOPED_ABBR_RE, replaceFn);
-    if (token2.type === "link_open" && token2.info === "auto") inside_autolink--;
-    if (token2.type === "link_close" && token2.info === "auto") inside_autolink++;
+    const token3 = inlineTokens[i];
+    if (token3.type === "text" && !inside_autolink) token3.content = token3.content.replace(SCOPED_ABBR_RE, replaceFn);
+    if (token3.type === "link_open" && token3.info === "auto") inside_autolink--;
+    if (token3.type === "link_close" && token3.info === "auto") inside_autolink++;
   }
 }
 function replace_rare(inlineTokens) {
   let inside_autolink = 0;
   for (let i = inlineTokens.length - 1; i >= 0; i--) {
-    const token2 = inlineTokens[i];
-    if (token2.type === "text" && !inside_autolink) {
-      if (RARE_RE.test(token2.content)) token2.content = token2.content.replace(/\+-/g, "\xB1").replace(/\.{2,}/g, "\u2026").replace(/([?!])…/g, "$1..").replace(/([?!]){4,}/g, "$1$1$1").replace(/,{2,}/g, ",").replace(/(^|[^-])---(?=[^-]|$)/gm, "$1\u2014").replace(/(^|\s)--(?=\s|$)/gm, "$1\u2013").replace(/(^|[^-\s])--(?=[^-\s]|$)/gm, "$1\u2013");
+    const token3 = inlineTokens[i];
+    if (token3.type === "text" && !inside_autolink) {
+      if (RARE_RE.test(token3.content)) token3.content = token3.content.replace(/\+-/g, "\xB1").replace(/\.{2,}/g, "\u2026").replace(/([?!])…/g, "$1..").replace(/([?!]){4,}/g, "$1$1$1").replace(/,{2,}/g, ",").replace(/(^|[^-])---(?=[^-]|$)/gm, "$1\u2014").replace(/(^|\s)--(?=\s|$)/gm, "$1\u2013").replace(/(^|[^-\s])--(?=[^-\s]|$)/gm, "$1\u2013");
     }
-    if (token2.type === "link_open" && token2.info === "auto") inside_autolink--;
-    if (token2.type === "link_close" && token2.info === "auto") inside_autolink++;
+    if (token3.type === "link_open" && token3.info === "auto") inside_autolink--;
+    if (token3.type === "link_close" && token3.info === "auto") inside_autolink++;
   }
 }
 function replace(state) {
@@ -23246,12 +23246,12 @@ function process_inlines(tokens, state) {
   };
   const replacements = {};
   for (let i = 0; i < tokens.length; i++) {
-    const token2 = tokens[i];
+    const token3 = tokens[i];
     const thisLevel = tokens[i].level;
     for (j = stack.length - 1; j >= 0; j--) if (stack[j].level <= thisLevel) break;
     truncateStack(stack, heads, j + 1);
-    if (token2.type !== "text") continue;
-    const text2 = token2.content;
+    if (token3.type !== "text") continue;
+    const text2 = token3.content;
     let pos = 0;
     const max2 = text2.length;
     OUTER: while (pos < max2) {
@@ -23459,16 +23459,16 @@ var StateBlock = class {
     this.lineMax = this.bMarks.length - 1;
   }
   push(type, tag2, nesting) {
-    const token2 = new Token(type, tag2, nesting);
-    token2.block = true;
+    const token3 = new Token(type, tag2, nesting);
+    token3.block = true;
     if (nesting < 0) this.level--;
-    token2.level = this.level;
+    token3.level = this.level;
     if (nesting > 0) this.level++;
-    this.tokens.push(token2);
-    return token2;
+    this.tokens.push(token3);
+    return token3;
   }
-  isEmpty(line) {
-    return this.bMarks[line] + this.tShift[line] >= this.eMarks[line];
+  isEmpty(line2) {
+    return this.bMarks[line2] + this.tShift[line2] >= this.eMarks[line2];
   }
   skipEmptyLines(from) {
     for (let max2 = this.lineMax; from < max2; from++) if (this.bMarks[from] + this.tShift[from] < this.eMarks[from]) break;
@@ -23494,33 +23494,33 @@ var StateBlock = class {
   }
   getLines(begin, end, indent, keepLastLF) {
     if (begin >= end) return "";
-    const queue = new Array(end - begin);
-    for (let i = 0, line = begin; line < end; line++, i++) {
+    const queue2 = new Array(end - begin);
+    for (let i = 0, line2 = begin; line2 < end; line2++, i++) {
       let lineIndent = 0;
-      const lineStart = this.bMarks[line];
+      const lineStart = this.bMarks[line2];
       let first = lineStart;
       let last;
-      if (line + 1 < end || keepLastLF) last = this.eMarks[line] + 1;
-      else last = this.eMarks[line];
+      if (line2 + 1 < end || keepLastLF) last = this.eMarks[line2] + 1;
+      else last = this.eMarks[line2];
       while (first < last && lineIndent < indent) {
         const ch = this.src.charCodeAt(first);
         if (isSpace(ch)) {
-          if (ch === 9) lineIndent += 4 - (lineIndent + this.bsCount[line]) % 4;
+          if (ch === 9) lineIndent += 4 - (lineIndent + this.bsCount[line2]) % 4;
           else lineIndent++;
-        } else if (first - lineStart < this.tShift[line]) lineIndent++;
+        } else if (first - lineStart < this.tShift[line2]) lineIndent++;
         else break;
         first++;
       }
-      if (lineIndent > indent) queue[i] = new Array(lineIndent - indent + 1).join(" ") + this.src.slice(first, last);
-      else queue[i] = this.src.slice(first, last);
+      if (lineIndent > indent) queue2[i] = new Array(lineIndent - indent + 1).join(" ") + this.src.slice(first, last);
+      else queue2[i] = this.src.slice(first, last);
     }
-    return queue.join("");
+    return queue2.join("");
   }
 };
 var MAX_AUTOCOMPLETED_CELLS = 65536;
-function getLine(state, line) {
-  const pos = state.bMarks[line] + state.tShift[line];
-  const max2 = state.eMarks[line];
+function getLine(state, line2) {
+  const pos = state.bMarks[line2] + state.tShift[line2];
+  const max2 = state.eMarks[line2];
   return state.src.slice(pos, max2);
 }
 function escapedSplit(str) {
@@ -23671,9 +23671,9 @@ function code(state, startLine, endLine) {
     break;
   }
   state.line = last;
-  const token2 = state.push("code_block", "code", 0);
-  token2.content = state.getLines(startLine, last, 4 + state.blkIndent, false) + "\n";
-  token2.map = [startLine, state.line];
+  const token3 = state.push("code_block", "code", 0);
+  token3.content = state.getLines(startLine, last, 4 + state.blkIndent, false) + "\n";
+  token3.map = [startLine, state.line];
   return true;
 }
 function fence(state, startLine, endLine, silent) {
@@ -23712,11 +23712,11 @@ function fence(state, startLine, endLine, silent) {
   }
   len = state.sCount[startLine];
   state.line = nextLine + (haveEndMarker ? 1 : 0);
-  const token2 = state.push("fence", "code", 0);
-  token2.info = params;
-  token2.content = state.getLines(startLine + 1, nextLine, len, true);
-  token2.markup = markup;
-  token2.map = [startLine, state.line];
+  const token3 = state.push("fence", "code", 0);
+  token3.info = params;
+  token3.content = state.getLines(startLine + 1, nextLine, len, true);
+  token3.markup = markup;
+  token3.map = [startLine, state.line];
   return true;
 }
 function blockquote(state, startLine, endLine, silent) {
@@ -23836,9 +23836,9 @@ function hr(state, startLine, endLine, silent) {
   if (cnt < 3) return false;
   if (silent) return true;
   state.line = startLine + 1;
-  const token2 = state.push("hr", "hr", 0);
-  token2.map = [startLine, state.line];
-  token2.markup = Array(cnt + 1).join(String.fromCharCode(marker));
+  const token3 = state.push("hr", "hr", 0);
+  token3.map = [startLine, state.line];
+  token3.markup = Array(cnt + 1).join(String.fromCharCode(marker));
   return true;
 }
 function skipBulletListMarker(state, startLine) {
@@ -23883,7 +23883,7 @@ function markTightParagraphs(state, idx) {
   }
 }
 function list(state, startLine, endLine, silent) {
-  let max2, pos, start, token2;
+  let max2, pos, start, token3;
   let nextLine = startLine;
   let tight = true;
   if (state.sCount[nextLine] - state.blkIndent >= 4) return false;
@@ -23909,12 +23909,12 @@ function list(state, startLine, endLine, silent) {
   const markerCharCode = state.src.charCodeAt(posAfterMarker - 1);
   const listTokIdx = state.tokens.length;
   if (isOrdered) {
-    token2 = state.push("ordered_list_open", "ol", 1);
-    if (markerValue !== 1) token2.attrs = [["start", markerValue]];
-  } else token2 = state.push("bullet_list_open", "ul", 1);
+    token3 = state.push("ordered_list_open", "ol", 1);
+    if (markerValue !== 1) token3.attrs = [["start", markerValue]];
+  } else token3 = state.push("bullet_list_open", "ul", 1);
   const listLines = [nextLine, 0];
-  token2.map = listLines;
-  token2.markup = String.fromCharCode(markerCharCode);
+  token3.map = listLines;
+  token3.markup = String.fromCharCode(markerCharCode);
   let prevEmptyEnd = false;
   const terminatorRules = state.md.block.ruler.getRules("list");
   const oldParentType = state.parentType;
@@ -23937,11 +23937,11 @@ function list(state, startLine, endLine, silent) {
     else indentAfterMarker = offset - initial;
     if (indentAfterMarker > 4) indentAfterMarker = 1;
     const indent = initial + indentAfterMarker;
-    token2 = state.push("list_item_open", "li", 1);
-    token2.markup = String.fromCharCode(markerCharCode);
+    token3 = state.push("list_item_open", "li", 1);
+    token3.markup = String.fromCharCode(markerCharCode);
     const itemLines = [nextLine, 0];
-    token2.map = itemLines;
-    if (isOrdered) token2.info = state.src.slice(start, posAfterMarker - 1);
+    token3.map = itemLines;
+    if (isOrdered) token3.info = state.src.slice(start, posAfterMarker - 1);
     const oldTight = state.tight;
     const oldTShift = state.tShift[nextLine];
     const oldSCount = state.sCount[nextLine];
@@ -23960,8 +23960,8 @@ function list(state, startLine, endLine, silent) {
     state.tShift[nextLine] = oldTShift;
     state.sCount[nextLine] = oldSCount;
     state.tight = oldTight;
-    token2 = state.push("list_item_close", "li", -1);
-    token2.markup = String.fromCharCode(markerCharCode);
+    token3 = state.push("list_item_close", "li", -1);
+    token3.markup = String.fromCharCode(markerCharCode);
     nextLine = state.line;
     itemLines[1] = nextLine;
     if (nextLine >= endLine) break;
@@ -23983,9 +23983,9 @@ function list(state, startLine, endLine, silent) {
     }
     if (markerCharCode !== state.src.charCodeAt(posAfterMarker - 1)) break;
   }
-  if (isOrdered) token2 = state.push("ordered_list_close", "ol", -1);
-  else token2 = state.push("bullet_list_close", "ul", -1);
-  token2.markup = String.fromCharCode(markerCharCode);
+  if (isOrdered) token3 = state.push("ordered_list_close", "ol", -1);
+  else token3 = state.push("bullet_list_close", "ul", -1);
+  token3.markup = String.fromCharCode(markerCharCode);
   listLines[1] = nextLine;
   state.line = nextLine;
   state.parentType = oldParentType;
@@ -24006,8 +24006,8 @@ function countCodePoints(str) {
   }
   return length;
 }
-function lineEnd(state, line) {
-  return Math.min(state.eMarks[line] + 1, state.src.length);
+function lineEnd(state, line2) {
+  return Math.min(state.eMarks[line2] + 1, state.src.length);
 }
 function getNextLinePos(state, nextLine) {
   const endLine = state.lineMax;
@@ -24134,12 +24134,12 @@ function reference(state, startLine, _endLine, silent) {
     title,
     href
   };
-  const token2 = state.push("reference_definition", "", 0);
-  token2.map = [startLine, nextLine];
-  token2.hidden = true;
+  const token3 = state.push("reference_definition", "", 0);
+  token3.map = [startLine, nextLine];
+  token3.hidden = true;
   const meta = /* @__PURE__ */ Object.create(null);
   meta.label = label;
-  token2.meta = meta;
+  token3.meta = meta;
   state.line = nextLine;
   return true;
 }
@@ -24274,9 +24274,9 @@ function html_block(state, startLine, endLine, silent) {
     }
   }
   state.line = nextLine;
-  const token2 = state.push("html_block", "", 0);
-  token2.map = [startLine, nextLine];
-  token2.content = state.getLines(startLine, nextLine, state.blkIndent, true);
+  const token3 = state.push("html_block", "", 0);
+  token3.map = [startLine, nextLine];
+  token3.content = state.getLines(startLine, nextLine, state.blkIndent, true);
   return true;
 }
 function heading(state, startLine, endLine, silent) {
@@ -24471,12 +24471,12 @@ var ParserBlock = class {
     const rules = this.ruler.getRules("");
     const len = rules.length;
     const maxNesting = state.md.options.maxNesting;
-    let line = startLine;
+    let line2 = startLine;
     let hasEmptyLines = false;
-    while (line < endLine) {
-      state.line = line = state.skipEmptyLines(line);
-      if (line >= endLine) break;
-      if (state.sCount[line] < state.blkIndent) break;
+    while (line2 < endLine) {
+      state.line = line2 = state.skipEmptyLines(line2);
+      if (line2 >= endLine) break;
+      if (state.sCount[line2] < state.blkIndent) break;
       if (state.level >= maxNesting) {
         state.line = endLine;
         break;
@@ -24484,7 +24484,7 @@ var ParserBlock = class {
       const prevLine = state.line;
       let ok = false;
       for (let i = 0; i < len; i++) {
-        ok = rules[i](state, line, endLine, false);
+        ok = rules[i](state, line2, endLine, false);
         if (ok) {
           if (prevLine >= state.line) throw new Error("block rule didn't increment state.line");
           break;
@@ -24493,11 +24493,11 @@ var ParserBlock = class {
       if (!ok) throw new Error("none of the block rules matched");
       state.tight = !hasEmptyLines;
       if (state.isEmpty(state.line - 1)) hasEmptyLines = true;
-      line = state.line;
-      if (line < endLine && state.isEmpty(line)) {
+      line2 = state.line;
+      if (line2 < endLine && state.isEmpty(line2)) {
         hasEmptyLines = true;
-        line++;
-        state.line = line;
+        line2++;
+        state.line = line2;
       }
     }
   }
@@ -24532,22 +24532,22 @@ var StateInline = class {
     this.posMax = this.src.length;
   }
   pushPending() {
-    const token2 = new Token("text", "", 0);
-    token2.content = this.pending;
-    token2.level = this.pendingLevel;
-    this.tokens.push(token2);
+    const token3 = new Token("text", "", 0);
+    token3.content = this.pending;
+    token3.level = this.pendingLevel;
+    this.tokens.push(token3);
     this.pending = "";
-    return token2;
+    return token3;
   }
   push(type, tag2, nesting) {
     if (this.pending) this.pushPending();
-    const token2 = new Token(type, tag2, nesting);
+    const token3 = new Token(type, tag2, nesting);
     let token_meta = void 0;
     if (nesting < 0) {
       this.level--;
       this.delimiters = this._prev_delimiters.pop();
     }
-    token2.level = this.level;
+    token3.level = this.level;
     if (nesting > 0) {
       this.level++;
       this._prev_delimiters.push(this.delimiters);
@@ -24555,9 +24555,9 @@ var StateInline = class {
       token_meta = { delimiters: this.delimiters };
     }
     this.pendingLevel = this.level;
-    this.tokens.push(token2);
+    this.tokens.push(token3);
     this.tokens_meta.push(token_meta);
-    return token2;
+    return token3;
   }
   scanDelims(start, canSplitWord) {
     const max2 = this.posMax;
@@ -24725,10 +24725,10 @@ function escape2(state, silent) {
   }
   if (ch1 === 32) {
     if (!silent) {
-      const token2 = state.push("text_special", "", 0);
-      token2.content = "\\";
-      token2.markup = "\\";
-      token2.info = "escape";
+      const token3 = state.push("text_special", "", 0);
+      token3.content = "\\";
+      token3.markup = "\\";
+      token3.info = "escape";
     }
     state.pos = pos;
     return true;
@@ -24743,11 +24743,11 @@ function escape2(state, silent) {
   }
   const origStr = "\\" + escapedStr;
   if (!silent) {
-    const token2 = state.push("text_special", "", 0);
-    if (ch1 < 256 && ESCAPED[ch1] !== 0) token2.content = escapedStr;
-    else token2.content = origStr;
-    token2.markup = origStr;
-    token2.info = "escape";
+    const token3 = state.push("text_special", "", 0);
+    if (ch1 < 256 && ESCAPED[ch1] !== 0) token3.content = escapedStr;
+    else token3.content = origStr;
+    token3.markup = origStr;
+    token3.info = "escape";
   }
   state.pos = pos + 1;
   return true;
@@ -24784,11 +24784,11 @@ function backtick(state, silent) {
       if (matchEnd > max2) break;
       if (matchEnd - matchStart === openerLength) {
         if (!silent) {
-          const token2 = state.push("code_inline", "code", 0);
-          token2.markup = marker;
+          const token3 = state.push("code_inline", "code", 0);
+          token3.markup = marker;
           let content = state.src.slice(pos, matchStart).replace(/\n/g, " ");
           if (content.startsWith(" ") && content.endsWith(" ") && /[^ ]/.test(content)) content = content.slice(1, -1);
-          token2.content = content;
+          token3.content = content;
         }
         state.pos = matchEnd;
         return true;
@@ -24808,15 +24808,15 @@ function strikethrough_tokenize(state, silent) {
   let len = scanned.length;
   const ch = String.fromCharCode(marker);
   if (len < 2) return false;
-  let token2;
+  let token3;
   if (len % 2) {
-    token2 = state.push("text", "", 0);
-    token2.content = ch;
+    token3 = state.push("text", "", 0);
+    token3.content = ch;
     len--;
   }
   for (let i = 0; i < len; i += 2) {
-    token2 = state.push("text", "", 0);
-    token2.content = ch + ch;
+    token3 = state.push("text", "", 0);
+    token3.content = ch + ch;
     state.delimiters.push({
       marker,
       length: 0,
@@ -24830,7 +24830,7 @@ function strikethrough_tokenize(state, silent) {
   return true;
 }
 function postProcess$1(state, delimiters) {
-  let token2;
+  let token3;
   const loneMarkers = [];
   const max2 = delimiters.length;
   for (let i = 0; i < max2; i++) {
@@ -24838,18 +24838,18 @@ function postProcess$1(state, delimiters) {
     if (startDelim.marker !== 126) continue;
     if (startDelim.end === -1) continue;
     const endDelim = delimiters[startDelim.end];
-    token2 = state.tokens[startDelim.token];
-    token2.type = "s_open";
-    token2.tag = "s";
-    token2.nesting = 1;
-    token2.markup = "~~";
-    token2.content = "";
-    token2 = state.tokens[endDelim.token];
-    token2.type = "s_close";
-    token2.tag = "s";
-    token2.nesting = -1;
-    token2.markup = "~~";
-    token2.content = "";
+    token3 = state.tokens[startDelim.token];
+    token3.type = "s_open";
+    token3.tag = "s";
+    token3.nesting = 1;
+    token3.markup = "~~";
+    token3.content = "";
+    token3 = state.tokens[endDelim.token];
+    token3.type = "s_close";
+    token3.tag = "s";
+    token3.nesting = -1;
+    token3.markup = "~~";
+    token3.content = "";
     if (state.tokens[endDelim.token - 1].type === "text" && state.tokens[endDelim.token - 1].content === "~") loneMarkers.push(endDelim.token - 1);
   }
   while (loneMarkers.length) {
@@ -24858,9 +24858,9 @@ function postProcess$1(state, delimiters) {
     while (j < state.tokens.length && state.tokens[j].type === "s_close") j++;
     j--;
     if (i !== j) {
-      token2 = state.tokens[j];
+      token3 = state.tokens[j];
       state.tokens[j] = state.tokens[i];
-      state.tokens[i] = token2;
+      state.tokens[i] = token3;
     }
   }
 }
@@ -24885,8 +24885,8 @@ function emphasis_tokenize(state, silent) {
   if (marker !== 95 && marker !== 42) return false;
   const scanned = state.scanDelims(state.pos, marker === 42);
   for (let i = 0; i < scanned.length; i++) {
-    const token2 = state.push("text", "", 0);
-    token2.content = String.fromCharCode(marker);
+    const token3 = state.push("text", "", 0);
+    token3.content = String.fromCharCode(marker);
     state.delimiters.push({
       marker,
       length: scanned.length,
@@ -25091,16 +25091,16 @@ function image(state, silent) {
     content = state.src.slice(labelStart, labelEnd);
     const tokens = [];
     state.md.inline.parse(content, state.md, state.env, tokens);
-    const token2 = state.push("image", "img", 0);
+    const token3 = state.push("image", "img", 0);
     const attrs = [["src", href], ["alt", ""]];
-    token2.attrs = attrs;
-    token2.children = tokens;
-    token2.content = content;
+    token3.attrs = attrs;
+    token3.children = tokens;
+    token3.content = content;
     if (title) attrs.push(["title", title]);
     if (label) {
       const meta = /* @__PURE__ */ Object.create(null);
       meta.label = label;
-      token2.meta = meta;
+      token3.meta = meta;
     }
   }
   state.pos = pos;
@@ -25208,10 +25208,10 @@ function html_inline(state, silent) {
   } else return false;
   if (end < 0) return false;
   if (!silent) {
-    const token2 = state.push("html_inline", "", 0);
-    token2.content = state.src.slice(pos, end);
-    if (isLinkOpen(token2.content)) state.linkLevel++;
-    if (isLinkClose(token2.content)) state.linkLevel--;
+    const token3 = state.push("html_inline", "", 0);
+    token3.content = state.src.slice(pos, end);
+    if (isLinkOpen(token3.content)) state.linkLevel++;
+    if (isLinkClose(token3.content)) state.linkLevel--;
   }
   state.pos = end;
   return true;
@@ -25228,10 +25228,10 @@ function entity(state, silent) {
     if (match) {
       if (!silent) {
         const code2 = match[1][0].toLowerCase() === "x" ? parseInt(match[1].slice(1), 16) : parseInt(match[1], 10);
-        const token2 = state.push("text_special", "", 0);
-        token2.content = isValidEntityCode(code2) ? fromCodePoint(code2) : fromCodePoint(65533);
-        token2.markup = match[0];
-        token2.info = "entity";
+        const token3 = state.push("text_special", "", 0);
+        token3.content = isValidEntityCode(code2) ? fromCodePoint(code2) : fromCodePoint(65533);
+        token3.markup = match[0];
+        token3.info = "entity";
       }
       state.pos += match[0].length;
       return true;
@@ -25242,10 +25242,10 @@ function entity(state, silent) {
       const decoded = decodeHTMLStrict(match[0]);
       if (decoded !== match[0]) {
         if (!silent) {
-          const token2 = state.push("text_special", "", 0);
-          token2.content = decoded;
-          token2.markup = match[0];
-          token2.info = "entity";
+          const token3 = state.push("text_special", "", 0);
+          token3.content = decoded;
+          token3.markup = match[0];
+          token3.info = "entity";
         }
         state.pos += match[0].length;
         return true;
@@ -25677,10 +25677,10 @@ var MarkdownIt = class {
       "helpers",
       Object.assign({}, helpers_exports)
     );
-    const [presetNameOrOptions, options] = args;
+    const [presetNameOrOptions, options2] = args;
     if (typeof presetNameOrOptions === "string") {
       this.configure(presetNameOrOptions);
-      if (options) this.set(options);
+      if (options2) this.set(options2);
     } else {
       this.configure("default");
       this.set(presetNameOrOptions || {});
@@ -25704,8 +25704,8 @@ var MarkdownIt = class {
   *   .set({ typographer: true })
   * ```
   */
-  set(options) {
-    Object.assign(this.options, options);
+  set(options2) {
+    Object.assign(this.options, options2);
     return this;
   }
   /**
@@ -25904,6 +25904,14 @@ function imagePath(markdownFile, src) {
 var parser = new MarkdownItCallable();
 
 // src/items.ts
+var STEP_ACTIONS = [
+  { id: "approve", label: "Approve" },
+  { id: "flag", label: "Flag", note: true }
+];
+var builtIn = (actions) => actions.length === STEP_ACTIONS.length && actions.every((action, at) => {
+  const own = STEP_ACTIONS[at];
+  return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit;
+});
 var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
 
@@ -25915,11 +25923,84 @@ function tooLong(fields) {
   return long === void 0 ? null : `That text is ${String(long.length)} characters long; the most it can be is ${String(MAX_TEXT)}.`;
 }
 
+// src/page/icons.ts
+var round = { fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-linejoin": "round" };
+var line = (d, width = 1.7) => ["path", { d, ...round, "stroke-width": width }];
+var ring = (extra = {}) => ["circle", { cx: 8, cy: 8, r: 6.2, fill: "none", stroke: "currentColor", "stroke-width": 1.6, ...extra }];
+var block2 = (x, y, width, height, opacity = 1) => ["rect", { x, y, width, height, rx: 1, fill: "currentColor", ...opacity < 1 && { opacity } }];
+var ICONS = {
+  /** Queue and step states. */
+  unread: [ring()],
+  read: [ring(), ["path", { d: "M8 1.8a6.2 6.2 0 0 1 0 12.4z", fill: "currentColor" }]],
+  // The tick is cut out of the disc in the canvas colour.
+  decided: [
+    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
+    ["path", { d: "M4.8 8.2l2.1 2.1 4.3-4.6", ...round, "stroke-width": 1.8, class: "knockout" }]
+  ],
+  reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
+  folded: [block2(2, 3, 12, 3), block2(2, 8, 12, 2, 0.55), block2(2, 12, 12, 2, 0.3)],
+  message: [line("M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z", 1.5)],
+  /** Checklist statuses. */
+  met: [ring(), line("M5 8.2l2 2 4-4.3")],
+  "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
+  partly: [ring(), line("M5 8h6")],
+  unchecked: [ring({ "stroke-dasharray": "2.4 2.2" })],
+  /** Notices and session. */
+  warn: [
+    ["path", { d: "M8 2l6.5 11.5h-13z", ...round, "stroke-width": 1.5 }],
+    line("M8 6.5v3.2", 1.6),
+    ["circle", { cx: 8, cy: 11.6, r: 0.9, fill: "currentColor" }]
+  ],
+  unlink: [line("M6.5 9.5l-1.8 1.8a2 2 0 0 1-2.8-2.8L3.7 6.7M9.5 6.5l1.8-1.8a2 2 0 0 1 2.8 2.8l-1.8 1.8M5 3V1.5M3 5H1.5M11 13v1.5M13 11h1.5", 1.5)],
+  offline: [line("M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11", 1.5)],
+  ask: [
+    ring({ "stroke-width": 1.5 }),
+    line("M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3", 1.5),
+    ["circle", { cx: 8, cy: 11.4, r: 0.9, fill: "currentColor" }]
+  ],
+  spinner: [
+    ["circle", { cx: 8, cy: 8, r: 6, fill: "none", stroke: "currentColor", "stroke-opacity": 0.25, "stroke-width": 2 }],
+    line("M8 2a6 6 0 0 1 6 6", 2)
+  ],
+  /** Files and controls. */
+  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]],
+  more: [3.5, 8, 12.5].map((cx) => ["circle", { cx, cy: 8, r: 1.4, fill: "currentColor" }]),
+  "chevron-right": [line("M6 4l4 4-4 4")],
+  "chevron-down": [line("M4 6l4 4 4-4")],
+  previous: [line("M10 3.5L5.5 8l4.5 4.5")],
+  next: [line("M6 3.5L10.5 8 6 12.5")],
+  /** Layouts. */
+  "layout-queue": [block2(1, 2, 5, 12), block2(7.3, 2, 7.7, 12, 0.5)],
+  "layout-three": [block2(1, 2, 3.5, 12), block2(5.8, 2, 5, 12, 0.5), block2(12, 2, 3, 12)],
+  "layout-split": [block2(1, 2, 6.3, 12, 0.5), block2(8.7, 2, 6.3, 12)],
+  "layout-panel": [block2(1, 2, 3.5, 12), block2(5.8, 2, 9.2, 7.5, 0.5), block2(5.8, 10.7, 9.2, 3.3)]
+};
+var SVG = "http://www.w3.org/2000/svg";
+function icon(name, label) {
+  const svg = document.createElementNS(SVG, "svg");
+  for (const [key2, value] of Object.entries({ viewBox: "0 0 16 16", width: 16, height: 16, focusable: "false" }))
+    svg.setAttribute(key2, String(value));
+  svg.classList.add("icon", `icon-${name}`);
+  if (label) {
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", label);
+  } else svg.setAttribute("aria-hidden", "true");
+  for (const [tag2, attributes] of ICONS[name]) {
+    const shape = document.createElementNS(SVG, tag2);
+    for (const [key2, value] of Object.entries(attributes)) shape.setAttribute(key2, String(value));
+    svg.append(shape);
+  }
+  return svg;
+}
+
 // src/page/dom.ts
 function el(tag2, props = {}, ...children) {
   const node = Object.assign(document.createElement(tag2), props);
   node.append(...children);
   return node;
+}
+function selectBox(select) {
+  return el("div", { className: "select" }, select, icon("chevron-down"));
 }
 function region(id) {
   const found = document.getElementById(id);
@@ -25929,10 +26010,28 @@ function region(id) {
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
   const box = region("alert");
-  box.textContent = message;
+  box.className = "banner attention";
+  box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
   box.hidden = message === null;
+  if (message === null) document.body.classList.remove("unreachable");
 }
-var unreachable = ({ name, reopen }) => `Could not reach the ${name}. ${reopen}`;
+function showUnreachable({ name, reopen, retry }) {
+  const box = region("alert");
+  box.className = "banner attention";
+  box.replaceChildren(
+    icon("offline"),
+    el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`),
+    ...retry ? [el("button", { type: "button", className: "btn small", onclick: retry }, "Retry now")] : []
+  );
+  box.hidden = false;
+  document.body.classList.add("unreachable");
+}
+var send = (route, body) => fetch(`/${route}?token=${token}`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body)
+});
+var postQuietly = (route, body) => send(route, body).catch(() => null);
 async function post(page, route, body) {
   const problem = tooLong(body);
   if (problem) {
@@ -25940,11 +26039,7 @@ async function post(page, route, body) {
     return null;
   }
   try {
-    const answer = await fetch(`/${route}?token=${token}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    const answer = await send(route, body);
     if (answer.ok) {
       showAlert(null);
       return answer;
@@ -25953,8 +26048,31 @@ async function post(page, route, body) {
     showAlert(typeof said2.error === "string" ? said2.error : `The ${page.name} could not do that (${String(answer.status)}).`);
     return null;
   } catch {
-    showAlert(unreachable(page));
+    showUnreachable(page);
     return null;
+  }
+}
+
+// src/page/layout.ts
+var LAYOUTS = [
+  { id: "queue", label: "What's left", icon: "layout-queue" },
+  { id: "three", label: "Three columns", icon: "layout-three" },
+  { id: "split", label: "Explanation beside code", icon: "layout-split" },
+  { id: "panel", label: "Tool panel", icon: "layout-panel" }
+];
+var KEY = "walkthrough.layout";
+function storedLayout() {
+  try {
+    const stored = localStorage.getItem(KEY);
+    return LAYOUTS.find((layout2) => layout2.id === stored)?.id ?? "queue";
+  } catch {
+    return "queue";
+  }
+}
+function storeLayout(layout2) {
+  try {
+    localStorage.setItem(KEY, layout2);
+  } catch {
   }
 }
 
@@ -25962,45 +26080,107 @@ async function post(page, route, body) {
 function renderer() {
   const markdown3 = new MarkdownItCallable({ html: false, linkify: true });
   markdown3.core.ruler.push("align_by_class", (state) => {
-    for (const token2 of state.tokens) {
-      const align = /^text-align:(left|center|right)$/.exec(String(token2.attrGet("style")))?.[1];
+    for (const token3 of state.tokens) {
+      const align = /^text-align:(left|center|right)$/.exec(String(token3.attrGet("style")))?.[1];
       if (!align) continue;
-      token2.attrs = (token2.attrs ?? []).filter(([name]) => name !== "style");
-      token2.attrJoin("class", `align-${align}`);
+      token3.attrs = (token3.attrs ?? []).filter(([name]) => name !== "style");
+      token3.attrJoin("class", `align-${align}`);
     }
   });
-  markdown3.renderer.rules["link_open"] = (tokens, at, options, _env, self) => {
+  markdown3.renderer.rules["link_open"] = (tokens, at, options2, _env, self) => {
     tokens[at]?.attrSet("target", "_blank");
     tokens[at]?.attrSet("rel", "noopener noreferrer");
-    return self.renderToken(tokens, at, options);
+    return self.renderToken(tokens, at, options2);
   };
   return markdown3;
 }
 var withImages = renderer();
 var image2 = withImages.renderer.rules["image"];
-withImages.renderer.rules["image"] = (tokens, at, options, env, self) => {
-  const token2 = tokens[at];
+withImages.renderer.rules["image"] = (tokens, at, options2, env, self) => {
+  const token3 = tokens[at];
   const file = env?.file ?? "";
-  const repoPath = token2 && imagePath(file, String(token2.attrGet("src") ?? ""));
-  if (repoPath) token2.attrSet("src", `file?path=${encodeURIComponent(repoPath)}`);
-  return image2 ? image2(tokens, at, options, env, self) : "";
+  const repoPath = token3 && imagePath(file, String(token3.attrGet("src") ?? ""));
+  if (repoPath) token3.attrSet("src", `file?path=${encodeURIComponent(repoPath)}`);
+  return image2 ? image2(tokens, at, options2, env, self) : "";
 };
+withImages.core.ruler.push("mark_added", (state) => {
+  const added = state.env?.added;
+  if (!added?.size) return;
+  for (const token3 of state.tokens) {
+    if (token3.level !== 0 || token3.nesting === -1 || !token3.map) continue;
+    const [first, end] = token3.map;
+    for (let line2 = first + 1; line2 <= end; line2++)
+      if (added.has(line2)) {
+        token3.attrJoin("class", "inserted");
+        break;
+      }
+  }
+});
 var withoutImages = renderer().disable("image");
-var renderMarkdown = (text2, file) => file === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file });
+var renderMarkdown = (text2, file, added) => file === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file, added });
+
+// src/page/motion.ts
+var root = getComputedStyle(document.documentElement);
+var token2 = (name) => root.getPropertyValue(`--${name}`).trim();
+var reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+var now = () => Number(document.timeline.currentTime ?? performance.now());
+function options(id, { ms, curve, delay = 0, iterations = 1, fill = "backwards" }) {
+  const duration = typeof ms === "number" ? ms : Number.parseFloat(token2(ms));
+  return { id, duration, delay, iterations, fill, easing: curve === "linear" ? "linear" : token2(curve) };
+}
+var animate = (element, id, frames, timing) => element.animate(frames, options(id, timing));
+var live = [];
+function play(key2, id, frames, given) {
+  const timing = options(id, given);
+  const lasts = timing.delay + timing.duration * timing.iterations;
+  const start = now();
+  for (const older of live.filter((one) => one.key === key2 && one.timing.id === id)) {
+    for (const running of older.running) running.cancel();
+    live.splice(live.indexOf(older), 1);
+  }
+  live.push({ key: key2, frames, timing, start, end: start + lasts, running: [] });
+  return lasts;
+}
+function replay() {
+  const at = now();
+  for (const motion of [...live]) {
+    if (motion.end <= at) {
+      live.splice(live.indexOf(motion), 1);
+      continue;
+    }
+    for (const target of document.querySelectorAll(`[data-motion="${CSS.escape(motion.key)}"]`)) {
+      const playing = target.getAnimations();
+      if (motion.running.some((running2) => playing.includes(running2))) continue;
+      const running = target.animate(motion.frames, motion.timing);
+      running.currentTime = at - motion.start;
+      motion.running.push(running);
+    }
+  }
+}
 
 // src/page/app.ts
-var exported = document.getElementById("exported")?.textContent;
+var exportedText = document.getElementById("exported")?.textContent;
+var exported = exportedText === void 0 ? void 0 : JSON.parse(exportedText);
 var readOnly = exported !== void 0;
+var FADE_IN = [{ opacity: 0 }, { opacity: 1 }];
 function markdown2(text2, className) {
   const box = document.createElement("div");
   box.className = `markdown ${className}`;
   box.innerHTML = renderMarkdown(text2);
   return box;
 }
+var plain = (text2) => markdown2(text2, "").textContent.replace(/\s+/g, " ").trim();
+var phone = matchMedia("(max-width: 760px)");
 var header = region("header");
+var queue = region("queue");
 var main = region("main");
+var side = region("side");
+var tools = region("tools");
+var layout = readOnly ? "queue" : storedLayout();
 var posted = 0;
-var PAGE = { name: "walkthrough", reopen: "Run /walkthrough again to reopen it." };
+var PAGE = { name: "walkthrough", reopen: "Run /walkthrough again to reopen it.", retry: () => {
+  poll();
+} };
 var post2 = (route, body) => {
   posted++;
   return post(PAGE, route, body);
@@ -26010,38 +26190,144 @@ var session;
 var drafts = /* @__PURE__ */ new Map();
 var decisionOf = (item) => walkthrough.decided[itemKey(item)] ?? null;
 var stepDecided = (step) => decisionOf({ type: "step", id: step.id }) !== null;
+var stepReopened = (step) => walkthrough.reopened[itemKey({ type: "step", id: step.id })];
 var labelOf = (item, id) => walkthrough.actions[itemKey(item)]?.find((action) => action.id === id)?.label ?? id;
-function currentStep({ steps }) {
+var CHECKLIST_ITEM = /^checklist-(.+)$/;
+function currentView() {
   const named = decodeURIComponent(location.hash.slice(1));
-  return steps.find((step) => step.id === named) ?? steps.find((step) => !stepDecided(step)) ?? steps[0];
+  const { steps } = walkthrough;
+  if (named === "session") return { kind: "session" };
+  if (named === "checklist" && walkthrough.checklist) return { kind: "checklist" };
+  const item = CHECKLIST_ITEM.exec(named)?.[1];
+  if (item !== void 0 && walkthrough.checklist) return { kind: "checklist", item };
+  if (named === "end" && steps.length) return { kind: "end" };
+  if (named === "deck" && !readOnly) return { kind: "deck" };
+  const step = steps.find((one) => one.id === named) ?? steps.find((one) => !stepDecided(one));
+  if (step) return { kind: "step", step };
+  return steps.length ? { kind: "end" } : { kind: "preparing" };
 }
-function show(step) {
-  if (!step) return;
-  location.hash = encodeURIComponent(step.id);
-}
+var currentStep = () => {
+  const view = currentView();
+  return view.kind === "step" ? view.step : void 0;
+};
+var go2 = (address) => {
+  location.hash = encodeURIComponent(address);
+};
+var moves = 0;
 var taking = null;
+var changing = /* @__PURE__ */ new Set();
 async function decide(item, action, fields = {}) {
+  const before = moves;
+  const from = currentStep()?.id;
   const answer = await post2("decide", { item, action, ...fields });
   if (!answer) return;
   ({ walkthrough, session } = await answer.json());
   for (const field of ["note", "text"]) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
+  flung = null;
+  changing.delete(itemKey(item));
+  const moving = item.type === "step" && moves === before && from === item.id;
+  if (moving) {
+    const { steps } = walkthrough;
+    const at = steps.findIndex((one) => one.id === item.id);
+    const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find((one) => !stepDecided(one));
+    go2(next ? next.id : "end");
+  }
   render();
-  if (item.type !== "step") return;
-  const at = walkthrough.steps.findIndex((one) => one.id === item.id);
-  show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find((one) => !stepDecided(one)));
+  offerUndo(item, action, moving);
 }
-var reading = /* @__PURE__ */ new Set();
-async function markRead(step) {
-  if (readOnly || walkthrough.read.includes(step.id) || reading.has(step.id)) return;
-  reading.add(step.id);
-  const answer = await post2("read", { step: step.id });
-  reading.delete(step.id);
+var undoable = null;
+var UNDO_MS = 6e3;
+var toastText = el("span", { className: "toast-text" });
+var toast = el(
+  "div",
+  { className: "toast" },
+  icon("met"),
+  toastText,
+  el("button", { type: "button", className: "toast-undo", onclick: () => void undo() }, "Undo")
+);
+var toastRegion = el("div", { className: "toast-region" });
+toastRegion.setAttribute("role", "status");
+if (!readOnly) tools.before(el("div", { className: "toast-anchor" }, toastRegion));
+var toastTimer;
+var toastHeld = { pointer: false, focus: false };
+function holdToast(held = {}) {
+  toastHeld = { ...toastHeld, ...held };
+  clearTimeout(toastTimer);
+  if (!toastHeld.pointer && !toastHeld.focus) toastTimer = setTimeout(hideToast, UNDO_MS);
+}
+toast.onpointerenter = () => {
+  holdToast({ pointer: true });
+};
+toast.onpointerleave = () => {
+  holdToast({ pointer: false });
+};
+toast.addEventListener("focusin", () => {
+  holdToast({ focus: true });
+});
+toast.addEventListener("focusout", () => {
+  holdToast({ focus: false });
+});
+function itemName(item) {
+  switch (item.type) {
+    case "step":
+      return `step ${String(stepNumber(item.id))}`;
+    case "checklist":
+      return `checklist item ${String((walkthrough.checklist?.items.findIndex((one) => one.id === item.id) ?? -1) + 1)}`;
+    case "note": {
+      const noted = session.conversation.find((entry) => entry.id === item.id);
+      return noted && isNote(noted) ? `the ${noted.note.label} note` : "the note";
+    }
+    case "walkthrough":
+      return "the walkthrough";
+  }
+}
+function offerUndo(item, action, moved) {
+  undoable = { item, landed: moved ? location.hash : null };
+  toastText.textContent = `Decided ${itemName(item)}: ${labelOf(item, action)}`;
+  for (const leaving of toast.getAnimations()) leaving.cancel();
+  if (!toast.isConnected) {
+    toastHeld = { pointer: false, focus: false };
+    toastRegion.append(toast);
+    const rise = [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }];
+    animate(toast, "toast-in", reduced() ? FADE_IN : rise, { ms: "base", curve: "ease-out", delay: 120 });
+  }
+  holdToast();
+}
+function hideToast() {
+  clearTimeout(toastTimer);
+  undoable = null;
+  if (!toast.isConnected) return;
+  const out = animate(toast, "toast-out", [{ opacity: 1 }, { opacity: 0 }], { ms: "fast", curve: "ease-in", fill: "forwards" });
+  out.finished.then(
+    () => {
+      toast.remove();
+      out.cancel();
+    },
+    () => {
+    }
+  );
+}
+async function undo() {
+  const taken = undoable;
+  if (!taken) return;
+  const hadFocus = toast.contains(document.activeElement);
+  hideToast();
+  const answer = await post2("decide", { item: taken.item, clear: true });
   if (!answer) return;
-  walkthrough = { ...walkthrough, read: (await answer.json()).read };
+  ({ walkthrough, session } = await answer.json());
+  if (taken.item.type === "step" && taken.landed === location.hash) go2(taken.item.id);
   render();
+  if (hadFocus) document.querySelector(".action-bar button, #main button")?.focus();
 }
-async function send(route, body, draft) {
+function markRead(step) {
+  if (readOnly || walkthrough.read.includes(step.id)) return;
+  const read = /* @__PURE__ */ new Set([...walkthrough.read, step.id]);
+  walkthrough = { ...walkthrough, read: walkthrough.steps.filter((one) => read.has(one.id)).map((one) => one.id) };
+  posted++;
+  void postQuietly("read", { step: step.id });
+}
+async function send2(route, body, draft) {
   const answer = await post2(route, body);
   if (!answer) return false;
   if (draft) drafts.delete(draft);
@@ -26051,11 +26337,23 @@ async function send(route, body, draft) {
 }
 var lastSession = "";
 var lastWalkthrough = "";
+var stopped = false;
 async function stop() {
   if (!await post2("stop", {})) return;
   clearInterval(poller);
-  header.replaceChildren(el("h1", {}, "Walkthrough"));
-  main.replaceChildren(el("p", { className: "notice" }, "The walkthrough has stopped. You can close this tab."));
+  stopped = true;
+  taking = null;
+  hideToast();
+  render();
+  const banner = region("alert");
+  banner.className = "banner";
+  banner.replaceChildren(
+    el("span", { className: "banner-text" }, el("strong", {}, "Stopped."), " The walkthrough has stopped and your decisions are kept. You can close this tab.")
+  );
+  banner.hidden = false;
+  const panes = region("panes");
+  panes.classList.add("stopped");
+  panes.inert = true;
 }
 var SESSION = {
   listening: ["Listening", "The session is listening: what you ask reaches it right away."],
@@ -26063,15 +26361,155 @@ var SESSION = {
   "needs-you": ["Needs you", "The session asked you something; reply to it below."],
   gone: ["Gone", "The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code."]
 };
-function sessionChip() {
-  const [label, about] = SESSION[session.state];
-  const chip = el("span", { className: "chip", title: about }, label);
-  chip.dataset["state"] = session.state;
-  chip.setAttribute("role", "status");
-  chip.setAttribute("aria-label", "Session");
-  return chip;
+function statusView() {
+  const state = stopped ? "gone" : session.state;
+  const [label, about] = stopped ? ["Stopped", "The walkthrough has stopped."] : SESSION[state];
+  const mark = state === "working" ? icon("spinner") : el("span", { className: "dot" });
+  if (state === "needs-you") mark.dataset["motion"] = "pulse";
+  const status = el("span", { className: "status", title: about }, mark, label);
+  status.dataset["state"] = state;
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-label", "Session");
+  return status;
 }
-var writable = (form) => readOnly ? [] : [form];
+function segmentState(step, current) {
+  if (stepDecided(step)) return "decided";
+  if (stepReopened(step)) return "reopened";
+  if (step === current) return "current";
+  return walkthrough.read.includes(step.id) ? "read" : "unread";
+}
+function progressView() {
+  const { steps } = walkthrough;
+  const decided = steps.filter(stepDecided).length;
+  const current = currentView().kind === "deck" ? deckTop() : currentStep();
+  const said2 = steps.length ? `${String(decided)} of ${plural(steps.length, "step")} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read` : "No steps yet";
+  const bar = el(
+    "div",
+    { className: "progress", title: said2 },
+    ...steps.map((step) => {
+      const state = segmentState(step, current);
+      const fill = el("span", { className: "segment-fill" });
+      fill.dataset["motion"] = `fill:${step.id}`;
+      const segment2 = el("span", { className: "segment" }, ...state === "decided" ? [fill] : []);
+      segment2.dataset["state"] = state;
+      return segment2;
+    })
+  );
+  if (steps.length) {
+    bar.setAttribute("role", "progressbar");
+    bar.setAttribute("aria-label", "Steps decided");
+    bar.setAttribute("aria-valuemin", "0");
+    bar.setAttribute("aria-valuemax", String(steps.length));
+    bar.setAttribute("aria-valuenow", String(decided));
+    bar.setAttribute("aria-valuetext", said2);
+  }
+  const count = el("span", { className: "progress-count" }, `${String(decided)}/${String(steps.length)}`);
+  count.setAttribute("aria-hidden", "true");
+  count.dataset["motion"] = "count:progress";
+  return [bar, count];
+}
+function chooseLayout(id) {
+  layout = id;
+  storeLayout(id);
+  render();
+}
+function layoutSwitch() {
+  const choices = LAYOUTS.map(({ id, label, icon: shape }) => {
+    const button = el("button", { type: "button", title: label }, icon(shape));
+    button.setAttribute("aria-label", label);
+    button.setAttribute("aria-pressed", String(id === layout));
+    button.dataset["key"] = `layout:${id}`;
+    button.onclick = () => {
+      chooseLayout(id);
+    };
+    return button;
+  });
+  const group = el("div", { className: "segmented icons layout-switch" }, ...choices);
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-label", "Layout");
+  return group;
+}
+var menuOpen = null;
+function closeMenu(refocus = false) {
+  const key2 = menuOpen;
+  menuOpen = null;
+  render();
+  if (refocus && key2 !== null) document.querySelector(`[data-key="${CSS.escape(key2)}"]`)?.focus();
+}
+document.addEventListener("click", (event) => {
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest(".menu, .more-menu, .menu-button"))) closeMenu();
+});
+function moreMenu() {
+  const button = el("button", { type: "button", className: "icon-button", onclick: () => {
+    menuOpen = menuOpen === "more" ? null : "more";
+    render();
+    document.querySelector(".menu [role=menuitem]")?.focus();
+  } }, icon("more"));
+  button.setAttribute("aria-label", "More");
+  button.setAttribute("aria-haspopup", "menu");
+  button.setAttribute("aria-expanded", String(menuOpen === "more"));
+  button.dataset["key"] = "more";
+  const box = el("div", { className: "more-menu" }, button);
+  if (menuOpen !== "more") return box;
+  const choices = stopped ? [] : [
+    ...walkthrough.steps.length && currentView().kind !== "deck" ? [["Swipe to decide", () => {
+      go2("deck");
+    }]] : [],
+    ["Stop", () => void stop()]
+  ];
+  const item = (label, choose, role = "menuitem") => {
+    const made = el("button", { type: "button", tabIndex: -1, onclick: () => {
+      closeMenu();
+      choose();
+    } }, label);
+    made.setAttribute("role", role);
+    made.dataset["key"] = `menu:${label}`;
+    return made;
+  };
+  const actions = choices.map(([label, choose]) => item(label, choose));
+  const layouts = LAYOUTS.map(({ id, label }) => {
+    const radio = item(label, () => {
+      chooseLayout(id);
+    }, "menuitemradio");
+    radio.setAttribute("aria-checked", String(id === layout));
+    return radio;
+  });
+  const items = [...actions, ...layouts];
+  const separator2 = el("div", { className: "menu-separator" });
+  separator2.setAttribute("role", "separator");
+  const menu = el("div", { className: "menu" }, ...actions, ...actions.length ? [separator2] : [], ...layouts);
+  menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", "More");
+  menu.onkeydown = (event) => {
+    const at = items.indexOf(event.target);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      items.at((at + (event.key === "ArrowDown" ? 1 : -1)) % items.length)?.focus();
+    } else if (event.key === "Escape" || event.key === "Tab") {
+      closeMenu();
+      if (event.key === "Tab") return;
+      document.querySelector('[data-key="more"]')?.focus();
+    } else return;
+    event.preventDefault();
+  };
+  box.append(menu);
+  return box;
+}
+function headerView() {
+  const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
+  return [
+    el("span", { className: "logo" }, "Walkthrough"),
+    el("h1", { className: "session-label", title: range }, nameOf(walkthrough)),
+    ...progressView(),
+    el(
+      "div",
+      { className: "header-end" },
+      layoutSwitch(),
+      statusView(),
+      ...stopped ? [] : [el("button", { type: "button", className: "btn small stop", onclick: () => void stop() }, "Stop")],
+      moreMenu()
+    )
+  ];
+}
 function draftArea(draft, label, start = "", rows = 2) {
   const box = el("textarea", { rows, value: drafts.get(draft) ?? start, placeholder: label });
   box.dataset["draft"] = draft;
@@ -26079,18 +26517,21 @@ function draftArea(draft, label, start = "", rows = 2) {
   box.oninput = () => drafts.set(draft, box.value);
   return box;
 }
-function draftForm(boxes, action, onSend) {
-  const form = el("form", { className: "draft" }, ...boxes, el("button", { type: "submit" }, action));
+function lineBox(draft, label, placeholder, onSend) {
+  const box = el("input", { type: "text", value: drafts.get(draft) ?? "", placeholder });
+  box.dataset["draft"] = draft;
+  box.setAttribute("aria-label", label);
+  box.oninput = () => drafts.set(draft, box.value);
+  const form = el("form", { className: "line-box" }, box);
   form.onsubmit = (event) => {
     event.preventDefault();
     onSend();
   };
   return form;
 }
-var draftBox = (draft, label, action, onSend) => draftForm([draftArea(draft, label)], action, onSend);
 var said = (entry) => entry.from === "session" ? markdown2(entry.text, "said session") : el("p", { className: "said person" }, entry.text ?? "");
-function followUps(root) {
-  const thread = /* @__PURE__ */ new Set([root.id]);
+function followUps(root2) {
+  const thread = /* @__PURE__ */ new Set([root2.id]);
   return session.conversation.filter((entry) => {
     const to = entry.from === "session" ? entry.answer : entry.kind === "reply" ? entry.to : void 0;
     if (to === void 0 || !thread.has(to)) return false;
@@ -26106,50 +26547,131 @@ var anchorOf = (entry) => {
   return at === void 0 ? placeOf(entry).step : at;
 };
 var answersAsk = (entry) => isNote(entry) && entry.answer !== void 0;
+var sessionMessages = () => session.conversation.filter((entry) => entry.from === "session" && !entry.answer && !entry.note);
+var answered = (message) => session.conversation.some((entry) => entry.from === "page" && entry.kind === "reply" && entry.to === message.id);
+var waitingQuestions = () => readOnly ? [] : sessionMessages().filter((message) => message.question && !answered(message));
+var turn = (entry) => el("div", { className: "turn" }, el("span", { className: "who" }, entry.from === "session" ? "Session" : "You"), said(entry));
+var replies = (entries) => entries.length ? [el("div", { className: "replies" }, ...entries.map(turn))] : [];
 function askThread(asked) {
   const answers = followUps(asked);
-  const inNotes = new Set(answers.filter(isNote).flatMap((note) => followUps(note).map((entry) => entry.id)));
-  return el(
-    "div",
-    { className: "thread" },
-    said(asked),
-    ...answers.length ? answers.filter((entry) => !inNotes.has(entry.id)).map((entry) => isNote(entry) ? noteView(entry) : said(entry)) : [el("p", { className: "notice" }, "Waiting for the session to answer.")]
-  );
+  const notes = answers.filter(isNote);
+  const inNotes = new Set(notes.flatMap((note) => followUps(note).map((entry) => entry.id)));
+  const rest = answers.filter((entry) => !isNote(entry) && !inNotes.has(entry.id));
+  const own = notes.length && !rest.length ? [] : [
+    el(
+      "div",
+      { className: "note asked" },
+      el("div", { className: "note-head" }, el("span", { className: "label" }, "You asked"), ...linesOf(asked.lines)),
+      said(asked),
+      ...answers.length ? replies(rest) : [el("p", { className: "muted" }, "Waiting for the session to answer.")]
+    )
+  ];
+  return el("div", { className: "ask-thread" }, ...own, ...notes.map((note) => noteView(note, asked)));
 }
-var linesLabel = ([first, last]) => first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
-function decideView(item, text2 = "") {
+var linesLabel = ([first, last]) => first === last ? `Line ${String(first)}` : `Lines ${String(first)}\u2013${String(last)}`;
+var linesOf = (lines) => lines ? [el("span", { className: "lines" }, linesLabel(lines).toLowerCase())] : [];
+function actionButton(item, action, look, small) {
+  const key2 = itemKey(item);
+  const classes = ["btn", ...look === "secondary" ? [] : [look], ...small ? ["small"] : []];
+  const button = el("button", { type: "button", className: classes.join(" ") }, ...look === "offer" ? [icon("message")] : [], action.label);
+  button.setAttribute("aria-pressed", String(decisionOf(item)?.action === action.id));
+  button.dataset["key"] = `action:${key2}:${action.id}`;
+  button.onclick = () => {
+    take(item, action);
+  };
+  return button;
+}
+function take(item, action) {
+  if (action.note || action.edit) {
+    taking = { key: itemKey(item), action: action.id };
+    render();
+    document.querySelector(".taking textarea")?.focus();
+  } else void decide(item, action.id);
+}
+function actionsMenu(item, label) {
+  const key2 = itemKey(item);
+  const actions = walkthrough.actions[key2] ?? [];
+  if (readOnly || !actions.length) return [];
+  const opener = `menu:${key2}`;
+  const open = menuOpen === opener;
+  const button = el("button", { type: "button", className: "icon-button menu-button" }, icon("more"));
+  button.setAttribute("aria-label", "Note actions");
+  button.setAttribute("aria-haspopup", "menu");
+  button.setAttribute("aria-expanded", String(open));
+  button.dataset["key"] = opener;
+  button.onclick = () => {
+    if (open) {
+      closeMenu();
+      return;
+    }
+    menuOpen = opener;
+    render();
+    document.querySelector('.menu [role="menuitem"]')?.focus();
+  };
+  if (!open) return [button];
+  const choices = actions.map((action) => {
+    const choice = el("button", { type: "button", tabIndex: -1 }, action.label);
+    choice.setAttribute("role", "menuitem");
+    choice.dataset["key"] = `menu-item:${key2}:${action.id}`;
+    choice.onclick = () => {
+      menuOpen = null;
+      render();
+      take(item, action);
+    };
+    return choice;
+  });
+  const menu = el("div", { className: "menu", popover: "manual" }, ...choices);
+  menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", `${label} actions`);
+  menu.onkeydown = (event) => {
+    const at = choices.findIndex((choice) => choice === document.activeElement);
+    const moves2 = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: choices.length - 1 };
+    const to = moves2[event.key];
+    if (to !== void 0) {
+      event.preventDefault();
+      choices[(to + choices.length) % choices.length]?.focus();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu(true);
+    } else if (event.key === "Tab") {
+      menuOpen = null;
+      setTimeout(render, 0);
+    }
+  };
+  queueMicrotask(() => {
+    if (menu.isConnected && !menu.matches(":popover-open")) menu.showPopover();
+  });
+  return [button, menu];
+}
+function actionGroup(item, look, small = false) {
+  const actions = walkthrough.actions[itemKey(item)] ?? [];
+  const group = el("div", { className: "choices" }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-label", "Decide");
+  return group;
+}
+var firstLeads = (_, at) => at === 0 ? "primary" : "secondary";
+var stepLook = ({ id }) => id === "approve" ? "primary" : id === "flag" ? "secondary" : "offer";
+function stateTag(item, long) {
+  const key2 = itemKey(item);
+  const decision = walkthrough.decided[key2] ?? null;
+  const reopened = walkthrough.reopened[key2];
+  if (decision) return el("span", { className: "tag decided" }, `Decided: ${labelOf(item, decision.action)}`);
+  if (reopened)
+    return el("span", { className: "tag reopened" }, long ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : "Reopened");
+  return el("span", { className: "tag" }, "Undecided");
+}
+function decideView(item, text2 = "", small = true) {
   const key2 = itemKey(item);
   const actions = walkthrough.actions[key2] ?? [];
   if (!actions.length) return [];
-  const decision = walkthrough.decided[key2] ?? null;
-  const reopened = walkthrough.reopened[key2];
-  const shown = decision ?? reopened;
-  const state = decision ? el("p", { className: "decision decided" }, `Decided: ${labelOf(item, decision.action)}`) : reopened ? el("p", { className: "decision reopened" }, `Reopened: changed since you chose ${labelOf(item, reopened.action)}`) : el("p", { className: "decision" }, "Undecided");
-  const buttons = actions.map((action) => {
-    const button = el("button", { type: "button", className: "quiet" }, action.label);
-    button.setAttribute("aria-pressed", String(decision?.action === action.id));
-    button.onclick = () => {
-      if (action.note || action.edit) {
-        taking = { key: key2, action: action.id };
-        render();
-      } else void decide(item, action.id);
-    };
-    return button;
-  });
-  const group = el("div", { className: "choices" }, ...buttons);
-  group.setAttribute("role", "group");
-  group.setAttribute("aria-label", "Decide");
+  const shown = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
   const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
   return [
     el(
       "div",
       { className: "decide" },
-      el(
-        "div",
-        { className: "decide-row" },
-        state,
-        ...readOnly ? [] : [group]
-      ),
+      el("div", { className: "decide-row" }, stateTag(item, true), ...readOnly ? [] : [actionGroup(item, firstLeads, small)]),
       ...shown ? decisionSaid(shown) : [],
       ...taken ? [takingForm(item, taken, text2)] : []
     )
@@ -26168,17 +26690,30 @@ function takingForm(item, action, text2) {
     ...action.edit ? [draftArea(draft("text"), "Text", text2, 3)] : [],
     ...action.note ? [draftArea(draft("note"), "Note", "", 3)] : []
   ];
-  const form = draftForm(boxes, "Send", () => {
+  const form = el(
+    "form",
+    { className: "taking" },
+    el("p", { className: "taking-head" }, action.label),
+    ...boxes,
+    el(
+      "div",
+      { className: "taking-row" },
+      el("span", { className: "hint" }, "Goes to the session with your decision."),
+      el("button", { type: "button", className: "btn ghost", onclick: () => {
+        taking = null;
+        flung = null;
+        render();
+      } }, "Cancel"),
+      el("button", { type: "submit", className: "btn primary" }, "Send")
+    )
+  );
+  form.onsubmit = (event) => {
+    event.preventDefault();
     void decide(item, action.id, {
       ...action.note && { note: drafts.get(draft("note")) ?? "" },
       ...action.edit && { text: drafts.get(draft("text")) ?? text2 }
     });
-  });
-  form.classList.add("taking");
-  form.append(el("button", { type: "button", className: "quiet", onclick: () => {
-    taking = null;
-    render();
-  } }, "Cancel"));
+  };
   return form;
 }
 function wasView(entry) {
@@ -26186,54 +26721,92 @@ function wasView(entry) {
   const where = file !== void 0 && lines ? `${file}, ${linesLabel(lines).toLowerCase()}` : "a step no longer in the change";
   return el("p", { className: "was" }, `Was on ${where}`);
 }
-function noteView(note) {
-  const { label, lines } = note.note;
+var replying = /* @__PURE__ */ new Set();
+function replyView(note) {
+  if (readOnly) return [];
   const draft = `reply:${note.id}`;
+  if (!replying.has(note.id) && !drafts.get(draft)) {
+    const open = el("button", { type: "button", className: "link" }, "Reply");
+    open.dataset["key"] = `reply:${note.id}`;
+    open.onclick = () => {
+      replying.add(note.id);
+      render();
+      document.querySelector(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
+    };
+    return [el("div", { className: "note-foot" }, open)];
+  }
+  const form = lineBox(draft, "Reply", "Reply\u2026", () => {
+    void send2("reply", { to: note.id, text: drafts.get(draft) ?? "" }, draft).then((sent) => {
+      if (!sent) return;
+      replying.delete(note.id);
+      render();
+    });
+  });
+  form.className = "reply";
+  form.append(el("button", { type: "submit", className: "btn small" }, "Send"));
+  form.onkeydown = (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    replying.delete(note.id);
+    drafts.delete(draft);
+    render();
+    document.querySelector(`[data-key="${CSS.escape(`reply:${note.id}`)}"]`)?.focus();
+  };
+  return [form];
+}
+function noteView(note, asked) {
+  const { label, lines } = note.note;
+  const item = { type: "note", id: note.id };
+  const key2 = itemKey(item);
   const detached = anchorOf(note) === null;
+  const shown = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
+  const taken = taking?.key === key2 ? walkthrough.actions[key2]?.find((action) => action.id === taking?.action) : void 0;
   const view = el(
     "article",
     { className: "note" },
     el(
-      "p",
+      "div",
       { className: "note-head" },
       el("span", { className: "label" }, label),
-      ...lines && !detached ? [el("span", { className: "lines" }, linesLabel(lines))] : []
+      ...detached ? [] : linesOf(lines),
+      ...shown ? [stateTag(item, false)] : [],
+      el("span", { className: "spacer" }),
+      ...actionsMenu(item, label)
     ),
     ...detached ? [wasView(note)] : [],
-    markdown2(note.text, "note-text"),
-    ...decideView({ type: "note", id: note.id }, note.text),
-    ...followUps(note).map(said),
-    ...writable(draftBox(draft, "Reply", "Reply", () => {
-      void send("reply", { to: note.id, text: drafts.get(draft) ?? "" }, draft);
-    }))
+    ...asked ? [el("p", { className: "you-asked" }, el("span", { className: "muted" }, "You asked:"), ` ${asked.text}`), ...replies([note, ...followUps(note)])] : [markdown2(note.text, "note-text"), ...replies(followUps(note))],
+    ...shown ? decisionSaid(shown) : [],
+    ...taken ? [takingForm(item, taken, note.text)] : [],
+    ...replyView(note)
   );
   view.setAttribute("aria-label", label);
+  view.id = `note-${note.id}`;
+  view.dataset["motion"] = `note:${note.id}`;
   return view;
 }
 function notesView(notes, place) {
-  const views = notes.filter((note) => !note.note.low).map(noteView);
+  const views = notes.filter((note) => !note.note.low).map((note) => noteView(note));
   const low = notes.filter((note) => note.note.low);
   if (!low.length) return views;
-  const more = el("details", { className: "more", open: opened.has(place) }, el("summary", {}, `${String(low.length)} more`));
-  more.append(...low.map(noteView));
+  const labels = [...new Set(low.map((note) => note.note.label))].join(", ");
+  const more = el(
+    "details",
+    { className: "more", open: opened.has(place) },
+    el("summary", {}, el("span", { className: "more-link" }, plural(low.length, "more note")), el("span", { className: "muted" }, ` \xB7 ${labels}`))
+  );
+  more.append(...low.map((note) => noteView(note)));
   more.ontoggle = () => {
+    if (more.open && !opened.has(place)) {
+      const rise = [{ opacity: 0, transform: "translateY(-4px)" }, { opacity: 1, transform: "none" }];
+      low.forEach((note, at) => {
+        play(`note:${note.id}`, "rise", reduced() ? FADE_IN : rise, { ms: "base", curve: reduced() ? "linear" : "ease-out", delay: at * 40 });
+      });
+      replay();
+    }
     if (more.open) opened.add(place);
     else opened.delete(place);
   };
   return [...views, more];
-}
-function askView(step) {
-  const asks = session.conversation.filter(isAsk).filter((asked) => anchorOf(asked) === step.id && !asked.lines);
-  if (readOnly && !asks.length) return [];
-  const draft = `ask:${step.id}`;
-  return [el(
-    "div",
-    { className: "conversation" },
-    ...asks.map(askThread),
-    ...writable(draftBox(draft, "Ask about this step", "Ask", () => {
-      void send("ask", { step: step.id, text: drafts.get(draft) ?? "" }, draft);
-    }))
-  )];
 }
 var picked = null;
 function lineAt(event) {
@@ -26243,11 +26816,11 @@ function lineAt(event) {
   const file = row?.dataset["file"];
   return readOnly || !cell || !row || file === void 0 ? null : { cell, file, line: Number(row.dataset["line"]) };
 }
-function pick(step, file, line, extend, ended) {
-  const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line;
-  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended };
+function pick(step, file, line2, extend, ended) {
+  const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line2;
+  picked = { step: step.id, file, from, lines: [Math.min(from, line2), Math.max(from, line2)], ended };
   render();
-  if (ended) document.querySelector(".picked-ask textarea")?.focus();
+  if (ended) document.querySelector(".picked-ask input")?.focus();
 }
 function pickLine(step, event) {
   const at = lineAt(event);
@@ -26277,51 +26850,23 @@ function unpick() {
 }
 function pickedAsk(step, file, lines) {
   const draft = `ask:${step.id}:${file}:${lines.join("-")}`;
-  const form = draftBox(draft, `Ask about ${file} ${linesLabel(lines).toLowerCase()}`, "Ask", () => {
-    void send("ask", { step: step.id, file, lines, text: drafts.get(draft) ?? "" }, draft).then((sent) => {
+  const label = `Ask about ${file} ${linesLabel(lines).toLowerCase()}`;
+  const form = lineBox(draft, label, "", () => {
+    void send2("ask", { step: step.id, file, lines, text: drafts.get(draft) ?? "" }, draft).then((sent) => {
       if (sent) unpick();
     });
   });
-  form.append(el("button", { type: "button", className: "quiet", onclick: unpick }, "Cancel"));
-  form.classList.add("picked-ask");
+  const box = form.querySelector("input");
+  if (box) box.id = `picked-${step.id}`;
+  form.className = "picked-ask";
+  form.prepend(el("label", { htmlFor: `picked-${step.id}` }, label));
+  form.append(
+    el("button", { type: "button", className: "btn ghost small", onclick: unpick }, "Cancel"),
+    el("button", { type: "submit", className: "btn primary small" }, "Ask")
+  );
   return form;
 }
-function choiceButtons({ id, choices = [] }) {
-  if (!choices.length) return [];
-  const buttons = choices.map(
-    (choice) => el("button", { type: "button", onclick: () => void send("reply", { to: id, text: choice }) }, choice)
-  );
-  return [el("div", { className: "choices" }, ...buttons)];
-}
-function sessionMessages() {
-  const messages = session.conversation.filter(
-    (entry) => entry.from === "session" && !entry.answer && !entry.note
-  );
-  if (!messages.length) return [];
-  const threads = messages.map((message) => {
-    const replies = session.conversation.filter(
-      (entry) => entry.from === "page" && entry.kind === "reply" && entry.to === message.id
-    );
-    const draft = `reply:${message.id}`;
-    return el(
-      "div",
-      { className: "thread" },
-      said(message),
-      ...followUps(message).map(said),
-      ...message.question && !replies.length && !readOnly ? [
-        ...choiceButtons(message),
-        draftBox(draft, "Reply", "Reply", () => {
-          void send("reply", { to: message.id, text: drafts.get(draft) ?? "" }, draft);
-        })
-      ] : []
-    );
-  });
-  const title = el("h2", { id: "from-session" }, "From the session");
-  const section = el("section", { className: "messages conversation" }, title, ...threads);
-  section.setAttribute("aria-labelledby", title.id);
-  return [section];
-}
-var lineKey = (file, line) => JSON.stringify([file, line]);
+var lineKey = (file, line2) => JSON.stringify([file, line2]);
 var drawn = /* @__PURE__ */ new Map();
 function drawDiff(step) {
   const kept = drawn.get(step.id);
@@ -26332,21 +26877,25 @@ function drawDiff(step) {
     outputFormat: "line-by-line",
     drawFileList: false,
     matching: "lines",
-    colorScheme: ColorSchemeType.AUTO,
+    // The page's own tokens recolour it, in both themes.
+    colorScheme: ColorSchemeType.LIGHT,
     fileContentToggle: false
   }).draw();
   const rows = /* @__PURE__ */ new Map();
   view.querySelectorAll(".d2h-file-wrapper").forEach((wrapper, at) => {
     const parsed = files[at];
     const file = parsed?.newName ?? "";
-    if (parsed && !parsed.isDeleted) addPreview(wrapper, step.id, file);
+    if (parsed) {
+      wrapper.querySelector(".d2h-file-name-wrapper")?.after(fileStats(parsed));
+      addPreview(wrapper, step.id, parsed);
+    }
     for (const number of wrapper.querySelectorAll(".line-num2")) {
-      const line = number.textContent.trim();
+      const line2 = number.textContent.trim();
       const row = number.closest("tr");
-      if (!line || !row) continue;
+      if (!line2 || !row) continue;
       row.dataset["file"] = file;
-      row.dataset["line"] = line;
-      rows.set(lineKey(file, Number(line)), row);
+      row.dataset["line"] = line2;
+      rows.set(lineKey(file, Number(line2)), row);
     }
   });
   view.onclick = (event) => {
@@ -26381,8 +26930,8 @@ function diffView(step, pinned) {
   const pickKey = pick2 && lineKey(pick2.file, pick2.lines[1]);
   if (pick2 && pickKey) {
     for (const row of rows.values()) {
-      const line = Number(row.dataset["line"]);
-      if (row.dataset["file"] === pick2.file && line >= pick2.lines[0] && line <= pick2.lines[1]) row.classList.add("selected");
+      const line2 = Number(row.dataset["line"]);
+      if (row.dataset["file"] === pick2.file && line2 >= pick2.lines[0] && line2 <= pick2.lines[1]) row.classList.add("selected");
     }
     if (pick2.ended && !at.has(pickKey)) at.set(pickKey, []);
   }
@@ -26399,53 +26948,146 @@ function diffView(step, pinned) {
   return view;
 }
 var previewed = /* @__PURE__ */ new Set();
-function addPreview(wrapper, stepId, file) {
+var fileStats = (parsed) => el("span", { className: "file-stats" }, parsed.isBinary ? "binary" : `+${String(parsed.addedLines)} \u2212${String(parsed.deletedLines)}`);
+function imageFigure(side2, source3, file) {
+  const caption = el("figcaption", {}, side2);
+  const image3 = el("img", { src: source3, alt: `${file}, ${side2.toLowerCase()}` });
+  image3.onload = () => {
+    caption.textContent = `${side2} \xB7 ${String(image3.naturalWidth)}\xD7${String(image3.naturalHeight)}`;
+  };
+  image3.onerror = () => {
+    caption.textContent = `${side2} \xB7 could not load`;
+  };
+  return el("figure", {}, el("div", { className: "image-box" }, image3), caption);
+}
+function addPreview(wrapper, stepId, parsed) {
+  const head = parsed.isDeleted ? null : parsed.newName;
+  const base2 = parsed.isNew ? null : parsed.oldName;
+  const file = head ?? base2 ?? "";
   const type = previewType(file);
+  const image3 = type?.startsWith("image/") ?? false;
   const diff2 = wrapper.querySelector(".d2h-file-diff");
-  if (!type || !diff2 || readOnly) return;
-  const source3 = `file?path=${encodeURIComponent(file)}`;
+  if (!type || !diff2 || readOnly || head === null && !image3) return;
+  const at = (path) => `file?path=${encodeURIComponent(path)}`;
   const preview = el("div", { className: "preview", hidden: true });
   preview.setAttribute("role", "region");
   preview.setAttribute("aria-label", `Preview of ${file}`);
   const fill = async () => {
-    if (type.startsWith("image/")) {
-      preview.replaceChildren(el("img", { src: source3, alt: file }));
+    if (image3) {
+      preview.replaceChildren(
+        el(
+          "div",
+          { className: "image-compare" },
+          ...base2 === null ? [] : [imageFigure("Before", `${at(base2)}&at=base`, file)],
+          ...head === null ? [] : [imageFigure("After", at(head), file)]
+        )
+      );
       return;
     }
-    preview.replaceChildren(el("p", { className: "notice" }, "Loading the preview."));
-    const answer = await fetch(source3).catch(() => null);
-    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), file);
-    else preview.replaceChildren(el("p", { className: "notice" }, "Could not load the preview."));
+    preview.replaceChildren(el("p", { className: "muted" }, "Loading the preview."));
+    const answer = await fetch(at(file)).catch(() => null);
+    const added = new Set(parsed.blocks.flatMap((block3) => block3.lines).flatMap((line2) => line2.type === LineType.INSERT ? [line2.newNumber] : []));
+    if (!answer?.ok) {
+      preview.replaceChildren(el("p", { className: "muted" }, "Could not load the preview."));
+      return;
+    }
+    preview.innerHTML = renderMarkdown(await answer.text(), file, added);
+    for (const table2 of preview.querySelectorAll("table.inserted")) {
+      const row = el("div", { className: "inserted" });
+      table2.classList.remove("inserted");
+      table2.replaceWith(row);
+      row.append(table2);
+    }
   };
   const choices = ["Diff", "Preview"].map(
-    (label) => el("button", { type: "button", className: "quiet", onclick: () => void choose(label === "Preview") }, label)
+    (label) => el("button", { type: "button", onclick: () => void choose(label === "Preview") }, label)
   );
   const key2 = JSON.stringify([stepId, file]);
   const choose = async (previewing) => {
     if (previewing) previewed.add(key2);
     else previewed.delete(key2);
-    for (const [at, button] of choices.entries()) button.setAttribute("aria-pressed", String(previewing === (at === 1)));
+    for (const [at2, button] of choices.entries()) button.setAttribute("aria-pressed", String(previewing === (at2 === 1)));
     diff2.hidden = previewing;
     preview.hidden = !previewing;
     if (previewing && !preview.hasChildNodes()) await fill();
   };
-  const toggle = el("div", { className: "switch" }, ...choices);
-  toggle.setAttribute("role", "group");
-  toggle.setAttribute("aria-label", `Show ${file} as`);
+  const toggle2 = el("div", { className: "segmented" }, ...choices);
+  toggle2.setAttribute("role", "group");
+  toggle2.setAttribute("aria-label", `Show ${file} as`);
   void choose(previewed.has(key2));
-  wrapper.querySelector(".d2h-file-header")?.append(toggle);
+  wrapper.querySelector(".d2h-file-header")?.append(toggle2);
   diff2.after(preview);
 }
-var paths = (label, files) => el("p", { className: "paths" }, `${label}: `, ...files.flatMap((file, at) => [at ? ", " : "", el("code", {}, file)]));
-function assumedView(stepId, assumptions) {
-  if (!assumptions.length) return [];
-  const label = el("p", { id: `assumed-${stepId}` }, el("strong", {}, "Assumed, not read"));
-  const list2 = el("ul", {}, ...assumptions.map((assumption) => el("li", {}, assumption)));
-  list2.setAttribute("aria-labelledby", label.id);
-  return [label, list2];
-}
 var opened = /* @__PURE__ */ new Set();
+var closed = /* @__PURE__ */ new Set();
+function toggle(set, key2) {
+  if (set.has(key2)) set.delete(key2);
+  else set.add(key2);
+  render();
+}
+function disclosure(label, open, onToggle, className, key2) {
+  const chevron = icon("chevron-right");
+  chevron.dataset["motion"] = `turn:${key2}`;
+  const button = el("button", { type: "button", className }, chevron, ...label);
+  button.setAttribute("aria-expanded", String(open));
+  button.dataset["key"] = className;
+  button.onclick = () => {
+    if (!reduced()) {
+      const turn2 = [{ transform: "rotate(0deg)" }, { transform: "rotate(90deg)" }];
+      play(`turn:${key2}`, "turn", open ? turn2.reverse() : turn2, { ms: "fast", curve: "ease-out" });
+    }
+    onToggle();
+  };
+  return button;
+}
+function assumedView(step) {
+  if (!step.assumptions.length) return [];
+  if (readOnly)
+    return [el("div", { className: "assumptions" }, el("p", { className: "assumed-head" }, "Assumed, not read"), el("ul", { className: "assumed" }, ...step.assumptions.map((assumption) => el("li", {}, assumption))))];
+  const open = !closed.has(step.id);
+  const motion = `reveal:${step.id}`;
+  const onToggle = () => {
+    if (!open) {
+      const rows = [{ gridTemplateRows: "0fr", opacity: 0 }, { gridTemplateRows: "1fr", opacity: 1 }];
+      play(motion, "reveal", reduced() ? FADE_IN : rows, reduced() ? { ms: "base", curve: "linear" } : { ms: "slow", curve: "ease-out" });
+    }
+    toggle(closed, step.id);
+  };
+  const button = disclosure(["Assumed, not read"], open, onToggle, "disclosure assumed-toggle", `assumed:${step.id}`);
+  button.id = `assumed-${step.id}`;
+  const list2 = el("ul", { className: "assumed" }, ...step.assumptions.map((assumption) => el("li", {}, assumption)));
+  list2.setAttribute("aria-labelledby", button.id);
+  button.setAttribute("aria-controls", list2.id = `assumed-list-${step.id}`);
+  const shown = el("div", { className: "assumed-wrap", hidden: !open }, list2);
+  shown.dataset["motion"] = motion;
+  return [el("div", { className: "assumptions" }, button, shown)];
+}
+function foldedView(step, pinned) {
+  const key2 = `fold:${step.id}`;
+  const open = readOnly || opened.has(key2);
+  const problems = step.problems.length ? [el("span", { className: "tag reopened" }, plural(step.problems.length, "problem"))] : [];
+  const label = [el("span", {}, plural(step.files.length, "file")), el("span", { className: "spacer" }), ...problems];
+  const summary = readOnly ? el("p", { className: "fold-summary" }, icon("folded"), ...label) : disclosure(label, open, () => {
+    toggle(opened, key2);
+  }, "fold-summary", key2);
+  if (!open) return [el("div", { className: "block" }, summary)];
+  const files = el(
+    "ul",
+    { className: "fold-files" },
+    ...step.files.map((file) => el("li", {}, el("code", { className: "fold-path" }, file.path), markdown2(file.reason, "fold-reason")))
+  );
+  files.setAttribute("aria-label", "Folded files");
+  const found = step.problems.length ? [el("ul", { className: "problems" }, ...step.problems.map((problem) => el("li", { className: "problem" }, icon("warn"), markdown2(problem, "problem-text"))))] : [];
+  found[0]?.setAttribute("aria-label", "Problems the session found");
+  const details = el("details", { className: "fold-diff", open: opened.has(step.id) }, el("summary", {}, "Show the diff"), diffView(step, pinned));
+  details.ontoggle = () => {
+    if (details.open) opened.add(step.id);
+    else opened.delete(step.id);
+  };
+  return [el("div", { className: "block" }, summary, files, ...found, ...step.diff ? [details] : [])];
+}
 function stepBody(step) {
+  const said2 = stepDecisionView(step);
   const pinned = session.conversation.filter(
     (entry) => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === step.id
   );
@@ -26453,207 +27095,901 @@ function stepBody(step) {
   const notes = stepNotes.length ? [el("div", { className: "step-notes" }, ...notesView(stepNotes, `more:${step.id}`))] : [];
   switch (step.kind) {
     case "step":
-      return [
-        el(
-          "div",
-          { className: "about" },
-          markdown2(step.explanation, "explanation"),
-          ...assumedView(step.id, step.assumptions),
-          paths("Files", step.files)
-        ),
-        ...notes,
-        diffView(step, pinned)
-      ];
-    case "folded": {
-      const details = el(
-        "details",
-        { open: opened.has(step.id) },
-        el("summary", {}, "Show the diff"),
-        diffView(step, pinned)
-      );
-      details.ontoggle = () => {
-        if (details.open) opened.add(step.id);
-        else opened.delete(step.id);
+      return {
+        prose: [markdown2(step.explanation, "explanation"), ...said2, ...assumedView(step), ...notes],
+        code: [el("div", { className: "block" }, diffView(step, pinned))]
       };
-      return [
-        el(
-          "div",
-          { className: "about" },
-          el("p", {}, "Folded by the session, not shown line by line."),
-          el("ul", {}, ...step.files.map((file) => el("li", {}, el("code", {}, file.path), `: ${file.reason}`))),
-          ...step.problems.length ? [
-            el("p", {}, el("strong", {}, "Problems the session found:")),
-            el("ul", { className: "problems" }, ...step.problems.map((problem) => el("li", {}, problem)))
-          ] : []
-        ),
-        ...notes,
-        ...step.diff ? [details] : []
-      ];
-    }
+    case "folded":
+      return {
+        prose: [el("p", { className: "explanation" }, "Folded by the session, not shown line by line."), ...said2, ...notes],
+        code: foldedView(step, pinned)
+      };
   }
 }
-function stepView(step, steps) {
-  const title = el("h2", { id: `step-${step.id}` }, step.title);
-  const at = steps.indexOf(step);
-  const move = (label, to) => el("button", { type: "button", className: "quiet", disabled: !to, onclick: () => {
-    show(to);
-  } }, label);
-  const section = el(
-    "section",
-    { className: "step" },
-    el("div", { className: "step-head" }, title),
-    ...decideView({ type: "step", id: step.id }),
-    ...stepBody(step),
-    ...askView(step)
-  );
+function stepDecisionView(step) {
+  const item = { type: "step", id: step.id };
+  const decision = decisionOf(item);
+  const reopened = stepReopened(step);
+  if (reopened && !decision) {
+    const note = reopened.note ? [" ", el("s", {}, `\u201C${reopened.note}\u201D`)] : [];
+    return [
+      el("p", { className: "reopened-line" }, "Changed since you chose ", el("strong", {}, labelOf(item, reopened.action)), ".", ...note),
+      ...followUps(reopened).map(said)
+    ];
+  }
+  if (!decision) return [];
+  const shown = [
+    ...decision.note ? [el("span", { className: "muted" }, readOnly ? "Note" : "Your note"), el("p", { className: "said person" }, decision.note)] : [],
+    ...decision.text ? [markdown2(decision.text, "said person")] : [],
+    ...followUps(decision).map(said)
+  ];
+  return shown.length ? [el("div", { className: "decision-said" }, ...shown)] : [];
+}
+function actionBar(step, asks = true) {
+  if (readOnly) return [];
+  const item = { type: "step", id: step.id };
+  const key2 = itemKey(item);
+  const actions = walkthrough.actions[key2] ?? [];
+  const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
+  if (taken) return [el("div", { className: "action-bar" }, takingForm(item, taken, ""))];
+  const draft = `ask:${step.id}`;
+  const ask = lineBox(draft, "Ask about this step", "Ask about this step\u2026", () => {
+    void send2("ask", { step: step.id, text: drafts.get(draft) ?? "" }, draft);
+  });
+  const decided = stepDecided(step) && !changing.has(key2);
+  const change = el("button", { type: "button", className: "btn", onclick: () => {
+    changing.add(key2);
+    render();
+  } }, "Change decision");
+  change.dataset["key"] = `change:${key2}`;
+  const choices = decided ? change : actionGroup(item, stepLook);
+  const asking = asks ? [ask] : [];
+  if (!phone.matches) return [el("div", { className: "action-bar" }, el("div", { className: "action-row" }, choices, ...asking))];
+  if (!decided) choices.replaceChildren(...[...choices.children].reverse());
+  return [...asking.map((box) => el("div", { className: "step-ask" }, box)), el("div", { className: "action-bar" }, choices)];
+}
+function stepAsks(step) {
+  const asks = session.conversation.filter(isAsk).filter((asked) => anchorOf(asked) === step.id && !asked.lines);
+  return asks.length ? [el("div", { className: "conversation" }, ...asks.map(askThread))] : [];
+}
+var prosePane = el("div", { className: "prose" });
+var codePane = el("div", { className: "code" });
+var splitStep = el("section", { className: "step split" }, prosePane, codePane);
+function stepView(step, notices, view) {
+  const title = el("h2", { className: "step-title", id: `step-${step.id}` }, step.title);
+  const { prose, code: code2 } = stepBody(step);
+  const parts = [
+    el("div", { className: "title-row" }, title, stateTag({ type: "step", id: step.id }, false)),
+    ...prose,
+    ...layout === "split" ? [] : code2,
+    ...stepAsks(step),
+    ...actionBar(step)
+  ];
+  let section = splitStep;
+  if (layout === "split") {
+    prosePane.replaceChildren(...notices, navRow(view), ...parts, ...besideChecklist(view), ...sessionRow(view));
+    codePane.replaceChildren(...code2);
+  } else section = el("section", { className: "step" }, ...parts);
   section.setAttribute("aria-labelledby", title.id);
-  const pager = el("div", { className: "pager" }, move("Previous", steps[at - 1]), move("Next", steps[at + 1]));
-  return el("div", {}, section, pager);
+  return section;
 }
-function stepsNav(steps, current) {
-  const item = (step) => {
+function queueRow(address, state, mark, title, sub, current) {
+  const row = el(
+    "a",
+    { href: `#${encodeURIComponent(address)}`, className: "queue-item" },
+    icon(mark),
+    el("span", { className: "queue-title" }, title, ...sub ? [el("span", { className: sub.attention ? "queue-sub attention" : "queue-sub" }, sub.text)] : [])
+  );
+  row.dataset["state"] = state;
+  row.dataset["key"] = `row:${address}`;
+  if (current) row.setAttribute("aria-current", current);
+  return row;
+}
+function stepRow(step, isCurrent) {
+  const current = isCurrent && "step";
+  if (stepDecided(step)) {
     const decision = decisionOf({ type: "step", id: step.id });
-    const href = `#${encodeURIComponent(step.id)}`;
-    const link2 = el("a", { href, className: decision ? "decided" : "" }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
-    if (step === current) link2.setAttribute("aria-current", "step");
-    const read = walkthrough.read.includes(step.id) ? "Read" : "";
-    const reopened = walkthrough.reopened[itemKey({ type: "step", id: step.id })] ? "Reopened" : read;
-    const mark = decision ? labelOf({ type: "step", id: step.id }, decision.action) : reopened;
-    return el("li", {}, link2, ...mark ? [el("span", { className: "mark" }, mark)] : []);
-  };
-  const nav = el("nav", { className: "steps" }, el("ol", {}, ...steps.filter((step) => !stepDecided(step)).map(item)));
-  const decided = steps.filter(stepDecided);
-  if (decided.length) {
-    const group = el(
-      "details",
-      { className: "decided-steps", open: opened.has("decided") || current !== void 0 && decided.includes(current) },
-      el("summary", {}, `${String(decided.length)} decided`),
-      el("ol", {}, ...decided.map(item))
-    );
-    group.ontoggle = () => {
-      if (group.open) opened.add("decided");
-      else opened.delete("decided");
-    };
-    nav.append(group);
+    const label = decision ? labelOf({ type: "step", id: step.id }, decision.action) : "";
+    return queueRow(step.id, "decided", "decided", step.title, { text: `Decided: ${label}` }, current);
   }
-  nav.setAttribute("aria-label", "Steps");
-  return nav;
+  if (stepReopened(step)) return queueRow(step.id, "reopened", "reopened", step.title, { text: "Reopened" }, current);
+  if (step.kind === "folded") {
+    const problems = step.problems.length ? { text: plural(step.problems.length, "problem"), attention: true } : null;
+    return queueRow(step.id, "folded", "folded", step.title, problems, current);
+  }
+  const read = walkthrough.read.includes(step.id);
+  return queueRow(step.id, read ? "read" : "unread", read ? "read" : "unread", step.title, null, current);
 }
-function wholeView() {
-  const decide2 = decideView({ type: "walkthrough" });
-  if (!decide2.length) return [];
-  const heading2 = el("h2", { id: "whole" }, "Whole walkthrough");
-  const section = el("section", { className: "whole" }, heading2, ...decide2);
-  section.setAttribute("aria-labelledby", heading2.id);
-  return [section];
+function leftItems() {
+  return (walkthrough.checklist?.items ?? []).filter((item) => {
+    const key2 = itemKey({ type: "checklist", id: item.id });
+    return item.mark === "not-met" || (walkthrough.actions[key2] ?? []).length > 0 && !walkthrough.decided[key2];
+  });
 }
-function checklistView({ title, items }, steps) {
-  const heading2 = el("h2", { id: "checklist" }, title);
+function sessionRow(view) {
+  const messages = sessionMessages().length;
+  const unplaced = walkthrough.unplaced?.length ?? 0;
+  if (!messages && !unplaced) return [];
+  const sub = [...messages ? [plural(messages, "message")] : [], ...unplaced ? [`${plural(unplaced, "file")} not in a step`] : []];
+  return [queueRow("session", "message", "message", "From the session", { text: sub.join(", ") }, view.kind === "session" && "page")];
+}
+function viewAddress(view) {
+  switch (view.kind) {
+    case "step":
+      return [view.step.id, view.step.title];
+    case "session":
+      return ["session", "From the session"];
+    case "checklist": {
+      const item = walkthrough.checklist?.items.find((one) => one.id === view.item);
+      return item ? [`checklist-${item.id}`, plain(item.text)] : ["checklist", walkthrough.checklist?.title ?? ""];
+    }
+    case "end":
+      return ["end", "End of the walkthrough"];
+    case "deck":
+      return ["deck", "Swipe to decide"];
+    case "preparing":
+      return null;
+  }
+}
+function queueSelect(view, left, decided) {
+  const shown = viewAddress(view);
+  const option = ([address, title]) => el("option", { value: address, selected: address === shown?.[0] }, address === shown?.[0] ? `Left ${String(left.length)} \xB7 ${title}` : title);
+  const known = [...left, ...decided.map((step) => [step.id, step.title]), ["end", ""]].some(([address]) => address === shown?.[0]);
+  const select = el(
+    "select",
+    { onchange: () => {
+      go2(select.value);
+    } },
+    ...shown && !known ? [option(shown)] : [],
+    ...walkthrough.steps.length || left.length ? [] : [el("option", { disabled: true, selected: true }, "No steps yet")],
+    ...left.map(option),
+    ...decided.length ? [el("optgroup", { label: `${String(decided.length)} decided` }, ...decided.map((step) => option([step.id, step.title])))] : [],
+    ...walkthrough.steps.length ? [option(["end", "End of the walkthrough"])] : []
+  );
+  select.setAttribute("aria-label", "Step");
+  select.dataset["key"] = "queue-select";
+  const box = selectBox(select);
+  box.classList.add("queue-select");
+  return box;
+}
+function queueView(view) {
+  const { steps } = walkthrough;
+  const current = view.kind === "step" ? view.step : void 0;
+  const undecided = steps.filter((step) => !stepDecided(step));
+  const fromSession = sessionRow(view);
+  const rows = [...undecided.map((step) => stepRow(step, step === current)), ...fromSession];
+  const left = undecided.map((step) => [step.id, step.title]);
+  if (fromSession.length) left.push(["session", "From the session"]);
+  for (const item of leftItems()) {
+    const at = view.kind === "checklist" && view.item === item.id;
+    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? "unchecked", item.mark ?? "unchecked", plain(item.text), { text: "Checklist" }, at && "page"));
+    left.push([`checklist-${item.id}`, plain(item.text)]);
+  }
+  const counted = steps.length > 0 || rows.length > 0;
+  const leftCount = el("span", { className: "counter" }, String(rows.length));
+  leftCount.dataset["motion"] = "count:left";
+  const head = el("h2", { className: "queue-head", id: "queue-head" }, "Left", ...counted ? [leftCount] : []);
+  const empty = rows.length ? [] : [el("p", { className: "queue-empty" }, steps.length ? "Everything is decided." : "No steps yet")];
+  const decided = steps.filter(stepDecided);
+  const open = opened.has("decided") || current !== void 0 && decided.includes(current);
+  const decidedCount = el("span", {}, `${String(decided.length)} decided`);
+  decidedCount.dataset["motion"] = "count:decided";
+  const toggleDecided = el(
+    "button",
+    { type: "button", className: "decided-toggle", onclick: () => {
+      toggle(opened, "decided");
+    } },
+    icon("decided"),
+    decidedCount,
+    icon(open ? "chevron-down" : "chevron-right")
+  );
+  toggleDecided.setAttribute("aria-expanded", String(open));
+  toggleDecided.dataset["key"] = "decided-toggle";
+  const foot = decided.length ? [
+    el(
+      "div",
+      { className: "queue-foot" },
+      toggleDecided,
+      ...open ? [el("div", { className: "queue-decided" }, ...decided.map((step) => stepRow(step, step === current)))] : []
+    )
+  ] : [];
+  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot];
+}
+var stepNumber = (id) => walkthrough.steps.findIndex((step) => step.id === id) + 1;
+var metCount = (items) => items.some((item) => item.mark !== void 0) ? `${String(items.filter((item) => item.mark === "met").length)}/${String(items.length)}` : null;
+function checklistView({ title, items }, view) {
+  const heading2 = el("h2", { className: view.kind === "checklist" ? "step-title" : "section-head", id: "checklist" }, title);
   const rows = items.map((item) => {
     const links = item.steps.flatMap((id) => {
-      const at = steps.findIndex((step2) => step2.id === id);
-      const step = steps[at];
-      return step ? [el("a", { href: `#${encodeURIComponent(id)}`, title: step.title }, `Step ${String(at + 1)}`)] : [];
+      const at = stepNumber(id);
+      const step = walkthrough.steps[at - 1];
+      if (!step) return [];
+      const link2 = el("a", { href: `#${encodeURIComponent(id)}`, className: "step-link", title: step.title }, String(at));
+      link2.setAttribute("aria-label", `Step ${String(at)}`);
+      return [link2];
     });
     const gone = item.steps.length - links.length;
-    if (gone)
-      links.push(el("span", { className: "gone" }, `${plural(gone, "linked step")} ${gone === 1 ? "is" : "are"} no longer in the change`));
-    return el(
+    const mark = item.mark ?? "unchecked";
+    const row = el(
       "li",
-      {},
-      el("span", { className: "status" }, item.status),
-      markdown2(item.text, "item-text"),
-      ...links.length ? [el("p", { className: "links" }, ...links)] : [],
+      { className: view.kind === "checklist" && view.item === item.id ? "current" : "" },
+      icon(mark),
+      el("div", { className: "item-body" }, markdown2(item.text, "item-text"), el("span", { className: "item-status" }, item.status)),
+      ...links,
+      ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} ${gone === 1 ? "is" : "are"} no longer in the change`)] : [],
       ...decideView({ type: "checklist", id: item.id }, item.text)
     );
+    row.dataset["mark"] = mark;
+    row.id = `checklist-item-${item.id}`;
+    return row;
   });
-  const section = el("section", { className: "checklist" }, heading2, el("ul", {}, ...rows));
+  const head = view.kind === "checklist" ? el("div", { className: "title-row" }, heading2) : heading2;
+  const met = metCount(items);
+  if (met !== null) head.append(el("span", { className: "counter" }, met));
+  const section = el("section", { className: "checklist" }, head, el("ul", {}, ...rows));
   section.setAttribute("aria-labelledby", heading2.id);
   return section;
 }
-function unplacedView() {
-  const files = walkthrough.unplaced ?? [];
-  if (!files.length) return [];
-  const title = el("h2", { id: "unplaced" }, "In no step yet");
+function wholeView() {
+  const item = { type: "walkthrough" };
+  const actions = walkthrough.actions[itemKey(item)] ?? [];
+  if (!actions.length) return [];
+  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", stateTag(item, true));
+  const shown = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
+  const taken = taking?.key === itemKey(item) ? actions.find((action) => action.id === taking?.action) : void 0;
   const section = el(
     "section",
-    { className: "messages conversation" },
-    title,
-    el("p", { className: "notice" }, "These files changed since the steps were recorded; the session puts them in steps."),
-    paths("Files", files)
+    { className: "whole" },
+    heading2,
+    ...shown ? decisionSaid(shown) : [],
+    ...readOnly ? [] : [taken ? takingForm(item, taken, "") : el("div", { className: "action-row" }, actionGroup(item, firstLeads))]
+  );
+  section.setAttribute("aria-labelledby", heading2.id);
+  return [section];
+}
+function endView() {
+  const { steps } = walkthrough;
+  const decided = steps.filter(stepDecided).length;
+  const title = el(
+    "h2",
+    { className: "step-title", id: "end" },
+    decided === steps.length ? `All ${plural(steps.length, "step")} decided` : `${String(decided)} of ${plural(steps.length, "step")} decided`
+  );
+  const rows = steps.map((step, at) => {
+    const item = { type: "step", id: step.id };
+    const decision = decisionOf(item);
+    return el(
+      "tr",
+      {},
+      el("td", { className: "number" }, String(at + 1)),
+      el("td", {}, el("a", { href: `#${encodeURIComponent(step.id)}` }, step.title), ...decision?.note ? [el("span", { className: "decision-note" }, decision.note)] : []),
+      el("td", { className: "decision" }, decision ? el("span", { className: "tag decided" }, labelOf(item, decision.action)) : stateTag(item, false))
+    );
+  });
+  const section = el(
+    "section",
+    { className: "end" },
+    el("div", { className: "title-row" }, title),
+    el("p", { className: "explanation" }, "Decisions stay changeable until you finish."),
+    el("table", { className: "decisions" }, el("tbody", {}, ...rows)),
+    ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "end" })] : [],
+    ...wholeView()
   );
   section.setAttribute("aria-labelledby", title.id);
-  return [section];
+  return section;
+}
+function sessionThreads() {
+  const waiting = new Set(waitingQuestions().map((message) => message.id));
+  const threads = sessionMessages().filter((message) => !waiting.has(message.id)).map((message) => el("div", { className: "thread" }, said(message), ...followUps(message).map(said)));
+  return threads.length ? threads : [el("p", { className: "muted" }, "Nothing from the session yet.")];
+}
+function sessionView() {
+  const title = el("h2", { className: "step-title", id: "from-session" }, "From the session");
+  const section = el("section", { className: "messages" }, el("div", { className: "title-row" }, title), ...sessionThreads());
+  section.setAttribute("aria-labelledby", title.id);
+  return section;
+}
+function preparingView() {
+  return el(
+    "div",
+    { className: "preparing" },
+    el("div", { className: "preparing-head" }, icon("spinner"), el("div", {}, el("strong", {}, "Preparing the steps"), el("span", { className: "muted" }, "They appear here as the session records them."))),
+    el("div", { className: "skeleton title" }),
+    el("div", { className: "skeleton" }),
+    el("div", { className: "skeleton short" })
+  );
+}
+var SWIPE = 90;
+var FLIGHT_MS = 200;
+var swiping = false;
+var flung = null;
+var deckTop = () => walkthrough.steps.find((step) => !stepDecided(step));
+function moveCard(deck, dx) {
+  const progress = Math.min(Math.abs(dx) / SWIPE, 1);
+  deck.style.setProperty("--dx", `${String(dx)}px`);
+  deck.style.setProperty("--turn", `${String(dx * 0.025)}deg`);
+  deck.style.setProperty("--p", String(progress));
+  deck.style.setProperty("--pa", String(dx > 0 ? progress : 0));
+  deck.style.setProperty("--pf", String(dx < 0 ? progress : 0));
+  deck.dataset["toward"] = dx > 0 ? "approve" : dx < 0 ? "flag" : "";
+  deck.classList.toggle("past", progress === 1);
+}
+function settle() {
+  swiping = false;
+  if (redrawLater) render();
+}
+function fling(deck, step, to) {
+  swiping = true;
+  deck.classList.remove("dragging");
+  deck.classList.add("flying");
+  moveCard(deck, to * (innerWidth + 120));
+  setTimeout(() => {
+    const item = { type: "step", id: step.id };
+    flung = { step: step.id, to };
+    if (to < 0) taking = { key: itemKey(item), action: "flag" };
+    swiping = false;
+    render();
+    if (to < 0) document.querySelector(".taking textarea")?.focus();
+    else
+      void decide(item, "approve").then(() => {
+        if (!flung) return;
+        flung = null;
+        render();
+      });
+  }, FLIGHT_MS);
+}
+function swipeable(deck, card, step, swipes) {
+  let moved = false;
+  card.ondragstart = (event) => {
+    event.preventDefault();
+  };
+  card.onclick = (event) => {
+    if (moved) event.preventDefault();
+  };
+  card.onpointerdown = (down) => {
+    if (down.button !== 0 || swiping) return;
+    if (down.pointerType === "mouse") down.preventDefault();
+    if (down.isTrusted) card.setPointerCapture(down.pointerId);
+    moved = false;
+    swiping = true;
+    let dragged = false;
+    let dx = 0;
+    const end = () => {
+      removeEventListener("pointermove", move);
+      removeEventListener("pointerup", up);
+      removeEventListener("pointercancel", up);
+    };
+    const move = (event) => {
+      if (event.pointerId !== down.pointerId) return;
+      const x = event.clientX - down.clientX;
+      const y = event.clientY - down.clientY;
+      if (!dragged) {
+        if (Math.abs(x) <= 8 && Math.abs(y) <= 8) return;
+        moved = true;
+        dragged = Math.abs(x) > Math.abs(y);
+        if (!dragged || !swipes) {
+          end();
+          settle();
+          return;
+        }
+        deck.classList.add("dragging");
+      }
+      dx = x;
+      moveCard(deck, dx);
+    };
+    const up = (event) => {
+      if (event.pointerId !== down.pointerId) return;
+      end();
+      if (!dragged) {
+        settle();
+        return;
+      }
+      if (event.type === "pointerup" && Math.abs(dx) > SWIPE) {
+        fling(deck, step, dx > 0 ? 1 : -1);
+        return;
+      }
+      deck.classList.remove("dragging");
+      moveCard(deck, 0);
+      settle();
+    };
+    addEventListener("pointermove", move);
+    addEventListener("pointerup", up);
+    addEventListener("pointercancel", up);
+  };
+}
+function miniDiff(step, note) {
+  const files = parse(step.diff);
+  const file = files.find((one) => one.newName === note?.note.file) ?? files[0];
+  if (!file) return [];
+  const rows = file.blocks.flatMap((block3) => [block3.header, ...block3.lines]);
+  const last = note?.note.lines?.[1];
+  const end = last === void 0 ? -1 : rows.findIndex((row) => typeof row !== "string" && row.newNumber === last);
+  const shown = end < 0 ? rows.slice(0, 3) : rows.slice(Math.max(0, end - 2), end + 1);
+  const table2 = el(
+    "table",
+    { className: "mini-diff" },
+    el(
+      "tbody",
+      {},
+      ...shown.map(
+        (row) => typeof row === "string" ? el("tr", { className: "hunk" }, el("td"), el("td"), el("td", {}, row)) : el(
+          "tr",
+          { className: row.type },
+          el("td", {}, String(row.oldNumber ?? "")),
+          el("td", {}, String(row.newNumber ?? "")),
+          el("td", {}, el("span", { className: "prefix" }, row.content.slice(0, 1)), row.content.slice(1))
+        )
+      )
+    )
+  );
+  return [el("div", { className: "mini" }, table2)];
+}
+function cardView(step, top, swipes) {
+  const notes = session.conversation.filter((entry) => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+  const first = notes.find((note) => !note.note.low);
+  const explanation = step.kind === "step" ? markdown2(step.explanation, "explanation") : el("p", { className: "explanation" }, "Folded by the session, not shown line by line.");
+  for (const link2 of explanation.querySelectorAll("a")) link2.replaceWith(...link2.childNodes);
+  const title = el("div", { className: "title-row" }, el("span", { className: "step-title" }, step.title), stateTag({ type: "step", id: step.id }, false));
+  if (!top) {
+    const beneath = el("div", { className: "swipe-card next" }, title, explanation);
+    beneath.setAttribute("aria-hidden", "true");
+    return beneath;
+  }
+  const chip = (kind, mark, label) => {
+    const shown = el("span", { className: `decision-chip ${kind}` }, icon(mark), label);
+    shown.setAttribute("aria-hidden", "true");
+    return shown;
+  };
+  const where = (lines) => lines ? ` \xB7 ${linesLabel(lines).toLowerCase()}` : "";
+  const card = el(
+    "a",
+    { className: "swipe-card top", href: `#${encodeURIComponent(step.id)}`, draggable: false },
+    ...swipes ? [chip("approve", "met", "Approve"), chip("flag", "warn", "Flag")] : [],
+    title,
+    explanation,
+    ...step.kind === "step" ? miniDiff(step, first) : [],
+    ...first ? [el("p", { className: "card-note" }, icon("warn"), el("span", {}, el("b", {}, first.note.label), `${where(first.note.lines)}: ${plain(first.text)}`))] : [],
+    el("span", { className: "card-meta" }, `${plural(step.files.length, "file")} \xB7 ${notes.length ? plural(notes.length, "note") : "no notes"}`)
+  );
+  card.setAttribute("aria-label", `Open step ${String(stepNumber(step.id))}, ${step.title}`);
+  return card;
+}
+function deckView() {
+  if (!walkthrough.steps.length) return preparingView();
+  const section = el("section", { className: "deck-view" });
+  section.setAttribute("aria-label", "Swipe to decide");
+  const top = deckTop();
+  if (!top) {
+    section.append(el("p", { className: "deck-empty" }, "Everything is decided."), el("a", { href: "#end" }, "See the end of the walkthrough"));
+    return section;
+  }
+  const next = walkthrough.steps.find((step) => step !== top && !stepDecided(step));
+  const item = { type: "step", id: top.id };
+  const swipes = builtIn(walkthrough.actions[itemKey(item)] ?? []);
+  const card = cardView(top, true, swipes);
+  const edge = (side2, mark, label) => {
+    const shown = el("span", { className: `edge ${side2}` }, ...side2 === "left" ? [icon(mark), label] : [label, icon(mark)]);
+    shown.setAttribute("aria-hidden", "true");
+    return shown;
+  };
+  const deck = el(
+    "div",
+    { className: swipes ? "deck swipes" : "deck" },
+    ...swipes ? [edge("left", "previous", "Flag"), edge("right", "next", "Approve")] : [],
+    ...next ? [cardView(next, false, swipes)] : [],
+    card
+  );
+  if (flung?.step === top.id) deck.classList.add("flung");
+  swipeable(deck, card, top, swipes);
+  const bar = actionBar(top, false);
+  for (const [id, to] of [["approve", 1], ["flag", -1]]) {
+    const button = bar.at(-1)?.querySelector(`[data-key="${CSS.escape(`action:${itemKey(item)}:${id}`)}"]`);
+    if (button && swipes)
+      button.onclick = () => {
+        fling(deck, top, to);
+      };
+  }
+  const hint = swipes ? "Swipe right to approve, left to flag. Tap to open the step." : "The session chose this step's actions; use the buttons. Tap to open the step.";
+  section.append(deck, el("p", { className: "swipe-hint" }, hint), ...bar);
+  return section;
+}
+function questionBox(message) {
+  const draft = `reply:${message.id}`;
+  const choices = (message.choices ?? []).map(
+    (choice, at) => el("button", { type: "button", className: at === 0 ? "btn primary" : "btn", onclick: () => void send2("reply", { to: message.id, text: choice }) }, choice)
+  );
+  const reply = lineBox(draft, "Reply", choices.length ? "Or reply\u2026" : "Reply\u2026", () => {
+    void send2("reply", { to: message.id, text: drafts.get(draft) ?? "" }, draft);
+  });
+  const head = el("p", { className: "question-head", id: `asks-${message.id}` }, icon("ask"), "The session asks");
+  const box = el("section", { className: "question-box" }, head, markdown2(message.text, "question-text"), el("div", { className: "action-row" }, ...choices, reply));
+  box.setAttribute("aria-labelledby", head.id);
+  return box;
+}
+function goneNotice() {
+  if (readOnly || stopped || session.state !== "gone") return [];
+  return [
+    el(
+      "div",
+      { className: "notice" },
+      icon("offline"),
+      el("span", {}, el("strong", {}, "The session stopped listening."), " Your decisions are kept; start the session again to continue.")
+    )
+  ];
+}
+function unplacedNotice() {
+  const files = walkthrough.unplaced ?? [];
+  if (!files.length) return [];
+  const notice = el(
+    "div",
+    { className: "notice" },
+    icon("file"),
+    el(
+      "div",
+      { className: "notice-body" },
+      el("span", {}, "Changed files not in any step yet"),
+      el("div", { className: "file-chips" }, ...files.map((file) => el("code", { className: "file-chip" }, file)))
+    )
+  );
+  notice.setAttribute("role", "region");
+  notice.setAttribute("aria-label", "Changed files not in any step yet");
+  return [notice];
 }
 function detachedView() {
   const gone = session.conversation.filter(
     (entry) => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null
   );
-  if (!gone.length) return [];
-  const title = el("h2", { id: "detached" }, "Detached");
+  const known = new Set(walkthrough.steps.map((step) => step.id));
+  const links = (walkthrough.checklist?.items ?? []).filter((item) => item.steps.some((id) => !known.has(id)));
+  const count = gone.length + links.length;
+  if (!count) return [];
+  const title = el("h2", { className: "detached-head", id: "detached" }, icon("unlink"), "Detached", el("span", { className: "counter" }, String(count)));
   const section = el(
     "section",
-    { className: "messages conversation" },
+    { className: "detached-box" },
     title,
-    el("p", { className: "notice" }, "Notes and questions whose step or lines are no longer in the change."),
-    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, wasView(entry), askThread(entry)))
+    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, wasView(entry), askThread(entry))),
+    ...links.map((item) => el("p", { className: "detached-item" }, icon("unlink"), el("span", {}, `Checklist \u201C${plain(item.text)}\u201D linked to a step that no longer exists`)))
   );
   section.setAttribute("aria-labelledby", title.id);
   return [section];
 }
+function viewBody(view, notices) {
+  switch (view.kind) {
+    case "step":
+      return stepView(view.step, notices, view);
+    case "session":
+      return sessionView();
+    case "checklist":
+      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : endView();
+    case "end":
+      return endView();
+    case "deck":
+      return deckView();
+    case "preparing":
+      return preparingView();
+  }
+}
+function besideChecklist(view) {
+  const { checklist } = walkthrough;
+  if (layout === "queue" || !checklist || view.kind === "checklist" || view.kind === "end") return [];
+  return [checklistView(checklist, view)];
+}
+function neighbours(view) {
+  const { steps } = walkthrough;
+  if (view.kind === "step") {
+    const at = steps.indexOf(view.step);
+    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? "end"];
+  }
+  if (view.kind === "end") return [steps.at(-1)?.id ?? null, null];
+  return [null, steps.find((step) => !stepDecided(step))?.id ?? (steps.length ? "end" : null)];
+}
+function navRow(view) {
+  const [previous, next] = neighbours(view);
+  const button = (label, shape, to) => {
+    const made = el("button", { type: "button", className: "icon-button", title: label, disabled: to === null }, icon(shape));
+    made.setAttribute("aria-label", label);
+    made.dataset["key"] = `nav:${shape}`;
+    made.onclick = () => {
+      if (to !== null) go2(to);
+    };
+    return made;
+  };
+  const nav = el("nav", { className: "step-nav" }, button("Previous step", "previous", previous), button("Next step", "next", next));
+  nav.setAttribute("aria-label", "Steps");
+  return nav;
+}
+var tool = null;
+var stepNotesOf = (step) => session.conversation.filter((entry) => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+function showNote(step, note) {
+  if (step.kind === "folded") {
+    opened.add(`fold:${step.id}`);
+    opened.add(step.id);
+  }
+  render();
+  const shown = document.getElementById(`note-${note.id}`);
+  if (!shown) return;
+  for (let hidden = shown.closest("details"); hidden; hidden = hidden.parentElement?.closest("details") ?? null) hidden.open = true;
+  shown.tabIndex = -1;
+  shown.focus();
+}
+function noteIndex(step, notes) {
+  if (!notes.length) return [el("p", { className: "muted" }, "No notes on this step.")];
+  const rows = notes.map((note) => {
+    const { label, lines } = note.note;
+    const button = el(
+      "button",
+      { type: "button", className: "note-link" },
+      el("span", { className: "label" }, label),
+      ...lines ? [el("span", { className: "lines" }, linesLabel(lines))] : [],
+      el("span", { className: "gist" }, plain(note.text))
+    );
+    button.dataset["key"] = `note-link:${note.id}`;
+    button.onclick = () => {
+      showNote(step, note);
+    };
+    return el("li", {}, button);
+  });
+  return [el("ul", { className: "note-index" }, ...rows)];
+}
+function toolPanel(view) {
+  const step = view.kind === "step" ? view.step : void 0;
+  const checklist = besideChecklist(view);
+  const tabs = [];
+  if (step) {
+    const notes = stepNotesOf(step);
+    tabs.push({ id: "notes", label: "Notes", count: String(notes.length), body: () => noteIndex(step, notes) });
+  }
+  const items = walkthrough.checklist?.items ?? [];
+  if (checklist.length) tabs.push({ id: "checklist", label: "Checklist", count: metCount(items) ?? String(items.length), body: () => checklist });
+  tabs.push({ id: "session", label: "From the session", count: String(sessionMessages().length), body: sessionThreads });
+  const chosen = tool ?? (walkthrough.checklist ? "checklist" : "notes");
+  const shown = tabs.find((tab) => tab.id === chosen) ?? tabs[0];
+  if (!shown) return [];
+  const select = (id) => {
+    tool = id;
+    render();
+    document.querySelector(`[data-key="tab:${id}"]`)?.focus();
+  };
+  const buttons = tabs.map((tab) => {
+    const selected = tab === shown;
+    const button = el("button", { type: "button", className: "tab", id: `tab-${tab.id}`, tabIndex: selected ? 0 : -1 }, tab.label, el("span", { className: "counter" }, tab.count));
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", String(selected));
+    if (selected) button.setAttribute("aria-controls", "tool-body");
+    button.dataset["key"] = `tab:${tab.id}`;
+    button.onclick = () => {
+      select(tab.id);
+    };
+    return button;
+  });
+  const list2 = el("div", { className: "tabs" }, ...buttons);
+  list2.setAttribute("role", "tablist");
+  list2.setAttribute("aria-label", "Tool panel");
+  list2.onkeydown = (event) => {
+    const at = tabs.indexOf(shown);
+    const to = { ArrowRight: at + 1, ArrowLeft: at - 1 + tabs.length, Home: 0, End: tabs.length - 1 }[event.key];
+    if (to === void 0) return;
+    event.preventDefault();
+    const tab = tabs[to % tabs.length];
+    if (tab) select(tab.id);
+  };
+  const body = el("div", { className: `tool-body ${shown.id}`, id: "tool-body" }, ...shown.body());
+  body.setAttribute("role", "tabpanel");
+  body.setAttribute("aria-labelledby", `tab-${shown.id}`);
+  return [list2, body];
+}
+var pressed = false;
+var redrawLater = false;
+document.addEventListener("pointerdown", () => {
+  pressed = true;
+}, true);
+for (const [target, released] of [[document, "pointerup"], [document, "pointercancel"], [window, "blur"]])
+  target.addEventListener(released, () => {
+    pressed = false;
+    if (!redrawLater) return;
+    redrawLater = false;
+    setTimeout(render, 0);
+  }, true);
+function exportStep(step, number) {
+  const title = el("span", { id: `step-${step.id}` }, step.title);
+  const { prose, code: code2 } = stepBody(step);
+  const section = el(
+    "section",
+    { className: "export-step", id: step.id },
+    el("h2", { className: "export-title" }, el("span", { className: "number" }, String(number)), title, stateTag({ type: "step", id: step.id }, true)),
+    ...prose,
+    ...code2,
+    ...stepAsks(step)
+  );
+  section.setAttribute("aria-labelledby", title.id);
+  return section;
+}
+function exportView(at) {
+  const { steps } = walkthrough;
+  const when = new Date(at).toLocaleDateString(void 0, { day: "numeric", month: "short", year: "numeric" });
+  const decided = steps.filter(stepDecided).length;
+  return [
+    el(
+      "header",
+      { className: "export-head" },
+      el("h1", {}, nameOf(walkthrough)),
+      el("p", { className: "muted" }, `Walkthrough export \xB7 ${when} \xB7 ${plural(steps.length, "step")}, ${String(decided)} decided`)
+    ),
+    ...unplacedNotice(),
+    ...detachedView(),
+    ...steps.map((step, index) => exportStep(step, index + 1)),
+    ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "end" })] : [],
+    ...sessionMessages().length ? [sessionView()] : [],
+    ...wholeView()
+  ];
+}
 function render() {
+  if (exported) {
+    main.replaceChildren(...exportView(exported.at));
+    return;
+  }
+  if (pressed || swiping) {
+    redrawLater = true;
+    return;
+  }
+  redrawLater = false;
+  const view = currentView();
+  if (view.kind === "step") markRead(view.step);
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   const focused = document.activeElement;
-  const typing = focused instanceof HTMLTextAreaElement ? focused : null;
+  const typing = focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement ? focused : null;
   const draft = typing?.dataset["draft"];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0];
-  const { steps } = walkthrough;
-  const pinned = `${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  const decided = steps.filter(stepDecided).length;
-  const progress = `${String(decided)} of ${plural(steps.length, "step")} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`;
-  header.replaceChildren(
-    el(
-      "div",
-      { className: "title" },
-      el("h1", {}, nameOf(walkthrough)),
-      el("p", { className: "pinned" }, `against ${walkthrough.target}, `, el("code", {}, pinned))
-    ),
-    ...steps.length ? [el("p", { className: "progress" }, progress)] : [],
-    readOnly ? el("p", { className: "notice" }, "Exported, read-only") : el(
-      "div",
-      { className: "actions" },
-      sessionChip(),
-      el("button", { type: "button", className: "quiet", onclick: () => void stop() }, "Stop")
-    )
+  document.body.dataset["layout"] = layout;
+  document.body.dataset["view"] = view.kind;
+  const panes = [queue, main, prosePane, codePane, side, tools];
+  const scrolled = panes.map((pane) => pane.scrollTop);
+  const before = drawnState;
+  const decided = new Set(Object.keys(walkthrough.decided).filter((key2) => walkthrough.decided[key2]));
+  const newly = before ? [...decided].filter((key2) => !before.decided.has(key2)) : [];
+  const decisionsMoved = newly.length > 0 || [...before?.decided ?? []].some((key2) => !decided.has(key2));
+  const shownView = viewKey(view);
+  const swapped = before !== null && before.view !== shownView;
+  const rows = [...queue.querySelectorAll(":scope > .queue-item[data-key]")].map((row) => {
+    const { paddingTop, paddingBottom } = getComputedStyle(row);
+    return { row, key: row.dataset["key"] ?? "", height: row.offsetHeight, paddingTop, paddingBottom };
+  });
+  const wasSplit = main.contains(splitStep);
+  const oldPane = !swapped ? [] : wasSplit ? [el("section", { className: "step split" }, el("div", { className: "prose" }, ...prosePane.childNodes), el("div", { className: "code" }, ...codePane.childNodes))] : [...main.childNodes].filter((node) => node !== leavingPane);
+  header.replaceChildren(...headerView());
+  queue.replaceChildren(...queueView(view));
+  const notices = [...waitingQuestions().map(questionBox), ...goneNotice(), ...unplacedNotice(), ...detachedView()];
+  const split = layout === "split" && view.kind === "step";
+  main.classList.toggle("split", split);
+  const shown = [...split ? [] : [...layout === "split" && view.kind !== "preparing" ? [navRow(view)] : [], ...notices], viewBody(view, notices)];
+  const present = [...main.children].filter((child) => child !== leavingPane);
+  if (shown.length !== present.length || shown.some((part, at) => present[at] !== part)) main.replaceChildren(...shown);
+  side.replaceChildren(...layout === "three" ? besideChecklist(view) : []);
+  side.hidden = !side.hasChildNodes();
+  tools.replaceChildren(...layout === "panel" ? toolPanel(view) : []);
+  panes.forEach((pane, at) => {
+    pane.scrollTop = scrolled[at] ?? 0;
+  });
+  for (const part of shown) part.dataset["motion"] = "pane-enter";
+  leaveRows(rows, newly);
+  placeGhosts();
+  if (swapped) swapPanes(oldPane, wasSplit, scrolled.slice(1, 4));
+  else if (leavingPane) main.prepend(leavingPane);
+  const counts = new Map(
+    [...document.querySelectorAll('[data-motion^="count:"]')].map((count) => [count.dataset["motion"] ?? "", count.textContent])
   );
-  const current = currentStep(walkthrough);
-  const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
-  main.replaceChildren(
-    ...sessionMessages(),
-    ...unplacedView(),
-    ...detachedView(),
-    ...current ? [el("div", { className: "side" }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)] : [
-      el("p", { className: "notice" }, "The session is preparing the steps; they appear here as it records them."),
-      ...checklist,
-      ...wholeView()
-    ]
-  );
-  if (current) void markRead(current);
-  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
+  if (decisionsMoved) moveDecided(newly, counts, before?.counts);
+  const state = stopped ? "stopped" : session.state;
+  if (state === "needs-you" && before?.state !== "needs-you" && !reduced())
+    play("pulse", "pulse", [{ boxShadow: "0 0 0 0 currentColor" }, { boxShadow: "0 0 0 6px transparent" }], { ms: 1200, curve: "ease-out", iterations: 2 });
+  drawnState = { decided, view: shownView, state, counts };
+  replay();
+  const current = (selector) => [...document.querySelectorAll(selector)].find((found) => !leavingPane?.contains(found));
+  const lost = focused instanceof HTMLElement && (!focused.isConnected || !!leavingPane?.contains(focused));
+  const kept = lost && focused.dataset["key"] !== void 0 ? current(`[data-key="${CSS.escape(focused.dataset["key"])}"]`) : focused;
+  if (kept instanceof HTMLElement && kept.isConnected && document.activeElement !== kept) kept.focus();
   if (draft === void 0) return;
-  const box = document.querySelector(`textarea[data-draft="${CSS.escape(draft)}"]`);
+  const box = current(`[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
   box?.setSelectionRange(...caret);
 }
+var drawnState = null;
+var viewKey = (view) => view.kind === "step" ? `step:${view.step.id}` : view.kind;
+var ghosts = /* @__PURE__ */ new Set();
+var itemOfRow = (key2) => {
+  const address = key2.slice("row:".length);
+  const item = CHECKLIST_ITEM.exec(address)?.[1];
+  return item === void 0 ? `step:${address}` : `checklist:${item}`;
+};
+function leaveRows(rows, newly) {
+  rows.forEach(({ row, key: key2, height, paddingTop, paddingBottom }, at) => {
+    if (!newly.includes(itemOfRow(key2)) || queue.querySelector(`:scope > [data-key="${CSS.escape(key2)}"]`)) return;
+    const motion = `leave:${key2}`;
+    row.classList.add("leaving");
+    row.removeAttribute("aria-current");
+    row.setAttribute("aria-hidden", "true");
+    row.inert = true;
+    delete row.dataset["key"];
+    row.dataset["motion"] = motion;
+    const ghost = { row, after: rows.slice(at + 1).map((one) => one.key), until: Infinity };
+    ghosts.add(ghost);
+    const fade = [{ opacity: 1 }, { opacity: 0 }];
+    const lasts = reduced() ? [play(motion, "row-fade", fade, { ms: "base", curve: "linear", fill: "forwards" })] : [
+      play(motion, "row-slide", [{ transform: "none" }, { transform: "translateX(-16px)" }], { ms: 160, curve: "ease-out", fill: "forwards" }),
+      play(motion, "row-fade", fade, { ms: 160, curve: "linear", fill: "forwards" }),
+      play(
+        motion,
+        "row-collapse",
+        [
+          { height: `${String(height)}px`, paddingTop, paddingBottom, marginBottom: "0px" },
+          // The rail's 2px gap goes with the row.
+          { height: "0px", paddingTop: "0px", paddingBottom: "0px", marginBottom: "-2px" }
+        ],
+        { ms: "slow", curve: "ease-out", delay: 120, fill: "both" }
+      )
+    ];
+    ghost.until = now() + Math.max(...lasts);
+    setTimeout(() => {
+      ghosts.delete(ghost);
+      row.remove();
+    }, Math.max(...lasts));
+  });
+}
+function placeGhosts() {
+  for (const ghost of ghosts) if (ghost.until <= now()) ghosts.delete(ghost);
+  for (const { row, after } of ghosts) {
+    const next = after.map((key2) => queue.querySelector(`:scope > [data-key="${CSS.escape(key2)}"]`)).find((found) => found !== null);
+    const end = queue.querySelector(":scope > .queue-empty, :scope > .queue-foot");
+    if (next) next.before(row);
+    else if (end) end.before(row);
+    else queue.append(row);
+  }
+}
+var leavingPane = null;
+function swapPanes(old, split, scrolled) {
+  leavingPane?.remove();
+  const shown = el("div", { className: split ? "main split" : "main" }, ...old);
+  const pane = el("div", { className: "pane-leaving" }, shown);
+  pane.inert = true;
+  pane.setAttribute("aria-hidden", "true");
+  pane.dataset["motion"] = "pane-leave";
+  main.scrollTo(0, 0);
+  main.prepend(pane);
+  [shown, ...shown.querySelectorAll(":scope > .step > .prose, :scope > .step > .code")].forEach((scroller, at) => {
+    scroller.scrollTop = scrolled[at] ?? 0;
+  });
+  leavingPane = pane;
+  const gone = play("pane-leave", "pane-leave", [{ opacity: 1 }, { opacity: 0 }], { ms: 100, curve: "linear", fill: "forwards" });
+  if (!reduced()) play("pane-leave", "pane-out", [{ transform: "none" }, { transform: "translateX(-12px)" }], { ms: 100, curve: "ease-in", fill: "forwards" });
+  const enter = [{ opacity: 0, transform: "translateX(12px)" }, { opacity: 1, transform: "none" }];
+  play("pane-enter", "pane-enter", reduced() ? FADE_IN : enter, { ms: "base", curve: reduced() ? "linear" : "ease-out", delay: 100 });
+  setTimeout(() => {
+    if (leavingPane !== pane) return;
+    pane.remove();
+    leavingPane = null;
+  }, gone);
+}
+function moveDecided(newly, counts, before = /* @__PURE__ */ new Map()) {
+  for (const key2 of newly.filter((one) => one.startsWith("step:"))) {
+    const fill = [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }];
+    play(`fill:${key2.slice("step:".length)}`, "fill", reduced() ? FADE_IN : fill, reduced() ? { ms: "base", curve: "linear" } : { ms: "slow", curve: "ease-out" });
+  }
+  const tick = [{ opacity: 0.55, transform: "translateY(2px)" }, { opacity: 1, transform: "none" }];
+  for (const [key2, text2] of counts)
+    if (before.get(key2) !== text2)
+      play(key2, "tick", reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: "base", curve: reduced() ? "linear" : "ease-out" });
+}
 var isTyping = (target) => target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 function stepBy(delta) {
-  const { steps } = walkthrough;
-  const current = currentStep(walkthrough);
-  show(current && steps[steps.indexOf(current) + delta]);
+  const view = currentView();
+  if (view.kind !== "step" && view.kind !== "end") return;
+  const to = neighbours(view)[delta > 0 ? 1 : 0];
+  if (to) go2(to);
 }
 document.addEventListener("keydown", (event) => {
-  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === "Escape" && picked) {
     const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
     unpick();
@@ -26664,17 +28000,34 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "j" || event.key === "ArrowRight") stepBy(1);
   else if (event.key === "k" || event.key === "ArrowLeft") stepBy(-1);
 });
+phone.addEventListener("change", render);
 window.addEventListener("hashchange", () => {
+  if (readOnly) return;
+  moves++;
+  taking = null;
+  flung = null;
   render();
-  window.scrollTo(0, 0);
+  main.scrollTo(0, 0);
+  prosePane.scrollTop = 0;
+  codePane.scrollTop = 0;
+  const view = currentView();
+  if (view.kind === "checklist" && view.item !== void 0) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: "nearest" });
 });
-({ walkthrough, session } = exported ? JSON.parse(exported) : await Promise.all(
+if (exported) {
+  document.body.classList.add("exported");
+  header.remove();
+  queue.remove();
+  main.className = "export";
+  document.title = `${nameOf(exported.walkthrough)} \xB7 Walkthrough`;
+}
+({ walkthrough, session } = exported ? exported : await Promise.all(
   ["data/walkthrough.json", "data/session.json"].map(async (data) => (await fetch(data)).json())
 ).then(([shownWalkthrough, shownSession]) => ({
   walkthrough: shownWalkthrough,
   session: shownSession
 })));
 render();
+if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 var POLL_MS = 1500;
 var polling = false;
 var fetchText = async (data) => {
@@ -26682,21 +28035,23 @@ var fetchText = async (data) => {
   if (!answer.ok) throw new Error(`${data}: ${String(answer.status)}`);
   return answer.text();
 };
-var poller = readOnly ? void 0 : setInterval(() => {
-  if (polling) return;
+function poll() {
+  if (polling || stopped) return;
   polling = true;
   const since = posted;
   Promise.all([fetchText("data/walkthrough.json"), fetchText("data/session.json")]).then(([walkthroughText, sessionText]) => {
+    if (document.body.classList.contains("unreachable")) showAlert(null);
     if (since !== posted || walkthroughText === lastWalkthrough && sessionText === lastSession) return;
     walkthrough = JSON.parse(walkthroughText);
     session = JSON.parse(sessionText);
     render();
   }).catch(() => {
-    showAlert(unreachable(PAGE));
+    showUnreachable(PAGE);
   }).finally(() => {
     polling = false;
   });
-}, POLL_MS);
+}
+var poller = readOnly ? void 0 : setInterval(poll, POLL_MS);
 /*! Bundled license information:
 
 markdown-it/dist/markdown-it.mjs:

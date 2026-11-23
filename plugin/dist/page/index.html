@@ -7,9 +7,16 @@
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="app.js"></script>
   </head>
-  <body>
-    <header id="header"></header>
-    <p id="alert" role="alert" hidden></p>
-    <main id="main"></main>
+  <body class="walkthrough">
+    <header id="header" class="app-header"></header>
+    <p id="alert" class="banner attention" role="alert" hidden></p>
+    <div id="panes" class="panes">
+      <nav id="queue" class="queue" aria-label="What's left"></nav>
+      <div class="center">
+        <main id="main" class="main"></main>
+        <section id="tools" class="tools" aria-label="Tool panel"></section>
+      </div>
+      <aside id="side" class="side" hidden></aside>
+    </div>
   </body>
 </html>

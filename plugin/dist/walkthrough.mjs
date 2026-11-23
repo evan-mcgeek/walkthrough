@@ -65,54 +65,54 @@ var require_polyfills = __commonJS({
     }
     var chdir;
     module.exports = patch;
-    function patch(fs9) {
+    function patch(fs12) {
       if (constants.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
-        patchLchmod(fs9);
+        patchLchmod(fs12);
       }
-      if (!fs9.lutimes) {
-        patchLutimes(fs9);
+      if (!fs12.lutimes) {
+        patchLutimes(fs12);
       }
-      fs9.chown = chownFix(fs9.chown);
-      fs9.fchown = chownFix(fs9.fchown);
-      fs9.lchown = chownFix(fs9.lchown);
-      fs9.chmod = chmodFix(fs9.chmod);
-      fs9.fchmod = chmodFix(fs9.fchmod);
-      fs9.lchmod = chmodFix(fs9.lchmod);
-      fs9.chownSync = chownFixSync(fs9.chownSync);
-      fs9.fchownSync = chownFixSync(fs9.fchownSync);
-      fs9.lchownSync = chownFixSync(fs9.lchownSync);
-      fs9.chmodSync = chmodFixSync(fs9.chmodSync);
-      fs9.fchmodSync = chmodFixSync(fs9.fchmodSync);
-      fs9.lchmodSync = chmodFixSync(fs9.lchmodSync);
-      fs9.stat = statFix(fs9.stat);
-      fs9.fstat = statFix(fs9.fstat);
-      fs9.lstat = statFix(fs9.lstat);
-      fs9.statSync = statFixSync(fs9.statSync);
-      fs9.fstatSync = statFixSync(fs9.fstatSync);
-      fs9.lstatSync = statFixSync(fs9.lstatSync);
-      if (fs9.chmod && !fs9.lchmod) {
-        fs9.lchmod = function(path12, mode, cb) {
+      fs12.chown = chownFix(fs12.chown);
+      fs12.fchown = chownFix(fs12.fchown);
+      fs12.lchown = chownFix(fs12.lchown);
+      fs12.chmod = chmodFix(fs12.chmod);
+      fs12.fchmod = chmodFix(fs12.fchmod);
+      fs12.lchmod = chmodFix(fs12.lchmod);
+      fs12.chownSync = chownFixSync(fs12.chownSync);
+      fs12.fchownSync = chownFixSync(fs12.fchownSync);
+      fs12.lchownSync = chownFixSync(fs12.lchownSync);
+      fs12.chmodSync = chmodFixSync(fs12.chmodSync);
+      fs12.fchmodSync = chmodFixSync(fs12.fchmodSync);
+      fs12.lchmodSync = chmodFixSync(fs12.lchmodSync);
+      fs12.stat = statFix(fs12.stat);
+      fs12.fstat = statFix(fs12.fstat);
+      fs12.lstat = statFix(fs12.lstat);
+      fs12.statSync = statFixSync(fs12.statSync);
+      fs12.fstatSync = statFixSync(fs12.fstatSync);
+      fs12.lstatSync = statFixSync(fs12.lstatSync);
+      if (fs12.chmod && !fs12.lchmod) {
+        fs12.lchmod = function(path13, mode, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs9.lchmodSync = function() {
+        fs12.lchmodSync = function() {
         };
       }
-      if (fs9.chown && !fs9.lchown) {
-        fs9.lchown = function(path12, uid, gid, cb) {
+      if (fs12.chown && !fs12.lchown) {
+        fs12.lchown = function(path13, uid, gid, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs9.lchownSync = function() {
+        fs12.lchownSync = function() {
         };
       }
       if (platform === "win32") {
-        fs9.rename = typeof fs9.rename !== "function" ? fs9.rename : (function(fs$rename) {
+        fs12.rename = typeof fs12.rename !== "function" ? fs12.rename : (function(fs$rename) {
           function rename(from, to, cb) {
             var start2 = Date.now();
             var backoff = 0;
             fs$rename(from, to, function CB(er) {
               if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start2 < 6e4) {
                 setTimeout(function() {
-                  fs9.stat(to, function(stater, st) {
+                  fs12.stat(to, function(stater, st) {
                     if (stater && stater.code === "ENOENT")
                       fs$rename(from, to, CB);
                     else
@@ -128,32 +128,32 @@ var require_polyfills = __commonJS({
           }
           if (Object.setPrototypeOf) Object.setPrototypeOf(rename, fs$rename);
           return rename;
-        })(fs9.rename);
+        })(fs12.rename);
       }
-      fs9.read = typeof fs9.read !== "function" ? fs9.read : (function(fs$read) {
-        function read(fd, buffer, offset, length, position, callback_) {
+      fs12.read = typeof fs12.read !== "function" ? fs12.read : (function(fs$read) {
+        function read2(fd, buffer, offset, length, position, callback_) {
           var callback;
           if (callback_ && typeof callback_ === "function") {
             var eagCounter = 0;
             callback = function(er, _, __) {
               if (er && er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
-                return fs$read.call(fs9, fd, buffer, offset, length, position, callback);
+                return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
               }
               callback_.apply(this, arguments);
             };
           }
-          return fs$read.call(fs9, fd, buffer, offset, length, position, callback);
+          return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
         }
-        if (Object.setPrototypeOf) Object.setPrototypeOf(read, fs$read);
-        return read;
-      })(fs9.read);
-      fs9.readSync = typeof fs9.readSync !== "function" ? fs9.readSync : /* @__PURE__ */ (function(fs$readSync) {
+        if (Object.setPrototypeOf) Object.setPrototypeOf(read2, fs$read);
+        return read2;
+      })(fs12.read);
+      fs12.readSync = typeof fs12.readSync !== "function" ? fs12.readSync : /* @__PURE__ */ (function(fs$readSync) {
         return function(fd, buffer, offset, length, position) {
           var eagCounter = 0;
           while (true) {
             try {
-              return fs$readSync.call(fs9, fd, buffer, offset, length, position);
+              return fs$readSync.call(fs12, fd, buffer, offset, length, position);
             } catch (er) {
               if (er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
@@ -163,11 +163,11 @@ var require_polyfills = __commonJS({
             }
           }
         };
-      })(fs9.readSync);
-      function patchLchmod(fs10) {
-        fs10.lchmod = function(path12, mode, callback) {
-          fs10.open(
-            path12,
+      })(fs12.readSync);
+      function patchLchmod(fs13) {
+        fs13.lchmod = function(path13, mode, callback) {
+          fs13.open(
+            path13,
             constants.O_WRONLY | constants.O_SYMLINK,
             mode,
             function(err, fd) {
@@ -175,80 +175,80 @@ var require_polyfills = __commonJS({
                 if (callback) callback(err);
                 return;
               }
-              fs10.fchmod(fd, mode, function(err2) {
-                fs10.close(fd, function(err22) {
+              fs13.fchmod(fd, mode, function(err2) {
+                fs13.close(fd, function(err22) {
                   if (callback) callback(err2 || err22);
                 });
               });
             }
           );
         };
-        fs10.lchmodSync = function(path12, mode) {
-          var fd = fs10.openSync(path12, constants.O_WRONLY | constants.O_SYMLINK, mode);
+        fs13.lchmodSync = function(path13, mode) {
+          var fd = fs13.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
-            ret = fs10.fchmodSync(fd, mode);
+            ret = fs13.fchmodSync(fd, mode);
             threw = false;
           } finally {
             if (threw) {
               try {
-                fs10.closeSync(fd);
+                fs13.closeSync(fd);
               } catch (er) {
               }
             } else {
-              fs10.closeSync(fd);
+              fs13.closeSync(fd);
             }
           }
           return ret;
         };
       }
-      function patchLutimes(fs10) {
-        if (constants.hasOwnProperty("O_SYMLINK") && fs10.futimes) {
-          fs10.lutimes = function(path12, at, mt, cb) {
-            fs10.open(path12, constants.O_SYMLINK, function(er, fd) {
+      function patchLutimes(fs13) {
+        if (constants.hasOwnProperty("O_SYMLINK") && fs13.futimes) {
+          fs13.lutimes = function(path13, at, mt, cb) {
+            fs13.open(path13, constants.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
               }
-              fs10.futimes(fd, at, mt, function(er2) {
-                fs10.close(fd, function(er22) {
+              fs13.futimes(fd, at, mt, function(er2) {
+                fs13.close(fd, function(er22) {
                   if (cb) cb(er2 || er22);
                 });
               });
             });
           };
-          fs10.lutimesSync = function(path12, at, mt) {
-            var fd = fs10.openSync(path12, constants.O_SYMLINK);
+          fs13.lutimesSync = function(path13, at, mt) {
+            var fd = fs13.openSync(path13, constants.O_SYMLINK);
             var ret;
             var threw = true;
             try {
-              ret = fs10.futimesSync(fd, at, mt);
+              ret = fs13.futimesSync(fd, at, mt);
               threw = false;
             } finally {
               if (threw) {
                 try {
-                  fs10.closeSync(fd);
+                  fs13.closeSync(fd);
                 } catch (er) {
                 }
               } else {
-                fs10.closeSync(fd);
+                fs13.closeSync(fd);
               }
             }
             return ret;
           };
-        } else if (fs10.futimes) {
-          fs10.lutimes = function(_a, _b, _c, cb) {
+        } else if (fs13.futimes) {
+          fs13.lutimes = function(_a, _b, _c, cb) {
             if (cb) process.nextTick(cb);
           };
-          fs10.lutimesSync = function() {
+          fs13.lutimesSync = function() {
           };
         }
       }
       function chmodFix(orig) {
         if (!orig) return orig;
         return function(target, mode, cb) {
-          return orig.call(fs9, target, mode, function(er) {
+          return orig.call(fs12, target, mode, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -258,7 +258,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, mode) {
           try {
-            return orig.call(fs9, target, mode);
+            return orig.call(fs12, target, mode);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -267,7 +267,7 @@ var require_polyfills = __commonJS({
       function chownFix(orig) {
         if (!orig) return orig;
         return function(target, uid, gid, cb) {
-          return orig.call(fs9, target, uid, gid, function(er) {
+          return orig.call(fs12, target, uid, gid, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -277,7 +277,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, uid, gid) {
           try {
-            return orig.call(fs9, target, uid, gid);
+            return orig.call(fs12, target, uid, gid);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -297,13 +297,13 @@ var require_polyfills = __commonJS({
             }
             if (cb) cb.apply(this, arguments);
           }
-          return options ? orig.call(fs9, target, options, callback) : orig.call(fs9, target, callback);
+          return options ? orig.call(fs12, target, options, callback) : orig.call(fs12, target, callback);
         };
       }
       function statFixSync(orig) {
         if (!orig) return orig;
         return function(target, options) {
-          var stats = options ? orig.call(fs9, target, options) : orig.call(fs9, target);
+          var stats = options ? orig.call(fs12, target, options) : orig.call(fs12, target);
           if (stats) {
             if (stats.uid < 0) stats.uid += 4294967296;
             if (stats.gid < 0) stats.gid += 4294967296;
@@ -332,16 +332,16 @@ var require_legacy_streams = __commonJS({
   "node_modules/graceful-fs/legacy-streams.js"(exports, module) {
     var Stream = __require("stream").Stream;
     module.exports = legacy;
-    function legacy(fs9) {
+    function legacy(fs12) {
       return {
         ReadStream,
         WriteStream
       };
-      function ReadStream(path12, options) {
-        if (!(this instanceof ReadStream)) return new ReadStream(path12, options);
+      function ReadStream(path13, options) {
+        if (!(this instanceof ReadStream)) return new ReadStream(path13, options);
         Stream.call(this);
         var self = this;
-        this.path = path12;
+        this.path = path13;
         this.fd = null;
         this.readable = true;
         this.paused = false;
@@ -375,7 +375,7 @@ var require_legacy_streams = __commonJS({
           });
           return;
         }
-        fs9.open(this.path, this.flags, this.mode, function(err, fd) {
+        fs12.open(this.path, this.flags, this.mode, function(err, fd) {
           if (err) {
             self.emit("error", err);
             self.readable = false;
@@ -386,10 +386,10 @@ var require_legacy_streams = __commonJS({
           self._read();
         });
       }
-      function WriteStream(path12, options) {
-        if (!(this instanceof WriteStream)) return new WriteStream(path12, options);
+      function WriteStream(path13, options) {
+        if (!(this instanceof WriteStream)) return new WriteStream(path13, options);
         Stream.call(this);
-        this.path = path12;
+        this.path = path13;
         this.fd = null;
         this.writable = true;
         this.flags = "w";
@@ -414,7 +414,7 @@ var require_legacy_streams = __commonJS({
         this.busy = false;
         this._queue = [];
         if (this.fd === null) {
-          this._open = fs9.open;
+          this._open = fs12.open;
           this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
           this.flush();
         }
@@ -449,7 +449,7 @@ var require_clone = __commonJS({
 // node_modules/graceful-fs/graceful-fs.js
 var require_graceful_fs = __commonJS({
   "node_modules/graceful-fs/graceful-fs.js"(exports, module) {
-    var fs9 = __require("fs");
+    var fs12 = __require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
     var clone = require_clone();
@@ -481,12 +481,12 @@ var require_graceful_fs = __commonJS({
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
       };
-    if (!fs9[gracefulQueue]) {
+    if (!fs12[gracefulQueue]) {
       queue = global[gracefulQueue] || [];
-      publishQueue(fs9, queue);
-      fs9.close = (function(fs$close) {
+      publishQueue(fs12, queue);
+      fs12.close = (function(fs$close) {
         function close(fd, cb) {
-          return fs$close.call(fs9, fd, function(err) {
+          return fs$close.call(fs12, fd, function(err) {
             if (!err) {
               resetQueue();
             }
@@ -498,48 +498,48 @@ var require_graceful_fs = __commonJS({
           value: fs$close
         });
         return close;
-      })(fs9.close);
-      fs9.closeSync = (function(fs$closeSync) {
+      })(fs12.close);
+      fs12.closeSync = (function(fs$closeSync) {
         function closeSync(fd) {
-          fs$closeSync.apply(fs9, arguments);
+          fs$closeSync.apply(fs12, arguments);
           resetQueue();
         }
         Object.defineProperty(closeSync, previousSymbol, {
           value: fs$closeSync
         });
         return closeSync;
-      })(fs9.closeSync);
+      })(fs12.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug(fs9[gracefulQueue]);
-          __require("assert").equal(fs9[gracefulQueue].length, 0);
+          debug(fs12[gracefulQueue]);
+          __require("assert").equal(fs12[gracefulQueue].length, 0);
         });
       }
     }
     var queue;
     if (!global[gracefulQueue]) {
-      publishQueue(global, fs9[gracefulQueue]);
+      publishQueue(global, fs12[gracefulQueue]);
     }
-    module.exports = patch(clone(fs9));
-    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs9.__patched) {
-      module.exports = patch(fs9);
-      fs9.__patched = true;
+    module.exports = patch(clone(fs12));
+    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs12.__patched) {
+      module.exports = patch(fs12);
+      fs12.__patched = true;
     }
-    function patch(fs10) {
-      polyfills(fs10);
-      fs10.gracefulify = patch;
-      fs10.createReadStream = createReadStream;
-      fs10.createWriteStream = createWriteStream;
-      var fs$readFile = fs10.readFile;
-      fs10.readFile = readFile2;
-      function readFile2(path12, options, cb) {
+    function patch(fs13) {
+      polyfills(fs13);
+      fs13.gracefulify = patch;
+      fs13.createReadStream = createReadStream;
+      fs13.createWriteStream = createWriteStream;
+      var fs$readFile = fs13.readFile;
+      fs13.readFile = readFile2;
+      function readFile2(path13, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$readFile(path12, options, cb);
-        function go$readFile(path13, options2, cb2, startTime) {
-          return fs$readFile(path13, options2, function(err) {
+        return go$readFile(path13, options, cb);
+        function go$readFile(path14, options2, cb2, startTime) {
+          return fs$readFile(path14, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$readFile, [path13, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$readFile, [path14, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -547,16 +547,16 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$writeFile = fs10.writeFile;
-      fs10.writeFile = writeFile;
-      function writeFile(path12, data, options, cb) {
+      var fs$writeFile = fs13.writeFile;
+      fs13.writeFile = writeFile;
+      function writeFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$writeFile(path12, data, options, cb);
-        function go$writeFile(path13, data2, options2, cb2, startTime) {
-          return fs$writeFile(path13, data2, options2, function(err) {
+        return go$writeFile(path13, data, options, cb);
+        function go$writeFile(path14, data2, options2, cb2, startTime) {
+          return fs$writeFile(path14, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$writeFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$writeFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -564,17 +564,17 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$appendFile = fs10.appendFile;
+      var fs$appendFile = fs13.appendFile;
       if (fs$appendFile)
-        fs10.appendFile = appendFile;
-      function appendFile(path12, data, options, cb) {
+        fs13.appendFile = appendFile;
+      function appendFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$appendFile(path12, data, options, cb);
-        function go$appendFile(path13, data2, options2, cb2, startTime) {
-          return fs$appendFile(path13, data2, options2, function(err) {
+        return go$appendFile(path13, data, options, cb);
+        function go$appendFile(path14, data2, options2, cb2, startTime) {
+          return fs$appendFile(path14, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$appendFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$appendFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -582,9 +582,9 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$copyFile = fs10.copyFile;
+      var fs$copyFile = fs13.copyFile;
       if (fs$copyFile)
-        fs10.copyFile = copyFile;
+        fs13.copyFile = copyFile;
       function copyFile(src, dest, flags, cb) {
         if (typeof flags === "function") {
           cb = flags;
@@ -602,34 +602,34 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$readdir = fs10.readdir;
-      fs10.readdir = readdir;
+      var fs$readdir = fs13.readdir;
+      fs13.readdir = readdir;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir(path12, options, cb) {
+      function readdir(path13, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path13, options2, cb2, startTime) {
-          return fs$readdir(path13, fs$readdirCallback(
-            path13,
+        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path14, options2, cb2, startTime) {
+          return fs$readdir(path14, fs$readdirCallback(
+            path14,
             options2,
             cb2,
             startTime
           ));
-        } : function go$readdir2(path13, options2, cb2, startTime) {
-          return fs$readdir(path13, options2, fs$readdirCallback(
-            path13,
+        } : function go$readdir2(path14, options2, cb2, startTime) {
+          return fs$readdir(path14, options2, fs$readdirCallback(
+            path14,
             options2,
             cb2,
             startTime
           ));
         };
-        return go$readdir(path12, options, cb);
-        function fs$readdirCallback(path13, options2, cb2, startTime) {
+        return go$readdir(path13, options, cb);
+        function fs$readdirCallback(path14, options2, cb2, startTime) {
           return function(err, files3) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
               enqueue([
                 go$readdir,
-                [path13, options2, cb2],
+                [path14, options2, cb2],
                 err,
                 startTime || Date.now(),
                 Date.now()
@@ -644,21 +644,21 @@ var require_graceful_fs = __commonJS({
         }
       }
       if (process.version.substr(0, 4) === "v0.8") {
-        var legStreams = legacy(fs10);
+        var legStreams = legacy(fs13);
         ReadStream = legStreams.ReadStream;
         WriteStream = legStreams.WriteStream;
       }
-      var fs$ReadStream = fs10.ReadStream;
+      var fs$ReadStream = fs13.ReadStream;
       if (fs$ReadStream) {
         ReadStream.prototype = Object.create(fs$ReadStream.prototype);
         ReadStream.prototype.open = ReadStream$open;
       }
-      var fs$WriteStream = fs10.WriteStream;
+      var fs$WriteStream = fs13.WriteStream;
       if (fs$WriteStream) {
         WriteStream.prototype = Object.create(fs$WriteStream.prototype);
         WriteStream.prototype.open = WriteStream$open;
       }
-      Object.defineProperty(fs10, "ReadStream", {
+      Object.defineProperty(fs13, "ReadStream", {
         get: function() {
           return ReadStream;
         },
@@ -668,7 +668,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      Object.defineProperty(fs10, "WriteStream", {
+      Object.defineProperty(fs13, "WriteStream", {
         get: function() {
           return WriteStream;
         },
@@ -679,7 +679,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileReadStream = ReadStream;
-      Object.defineProperty(fs10, "FileReadStream", {
+      Object.defineProperty(fs13, "FileReadStream", {
         get: function() {
           return FileReadStream;
         },
@@ -690,7 +690,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileWriteStream = WriteStream;
-      Object.defineProperty(fs10, "FileWriteStream", {
+      Object.defineProperty(fs13, "FileWriteStream", {
         get: function() {
           return FileWriteStream;
         },
@@ -700,7 +700,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      function ReadStream(path12, options) {
+      function ReadStream(path13, options) {
         if (this instanceof ReadStream)
           return fs$ReadStream.apply(this, arguments), this;
         else
@@ -720,7 +720,7 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function WriteStream(path12, options) {
+      function WriteStream(path13, options) {
         if (this instanceof WriteStream)
           return fs$WriteStream.apply(this, arguments), this;
         else
@@ -738,22 +738,22 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function createReadStream(path12, options) {
-        return new fs10.ReadStream(path12, options);
+      function createReadStream(path13, options) {
+        return new fs13.ReadStream(path13, options);
       }
-      function createWriteStream(path12, options) {
-        return new fs10.WriteStream(path12, options);
+      function createWriteStream(path13, options) {
+        return new fs13.WriteStream(path13, options);
       }
-      var fs$open = fs10.open;
-      fs10.open = open2;
-      function open2(path12, flags, mode, cb) {
+      var fs$open = fs13.open;
+      fs13.open = open2;
+      function open2(path13, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
-        return go$open(path12, flags, mode, cb);
-        function go$open(path13, flags2, mode2, cb2, startTime) {
-          return fs$open(path13, flags2, mode2, function(err, fd) {
+        return go$open(path13, flags, mode, cb);
+        function go$open(path14, flags2, mode2, cb2, startTime) {
+          return fs$open(path14, flags2, mode2, function(err, fd) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$open, [path13, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$open, [path14, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -761,20 +761,20 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      return fs10;
+      return fs13;
     }
     function enqueue(elem) {
       debug("ENQUEUE", elem[0].name, elem[1]);
-      fs9[gracefulQueue].push(elem);
+      fs12[gracefulQueue].push(elem);
       retry();
     }
     var retryTimer;
     function resetQueue() {
       var now = Date.now();
-      for (var i = 0; i < fs9[gracefulQueue].length; ++i) {
-        if (fs9[gracefulQueue][i].length > 2) {
-          fs9[gracefulQueue][i][3] = now;
-          fs9[gracefulQueue][i][4] = now;
+      for (var i = 0; i < fs12[gracefulQueue].length; ++i) {
+        if (fs12[gracefulQueue][i].length > 2) {
+          fs12[gracefulQueue][i][3] = now;
+          fs12[gracefulQueue][i][4] = now;
         }
       }
       retry();
@@ -782,9 +782,9 @@ var require_graceful_fs = __commonJS({
     function retry() {
       clearTimeout(retryTimer);
       retryTimer = void 0;
-      if (fs9[gracefulQueue].length === 0)
+      if (fs12[gracefulQueue].length === 0)
         return;
-      var elem = fs9[gracefulQueue].shift();
+      var elem = fs12[gracefulQueue].shift();
       var fn = elem[0];
       var args = elem[1];
       var err = elem[2];
@@ -806,7 +806,7 @@ var require_graceful_fs = __commonJS({
           debug("RETRY", fn.name, args);
           fn.apply(null, args.concat([startTime]));
         } else {
-          fs9[gracefulQueue].push(elem);
+          fs12[gracefulQueue].push(elem);
         }
       }
       if (retryTimer === void 0) {
@@ -1241,10 +1241,10 @@ var require_mtime_precision = __commonJS({
   "node_modules/proper-lockfile/lib/mtime-precision.js"(exports, module) {
     "use strict";
     var cacheSymbol = /* @__PURE__ */ Symbol();
-    function probe(file2, fs9, callback) {
-      const cachedPrecision = fs9[cacheSymbol];
+    function probe(file2, fs12, callback) {
+      const cachedPrecision = fs12[cacheSymbol];
       if (cachedPrecision) {
-        return fs9.stat(file2, (err, stat) => {
+        return fs12.stat(file2, (err, stat) => {
           if (err) {
             return callback(err);
           }
@@ -1252,16 +1252,16 @@ var require_mtime_precision = __commonJS({
         });
       }
       const mtime = new Date(Math.ceil(Date.now() / 1e3) * 1e3 + 5);
-      fs9.utimes(file2, mtime, mtime, (err) => {
+      fs12.utimes(file2, mtime, mtime, (err) => {
         if (err) {
           return callback(err);
         }
-        fs9.stat(file2, (err2, stat) => {
+        fs12.stat(file2, (err2, stat) => {
           if (err2) {
             return callback(err2);
           }
           const precision = stat.mtime.getTime() % 1e3 === 0 ? "s" : "ms";
-          Object.defineProperty(fs9, cacheSymbol, { value: precision });
+          Object.defineProperty(fs12, cacheSymbol, { value: precision });
           callback(null, stat.mtime, precision);
         });
       });
@@ -1282,8 +1282,8 @@ var require_mtime_precision = __commonJS({
 var require_lockfile = __commonJS({
   "node_modules/proper-lockfile/lib/lockfile.js"(exports, module) {
     "use strict";
-    var path12 = __require("path");
-    var fs9 = require_graceful_fs();
+    var path13 = __require("path");
+    var fs12 = require_graceful_fs();
     var retry = require_retry2();
     var onExit = require_signal_exit();
     var mtimePrecision = require_mtime_precision();
@@ -1293,7 +1293,7 @@ var require_lockfile = __commonJS({
     }
     function resolveCanonicalPath(file2, options, callback) {
       if (!options.realpath) {
-        return callback(null, path12.resolve(file2));
+        return callback(null, path13.resolve(file2));
       }
       options.fs.realpath(file2, callback);
     }
@@ -1414,7 +1414,7 @@ var require_lockfile = __commonJS({
         update: null,
         realpath: true,
         retries: 0,
-        fs: fs9,
+        fs: fs12,
         onCompromised: (err) => {
           throw err;
         },
@@ -1458,7 +1458,7 @@ var require_lockfile = __commonJS({
     }
     function unlock(file2, options, callback) {
       options = {
-        fs: fs9,
+        fs: fs12,
         realpath: true,
         ...options
       };
@@ -1480,7 +1480,7 @@ var require_lockfile = __commonJS({
       options = {
         stale: 1e4,
         realpath: true,
-        fs: fs9,
+        fs: fs12,
         ...options
       };
       options.stale = Math.max(options.stale || 0, 2e3);
@@ -1519,16 +1519,16 @@ var require_lockfile = __commonJS({
 var require_adapter = __commonJS({
   "node_modules/proper-lockfile/lib/adapter.js"(exports, module) {
     "use strict";
-    var fs9 = require_graceful_fs();
-    function createSyncFs(fs10) {
+    var fs12 = require_graceful_fs();
+    function createSyncFs(fs13) {
       const methods = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
-      const newFs = { ...fs10 };
+      const newFs = { ...fs13 };
       methods.forEach((method) => {
         newFs[method] = (...args) => {
           const callback = args.pop();
           let ret;
           try {
-            ret = fs10[`${method}Sync`](...args);
+            ret = fs13[`${method}Sync`](...args);
           } catch (err) {
             return callback(err);
           }
@@ -1566,7 +1566,7 @@ var require_adapter = __commonJS({
     }
     function toSyncOptions(options) {
       options = { ...options };
-      options.fs = createSyncFs(options.fs || fs9);
+      options.fs = createSyncFs(options.fs || fs12);
       if (typeof options.retries === "number" && options.retries > 0 || options.retries && typeof options.retries.retries === "number" && options.retries.retries > 0) {
         throw Object.assign(new Error("Cannot use retries with the sync api"), { code: "ESYNC" });
       }
@@ -1857,9 +1857,9 @@ var require_punycode = __commonJS({
 
 // src/cli.ts
 import { spawnSync as spawnSync4 } from "node:child_process";
-import fs8 from "node:fs";
-import path11 from "node:path";
-import { parseArgs } from "node:util";
+import fs11 from "node:fs";
+import path12 from "node:path";
+import { parseArgs as parseArgs2 } from "node:util";
 
 // src/change.ts
 import { execFile, spawnSync } from "node:child_process";
@@ -1931,9 +1931,9 @@ async function changedFiles(cwd, base, head) {
   const fields = (await gitAsync(cwd, "", "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
   const files3 = [];
   for (let at = 0; at < fields.length - 1; ) {
-    const status = fields[at++] ?? "";
+    const status2 = fields[at++] ?? "";
     const first = fields[at++] ?? "";
-    if (status.startsWith("R")) files3.push({ path: fields[at++] ?? "", from: first });
+    if (status2.startsWith("R")) files3.push({ path: fields[at++] ?? "", from: first });
     else files3.push({ path: first });
   }
   return files3;
@@ -1966,6 +1966,47 @@ function defaultTarget(cwd) {
 }
 
 // src/input.ts
+import fs3 from "node:fs";
+
+// src/paths.ts
+import fs2 from "node:fs";
+import os from "node:os";
+import path2 from "node:path";
+var outsideOwn = (dir) => {
+  if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
+  const own = path2.join(os.userInfo().homedir, ".local", "state", "walkthrough");
+  const full = path2.resolve(dir);
+  if (full === own || full.startsWith(own + path2.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
+  return dir;
+};
+var stateDir = () => outsideOwn(
+  process.env["WALKTHROUGH_STATE"] || path2.join(process.env["XDG_STATE_HOME"] || path2.join(os.homedir(), ".local", "state"), "walkthrough")
+);
+var INBOX = "inbox";
+function makeInbox(dir) {
+  const inbox = path2.join(dir, INBOX);
+  fs2.mkdirSync(inbox, { recursive: true, mode: 448 });
+  return inbox;
+}
+function inInbox(file2) {
+  const parent = path2.dirname(path2.resolve(file2));
+  if (path2.basename(parent) !== INBOX) return false;
+  try {
+    if (!fs2.realpathSync(parent).startsWith(fs2.realpathSync(stateDir()) + path2.sep)) return false;
+    const stat = fs2.lstatSync(file2, { throwIfNoEntry: false });
+    return !stat || stat.isFile();
+  } catch {
+    return false;
+  }
+}
+
+// src/input.ts
+function readInput(file2) {
+  if (file2 === void 0) return fs3.readFileSync(0, "utf8");
+  const text2 = fs3.readFileSync(file2, "utf8");
+  if (inInbox(file2)) fs3.rmSync(file2);
+  return text2;
+}
 var filled = (value) => typeof value === "string" && value.trim() !== "";
 var fieldsOf = (value) => typeof value === "object" && value !== null ? value : {};
 function parsed(text2) {
@@ -1987,6 +2028,126 @@ function parseObject(text2, what) {
   return object;
 }
 
+// src/walkthrough.ts
+import path4 from "node:path";
+
+// src/items.ts
+var STEP_ACTIONS = [
+  { id: "approve", label: "Approve" },
+  { id: "flag", label: "Flag", note: true }
+];
+var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
+var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
+
+// src/json-files.ts
+var import_proper_lockfile = __toESM(require_proper_lockfile(), 1);
+import fs4 from "node:fs";
+import path3 from "node:path";
+function readJson(file2, fallback) {
+  try {
+    return JSON.parse(fs4.readFileSync(file2, "utf8").replace(/^﻿/, ""));
+  } catch {
+    return fallback;
+  }
+}
+function writeJson(file2, value) {
+  fs4.mkdirSync(path3.dirname(file2), { recursive: true, mode: 448 });
+  const beside = `${file2}.${String(process.pid)}.tmp`;
+  fs4.writeFileSync(beside, `${JSON.stringify(value, null, 2)}
+`, { mode: 384 });
+  fs4.renameSync(beside, file2);
+}
+async function locked(file2, work) {
+  fs4.mkdirSync(path3.dirname(file2), { recursive: true, mode: 448 });
+  const release = await (0, import_proper_lockfile.lock)(file2, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
+  try {
+    return await work();
+  } finally {
+    await release();
+  }
+}
+
+// src/walkthrough.ts
+var MARKS = ["met", "partly", "not-met", "unchecked"];
+var file = (dir) => path4.join(dir, "walkthrough.json");
+function walkthroughDir(repo, source) {
+  const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
+  if (Buffer.byteLength(name2) > 255)
+    throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
+  return path4.join(stateDir(), repo, name2);
+}
+var readWalkthrough = (dir) => readJson(file(dir), null);
+function openWalkthrough(dir, source, change, carry) {
+  return locked(file(dir), async () => {
+    const saved = readWalkthrough(dir);
+    if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: "resumed" };
+    if (saved) {
+      const moved = { ...saved, target: change.target, base: change.base, head: change.head };
+      const { steps: steps2, unplaced } = await carry(moved);
+      setSteps(moved, steps2);
+      if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
+      writeJson(file(dir), moved);
+      return { walkthrough: moved, opened: "moved" };
+    }
+    const walkthrough = {
+      ...source.kind === "branch" ? { kind: "branch", branch: source.branch } : { kind: "range", label: source.label },
+      target: change.target,
+      base: change.base,
+      head: change.head,
+      steps: []
+    };
+    writeJson(file(dir), walkthrough);
+    return { walkthrough, opened: "new" };
+  });
+}
+function update(dir, change) {
+  return locked(file(dir), async () => {
+    const walkthrough = readWalkthrough(dir);
+    if (!walkthrough) throw new Error("there is no such walkthrough yet; run walkthrough start first");
+    const changed = await change(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return changed;
+  });
+}
+function keepActions(walkthrough, keep) {
+  return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
+}
+function setSteps(walkthrough, steps2) {
+  walkthrough.steps = steps2;
+  delete walkthrough.unplaced;
+  walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps2.map((step) => Number(step.id)));
+  const kept = new Set(steps2.map((step) => itemKey({ type: "step", id: step.id })));
+  walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("step:") || kept.has(key));
+}
+function recordSteps(dir, build) {
+  return update(dir, async (walkthrough) => {
+    setSteps(walkthrough, await build(walkthrough));
+    return walkthrough;
+  });
+}
+function recordChecklist(dir, build) {
+  return update(dir, (walkthrough) => {
+    const checklist2 = build(walkthrough);
+    walkthrough.checklist = checklist2;
+    const ids = checklist2.items.map((item) => item.id);
+    walkthrough.lastChecklistItem = Math.max(walkthrough.lastChecklistItem ?? 0, ...ids.map(Number));
+    const kept = new Set(ids.map((id) => itemKey({ type: "checklist", id })));
+    walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("checklist:") || kept.has(key));
+    return checklist2;
+  });
+}
+function recordActions(dir, build) {
+  return update(dir, (walkthrough) => {
+    const recorded = build(walkthrough);
+    const named = new Map(recorded.map(({ item, actions: actions2 }) => [itemKey(item), actions2]));
+    walkthrough.actions = {
+      ...keepActions(walkthrough, (key) => !named.has(key)),
+      ...Object.fromEntries([...named].filter(([, actions2]) => actions2.length))
+    };
+    return recorded;
+  });
+}
+
 // src/checklist.ts
 function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastChecklistItem = 0 }) {
   const { title, items } = parseObject(text2, "the checklist");
@@ -1998,10 +2159,11 @@ function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastCheck
   const kept = /* @__PURE__ */ new Set();
   const checked = items.map((one, at) => {
     const name2 = `item ${String(at + 1)}`;
-    const { id, status, text: itemText, steps: links = [] } = fieldsOf(one);
-    if (!filled(status)) throw new Error(`${name2} needs a status`);
+    const { id, status: status2, mark, text: itemText, steps: links = [] } = fieldsOf(one);
+    if (!filled(status2)) throw new Error(`${name2} needs a status`);
     if (!filled(itemText)) throw new Error(`${name2} needs a text`);
     if (!Array.isArray(links) || !links.every(filled)) throw new Error(`${name2}: steps must be a list of step ids`);
+    if (mark !== void 0 && !MARKS.includes(mark)) throw new Error(`${name2}: mark must be one of ${MARKS.join(", ")}`);
     if (id !== void 0 && !filled(id))
       throw new Error(`${name2}: id must be the id of an item, as walkthrough checklist printed it`);
     if (id !== void 0 && !before.some((old) => old.id === id)) throw new Error(`${name2}: the checklist has no item ${id} to keep`);
@@ -2009,7 +2171,7 @@ function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastCheck
     if (id !== void 0) kept.add(id);
     for (const link2 of links)
       if (!known.has(link2)) unknown.push(`${name2} links to step ${link2}, which this walkthrough does not have`);
-    return { id, status, text: itemText, steps: links };
+    return { id, status: status2, ...mark !== void 0 && { mark }, text: itemText, steps: links };
   });
   if (unknown.length > 0) throw new Error(`the checklist was not recorded:
   ${unknown.join("\n  ")}`);
@@ -2026,55 +2188,13 @@ function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastCheck
 
 // src/prune.ts
 import { spawnSync as spawnSync3 } from "node:child_process";
-import fs6 from "node:fs";
+import fs8 from "node:fs";
 import path9 from "node:path";
-
-// src/json-files.ts
-var import_proper_lockfile = __toESM(require_proper_lockfile(), 1);
-import fs2 from "node:fs";
-import path2 from "node:path";
-function readJson(file2, fallback) {
-  try {
-    return JSON.parse(fs2.readFileSync(file2, "utf8").replace(/^﻿/, ""));
-  } catch {
-    return fallback;
-  }
-}
-function writeJson(file2, value) {
-  fs2.mkdirSync(path2.dirname(file2), { recursive: true, mode: 448 });
-  const beside = `${file2}.${String(process.pid)}.tmp`;
-  fs2.writeFileSync(beside, `${JSON.stringify(value, null, 2)}
-`, { mode: 384 });
-  fs2.renameSync(beside, file2);
-}
-async function locked(file2, work) {
-  fs2.mkdirSync(path2.dirname(file2), { recursive: true, mode: 448 });
-  const release = await (0, import_proper_lockfile.lock)(file2, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
-  try {
-    return await work();
-  } finally {
-    await release();
-  }
-}
-
-// src/paths.ts
-import os from "node:os";
-import path3 from "node:path";
-var outsideOwn = (dir) => {
-  if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
-  const own = path3.join(os.userInfo().homedir, ".local", "state", "walkthrough");
-  const full = path3.resolve(dir);
-  if (full === own || full.startsWith(own + path3.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
-  return dir;
-};
-var stateDir = () => outsideOwn(
-  process.env["WALKTHROUGH_STATE"] || path3.join(process.env["XDG_STATE_HOME"] || path3.join(os.homedir(), ".local", "state"), "walkthrough")
-);
 
 // src/server.ts
 import { spawn } from "node:child_process";
 import crypto5 from "node:crypto";
-import fs5 from "node:fs";
+import fs7 from "node:fs";
 import http from "node:http";
 import path8 from "node:path";
 import { fileURLToPath } from "node:url";
@@ -2579,10 +2699,10 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
       const source = references[index * 2 + half];
       const value = single[source];
       if (value < 0) {
-        let read = start2[source];
-        const readEnd = read + length[source];
-        while (read < readEnd)
-          pool[write++] = pool[read++];
+        let read2 = start2[source];
+        const readEnd = read2 + length[source];
+        while (read2 < readEnd)
+          pool[write++] = pool[read2++];
       } else {
         pool[write++] = value;
       }
@@ -2597,10 +2717,10 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
     }
     const value = single[slot];
     if (value < 0) {
-      let read = start2[slot];
-      const readEnd = read + length[slot];
-      while (read < readEnd)
-        out[outIndex++] = pool[read++];
+      let read2 = start2[slot];
+      const readEnd = read2 + length[slot];
+      while (read2 < readEnd)
+        out[outIndex++] = pool[read2++];
     } else {
       out[outIndex++] = value;
     }
@@ -7195,7 +7315,7 @@ import path6 from "node:path";
 
 // src/session.ts
 import crypto3 from "node:crypto";
-import fs3 from "node:fs";
+import fs5 from "node:fs";
 import path5 from "node:path";
 
 // src/notes.ts
@@ -7547,7 +7667,7 @@ function parseSteps(text2) {
       return {
         title,
         folded,
-        files: files3.map(({ path: path12, reason }) => ({ path: path12, reason })),
+        files: files3.map(({ path: path13, reason }) => ({ path: path13, reason })),
         problems
       };
     }
@@ -7677,93 +7797,6 @@ function parseNotes(text2, walkthrough) {
   });
 }
 
-// src/walkthrough.ts
-import path4 from "node:path";
-
-// src/items.ts
-var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
-var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
-
-// src/walkthrough.ts
-var file = (dir) => path4.join(dir, "walkthrough.json");
-function walkthroughDir(repo, source) {
-  const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
-  if (Buffer.byteLength(name2) > 255)
-    throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
-  return path4.join(stateDir(), repo, name2);
-}
-var readWalkthrough = (dir) => readJson(file(dir), null);
-function openWalkthrough(dir, source, change, carry) {
-  return locked(file(dir), async () => {
-    const saved = readWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: "resumed" };
-    if (saved) {
-      const moved = { ...saved, target: change.target, base: change.base, head: change.head };
-      const { steps: steps2, unplaced } = await carry(moved);
-      setSteps(moved, steps2);
-      if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
-      writeJson(file(dir), moved);
-      return { walkthrough: moved, opened: "moved" };
-    }
-    const walkthrough = {
-      ...source.kind === "branch" ? { kind: "branch", branch: source.branch } : { kind: "range", label: source.label },
-      target: change.target,
-      base: change.base,
-      head: change.head,
-      steps: []
-    };
-    writeJson(file(dir), walkthrough);
-    return { walkthrough, opened: "new" };
-  });
-}
-function update(dir, change) {
-  return locked(file(dir), async () => {
-    const walkthrough = readWalkthrough(dir);
-    if (!walkthrough) throw new Error("there is no such walkthrough yet; run walkthrough start first");
-    const changed = await change(walkthrough);
-    writeJson(file(dir), walkthrough);
-    return changed;
-  });
-}
-function keepActions(walkthrough, keep) {
-  return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
-}
-function setSteps(walkthrough, steps2) {
-  walkthrough.steps = steps2;
-  delete walkthrough.unplaced;
-  walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps2.map((step) => Number(step.id)));
-  const kept = new Set(steps2.map((step) => itemKey({ type: "step", id: step.id })));
-  walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("step:") || kept.has(key));
-}
-function recordSteps(dir, build) {
-  return update(dir, async (walkthrough) => {
-    setSteps(walkthrough, await build(walkthrough));
-    return walkthrough;
-  });
-}
-function recordChecklist(dir, build) {
-  return update(dir, (walkthrough) => {
-    const checklist2 = build(walkthrough);
-    walkthrough.checklist = checklist2;
-    const ids = checklist2.items.map((item) => item.id);
-    walkthrough.lastChecklistItem = Math.max(walkthrough.lastChecklistItem ?? 0, ...ids.map(Number));
-    const kept = new Set(ids.map((id) => itemKey({ type: "checklist", id })));
-    walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("checklist:") || kept.has(key));
-    return checklist2;
-  });
-}
-function recordActions(dir, build) {
-  return update(dir, (walkthrough) => {
-    const recorded = build(walkthrough);
-    const named = new Map(recorded.map(({ item, actions: actions2 }) => [itemKey(item), actions2]));
-    walkthrough.actions = {
-      ...keepActions(walkthrough, (key) => !named.has(key)),
-      ...Object.fromEntries([...named].filter(([, actions2]) => actions2.length))
-    };
-    return recorded;
-  });
-}
-
 // src/session.ts
 var BACK_WITHIN_MS = 60 * 1e3;
 var LISTEN_EVERY_MS = 500;
@@ -7776,7 +7809,7 @@ var hold = (dir, work) => locked(path5.join(dir, "session"), work);
 function readLines(file2) {
   let text2 = "";
   try {
-    text2 = fs3.readFileSync(file2, "utf8");
+    text2 = fs5.readFileSync(file2, "utf8");
   } catch {
     return [];
   }
@@ -7789,7 +7822,7 @@ function readLines(file2) {
   });
 }
 var append = (file2, entry) => {
-  fs3.appendFileSync(file2, `${JSON.stringify(entry)}
+  fs5.appendFileSync(file2, `${JSON.stringify(entry)}
 `, { mode: 384 });
 };
 var newId = () => crypto3.randomBytes(4).toString("hex");
@@ -7911,15 +7944,15 @@ async function listen(dir, pageRunning) {
       void release().finally(() => process.exit(0));
     });
   for (; ; ) {
-    const taken = await hold(dir, () => {
+    const taken2 = await hold(dir, () => {
       if (!mine()) return "replaced";
       const requests = readLines(inbox);
       if (!requests.length) return null;
-      fs3.rmSync(inbox, { force: true });
+      fs5.rmSync(inbox, { force: true });
       writeJson(listener, { state: "handed", requests: requests.map((one) => one.id) });
       return requests;
     });
-    if (taken) return taken;
+    if (taken2) return taken2;
     if (!pageRunning()) {
       await release();
       return "stopped";
@@ -7929,13 +7962,10 @@ async function listen(dir, pageRunning) {
 }
 
 // src/decisions.ts
-var STEP_ACTIONS = [
-  { id: "approve", label: "Approve" },
-  { id: "flag", label: "Flag", note: true }
-];
 var readFile = (dir) => path6.join(dir, "read.json");
 var fingerprint = (content) => crypto4.createHash("sha256").update(content).digest("hex").slice(0, 16);
-var isDecision = (entry) => entry.from === "page" && entry.kind === "decision";
+var isChoice = (entry) => entry.from === "page" && entry.kind === "decision";
+var taken = (choice) => choice && !("clear" in choice) ? choice : null;
 var keyOf = (value) => typeof value === "object" && value !== null ? itemKey(value) : "";
 function itemsOf({ steps: steps2, checklist: checklist2, base, head }, conversation) {
   const items = [
@@ -7950,11 +7980,11 @@ function itemsOf({ steps: steps2, checklist: checklist2, base, head }, conversat
 }
 var actionsOf = ({ actions: actions2 }, item) => actions2?.[itemKey(item)] ?? (item.type === "step" ? STEP_ACTIONS : []);
 function decisionsOf(walkthrough, conversation) {
-  const decisions2 = conversation.filter(isDecision);
+  const choices = conversation.filter(isChoice);
   return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
-    const decision = decisions2.findLast((one) => itemKey(one.item) === key && one.on === on) ?? null;
-    const earlier = decision ? void 0 : decisions2.findLast((one) => itemKey(one.item) === key);
-    return { item, key, actions: actionsOf(walkthrough, item), decision, reopened: earlier ?? null };
+    const latest = choices.findLast((one) => itemKey(one.item) === key && one.on === on);
+    const earlier = latest ? void 0 : choices.findLast((one) => itemKey(one.item) === key);
+    return { item, key, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
   });
 }
 function walkthroughView(dir) {
@@ -7962,13 +7992,13 @@ function walkthroughView(dir) {
   if (!walkthrough) return null;
   const conversation = conversationOf(dir);
   const items = decisionsOf(walkthrough, conversation);
-  const read = readJson(readFile(dir), []);
+  const read2 = readJson(readFile(dir), []);
   return {
     ...walkthrough,
     actions: Object.fromEntries(items.filter((one) => one.actions.length).map((one) => [one.key, one.actions])),
     decided: Object.fromEntries(items.map((one) => [one.key, one.decision])),
     reopened: Object.fromEntries(items.flatMap((one) => one.reopened ? [[one.key, one.reopened]] : [])),
-    read: walkthrough.steps.filter((step) => read.includes(`${step.id}:${fingerprint(step.diff)}`)).map((step) => step.id),
+    read: walkthrough.steps.filter((step) => read2.includes(`${step.id}:${fingerprint(step.diff)}`)).map((step) => step.id),
     anchored: Object.fromEntries(
       conversation.flatMap((entry) => {
         const place = entry.from === "session" ? entry.note : entry.kind === "ask" ? entry : void 0;
@@ -8008,11 +8038,19 @@ function parseActions(text2, walkthrough, conversation) {
     };
   });
 }
-async function decide(dir, { item, action, note: note2, text: text2 }) {
+async function decide(dir, { item, action, note: note2, text: text2, clear }) {
   const walkthrough = readWalkthrough(dir);
-  const found = walkthrough && itemsOf(walkthrough, conversationOf(dir)).find((one) => one.key === keyOf(item));
-  const offered = found && actionsOf(walkthrough, found.item).find((one) => one.id === action);
-  if (!found || !offered) return null;
+  const conversation = conversationOf(dir);
+  const found = walkthrough && itemsOf(walkthrough, conversation).find((one) => one.key === keyOf(item));
+  if (!found) return null;
+  if (clear !== void 0) {
+    const decided = decisionsOf(walkthrough, conversation).find((one) => one.key === found.key)?.decision;
+    if (clear !== true || !decided || action !== void 0 || note2 !== void 0 || text2 !== void 0) return null;
+    const session2 = await request(dir, { kind: "decision", item: found.item, clear: true, on: found.on });
+    return { walkthrough: walkthroughView(dir), session: session2 };
+  }
+  const offered = actionsOf(walkthrough, found.item).find((one) => one.id === action);
+  if (!offered) return null;
   if (offered.note ? !filled(note2) : note2 !== void 0) return null;
   if (offered.edit ? !filled(text2) : text2 !== void 0) return null;
   const session = await request(dir, {
@@ -8031,37 +8069,48 @@ async function markRead(dir, stepId) {
   const file2 = readFile(dir);
   const mark = `${step.id}:${fingerprint(step.diff)}`;
   await locked(file2, () => {
-    const read = readJson(file2, []);
-    if (!read.includes(mark)) writeJson(file2, [...read, mark]);
+    const read2 = readJson(file2, []);
+    if (!read2.includes(mark)) writeJson(file2, [...read2, mark]);
   });
   return walkthroughView(dir);
 }
 
 // src/list.ts
-import fs4 from "node:fs";
+import fs6 from "node:fs";
 import path7 from "node:path";
 var ACTIVITY = ["walkthrough.json", "conversation.jsonl", "read.json"];
 function listView(repoDir2) {
-  const entries = fs4.existsSync(repoDir2) ? fs4.readdirSync(repoDir2, { withFileTypes: true }) : [];
+  const entries = fs6.existsSync(repoDir2) ? fs6.readdirSync(repoDir2, { withFileTypes: true }) : [];
   const listed = entries.flatMap((entry) => {
     const dir = path7.join(repoDir2, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
-    const changed = ACTIVITY.map((file2) => fs4.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
+    const segments = view.steps.map((step) => {
+      const key = itemKey({ type: "step", id: step.id });
+      if (view.decided[key]) return "decided";
+      if (view.reopened[key]) return "reopened";
+      return view.read.includes(step.id) ? "read" : "unread";
+    });
+    const changed = ACTIVITY.map((file2) => fs6.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
         name: nameOf(view),
         target: view.target,
         steps: view.steps.length,
-        decided: view.steps.filter((step) => view.decided[itemKey({ type: "step", id: step.id })]).length,
+        decided: segments.filter((segment) => segment === "decided").length,
         read: view.read.length,
+        segments,
         last: new Date(Math.max(...changed)).toISOString()
       }
     ];
   });
   return listed.sort((one, other) => other.last.localeCompare(one.last));
 }
+var listPage = (repoDir2) => ({
+  repo: path7.basename(repoDir2).replace(/-[0-9a-f]{8}$/, ""),
+  walkthroughs: listView(repoDir2)
+});
 
 // src/words.ts
 var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
@@ -8099,12 +8148,12 @@ var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
   const file2 = path8.join(dir, "token");
   try {
-    const kept = fs5.readFileSync(file2, "utf8").trim();
+    const kept = fs7.readFileSync(file2, "utf8").trim();
     if (/^[0-9a-f]{48}$/.test(kept)) return kept;
   } catch {
   }
   const token = crypto5.randomBytes(24).toString("hex");
-  fs5.writeFileSync(file2, `${token}
+  fs7.writeFileSync(file2, `${token}
 `, { mode: 384 });
   return token;
 }
@@ -8118,8 +8167,8 @@ var sleep = (ms) => new Promise((resolve) => {
 async function ensureServer(dir, list3 = false) {
   const running = readRecord(dir);
   if (running && alive(running)) return running.url;
-  fs5.mkdirSync(dir, { recursive: true, mode: 448 });
-  const log = fs5.openSync(path8.join(dir, "server.log"), "a", 384);
+  fs7.mkdirSync(dir, { recursive: true, mode: 448 });
+  const log = fs7.openSync(path8.join(dir, "server.log"), "a", 384);
   const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
     // Not the folder start ran in, which may be a worktree removed while the page is open.
     cwd: commonDir(process.cwd()),
@@ -8127,7 +8176,7 @@ async function ensureServer(dir, list3 = false) {
     stdio: ["ignore", log, log]
   });
   child.unref();
-  fs5.closeSync(log);
+  fs7.closeSync(log);
   for (const end = Date.now() + 1e4; Date.now() < end; await sleep(50)) {
     const record = readRecord(dir);
     if (record && record.pid === child.pid) return record.url;
@@ -8137,13 +8186,13 @@ async function ensureServer(dir, list3 = false) {
 async function stopServer(dir) {
   const record = readRecord(dir);
   if (!record || !alive(record)) {
-    fs5.rmSync(recordFile(dir), { force: true });
+    fs7.rmSync(recordFile(dir), { force: true });
     return false;
   }
   process.kill(record.pid, "SIGTERM");
   for (const end = Date.now() + 8e3; Date.now() < end && alive(record); ) await sleep(50);
   if (alive(record)) process.kill(record.pid, "SIGKILL");
-  fs5.rmSync(recordFile(dir), { force: true });
+  fs7.rmSync(recordFile(dir), { force: true });
   return true;
 }
 function serve(dir, list3 = false) {
@@ -8166,7 +8215,7 @@ function serve(dir, list3 = false) {
     }
   });
   const shutDown = () => {
-    if (readRecord(dir)?.pid === process.pid) fs5.rmSync(recordFile(dir), { force: true });
+    if (readRecord(dir)?.pid === process.pid) fs7.rmSync(recordFile(dir), { force: true });
     process.exit(0);
   };
   process.on("SIGTERM", shutDown);
@@ -8206,11 +8255,11 @@ async function inChange(base, head, file2, type) {
     (markdown) => previewType(markdown)?.startsWith("text/markdown") && imagesIn(markdown, fileAt(process.cwd(), head, markdown)?.toString("utf8") ?? "").includes(file2)
   );
 }
-async function serveFileAtHead(dir, file2, res) {
+async function serveFileAt(dir, file2, atBase, res) {
   const walkthrough = readWalkthrough(dir);
   const type = previewType(file2);
-  const shown = walkthrough && type && await inChange(walkthrough.base, walkthrough.head, file2, type);
-  const content = shown ? fileAt(process.cwd(), walkthrough.head, file2) : null;
+  const shown = walkthrough && type && (atBase ? (await changedFiles(process.cwd(), walkthrough.base, walkthrough.head)).some((one) => (one.from ?? one.path) === file2) : await inChange(walkthrough.base, walkthrough.head, file2, type));
+  const content = shown ? fileAt(process.cwd(), atBase ? walkthrough.base : walkthrough.head, file2) : null;
   if (!type || !content) {
     res.writeHead(404).end();
     return;
@@ -8223,12 +8272,12 @@ async function serveFileAtHead(dir, file2, res) {
 }
 function serveFile(dir, list3, what, query, res) {
   if (!list3 && what === "file") {
-    serveFileAtHead(dir, query.get("path") ?? "", res).catch((error) => {
+    serveFileAt(dir, query.get("path") ?? "", query.get("at") === "base", res).catch((error) => {
       failRequest(res, error);
     });
     return;
   }
-  const data = list3 ? { "data/list.json": () => listView(dir) } : { "data/walkthrough.json": () => walkthroughView(dir), "data/session.json": () => sessionView(dir) };
+  const data = list3 ? { "data/list.json": () => listPage(dir) } : { "data/walkthrough.json": () => walkthroughView(dir), "data/session.json": () => sessionView(dir) };
   const view = Object.hasOwn(data, what) ? data[what] : void 0;
   if (view) {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));
@@ -8241,7 +8290,7 @@ function serveFile(dir, list3, what, query, res) {
     return;
   }
   res.writeHead(200, { "content-type": known.type, "cache-control": "no-store" });
-  fs5.createReadStream(path8.join(PAGE, known.file)).pipe(res);
+  fs7.createReadStream(path8.join(PAGE, known.file)).pipe(res);
 }
 function readBody(req, res, onBody) {
   let size = 0;
@@ -8303,10 +8352,10 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
       res.writeHead(400, JSON_HEADERS).end(JSON.stringify({ error: problem }));
       return;
     }
-    Promise.resolve().then(() => route(fields)).then(({ status, body: said, after }) => {
+    Promise.resolve().then(() => route(fields)).then(({ status: status2, body: said, after }) => {
       if (after) res.once("finish", after);
-      if (said === void 0) res.writeHead(status).end();
-      else res.writeHead(status, JSON_HEADERS).end(JSON.stringify(said));
+      if (said === void 0) res.writeHead(status2).end();
+      else res.writeHead(status2, JSON_HEADERS).end(JSON.stringify(said));
     }).catch((error) => {
       failRequest(res, error);
     });
@@ -8324,14 +8373,14 @@ function over(cwd, walkthrough) {
 }
 async function remove(dir, name2, why) {
   await stopServer(dir);
-  fs6.rmSync(dir, { recursive: true, force: true });
+  fs8.rmSync(dir, { recursive: true, force: true });
   return `Removed the walkthrough of ${name2}: ${why}.`;
 }
 async function prune(cwd) {
   const repoDir2 = path9.join(stateDir(), currentRepo(cwd));
   const removed = [];
-  if (!fs6.existsSync(repoDir2)) return removed;
-  for (const entry of fs6.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
+  if (!fs8.existsSync(repoDir2)) return removed;
+  for (const entry of fs8.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
     const dir = path9.join(repoDir2, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
@@ -8357,7 +8406,7 @@ async function pruneDaily(cwd) {
 
 // src/export.ts
 import crypto6 from "node:crypto";
-import fs7 from "node:fs";
+import fs9 from "node:fs";
 import path10 from "node:path";
 var hash = (text2) => `'sha256-${crypto6.createHash("sha256").update(text2).digest("base64")}'`;
 function inline2(html, tag, replacement) {
@@ -8365,13 +8414,13 @@ function inline2(html, tag, replacement) {
   return html.replace(tag, () => replacement);
 }
 function exportPage(dir) {
-  const read = (file2) => fs7.readFileSync(path10.join(PAGE, file2), "utf8");
-  const script = read("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
-  const style = read("style.css");
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir) };
+  const read2 = (file2) => fs9.readFileSync(path10.join(PAGE, file2), "utf8");
+  const script = read2("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
+  const style = read2("style.css");
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString() };
   const data = JSON.stringify(state).replaceAll("<", "\\u003c");
-  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; base-uri 'none'; form-action 'none'`;
-  let html = read("index.html");
+  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
+  let html = read2("index.html");
   html = inline2(
     html,
     '<link rel="stylesheet" href="style.css" />',
@@ -8416,8 +8465,8 @@ var notesExample = [
 var checklistExample = {
   title: "Acceptance criteria",
   items: [
-    { status: "met", text: "Sessions survive a restart.", steps: ["1"] },
-    { status: "not shown", text: "Expired sessions are removed.", steps: [] }
+    { status: "met", mark: "met", text: "Sessions survive a restart.", steps: ["1"] },
+    { status: "not shown", mark: "not-met", text: "Expired sessions are removed.", steps: [] }
   ]
 };
 var actionsExample = [
@@ -8440,16 +8489,23 @@ var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --
   Every command below finds the walkthrough from the same options start was given, so pass them to each.
   When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
   and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
+  It prints the walkthrough's inbox, a folder for the files the session records from.
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+
+Recording from files
+  steps, checklist, note, actions, say and policy save read what they record from the file --file names, or from standard input without it.
+  Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
+  The command removes a file from the inbox once it has read it, so each recording is a new file there.
+  Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.
 
 walkthrough files
   Prints every changed file of the walkthrough, one path per line, at its head path.
 
-walkthrough steps < steps.json
+walkthrough steps --file <file>
   Records the steps, replacing those recorded before, and prints each step's id and title in order.
   A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, or else a new id; its notes and checklist links follow the id.
   A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
-  Standard input is a JSON array of steps in reading order; a step shows its files in the order given.
+  The file is a JSON array of steps in reading order; a step shows its files in the order given.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
     {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
@@ -8458,9 +8514,9 @@ walkthrough steps < steps.json
   Example:
 ${JSON.stringify(example, null, 2)}
 
-walkthrough note < notes.json
+walkthrough note --file <file>
   Pins notes to the page, after those pinned before, and prints each note's id.
-  Standard input is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
+  The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
   "step" is a step id as walkthrough steps printed it.
   A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
     {"step": string, "label": string, "text": string, "low": boolean}
@@ -8471,28 +8527,30 @@ walkthrough note < notes.json
   Example:
 ${JSON.stringify(notesExample, null, 2)}
 
-walkthrough checklist < checklist.json
-  Records the checklist shown beside the steps, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
-  Standard input is a JSON object with a title and items in reading order.
+walkthrough checklist --file <file>
+  Records the checklist the page shows, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
+  The file is a JSON object with a title and items in reading order.
   An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
   To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
   Title, status and text are the session's own words.
+  "mark" picks the icon beside the status: "met", "partly", "not-met" or "unchecked" ("mark" may be left out, which shows "unchecked").
+  An item marked "not-met", or offering actions the person has not taken, is listed with the steps left, as something that still needs the person.
   An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
   A link to a step that is later gone shows as gone.
-    {"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}
-    {"id": string, "status": string, "text": string, "steps": [step id, ...]}   an item kept under a new text
+    {"title": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
+    {"id": string, "status": string, "mark": mark, "text": string, "steps": [step id, ...]}   an item kept under a new text
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
 
-walkthrough actions < actions.json
+walkthrough actions --file <file>
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
-  Standard input is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
+  The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
     [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
-  Other items offer nothing until actions are recorded on them; the walkthrough's actions show beside the steps.
+  Other items offer nothing until actions are recorded on them; the walkthrough's actions show at its end, after the last step.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
@@ -8505,6 +8563,7 @@ walkthrough decisions
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
   A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
   A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+  A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
 
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
@@ -8513,12 +8572,14 @@ walkthrough listen
     {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
+    {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
+  Act on a clear as the review policy says, and answer it with say --answer like any decision.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
-walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>
-  Puts the session's Markdown on the page: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
+walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
+  Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
   An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
   the person can reply to it like any note, and you can record actions on it.
   Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
@@ -8527,11 +8588,60 @@ walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]..
 walkthrough export [--out <file>]
   Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist and decisions.
   The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
+  With --out the person approves the command, since it writes where it names.
+
+walkthrough policy [show | init | save --file <file>]
+  The person's review policy; this compares and copies its bytes and never reads its rules.
+  With no action it prints its state and path on the first line, then the inbox to write a new version to:
+    none: there is no review policy at <path>, so the template applies.
+    template: the review policy at <path> is the unchanged template.
+    yours: the review policy at <path> is the person's own.
+  show prints the policy, or the template when there is none; init copies the template there when there is none;
+  save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list
   Opens a page of the repo's walkthroughs with their progress and last activity; opening one starts its page when it is not running.
   It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
 `;
+
+// src/policy.ts
+import fs10 from "node:fs";
+import os2 from "node:os";
+import path11 from "node:path";
+import { parseArgs } from "node:util";
+var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEWER.md");
+var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os2.homedir(), ".config"), "walkthrough", "REVIEWER.md");
+var read = (file2) => fs10.readFileSync(file2);
+function status() {
+  const policy = policyPath();
+  const inbox = makeInbox(stateDir());
+  if (!fs10.existsSync(policy)) console.log(`none: there is no review policy at ${policy}, so the template applies.`);
+  else if (read(policy).equals(read(TEMPLATE)))
+    console.log(`template: the review policy at ${policy} is the unchanged template.`);
+  else console.log(`yours: the review policy at ${policy} is the person's own.`);
+  console.log(`Write a new version to files in ${inbox} and save it with walkthrough policy save --file <file>.`);
+}
+function save(text2, what) {
+  const policy = policyPath();
+  fs10.mkdirSync(path11.dirname(policy), { recursive: true });
+  fs10.writeFileSync(policy, text2);
+  console.log(`${what} ${policy}.`);
+}
+function policyCommand(args) {
+  const { positionals, values } = parseArgs({ args, allowPositionals: true, options: { file: { type: "string" } } });
+  const [action, ...rest2] = positionals;
+  if (rest2.length > 0) throw new Error("usage: walkthrough policy [show | init | save --file <file>]");
+  if (action === void 0) status();
+  else if (action === "show") process.stdout.write(read(fs10.existsSync(policyPath()) ? policyPath() : TEMPLATE));
+  else if (action === "init") {
+    if (fs10.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
+    save(read(TEMPLATE), "Copied the template to");
+  } else if (action === "save") {
+    const text2 = readInput(values.file);
+    if (!text2.trim()) throw new Error("the review policy is empty; nothing was saved");
+    save(text2, "Saved the review policy at");
+  } else throw new Error("usage: walkthrough policy [show | init | save --file <file>]");
+}
 
 // src/cli.ts
 var short = (sha) => sha.slice(0, 7);
@@ -8546,7 +8656,7 @@ function located(args, {
   allowPositionals = false,
   branch
 } = {}) {
-  const parsed3 = parseArgs({ args, allowPositionals, options: { ...SOURCE_OPTIONS, ...options } });
+  const parsed3 = parseArgs2({ args, allowPositionals, options: { ...SOURCE_OPTIONS, ...options } });
   const { target, base, head, label } = parsed3.values;
   const cwd = process.cwd();
   let source;
@@ -8564,6 +8674,7 @@ async function start(args) {
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = await openWalkthrough(dir, source, change, (moved) => carrySteps(cwd, moved));
   await starting(dir);
+  const inbox = makeInbox(dir);
   const { steps: steps2 } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps2.length, "step")}.`
@@ -8582,6 +8693,7 @@ async function start(args) {
     console.log(
       `Warning: ${plural(change.uncommitted, "uncommitted change")} ${change.uncommitted === 1 ? "is" : "are"} left out of this walkthrough.`
     );
+  console.log(`Write what you record to files in ${inbox} and pass each with --file.`);
   openPage(await ensureServer(dir), "The page", dir);
 }
 function openPage(url, what, dir) {
@@ -8590,9 +8702,9 @@ function openPage(url, what, dir) {
     browser.status === 0 ? `${what} is open in your browser.` : `Could not open a browser; the address of ${what.toLowerCase()} is in ${dir}/server.json.`
   );
 }
-var repoDir = () => path11.join(stateDir(), currentRepo(process.cwd()));
+var repoDir = () => path12.join(stateDir(), currentRepo(process.cwd()));
 async function list2(args) {
-  parseArgs({ args, options: {} });
+  parseArgs2({ args, options: {} });
   openPage(await ensureServer(repoDir(), true), "The list of walkthroughs", repoDir());
 }
 function current(args, config2 = {}) {
@@ -8603,31 +8715,33 @@ function current(args, config2 = {}) {
 }
 async function files2(args) {
   const { base, head } = current(args).walkthrough;
-  for (const { path: path12 } of await changedFiles(process.cwd(), base, head)) console.log(path12);
+  for (const { path: path13 } of await changedFiles(process.cwd(), base, head)) console.log(path13);
 }
+var FILE_OPTION = { options: { file: { type: "string" } } };
 async function steps(args) {
-  const { cwd, dir } = located(args);
-  const inputs = parseSteps(fs8.readFileSync(0, "utf8"));
+  const { cwd, dir, values } = located(args, FILE_OPTION);
+  const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, (walkthrough) => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter((step) => step.kind === "folded").length;
   const ids = recorded.map((step) => `${step.id} (${step.title})`).join(", ");
   console.log(`Recorded ${plural(recorded.length, "step")}${folded ? `, ${String(folded)} of them folded` : ""}: ${ids}.`);
 }
 async function notes(args) {
-  const { dir, walkthrough } = current(args);
-  const noted = await note(dir, parseNotes(fs8.readFileSync(0, "utf8"), walkthrough));
+  const { dir, walkthrough, values } = current(args, FILE_OPTION);
+  const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
   const list3 = noted.map((entry) => `${entry.id} (${entry.note.label})`).join(", ");
   console.log(`Recorded ${plural(noted.length, "note")}${noted.length ? `: ${list3}` : ""}.`);
 }
 async function checklist(args) {
-  const text2 = fs8.readFileSync(0, "utf8");
-  const { title, items } = await recordChecklist(located(args).dir, (walkthrough) => parseChecklist(text2, walkthrough));
+  const { dir, values } = located(args, FILE_OPTION);
+  const text2 = readInput(values.file);
+  const { title, items } = await recordChecklist(dir, (walkthrough) => parseChecklist(text2, walkthrough));
   const ids = items.map((item) => item.id).join(", ");
   console.log(`Recorded the checklist ${title} with ${plural(items.length, "item")}${items.length ? `: ${ids}` : ""}.`);
 }
 async function actions(args) {
-  const text2 = fs8.readFileSync(0, "utf8");
-  const { dir } = located(args);
+  const { dir, values } = located(args, FILE_OPTION);
+  const text2 = readInput(values.file);
   const recorded = await recordActions(dir, (walkthrough) => parseActions(text2, walkthrough, conversationOf(dir)));
   console.log(`Recorded the actions of ${plural(recorded.length, "item")}.`);
 }
@@ -8639,24 +8753,24 @@ function decisions(args) {
 }
 function exportCommand(args) {
   const { values, dir, walkthrough } = current(args, { options: { out: { type: "string" } } });
-  const out = path11.resolve(values.out ?? path11.join(dir, "export.html"));
-  fs8.writeFileSync(out, exportPage(dir));
+  const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
+  fs11.writeFileSync(out, exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 async function listenCommand(args) {
   const { dir } = current(args);
-  const taken = await listen(dir, () => serverRunning(dir));
-  if (taken === "replaced") {
+  const taken2 = await listen(dir, () => serverRunning(dir));
+  if (taken2 === "replaced") {
     console.error("walkthrough: another walkthrough listen took over; this one gets nothing more.");
     process.exitCode = 3;
-  } else if (taken === "stopped") console.log(JSON.stringify({ kind: "stopped" }));
+  } else if (taken2 === "stopped") console.log(JSON.stringify({ kind: "stopped" }));
   else {
     const conversation = conversationOf(dir);
     const about = (to) => {
       const noted = conversation.find((entry) => entry.id === to && entry.from === "session" && entry.note);
       return noted?.from === "session" && noted.note ? { label: noted.note.label, text: noted.text } : void 0;
     };
-    for (const request2 of taken)
+    for (const request2 of taken2)
       console.log(
         JSON.stringify({
           ...request2,
@@ -8673,13 +8787,17 @@ async function sayCommand(args) {
       answer: { type: "string" },
       as: { type: "string" },
       question: { type: "boolean" },
-      choice: { type: "string", multiple: true }
+      choice: { type: "string", multiple: true },
+      file: { type: "string" }
     },
     allowPositionals: true
   });
-  const text2 = positionals.join(" ").trim();
+  if (values.file !== void 0 && positionals.length > 0) throw new Error("say takes its text or a --file, not both");
+  const text2 = (values.file === void 0 ? positionals.join(" ") : readInput(values.file)).trim();
   if (!text2)
-    throw new Error("usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] <text>");
+    throw new Error(
+      "usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)"
+    );
   const said = await say(dir, text2, { ...values, label: values.as });
   console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : "Said on the page.");
 }
@@ -8697,10 +8815,11 @@ var COMMANDS = {
     process.stdout.write(GUIDE);
   },
   listen: listenCommand,
+  policy: policyCommand,
   say: sayCommand,
   stop: async (args) => {
     if (args.includes("--list")) {
-      parseArgs({ args, options: { list: { type: "boolean" } } });
+      parseArgs2({ args, options: { list: { type: "boolean" } } });
       const stopped2 = await stopServer(repoDir());
       console.log(stopped2 ? "Stopped the list of walkthroughs." : "The list of walkthroughs was not running.");
       return;
@@ -8714,11 +8833,11 @@ var COMMANDS = {
       console.log(removed.length > 0 ? removed.join("\n") : "No walkthrough to remove.");
       return;
     }
-    const { positionals } = parseArgs({ args, allowPositionals: true, options: SOURCE_OPTIONS });
+    const { positionals } = parseArgs2({ args, allowPositionals: true, options: SOURCE_OPTIONS });
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === "range") throw new Error("name a branch or a range, not both");
     const listed = readWalkthrough(dir) ? void 0 : listView(repoDir()).find((one) => one.id === positionals[0]);
-    console.log(await (listed ? pruneOne(path11.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
+    console.log(await (listed ? pruneOne(path12.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = "", mode]) => {
@@ -8730,7 +8849,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n    | actions < actions.json | decisions\n    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list\n  every command but guide and list finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n    | actions < actions.json | decisions\n    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {

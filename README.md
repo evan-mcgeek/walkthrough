@@ -57,7 +57,9 @@ While your policy is still the unchanged template, the offer comes again on late
 The template covers how to split and order steps, how to write explanations, what the checklist tracks, which reviewers run and how their findings are checked, how drafts for colleagues are written, and which actions each kind of walkthrough offers.
 Every rule in it is a default you can edit.
 
-Claude Code asks you to approve the session's reads of your policy, which lives outside the project, and the commands that pass JSON to the CLI.
+The plugin's hook lets the session run the `walkthrough` commands and write the files it records from into the walkthrough's inbox without asking you, for the whole session.
+Anything else the session does goes through your usual permissions; `export --out` asks, since it writes where it names.
+If your settings turn hooks off, the session's writes to the inbox ask, and so do its `walkthrough` commands after the turn that started the walkthrough.
 
 The page then opens and shows the session preparing.
 Steps appear as soon as the session records them.
@@ -74,27 +76,29 @@ The session runs the `walkthrough` CLI for you; you rarely type it yourself.
 | --- | --- |
 | `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page. |
 | `files` | Lists the changed files. |
-| `steps`, `note`, `checklist`, `actions` | Record what the session wrote, as JSON on standard input. |
+| `steps`, `note`, `checklist`, `actions` | Record what the session wrote, as JSON from a file in the walkthrough's inbox (`--file`) or on standard input. |
 | `listen` | Waits in the background for what you do on the page. |
 | `say` | Puts the session's answer, question or note on the page. |
+| `policy` | Says whether your review policy is missing, the unchanged template or your own; `show`, `init` and `save --file` print, create and replace it. |
 | `decisions` | Prints your latest decision on every item. |
 | `export` | Writes the walkthrough to one read-only HTML file. |
 | `list` | Opens a page of this repo's walkthroughs. |
 | `stop` | Ends the page and the listener; `stop --list` ends the list page. |
 | `prune` | Removes walkthroughs whose branch is gone or whose head is merged; it also runs at most once a day on `start`. `prune <branch>`, `prune <id>` with an id from the list page, or `prune` with a range's options removes that one. |
 
-Every command but `guide` and `list` takes the same `--target` or `--base`, `--head` and `--label` options that `start` was given.
+Every command but `guide`, `list` and `policy` takes the same `--target` or `--base`, `--head` and `--label` options that `start` was given.
 
 When the change moves (you push fixes, or a range gets a new head), `start` goes on with the same walkthrough.
 Steps whose diff is unchanged keep your decisions, changed steps reopen, and new files go into new steps.
 
 ## Token cost
 
-Measured once, on 2026-11-22, with Claude Code 2.1.330 and Claude Opus 5.5, in a headless session (`claude -p`) on a range of this repo: 16 changed files, 496 lines added and 19 removed.
-The session read the review policy template, the project's instructions, the ticket and the whole diff, and prepared six steps, a four-item checklist and four notes, without reviewer agents and without the page.
-It used 1.28 million input tokens, of which 1.22 million were cache reads, and 17,500 output tokens, for 32 turns and about $1.02 at list price.
+Measured once, on 2026-11-23, with Claude Code 2.1.330 and Claude Opus 5.5, in a headless session (`claude -p`) on a range of this repo: 16 changed files, 496 lines added and 19 removed.
+The session read the review policy template, the project's instructions, the ticket and the whole diff, then recorded six steps, a four-item checklist, three notes and the actions, and stopped the page, with no permission prompt.
+It used about 908,000 input tokens, of which 856,000 were cache reads, and 10,400 output tokens, for 29 turns and about $0.79 at list price.
 
-That run could not record its steps, because the headless session had no way to approve the commands that pass JSON to the CLI, so a complete walkthrough costs somewhat more.
+The measurement covers preparing and recording a walkthrough only.
+Nobody acted on the page, so it includes no answers to questions or decisions, and it ran no reviewer agents.
 Each reviewer agent your policy runs adds its own cost; in the interactive test runs, one fresh-context reviewer of a 10-file change used about 74,000 tokens.
 Answering what you do on the page adds a short turn per action.
 
@@ -109,9 +113,13 @@ The other decisions are in [`docs/adr/`](docs/adr/), and the domain language in 
 ```sh
 npm install
 npx playwright install chromium firefox webkit
-npm test       # builds, then runs the CLI tests (vitest) and the page tests (Playwright) in Chromium, Firefox and WebKit
-npm run lint   # type check and ESLint
+npm test                # builds, then runs the CLI tests (vitest) and the page tests (Playwright) in Chromium
+npm run test:browsers   # the same, with the page tests in Chromium, Firefox and WebKit
+npm run lint            # type check and ESLint
 ```
+
+Use `npm test` while working, and `npm run test:browsers` once before a release.
+Both run at most 4 test workers at a time; `PLAYWRIGHT_WORKERS` sets another number for the page tests.
 
 Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 
