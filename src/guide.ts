@@ -4,7 +4,7 @@ const example = [
     title: 'Session store',
     explanation: 'Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.',
     assumptions: ['Sessions are only read by the login handler.'],
-    files: ['src/session-store.ts', 'test/session-store.test.ts'],
+    files: [{ path: 'src/session-store.ts', explanation: 'Keeps sessions in memory, keyed by their id.' }, 'test/session-store.test.ts'],
   },
   {
     title: 'Regenerated API description',
@@ -78,6 +78,8 @@ walkthrough steps --file <file>
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
     {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
+  A path in a step's files may be given with a short explanation of that file, shown just above its diff, under the step's explanation:
+    {"path": path, "explanation": string}
   A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
     {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
   Example:

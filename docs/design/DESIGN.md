@@ -66,6 +66,11 @@ typography:
     fontSize: "17px"
     fontWeight: 650
     lineHeight: 1.4
+  prose:
+    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.6
   body:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
     fontSize: "14.5px"
@@ -301,7 +306,7 @@ A cool grey neutral scale with a single violet accent and three narrowly scoped 
 - **Surface** (`surface`): the queue rail, secondary buttons, the code pane, banners and the session-message rows.
 - **Surface Tint** (`surface-tint`): hover fill, decided tags, counters, file chips, reason pills, skeleton bars.
 - **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows and under file headers; the 1px edge of every control (buttons, inputs, segmented switches, tags).
-- **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text; explanation prose and secondary labels; the single secondary grey per theme, for metadata, counts, status-gone, placeholders, line numbers, hunk headers and resting icons.
+- **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text, explanation prose included; note text, preview prose, quotes and secondary labels; the single secondary grey per theme, for metadata, counts, status-gone, placeholders, line numbers, list markers, hunk headers and resting icons.
 
 ### Named Rules
 **The Grey Verdict Rule.** A recorded decision is shown in neutral greys only: the decided tag is surface tint with secondary ink. Green appears in exactly two places, diff additions and the Listening status, and never next to a decision. (The swipe chip is gesture feedback, not recorded state: violet for Approve, amber for Flag.)
@@ -322,12 +327,24 @@ A cool grey neutral scale with a single violet accent and three narrowly scoped 
 ### Hierarchy
 - **Headline** (650, 21px, 1.25, -0.01em): the open step's title; 19px at 390px wide and on swipe cards. Page titles on the list and export pages sit at 20 to 22px, same weight.
 - **Title** (650, 17px): export section headings; 16px for Markdown headings inside a preview.
-- **Body** (400, 14.5px, 1.5): the agent's explanation and preview prose, held to 66 to 72ch.
+- **Prose** (400, 15px, 1.6, ink): the step's explanation and each file's explanation, held to 68ch; the text read at length.
+- **Body** (400, 14.5px, 1.5): preview prose, held to 72ch, and the reopened line.
 - **Body UI** (400, 13.5px, 1.35 to 1.5): queue items, notes, notices, checklist items, menu items, buttons (500).
 - **Label** (650, 13px): queue and section headers, note labels, form headers.
 - **Meta** (500/600, 12 to 12.5px): counters, tags, sub-lines under queue items, hints, reply authors.
 - **Code** (400, 12.5px / 21px line): diff lines; hunk headers drop to 12px in muted ink.
 - **Mono Label** (500, 12 to 12.5px): file names in file headers, the session label in the header, file chips, list-page walkthrough names, detached "was" locations.
+
+### Session Markdown
+Everything the session writes is Markdown, styled the same wherever it shows: explanations, notes, answers, checklist items and questions.
+It takes its size and ink from where it sits (Prose in explanations, 14px secondary ink in notes).
+- **Paragraphs and blocks:** 12px apart; nothing above the first or below the last.
+- **Lists:** indented 24px, items 4px apart, nested lists 4px below their item, markers in muted ink.
+- **Headings:** every level is a small heading at the size of the text around it, in the label weight (650) and ink, 16px above and 4px below; never a second title.
+- **Inline code:** mono 500 at 0.9em on the surface tint, 4px sides and 4px radius; code blocks keep the surface fill.
+- **Quotes:** secondary ink behind a 2px control-edge rule, 12px in.
+- **Links:** violet text, underlined 2px below the baseline.
+Every pairing stays at 6:1 or better in both themes, well past AA.
 
 ### Named Rules
 **The Mono Means Literal Rule.** Monospace appears only on text that is literally code, a path, or an identifier the reviewer may copy. Headings, buttons and statuses stay in the UI sans.
@@ -340,7 +357,7 @@ A cool grey neutral scale with a single violet accent and three narrowly scoped 
 
 The desktop frame is a fixed 48px header over a row of panes. "What's left" (default) puts a 232px queue rail on the surface tone at left and the open step in the main pane (24px top and bottom, 32px sides). The other three layouts rearrange the same parts: "Three columns" adds a 288px side pane; "Explanation beside code" splits a 400px prose pane from a code pane on the surface tone; "Tool panel" stacks a tabbed panel under the step. All four keep identical functions. Beside a step the checklist is compact (marks, text and step links); its own page, opened from its title or a rail row, holds the statuses and actions.
 
-The main pane is a column: title row, explanation, assumptions toggle, files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files sit 24px apart. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
+The main pane is a column: title row, explanation (the step's overview), assumptions toggle, files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files sit 24px apart. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
 
 Spacing runs on one 4px scale (`s1` to `s6`: 4, 8, 12, 16, 24, 32px): 8px between controls in a row and within a title row, 12px inside notices and between list rows, 16px for form and notice spacing, 24px between blocks and files, 32px for pane sides and page padding. Control padding is on the same scale: buttons 0 16px, small, offered and note buttons 0 12px, tags, counters, reasons and file chips 0 8px, step-number links 0 4px, segmented buttons 4px 12px, layout-switch buttons 4px 8px, icon buttons 4px, queue rows 8px, the decision chip 4px 8px. The only off-scale values are deliberate: 2px between queue rows, the 116px code-column indent, and 40px export side padding.
 
@@ -395,6 +412,7 @@ The signature rail. Items are a 16px state icon plus a 13.5px title and optional
 A 7px dot plus 13px 600 label: Listening (green), Working (violet text with a spinning icon, 1s linear), Needs you (amber dot with a 3px amber-wash ring), Gone (muted hollow dot).
 
 ### Diff and Notes
+A file the session explained gets its explanation in Prose right under its sticky header, above its diff and its preview, 12px above and below and in line with the file name; it scrolls with the file, and in "Explanation beside code" it stays with its file in the code pane.
 diff2html line-by-line, restyled through classes and laid out as described in Layout: 46px number columns in muted ink, 12.5/21px mono code, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink. A note row spans the table in UI sans, top and bottom rules, label in 650, replies indented behind a 2px rule. "N more notes" is a violet-text link on a row with no fill. The Ask-about-lines composer is a row in the violet wash with violet-line rules: a "Ask about <file> lines a–b" label, a focused input, then small Cancel (ghost) and Ask (primary).
 
 ### Image Diff

@@ -11,4 +11,13 @@ Design: extend DESIGN.md's existing tokens and components.
 
 **Blocked by:** 36 Two flows, two commands
 
-**Status:** ready-for-agent
+**Status:** done
+
+- [x] Explanation prose, the step's and each file's, is primary ink, 15px at 1.6, held to 68ch, paragraphs 12px apart.
+- [x] Session Markdown everywhere (explanations, notes, answers) gets lists with 24px indents and 4px item spacing, small headings in the label weight, inline code on the surface tint at 0.9em, quotes behind a 2px rule, links in violet text.
+- [x] Checked before and after in light and dark, at 1280px and 390px, in "Explanation beside code", the swipe deck and the export; every text pairing is 6:1 or better.
+- [x] DESIGN.md's Typography section has the Prose level and the Session Markdown rules.
+
+## Seams under test
+
+- The page: the step's and a file's explanation compute to primary ink at 15px with a 24px line.

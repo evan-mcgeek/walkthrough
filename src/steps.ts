@@ -4,8 +4,14 @@ import { filled, parseList } from './input';
 import type { FoldedFile, Step, Walkthrough } from './walkthrough';
 
 export type StepInput =
-  | { title: string; explanation: string; assumptions: string[]; files: string[] }
+  | { title: string; explanation: string; assumptions: string[]; files: (string | ExplainedFile)[] }
   | { title: string; folded: true; files: FoldedFile[]; problems: string[] };
+
+type ExplainedFile = { path: string; explanation: string };
+
+const isStepFile = (file: unknown): file is string | ExplainedFile =>
+  filled(file) ||
+  (typeof file === 'object' && file !== null && filled((file as ExplainedFile).path) && filled((file as ExplainedFile).explanation));
 
 const isFoldedFile = (file: unknown): file is FoldedFile =>
   typeof file === 'object' && file !== null && filled((file as FoldedFile).path) && filled((file as FoldedFile).reason);
@@ -29,14 +35,19 @@ export function parseSteps(text: string): StepInput[] {
       };
     }
     if (!filled(explanation)) throw new Error(`${name} needs an explanation`);
-    if (!files.every(filled)) throw new Error(`${name}: files must be a list of paths`);
+    if (!files.every(isStepFile)) throw new Error(`${name}: each file must be a path, or a path with its explanation`);
     if (!Array.isArray(assumptions) || !assumptions.every(filled))
       throw new Error(`${name}: assumptions must be a list of text`);
-    return { title, explanation, assumptions, files };
+    return {
+      title,
+      explanation,
+      assumptions,
+      files: files.map(file => (typeof file === 'string' ? file : { path: file.path, explanation: file.explanation })),
+    };
   });
 }
 
-const pathOf = (file: string | FoldedFile) => (typeof file === 'string' ? file : file.path);
+const pathOf = (file: string | { path: string }) => (typeof file === 'string' ? file : file.path);
 export const pathsOf = (step: StepInput | Step) => step.files.map(pathOf);
 
 // Ids follow files rather than places, so decisions, notes and links follow them; a gone id is never reused.
@@ -56,6 +67,11 @@ function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): str
       taken.add(id);
     }
   return ids.map(id => id ?? String(++next));
+}
+
+function fileExplanations(files: (string | ExplainedFile)[]): { fileExplanations?: Record<string, string> } {
+  const explained = files.filter(file => typeof file !== 'string');
+  return explained.length ? { fileExplanations: Object.fromEntries(explained.map(file => [file.path, file.explanation])) } : {};
 }
 
 export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Promise<Step[]> {
@@ -80,7 +96,7 @@ export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: 
     };
     return 'folded' in input
       ? { ...common, kind: 'folded', files: input.files, problems: input.problems }
-      : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files };
+      : { ...common, kind: 'step', explanation: input.explanation, assumptions: input.assumptions, files: input.files.map(pathOf), ...fileExplanations(input.files) };
   }));
 }
 

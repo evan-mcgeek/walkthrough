@@ -31,7 +31,7 @@ A Claude Code session drives the page: it records the steps, explanations, assum
 
 ## Capabilities and Constraints
 
-- Steps: title, the agent's Markdown explanation, an optional list of what the agent assumed rather than read (kept apart from the explanation), the files the step covers (a step can cover several files), and their diffs. One folded step groups files the agent judged skippable (lockfile, generated), each with its reason and any problem.
+- Steps: title, the agent's Markdown explanation, an optional list of what the agent assumed rather than read (kept apart from the explanation), the files the step covers (a step can cover several files), each with an optional short explanation of its own above its diff, and their diffs. One folded step groups files the agent judged skippable (lockfile, generated), each with its reason and any problem.
 - Read (seen on the page) is tracked separately from decided. An undecided item never reads as approved. Decisions stay changeable until the end. A step whose code changes reopens; a note whose code no longer exists shows as detached, never dropped.
 - Notes pin to a step or a line range, with an agent-chosen label, Markdown text, replies and their own actions. Low-priority notes are grouped behind "N more".
 - Checklist: titled by the agent, items with agent-chosen statuses and links to steps.

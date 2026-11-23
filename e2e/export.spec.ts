@@ -6,7 +6,7 @@ test.use({ files: { 'gen.txt': 'made\n' } });
 
 const steps = [
   { title: 'Login check', explanation: 'Adds a **login** function.', files: ['login.ts'], assumptions: ['Callers check the result.'] },
-  { title: 'App version', explanation: 'Bumps the app constant.', files: ['app.ts'] },
+  { title: 'App version', explanation: 'Bumps the app constant.', files: [{ path: 'app.ts', explanation: 'The **version** the app reports.' }] },
   { title: 'Generated', folded: true, files: [{ path: 'gen.txt', reason: 'Made by a tool.' }], problems: ['Out of date.'] },
 ];
 
@@ -60,6 +60,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   const other = exported.getByRole('region', { name: 'App version' });
   await expect(other.getByText('Undecided', { exact: true })).toBeVisible();
   await expect(other.locator('.d2h-del')).toContainText(['export const app = 1;']);
+  await expect(other.locator('.d2h-file-wrapper[data-file="app.ts"] .file-explanation')).toHaveText('The version the app reports.');
   const folded = exported.getByRole('region', { name: 'Generated' });
   await expect(folded.getByRole('list', { name: 'Folded files' })).toContainText('gen.txt');
   await expect(folded.getByText('Made by a tool.')).toBeVisible();

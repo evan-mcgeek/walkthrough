@@ -991,6 +991,12 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
     if (!readOnly) row.querySelector('.d2h-code-linenumber')?.setAttribute('aria-pressed', String(picked));
   };
   for (const old of view.querySelectorAll<HTMLTableRowElement>('tr.selected')) press(old, false);
+  for (const old of view.querySelectorAll('.file-explanation')) old.remove();
+  const explained = step.kind === 'step' ? (step.fileExplanations ?? {}) : {};
+  for (const wrapper of view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')) {
+    const text = explained[wrapper.dataset['file'] ?? ''];
+    if (text) wrapper.querySelector('.d2h-file-header')?.after(markdown(text, 'file-explanation'));
+  }
   const at = new Map<string, (Note | Ask)[]>();
   for (const entry of pinned) {
     const { file, lines } = placeOf(entry);

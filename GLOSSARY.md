@@ -24,7 +24,8 @@ _Avoid_: Mode, flow
 A change someone asked the person to review, named by its number or link on the code host.
 
 **Step**:
-A part of the change the agent recorded, made of whole files, shown with its diff and the agent's explanation.
+A part of the change the agent recorded, made of whole files, shown with its diff and the agent's explanation, its overview.
+A file in it may carry a short explanation of its own, shown above that file's diff.
 _Avoid_: Hunk, chunk
 
 **Folded step**:

@@ -100,51 +100,68 @@ details summary {
 .markdown:not(.hljs),
 .markdown:not(.hljs) p {
   white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .markdown > :first-child {
   margin-top: 0;
 }
 
-.markdown > :last-child {
+.markdown > :last-child,
+.markdown li > :last-child {
   margin-bottom: 0;
 }
 
-.markdown p,
-.markdown ul,
-.markdown ol,
-.markdown pre,
-.markdown table,
-.markdown blockquote {
-  margin: 0 0 8px;
+.markdown :is(p, ul, ol, pre, table, blockquote) {
+  margin: 0 0 var(--s3);
 }
 
-.markdown ul,
-.markdown ol {
-  padding-left: 24px;
+.markdown :is(ul, ol) {
+  padding-left: var(--s5);
+}
+
+.markdown li + li,
+.markdown li > :is(ul, ol) {
+  margin-top: var(--s1);
+}
+
+.markdown li::marker {
+  color: var(--muted);
+}
+
+/* Small headings: the label weight at the size of the text around them, never a second title. */
+.markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: var(--s4) 0 var(--s1);
+  color: var(--ink);
+  font: 650 1em/1.4 var(--font-ui);
 }
 
 .markdown code,
 .preview code {
-  font: 500 0.86em var(--font-mono);
+  padding: 0 var(--s1);
+  border-radius: var(--r-xs);
+  background: var(--surface-tint);
+  font: 500 0.9em var(--font-mono);
   font-variant-ligatures: none;
+  box-decoration-break: clone;
 }
 
 .markdown pre {
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
   background: var(--surface);
   overflow-x: auto;
 }
 
-.markdown pre code {
+:is(.markdown, .preview) pre code {
   padding: 0;
+  background: none;
 }
 
 .markdown blockquote {
-  padding-left: 12px;
-  border-left: 3px solid var(--rule);
-  color: var(--muted);
+  padding-left: var(--s3);
+  border-left: 2px solid var(--control-edge);
+  color: var(--ink-secondary);
 }
 
 .markdown table {
@@ -159,4 +176,5 @@ details summary {
 
 .markdown a {
   color: var(--violet-text);
+  text-underline-offset: 2px;
 }
