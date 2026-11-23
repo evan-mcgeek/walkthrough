@@ -36,9 +36,12 @@ try {
   git(['update-index', '--add', '--cacheinfo', `100644,${blob},.claude-plugin/marketplace.json`], { env });
   const tree = git(['write-tree'], { env });
 
-  const parent = revision(BRANCH);
+  const local = revision(BRANCH);
+  // A fresh clone has the release branch only on origin, and installs track its history.
+  const parent = local || revision('refs/remotes/origin/release');
   const head = revision('HEAD');
   if (parent && revision(`${parent}^{tree}`) === tree) {
+    if (!local) git(['update-ref', BRANCH, parent, '']);
     console.log(`release: already up to date at ${parent.slice(0, 7)}`);
   } else {
     const commit = git([
@@ -49,7 +52,7 @@ try {
       `Release ${git(['rev-parse', '--short', head])}`,
     ]);
     // Only if the branch has not moved meanwhile; an empty old value means it must not exist yet.
-    git(['update-ref', BRANCH, commit, parent]);
+    git(['update-ref', BRANCH, commit, local]);
     console.log(`release: ${commit.slice(0, 7)} on release, built from ${head.slice(0, 7)}`);
   }
 } finally {
