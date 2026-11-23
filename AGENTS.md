@@ -8,6 +8,13 @@ Judgement about code belongs to the session, guided by the review policy and the
 If a feature seems to need such a rule, it belongs in the skill or the review policy template instead.
 The review policy is the person's, not the tool's state: the CLI only compares it with the template and copies it, byte for byte, and never reads its rules.
 
+## Testing on a laptop
+
+This is a local tool built on a laptop, so tests stay light.
+While building, run `npm test` (Chromium, 4 workers); run `npm run test:browsers` once before a release.
+Only one agent runs browser tests at a time.
+Never use `--repeat-each`, stress runs or synthetic load (`yes` loops, CPU burners); fix a flake from its trace and the race in the code.
+
 ## Agent skills
 
 ### Issue tracker
