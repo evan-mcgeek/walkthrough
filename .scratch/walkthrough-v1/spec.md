@@ -3,7 +3,7 @@
 Status: ready-for-agent
 
 This spec replaces the first version after the re-scope of 2026-11-22: the tool is universal and has nothing specific in it (ADR 0005).
-Prior art and the ideas borrowed from it: `~/development/projects/docs/investigations/2026-11-22-walkthrough-prior-art-investigation.md` (ideas I01-I17).
+Prior art was surveyed before this rewrite; the ideas borrowed from it are marked I01-I17.
 
 ## Problem Statement
 
@@ -216,6 +216,5 @@ The tool itself knows only git, its own state and the page, so it works for any 
 ## Further Notes
 
 - Domain language: `GLOSSARY.md`; decisions: ADRs 0001-0005.
-- Shared build notes for implementers: `~/development/projects/docs/investigations/2026-11-22-walkthrough-build-notes-investigation.md`.
 - The page design is being drawn in a separate design round; build with plain styling until it lands, then apply it.
 - Publishing target: the person's own public repo and personal plugin marketplace (account to be named before publishing).
