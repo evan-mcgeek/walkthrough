@@ -1093,7 +1093,7 @@ function preparingView(): HTMLElement {
 const SWIPE = 90;
 /** The --base duration a card takes to fly out. */
 const FLIGHT_MS = 200;
-/** Between taking a card and its flight ending; a redraw meanwhile waits in `redraw`. */
+/** From touching a card until it is let go or its flight ends; a redraw meanwhile waits in `redraw`. */
 let swiping = false;
 let redraw = false;
 /** The step whose card was swiped away, until its decision is taken or cancelled; 1 is right, -1 left. */
@@ -1143,17 +1143,21 @@ function fling(deck: HTMLElement, step: Step, to: 1 | -1): void {
 
 /** The card follows a finger or the mouse sideways when it `swipes`; a vertical move is left to scrolling, and a drag is never a tap. */
 function swipeable(deck: HTMLElement, card: HTMLElement, step: Step, swipes: boolean): void {
-  let dragged = false;
+  let moved = false;
   card.ondragstart = event => {
     event.preventDefault();
   };
   card.onclick = event => {
-    if (dragged) event.preventDefault();
+    if (moved) event.preventDefault();
   };
   card.onpointerdown = down => {
     if (down.button !== 0 || swiping) return;
     if (down.pointerType === 'mouse') down.preventDefault();
-    dragged = false;
+    // Captured, the pointer's up or cancel always arrives, so the deck never waits on a lost gesture.
+    if (down.isTrusted) card.setPointerCapture(down.pointerId);
+    moved = false;
+    swiping = true;
+    let dragged = false;
     let dx = 0;
     const end = () => {
       removeEventListener('pointermove', move);
@@ -1165,17 +1169,14 @@ function swipeable(deck: HTMLElement, card: HTMLElement, step: Step, swipes: boo
       const x = event.clientX - down.clientX;
       const y = event.clientY - down.clientY;
       if (!dragged) {
-        if (Math.abs(y) > 8 && Math.abs(y) > Math.abs(x)) {
+        if (Math.abs(x) <= 8 && Math.abs(y) <= 8) return;
+        moved = true;
+        dragged = Math.abs(x) > Math.abs(y);
+        if (!dragged || !swipes) {
           end();
+          settle();
           return;
         }
-        if (Math.abs(x) <= 8) return;
-        dragged = true;
-        if (!swipes) {
-          end();
-          return;
-        }
-        swiping = true;
         deck.classList.add('dragging');
       }
       dx = x;
@@ -1184,7 +1185,10 @@ function swipeable(deck: HTMLElement, card: HTMLElement, step: Step, swipes: boo
     const up = (event: PointerEvent) => {
       if (event.pointerId !== down.pointerId) return;
       end();
-      if (!dragged) return;
+      if (!dragged) {
+        settle();
+        return;
+      }
       if (event.type === 'pointerup' && Math.abs(dx) > SWIPE) {
         fling(deck, step, dx > 0 ? 1 : -1);
         return;
