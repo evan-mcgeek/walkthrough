@@ -79,7 +79,7 @@ test('a changed image previews as it is at the head commit; other files have no 
 
   const image = file.getByRole('region', { name: 'Preview of logo.svg' }).getByRole('img', { name: 'logo.svg, after' });
   await expect(image).toBeVisible();
-  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(40);
+  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(40);
   await expect(fileIn(page, 'login.ts').getByRole('group')).toHaveCount(0);
 });
 

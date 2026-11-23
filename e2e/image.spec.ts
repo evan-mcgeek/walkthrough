@@ -10,7 +10,7 @@ test.beforeEach(async ({ page, repo, url }) => {
   const files = ['icons/cart.svg', 'icons/new.svg', 'login.ts', 'app.ts'];
   const recorded = repo.record([{ title: 'Icons', explanation: 'Redraws the cart.', files }]);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
-  await expect(page.getByRole('region', { name: 'Icons' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Icons', exact: true })).toBeVisible();
 });
 
 const fileIn = (page: import('@playwright/test').Page, name: string) =>
