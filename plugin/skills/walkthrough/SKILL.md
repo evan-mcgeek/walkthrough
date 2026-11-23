@@ -1,24 +1,33 @@
 ---
 name: walkthrough
-description: Walk through a change, the current branch or any base and head, on a local page, one step at a time. Use when the person runs /walkthrough or asks to walk through or review their branch or a change.
+description: Walk through your own change, the current branch or any base and head, on a local page, one step at a time. Use when the person runs /walkthrough or asks to walk through or review their own branch or change.
 allowed-tools: Bash(walkthrough *)
 ---
 
-# Walkthrough
+# Walkthrough of your own change
+
+The person walks through their own change, the current branch unless they name another.
+When they ask instead to review a change someone else asked them to review, `/walkthrough:pr` is the procedure for that.
+
+1. Find the review policy and read it, as "Review policy" below says; follow its "Shared rules" and "My change" parts, and leave the other part out.
+   Read the project's instructions for agents (its CLAUDE.md, AGENTS.md and the files they point to).
+2. Run `walkthrough start --kind own` in the repo.
+   With no other options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
+   For a range of commits, add `--base <rev> --head <rev>` and a short `--label` to name it.
+3. Go on as "Walking through" says, until the walkthrough stops.
+   It ends as the policy's "My change" part says, such as with a fix list the person hands to an author session.
+
+## Walking through
 
 The `walkthrough` CLI owns all walkthrough state; never write files under its state folder yourself, except in the inbox it prints.
 Everything you record goes through a file: write it with your file tool into the inbox, then pass its path with `--file`, as `walkthrough guide` says.
 The plugin lets the `walkthrough` commands and those writes run without asking the person; never pass JSON or Markdown through a heredoc, a pipe or `$(...)`, which ask.
 Run each `walkthrough` command on its own, never chained with `;`, `&&` or `|`, which also asks.
 Every judgement in a walkthrough (how to split, order and fold the change, what to write, what to do with what the person sends) follows the person's review policy and the project's own instructions for agents.
-Before step 1, find the review policy as below, read it, and read the project's instructions for agents (its CLAUDE.md, AGENTS.md and the files they point to).
 Run any reviewer in a fresh context, and never treat the author session's own summary of the change as evidence (ADR 0002).
 
-1. Run `walkthrough start` in the repo.
-   With no options it walks through the current branch; if the person names the branch their change targets, pass `--target <branch>`.
-   For any other change (a range of commits, a colleague's change you fetched as the policy says), pass `--base <rev> --head <rev>` and a short `--label` to name it.
-   Pass the same options to every later `walkthrough` command; they find the walkthrough by them.
-2. Tell the person, in one or two lines, what the output says: the branch, the pinned base and head, and any warning.
+1. Pass the options you gave `walkthrough start`, all but `--kind`, to every later `walkthrough` command; they find the walkthrough by them.
+2. Tell the person, in one or two lines, what the output of `walkthrough start` says: the change, the pinned base and head, and any warning.
    Keep the inbox it prints for the files you record from.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
    The page is already open and shows you preparing; the steps appear on it as soon as you record them.
@@ -36,6 +45,7 @@ Run any reviewer in a fresh context, and never treat the author session's own su
 ## Review policy
 
 The person's policy lives outside every project, and starts as a copy of the template the plugin ships.
+It has a part of shared rules and a part for each kind of walkthrough; follow the shared rules and the part this skill names.
 Run `walkthrough policy`; its first line names the policy's state and path:
 
 - `yours`: the policy is the person's own; read it with `walkthrough policy show` and go on.

@@ -41,6 +41,16 @@
   vertical-align: middle;
 }
 
+.list-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.list-name .kind {
+  flex: none;
+}
+
 .list-open {
   display: block;
   padding: 0;

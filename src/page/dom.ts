@@ -16,6 +16,10 @@ export function selectBox(select: HTMLSelectElement): HTMLElement {
   return el('div', { className: 'select' }, select, icon('chevron-down'));
 }
 
+/** The session's label for the kind of walkthrough, as it gave it; none without one. */
+export const kindView = (kind: string | undefined) =>
+  kind === undefined ? [] : [el('span', { className: 'kind', title: 'The kind of walkthrough' }, kind)];
+
 export function region(id: string): HTMLElement {
   const found = document.getElementById(id);
   if (!found) throw new Error(`the page has no #${id}`);

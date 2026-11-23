@@ -10,6 +10,7 @@ export type Segment = 'decided' | 'reopened' | 'read' | 'unread';
 export type Listed = {
   id: string;
   name: string;
+  kind?: string;
   target: string;
   steps: number;
   decided: number;
@@ -38,6 +39,7 @@ export function listView(repoDir: string): Listed[] {
       {
         id: entry.name,
         name: nameOf(view),
+        ...(view.kindLabel !== undefined && { kind: view.kindLabel }),
         target: view.target,
         steps: view.steps.length,
         decided: segments.filter(segment => segment === 'decided').length,

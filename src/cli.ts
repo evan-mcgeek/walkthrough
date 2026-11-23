@@ -61,10 +61,12 @@ function located<T extends Options>(
 }
 
 async function start(args: string[]): Promise<void> {
-  const { cwd, source, dir } = located(args);
+  const { cwd, source, dir, values } = located(args, { options: { kind: { type: 'string' } } });
+  const kind = values.kind?.trim();
+  if (kind === '') throw new Error('--kind needs a label that names the kind of walkthrough');
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = await openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, kind, moved => carrySteps(cwd, moved));
   await starting(dir);
   const inbox = makeInbox(dir);
   const { steps } = walkthrough;
@@ -263,7 +265,7 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
+        '  commands: start [--kind <label>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
         '    | actions --file <file> | decisions | listen\n' +
         '    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +

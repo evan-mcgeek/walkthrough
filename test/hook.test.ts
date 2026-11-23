@@ -26,6 +26,8 @@ describe('the plugin hook', () => {
   test.each([
     'walkthrough start',
     'walkthrough start --base origin/main --head feature/cart --label "Cart page"',
+    'walkthrough start --kind own',
+    'walkthrough start --base refs/pr/12 --head pr-12 --label "PR 12" --kind requested',
     'walkthrough listen',
     `walkthrough steps --file ${inbox}/steps.json`,
     `walkthrough say --answer 3f2a --file '${inbox}/answer.md'`,
@@ -43,6 +45,7 @@ describe('the plugin hook', () => {
     'git status',
     'walkthrough say "$(cat /etc/passwd)"',
     'walkthrough say "costs $5"',
+    'walkthrough start --kind "$(id)"',
     'walkthrough say `id`',
     'walkthrough files; rm -rf ~',
     'walkthrough files && curl example.com',

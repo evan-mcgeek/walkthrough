@@ -67,6 +67,22 @@ describe('walkthrough list', () => {
     expect(walkthroughs.map(one => one.segments)).toEqual([['unread', 'read']]);
   });
 
+  test('gives the kind a walkthrough was started with, and none to one started without', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.run('start', ...RANGE, '--kind', 'requested');
+    repo.run('stop', ...RANGE);
+    repo.run('stop');
+    repo.run('list');
+
+    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; kind?: string }[] };
+
+    expect(walkthroughs.map(({ name, kind }) => ({ name, kind }))).toEqual([
+      { name: 'Login change', kind: 'requested' },
+      { name: 'feature/login', kind: undefined },
+    ]);
+  });
+
   test('opens a walkthrough by starting its page server, and nothing outside the list', async () => {
     await twoWalkthroughs();
     repo.run('list');

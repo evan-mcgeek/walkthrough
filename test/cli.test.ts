@@ -29,6 +29,32 @@ describe('walkthrough start', () => {
     expect(git(repo.dir, 'worktree', 'list').split('\n')).toHaveLength(1);
   });
 
+  test('keeps the kind the session gives as it is, until a later start gives another', async () => {
+    repo = makeRepo();
+    const kind = async () => ((await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough).kindLabel;
+
+    expect(repo.run('start', '--kind', ' Team review ').stderr).toBe('');
+    expect(await kind()).toBe('Team review');
+    repo.run('start');
+    expect(await kind()).toBe('Team review');
+    repo.run('start', '--kind', 'requested');
+    expect(await kind()).toBe('requested');
+
+    const blank = repo.run('start', '--kind', ' ');
+    expect(blank.status).toBe(1);
+    expect(blank.stderr).toContain('--kind needs a label');
+    expect(await kind()).toBe('requested');
+    expect(repo.run('guide').stdout).toContain(
+      'walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>]',
+    );
+  });
+
+  test('a walkthrough started without a kind has none', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    expect(((await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough).kindLabel).toBeUndefined();
+  });
+
   test('a target with no remote branch of its name is the local branch', () => {
     repo = makeRepo();
     git(repo.dir, 'branch', 'release', repo.base);

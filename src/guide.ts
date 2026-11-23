@@ -47,8 +47,11 @@ const actionsExample = [
   { item: { type: 'walkthrough' }, actions: [{ id: 'post', label: 'Post my comments' }] },
 ];
 
-export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>]
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  --kind gives the walkthrough the session's own label for what kind it is, such as "own" or "requested";
+  the page header and the list show it as given, nothing else reads it, and a later start keeps it unless it gives another.
+  It is start's alone: the other commands find the walkthrough without it.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.

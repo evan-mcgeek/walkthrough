@@ -74,6 +74,26 @@ test('the header names the walkthrough and its range, and Stop stays at hand', a
   await expect(page.getByRole('banner').getByRole('button', { name: 'Stop' })).toBeVisible();
 });
 
+test('the header shows the kind the session gave the walkthrough beside its name, in muted ink', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  const kind = page.getByRole('banner').locator('.kind');
+  await expect(kind).toHaveCount(0);
+
+  repo.run('start', '--kind', 'requested');
+
+  await expect(kind).toHaveText('requested');
+  await expect(kind).toHaveAttribute('title', 'The kind of walkthrough');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
+  const muted = await page.evaluate(() => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = 'var(--muted)';
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  expect(await kind.evaluate(one => getComputedStyle(one).color)).toBe(muted);
+});
+
 test('the header signs the page with the mark, and the server serves its favicon and app icon', async ({ page, url }) => {
   await expect(page).toHaveURL(url);
   const logo = page.getByRole('banner').locator('.logo');

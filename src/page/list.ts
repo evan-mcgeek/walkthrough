@@ -1,6 +1,6 @@
 import type { Listed } from '../list';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
+import { el, kindView, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon } from './icons';
 
 type ListPage = { repo: string; walkthroughs: Listed[] };
@@ -65,7 +65,7 @@ function row(one: Listed): HTMLTableRowElement {
     'tr',
     {},
     // The id is what walkthrough prune takes to remove this one.
-    el('td', {}, name, el('code', { className: 'list-id' }, one.id)),
+    el('td', {}, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
     el('td', {}, progress(one)),
     el('td', { className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );

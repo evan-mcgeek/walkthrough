@@ -18,6 +18,8 @@ export type Checklist = { title: string; items: ChecklistItem[] };
 export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
+  /** The session's own name for the kind of walkthrough, which the page shows and nothing reads. */
+  kindLabel?: string;
   base: string;
   head: string;
   /** Empty until the session records its steps. */
@@ -53,6 +55,7 @@ export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
+  kind: string | undefined,
   carry: (moved: Walkthrough) => Promise<{ steps: Step[]; unplaced: string[] }>,
 ): Promise<{
   walkthrough: Walkthrough;
@@ -60,9 +63,15 @@ export function openWalkthrough(
 }> {
   return locked(file(dir), async () => {
     const saved = savedWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
+    const labelled = kind === undefined ? {} : { kindLabel: kind };
+    if (saved?.head === change.head && saved.base === change.base) {
+      if (kind === undefined || kind === saved.kindLabel) return { walkthrough: saved, opened: 'resumed' };
+      const relabelled = { ...saved, ...labelled };
+      writeJson(file(dir), relabelled);
+      return { walkthrough: relabelled, opened: 'resumed' };
+    }
     if (saved) {
-      const moved = { ...saved, target: change.target, base: change.base, head: change.head };
+      const moved = { ...saved, ...labelled, target: change.target, base: change.base, head: change.head };
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
       // Before any steps, the page shows the session preparing them instead.
@@ -73,6 +82,7 @@ export function openWalkthrough(
     const walkthrough: Walkthrough = {
       ...(source.kind === 'branch' ? { kind: 'branch', branch: source.branch } : { kind: 'range', label: source.label }),
       target: change.target,
+      ...labelled,
       base: change.base,
       head: change.head,
       steps: [],
