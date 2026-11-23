@@ -13,10 +13,21 @@ The tool itself knows only git, its own state and the page, so it works for any 
 
 You need Claude Code, git, and Node.js 22 or later.
 
+### From the marketplace
+
+The repo is also a plugin marketplace named `walkthrough`:
+
+```sh
+claude plugin marketplace add evan-mcgeek/walkthrough
+claude plugin install walkthrough@walkthrough
+```
+
+The plugin installs from the `release` branch, which holds the built plugin; see [Release](#release).
+
 ### From a local clone
 
 ```sh
-git clone <this repo> walkthrough
+git clone https://github.com/evan-mcgeek/walkthrough.git
 cd walkthrough
 npm install
 npm run build
@@ -25,18 +36,6 @@ claude --plugin-dir ./plugin
 
 `--plugin-dir` loads the plugin for that session only.
 Run it from the repo you want to review, with the path to the plugin folder of your clone.
-
-### From a marketplace
-
-The repo root is also a plugin marketplace named `walkthrough`:
-
-```sh
-claude plugin marketplace add <owner>/<repo>
-claude plugin install walkthrough@walkthrough
-```
-
-Use the account and repo name the plugin is published under, or a local path to a clone.
-The plugin runs from its built files in `plugin/dist`, so the published copy must include them.
 
 ## First run
 
@@ -113,9 +112,24 @@ The other decisions are in [`docs/adr/`](docs/adr/), and the domain language in 
 
 ```sh
 npm install
-npx playwright install chromium
-npm test       # builds, then runs the CLI tests (vitest) and the page tests (Playwright)
+npx playwright install chromium firefox webkit
+npm test       # builds, then runs the CLI tests (vitest) and the page tests (Playwright) in Chromium, Firefox and WebKit
 npm run lint   # type check and ESLint
 ```
 
 Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
+
+### Release
+
+The built plugin in `plugin/dist` is not committed on the development branches, so a marketplace install takes the plugin from the `release` branch instead.
+`npm run release` builds the current commit and commits the result to the local `release` branch: the plugin folder with its built files, the marketplace manifest, `LICENSE` and this README.
+It needs a clean working tree, never checks anything out or rewrites the development history, and does not push.
+Each release is one commit on top of the previous one, made only when the built files changed.
+
+To publish, push both branches:
+
+```sh
+git push origin <development branch> release
+```
+
+The marketplace manifest on the development branch points the plugin at `release`, and the copy on `release` points at the plugin folder beside it, so `evan-mcgeek/walkthrough` and `evan-mcgeek/walkthrough#release` both install it.

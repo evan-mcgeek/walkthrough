@@ -66,3 +66,21 @@ test('previews still load after the worktree the walkthrough was started in is r
   expect(markdown.status).toBe(200);
   expect(await markdown.text()).toBe('# Guide\n');
 });
+
+test('serves an unchanged image a changed Markdown file shows, and no other unchanged file', async () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>\n';
+  repo = makeRepo({
+    start: { 'docs/img/flow.svg': svg, 'shared/logo.svg': svg, 'other.svg': svg, 'docs/notes.md': '# Notes\n' },
+    feature: { 'docs/guide.md': '# Guide\n\n![Flow](img/flow.svg)\n\n![Logo](../shared/logo.svg)\n\n[Notes](notes.md)\n' },
+  });
+  repo.run('start');
+
+  const flow = await fileAt('docs/img/flow.svg');
+
+  expect(flow.status).toBe(200);
+  expect(await flow.text()).toBe(svg);
+  expect(flow.headers.get('content-security-policy')).toContain('sandbox');
+  expect((await fileAt('shared/logo.svg')).status).toBe(200);
+  expect((await fileAt('other.svg')).status).toBe(404);
+  expect((await fileAt('docs/notes.md')).status).toBe(404);
+});
