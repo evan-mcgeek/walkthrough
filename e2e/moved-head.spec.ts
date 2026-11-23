@@ -87,6 +87,7 @@ test('changed files in no step yet are named until the session records steps for
 });
 
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await page.keyboard.press('j');
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   await expect(item.getByRole('link', { name: 'Step 1' })).toHaveText('1');
