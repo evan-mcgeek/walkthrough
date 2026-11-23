@@ -239,3 +239,25 @@ test('steps shown are read apart from decided, and decided steps fold into a cou
   await page.reload();
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
 });
+
+test('an empty Ask or Flag note is not sent, and the box says it needs words', async ({ page }) => {
+  const sent: string[] = [];
+  page.on('request', request => {
+    if (request.method() === 'POST') sent.push(new URL(request.url()).pathname);
+  });
+  const step = page.getByRole('region', { name: 'Login check' });
+  const ask = step.getByRole('textbox', { name: 'Ask about this step' });
+
+  await ask.fill('   ');
+  await ask.press('Enter');
+  await expect(ask).toHaveValue('');
+  expect(await ask.evaluate((box: HTMLInputElement) => box.validity.valueMissing)).toBe(true);
+  await step.getByRole('button', { name: 'Flag' }).click();
+  await step.getByRole('button', { name: 'Send' }).click();
+
+  const note = step.getByRole('textbox', { name: 'Note' });
+  await expect(note).toBeFocused();
+  expect(await note.evaluate((box: HTMLTextAreaElement) => box.validity.valueMissing)).toBe(true);
+  await expect(page.getByRole('alert')).toBeHidden();
+  expect(sent.filter(route => route !== '/read')).toEqual([]);
+});

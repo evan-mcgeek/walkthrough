@@ -445,16 +445,26 @@ function draftArea(draft: string, label: string, start = '', rows = 2): HTMLText
   return box;
 }
 
+/** Blank words are never sent: a box of only spaces is emptied, so the browser says it needs words. */
+function filledIn(form: HTMLFormElement): boolean {
+  for (const box of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]'))
+    if (!box.value.trim()) {
+      box.value = '';
+      drafts.delete(box.dataset['draft'] ?? '');
+    }
+  return form.reportValidity();
+}
+
 /** A one-line box that sends on Enter, as the board's Ask and Reply boxes do. */
 function lineBox(draft: string, label: string, placeholder: string, onSend: () => void): HTMLFormElement {
-  const box = el('input', { type: 'text', value: drafts.get(draft) ?? '', placeholder });
+  const box = el('input', { type: 'text', value: drafts.get(draft) ?? '', placeholder, required: true });
   box.dataset['draft'] = draft;
   box.setAttribute('aria-label', label);
   box.oninput = () => drafts.set(draft, box.value);
   const form = el('form', { className: 'line-box' }, box);
   form.onsubmit = event => {
     event.preventDefault();
-    onSend();
+    if (filledIn(form)) onSend();
   };
   return form;
 }
@@ -670,6 +680,7 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
     ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
     ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
   ];
+  for (const box of boxes) box.required = true;
   const form = el(
     'form',
     { className: 'taking' },
@@ -685,6 +696,7 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
   );
   form.onsubmit = event => {
     event.preventDefault();
+    if (!filledIn(form)) return;
     void decide(item, action.id, {
       ...(action.note && { note: drafts.get(draft('note')) ?? '' }),
       ...(action.edit && { text: drafts.get(draft('text')) ?? text }),
