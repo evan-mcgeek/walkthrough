@@ -34,6 +34,7 @@ const card = (page: Page, number: number, title: string) => page.getByRole('link
 
 /** Drags with the mouse from the middle of the card, `by` pixels sideways. */
 async function drag(page: Page, target: Locator, by: number): Promise<void> {
+  await target.waitFor();
   const box = await target.boundingBox();
   if (!box) throw new Error('the card is not shown');
   const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
@@ -46,6 +47,7 @@ async function drag(page: Page, target: Locator, by: number): Promise<void> {
 
 /** Swipes as a finger does: the pointer events a touch screen sends, `by` pixels sideways. */
 async function swipe(target: Locator, by: number): Promise<void> {
+  await target.waitFor();
   const box = await target.boundingBox();
   if (!box) throw new Error('the card is not shown');
   const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
@@ -180,6 +182,7 @@ test('with reduced motion a swiped card only fades, and the swipe still decides'
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await openDeck(page);
   const first = card(page, 1, 'Login check');
+  await first.waitFor();
   const box = await first.boundingBox();
   if (!box) throw new Error('the card is not shown');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
