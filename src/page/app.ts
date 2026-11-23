@@ -325,6 +325,7 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   const classes = ['btn', ...(look === 'secondary' ? [] : [look]), ...(small ? ['small'] : [])];
   const button = el('button', { type: 'button', className: classes.join(' ') }, ...(look === 'offer' ? [icon('message')] : []), action.label);
   button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
+  button.dataset['key'] = `action:${key}:${action.id}`;
   button.onclick = () => {
     if (action.note || action.edit) {
       taking = { key, action: action.id };
@@ -655,6 +656,7 @@ function toggle(set: Set<string>, key: string): void {
 function disclosure(label: (Node | string)[], open: boolean, onToggle: () => void, className: string): HTMLButtonElement {
   const button = el('button', { type: 'button', className }, icon(open ? 'chevron-down' : 'chevron-right'), ...label);
   button.setAttribute('aria-expanded', String(open));
+  button.dataset['key'] = className;
   button.onclick = onToggle;
   return button;
 }
@@ -753,6 +755,7 @@ function actionBar(step: Step): HTMLElement[] {
   });
   const decided = stepDecided(step) && !changing.has(key);
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
+  change.dataset['key'] = `change:${key}`;
   return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
 }
 
@@ -788,6 +791,7 @@ function queueRow(
     el('span', { className: 'queue-title' }, title, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
   );
   row.dataset['state'] = state;
+  row.dataset['key'] = `row:${address}`;
   if (current) row.setAttribute('aria-current', current);
   return row;
 }
@@ -845,6 +849,7 @@ function queueView(view: View): HTMLElement[] {
     icon(open ? 'chevron-down' : 'chevron-right'),
   );
   toggleDecided.setAttribute('aria-expanded', String(open));
+  toggleDecided.dataset['key'] = 'decided-toggle';
   const foot = decided.length
     ? [
         el(
@@ -1073,8 +1078,11 @@ function render(): void {
     viewBody(view),
   );
   if (view.kind === 'step') void markRead(view.step);
-  // A diff is kept across redraws, so a line number focused in it is still there to focus again.
-  if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
+  // A diff is kept across redraws, so a line number focused in it is still there to focus again; a redrawn control is found by its key.
+  const kept = focused instanceof HTMLElement && !focused.isConnected && focused.dataset['key'] !== undefined
+    ? document.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused.dataset['key'])}"]`)
+    : focused;
+  if (kept instanceof HTMLElement && kept.isConnected && document.activeElement !== kept) kept.focus();
   if (draft === undefined) return;
   const box = document.querySelector<HTMLTextAreaElement | HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();

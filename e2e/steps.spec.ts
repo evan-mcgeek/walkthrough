@@ -75,7 +75,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
-test('the rail is reached and used from the keyboard', async ({ page, browserName }) => {
+test('the rail is reached and used from the keyboard, and keeps its focus through a redraw', async ({ page, repo, browserName }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   // Safari moves between links with Option-Tab, as its own setting leaves plain Tab to form controls.
@@ -83,6 +83,9 @@ test('the rail is reached and used from the keyboard', async ({ page, browserNam
 
   await rail.getByRole('link', { name: 'Login check' }).focus();
   await page.keyboard.press(tab);
+  await expect(rail.getByRole('link', { name: 'Regenerated schema' })).toBeFocused();
+  repo.background('listen');
+  await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
   await expect(rail.getByRole('link', { name: 'Regenerated schema' })).toBeFocused();
   await page.keyboard.press(tab);
   await page.keyboard.press('Enter');
