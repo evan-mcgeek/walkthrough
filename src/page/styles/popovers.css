@@ -18,6 +18,11 @@
   box-shadow: var(--shadow-float);
 }
 
+/* Focused itself when it holds nothing to focus, which needs no ring: it is plainly the one thing open. */
+.popover:focus {
+  outline: none;
+}
+
 /* The page stays in view behind a popover; only the popover takes clicks and keys. */
 .popover::backdrop {
   background: none;
@@ -51,7 +56,7 @@
 /* ---------- Appearance ---------- */
 
 .popover.appearance {
-  inset: 52px var(--s4) auto auto;
+  inset: 48px 60px auto auto;
   width: 300px;
 }
 

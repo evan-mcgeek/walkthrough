@@ -2,17 +2,21 @@ import type { Viewer } from '../viewer';
 import { el, openDialog, postQuietly, radioGroup } from './dom';
 
 /** Puts the person's accent and theme on the root, where the tokens read them. */
-export function showViewer(viewer: Partial<Viewer>): void {
-  Object.assign(document.documentElement.dataset, viewer);
+export function showViewer({ accent, theme }: Partial<Viewer>): void {
+  Object.assign(document.documentElement.dataset, { ...(accent && { accent }), ...(theme && { theme }) });
 }
 
-/** The person's settings, or none when the server cannot say, which leaves the defaults the stylesheet starts with. */
-export async function loadViewer(): Promise<void> {
+/** The person's settings, shown; null when the server cannot say, which leaves the defaults. */
+export async function loadViewer(): Promise<Viewer | null> {
   try {
     const answer = await fetch('data/viewer.json');
-    if (answer.ok) showViewer((await answer.json()) as Viewer);
+    if (!answer.ok) return null;
+    const viewer = (await answer.json()) as Viewer;
+    showViewer(viewer);
+    return viewer;
   } catch {
     // The page says the server is gone once it polls.
+    return null;
   }
 }
 

@@ -23,7 +23,7 @@ test('? opens the shortcut sheet, which lists every key, keeps the page behind i
 
   const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator('kbd')).toHaveText(['J / K', 'A', 'F', '/', 'Click, Shift-click a line', 'C', 'V', '1 – 4', 'G then S', '?']);
+  await expect(sheet.locator('kbd')).toHaveText(['J / K', 'A', 'F', '/', 'Click, Shift-click', 'C', 'V', '1 – 4', 'G then S', '?']);
   await expect(sheet.getByRole('row').filter({ hasText: 'Show or hide a panel' })).toBeVisible();
   for (let press = 0; press < 3; press++) await page.keyboard.press('Tab');
   await expect(approve).not.toBeFocused();

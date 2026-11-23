@@ -153,7 +153,7 @@
   position: relative;
 }
 
-/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the layouts move into More. */
+/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the panels move into More. */
 @media (max-width: 760px) {
   .app-header {
     flex-wrap: wrap;
@@ -187,7 +187,7 @@
 
   /* The first row has no room to spare beside the label. */
   .app-header .kind,
-  .header-end > :is(.stop, .layout-switch) {
+  .header-end > .stop {
     display: none;
   }
 }

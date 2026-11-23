@@ -7,7 +7,7 @@ const SHORTCUTS = [
   { caps: 'A', does: 'Approve and go to the next step' },
   { caps: 'F', does: 'Flag (asks for a note)' },
   { caps: '/', does: 'Ask about this step' },
-  { caps: 'Click, Shift-click a line', does: 'Pick lines' },
+  { caps: 'Click, Shift-click', does: 'Pick lines from their numbers' },
   { caps: 'C', does: 'Comment on picked lines' },
   { caps: 'V', does: 'Mark the file as viewed' },
   { caps: '1 – 4', does: 'Show or hide a panel' },

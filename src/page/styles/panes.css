@@ -1,6 +1,6 @@
 /*
-  The "What's left" layout (docs/design/DESIGN.md, Layout and Queue): the header and any banner over .panes,
-  the 232px .queue rail on the surface tone and the .main pane, which scrolls on its own with the action bar docked to its foot.
+  The panes (docs/design/DESIGN.md, Layout and Queue): the header and any banner over .panes,
+  the 224px .queue rail on the surface tone and the .main pane, which scrolls on its own with the action bar docked to its foot.
 */
 
 .walkthrough {
@@ -54,7 +54,7 @@
   flex: none;
   flex-direction: column;
   gap: 2px;
-  width: 232px;
+  width: 224px;
   box-sizing: border-box;
   padding: var(--s3) var(--s2);
   overflow-y: auto;
@@ -815,7 +815,7 @@
 
 /* ---------- undo toast ---------- */
 
-/* A strip at the main pane's foot, in every layout. */
+/* A strip at the main pane's foot, whichever panels are open. */
 .toast-anchor {
   position: relative;
   z-index: 4;

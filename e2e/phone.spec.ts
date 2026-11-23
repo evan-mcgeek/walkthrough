@@ -99,18 +99,29 @@ test('the header keeps one row over the progress strip, shortening the label to 
   expect((await header.boundingBox())?.height).toBeLessThan(72);
 });
 
-test('the layouts move into the More menu too', async ({ page }) => {
-  await expect(page.getByRole('group', { name: 'Layout' })).toBeHidden();
+test('the panels move into the More menu, where the explanation column waits for wider screens', async ({ page, repo }) => {
+  const record = repo.record({ title: 'Acceptance criteria', items: [{ status: 'met', mark: 'met', text: 'A person can log in.', steps: ['1'] }] }, 'checklist');
+  if (record.status !== 0) throw new Error(record.stderr);
+  await expect(page.locator('.edge-stripe').getByRole('button')).toHaveCount(0);
+  await expect(page.getByRole('toolbar', { name: 'Tool panel (hidden)' })).toBeHidden();
   await page.getByRole('button', { name: 'More' }).click();
-  const layouts = page.getByRole('menu', { name: 'More' }).getByRole('menuitemradio');
-  await expect(layouts).toHaveText(["What's left", 'Three columns', 'Explanation beside code', 'Tool panel']);
-  await expect(layouts.filter({ hasText: "What's left" })).toHaveAttribute('aria-checked', 'true');
+  const panels = page.getByRole('menu', { name: 'More' }).getByRole('menuitemcheckbox');
+  await expect(panels).toHaveText(["What's left (1)", 'Checklist (2)', 'Explanation column (3)Wider screens', 'Tool panel (4)']);
+  await expect(panels.nth(0)).toHaveAttribute('aria-checked', 'true');
+  await expect(panels.nth(2)).toHaveAttribute('aria-disabled', 'true');
 
-  await layouts.filter({ hasText: 'Tool panel' }).click();
+  await panels.filter({ hasText: 'Tool panel' }).click();
   await expect(page.getByRole('tablist', { name: 'Tool panel' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Step' })).toBeVisible();
   await page.getByRole('button', { name: 'More' }).click();
-  await expect(page.getByRole('menuitemradio', { name: 'Tool panel' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('menuitemcheckbox', { name: /^Checklist/ }).click();
+  const side = page.getByRole('complementary', { name: 'Checklist' });
+  await expect(side.getByText('A person can log in.')).toBeVisible();
+  const main = await page.getByRole('main').boundingBox();
+  const stacked = await side.boundingBox();
+  expect(main && stacked && stacked.y >= main.y + main.height - 1).toBe(true);
+  await page.getByRole('button', { name: 'More' }).click();
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Tool panel (4)' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemcheckbox', { name: /^Explanation column/ })).toBeDisabled();
 });
 
 test('the step decides from a bottom bar of touch-sized buttons, with Ask above it', async ({ page }) => {
@@ -126,32 +137,6 @@ test('the step decides from a bottom bar of touch-sized buttons, with Ask above 
 
   await choices.getByText('Flag').click();
   await expect(step.getByRole('textbox', { name: 'Note' })).toBeFocused();
-});
-
-test('Explanation beside code stacks the step over its code, with the same bottom bar and the toast above it', async ({ page }) => {
-  await page.getByRole('button', { name: 'More' }).click();
-  await page.getByRole('menuitemradio', { name: 'Explanation beside code' }).click();
-  const step = page.getByRole('region', { name: 'Login check' });
-  const bar = step.getByRole('group', { name: 'Decide' });
-  await expect(bar.getByRole('button')).toHaveText(['Flag', 'Approve']);
-  for (const choice of await bar.getByRole('button').all()) expect((await choice.boundingBox())?.height).toBeGreaterThanOrEqual(44);
-  const code = await step.locator('.d2h-file-wrapper').last().boundingBox();
-  const ask = await step.getByRole('textbox', { name: 'Ask about this step' }).boundingBox();
-  const docked = await bar.boundingBox();
-  expect(code && ask && code.y + code.height <= ask.y).toBe(true);
-  expect(ask && docked && ask.y + ask.height <= docked.y).toBe(true);
-  expect(docked && Math.round(docked.y + docked.height)).toBeGreaterThan(844 - 24);
-
-  await bar.getByRole('button', { name: 'Approve' }).click();
-  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
-  const next = await page.getByRole('region', { name: 'App version' }).getByRole('group', { name: 'Decide' }).boundingBox();
-  // The toast rises into place, so its box settles a moment after it shows.
-  await expect
-    .poll(async () => {
-      const toast = await page.getByText('Decided step 1: Approve').boundingBox();
-      return toast && next ? Math.round(next.y - (toast.y + toast.height)) : -1;
-    })
-    .toBeGreaterThanOrEqual(0);
 });
 
 test('the rail becomes a select of what is left, with decided steps and the end after it', async ({ page }) => {
