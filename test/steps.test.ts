@@ -212,7 +212,7 @@ describe('walkthrough guide', () => {
       '{"kind": "reply", "id": string, "to": string, "text": string}',
       '{"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}',
       '{"kind": "stopped"}',
-      'walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text>',
+      'walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)',
     ])
       expect(guide.stdout).toContain(shape);
   });
