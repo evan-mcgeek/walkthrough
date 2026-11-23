@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { shareHistory } from './helpers';
 
 if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
   const realHome = os.homedir();
@@ -39,4 +40,6 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
     process.once(signal, () => {
       if (!process.listenerCount(signal)) process.exit(128 + os.constants.signals[signal]);
     });
+  // Its git runs also have xcrun look git up for the new HOME once here, not in every worker at once, which timed out under load.
+  shareHistory();
 }
