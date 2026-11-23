@@ -114,6 +114,26 @@
   background: none;
 }
 
+/* At phone width the bar takes its own full-width row under the header's first line. */
+@media (max-width: 600px) {
+  .app-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 48px;
+    padding: var(--s2) var(--s3);
+    row-gap: var(--s2);
+  }
+
+  .session-label {
+    flex: 1 1 0;
+  }
+
+  .progress {
+    order: 1;
+    width: 100%;
+  }
+}
+
 .header-note {
   color: var(--muted);
   font-size: 13px;
