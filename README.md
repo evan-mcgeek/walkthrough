@@ -33,7 +33,8 @@ git clone https://github.com/evan-mcgeek/walkthrough.git
 cd walkthrough
 npm install
 npm run build
-claude --plugin-dir ./plugin
+cd /path/to/the/repo/to/review
+claude --plugin-dir /path/to/walkthrough/plugin
 ```
 
 `--plugin-dir` loads the plugin for that session only, so start Claude Code from the repo you want to review and point it at the `plugin` folder of your clone.
