@@ -8,7 +8,7 @@ import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } fr
 import { type Action, builtIn, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, selectBox, showAlert, showUnreachable } from './dom';
+import { el, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
 import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
@@ -221,17 +221,14 @@ async function undo(): Promise<void> {
   if (hadFocus) document.querySelector<HTMLElement>('.action-bar button, #main button')?.focus();
 }
 
-const reading = new Set<string>();
-
-async function markRead(step: Step): Promise<void> {
-  if (readOnly || walkthrough.read.includes(step.id) || reading.has(step.id)) return;
-  reading.add(step.id);
-  const answer = await post('read', { step: step.id });
-  reading.delete(step.id);
-  if (!answer) return;
-  // Only what was read: a decision sent meanwhile may have answered with newer decisions.
-  walkthrough = { ...walkthrough, read: ((await answer.json()) as WalkthroughView).read };
-  render();
+/** Marked before the redraw that shows the step: a redraw or alert change on the server's answer could undo a click made meanwhile. */
+function markRead(step: Step): void {
+  if (readOnly || walkthrough.read.includes(step.id)) return;
+  const read = new Set([...walkthrough.read, step.id]);
+  // In step order, as the server lists them, so the next poll finds nothing new to draw.
+  walkthrough = { ...walkthrough, read: walkthrough.steps.filter(one => read.has(one.id)).map(one => one.id) };
+  posted++;
+  void postQuietly('read', { step: step.id });
 }
 
 async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
@@ -1790,6 +1787,8 @@ function render(): void {
     return;
   }
   redrawLater = false;
+  const view = currentView();
+  if (view.kind === 'step') markRead(view.step);
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
@@ -1797,7 +1796,6 @@ function render(): void {
   const typing = focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement ? focused : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
-  const view = currentView();
   document.body.dataset['layout'] = layout;
   document.body.dataset['view'] = view.kind;
   // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
@@ -1849,7 +1847,6 @@ function render(): void {
     play('pulse', 'pulse', [{ boxShadow: '0 0 0 0 currentColor' }, { boxShadow: '0 0 0 6px transparent' }], { ms: 1200, curve: 'ease-out', iterations: 2 });
   drawnState = { decided, view: shownView, state, counts };
   replay();
-  if (view.kind === 'step') void markRead(view.step);
   // The pane leaving is a picture of what was, so nothing in it takes focus again.
   const current = (selector: string) => [...document.querySelectorAll<HTMLElement>(selector)].find(found => !leavingPane?.contains(found));
   const lost = focused instanceof HTMLElement && (!focused.isConnected || !!leavingPane?.contains(focused));
