@@ -2,12 +2,21 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from './walkthrough';
 
-test.use({ files: { 'gen.txt': 'made\n' } });
+// A GIF header that says 1280 × 800, with the NUL that makes git call it binary.
+test.use({ files: { 'gen.txt': 'made\n', 'docs/shot.gif': 'GIF89a\u0000\u0005\u0020\u0003\u0000\u0000;' } });
 
 const steps = [
   { title: 'Login check', explanation: 'Adds a **login** function.', files: ['login.ts'], assumptions: ['Callers check the result.'] },
   { title: 'App version', explanation: 'Bumps the app constant.', files: [{ path: 'app.ts', explanation: 'The **version** the app reports.' }] },
-  { title: 'Generated', folded: true, files: [{ path: 'gen.txt', reason: 'Made by a tool.' }], problems: ['Out of date.'] },
+  {
+    title: 'Generated',
+    folded: true,
+    files: [
+      { path: 'gen.txt', reason: 'Made by a tool.' },
+      { path: 'docs/shot.gif', reason: 'A screenshot.' },
+    ],
+    problems: ['Out of date.'],
+  },
 ];
 
 test('the export shows the whole walkthrough as one read-only document, offline, from its one file', async ({ page, context, repo, url }) => {
@@ -70,6 +79,9 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(folded.getByRole('list', { name: 'Folded files' })).toContainText('gen.txt');
   await expect(folded.getByText('Made by a tool.')).toBeVisible();
   await expect(folded.getByText('Out of date.')).toBeVisible();
+  await expect(folded.getByText('Binary image · 1280 × 800 · added', { exact: true })).toBeVisible();
+  await expect(folded.locator('.fold-path')).toHaveText(['gen.txt', 'docs/shot.gif']);
+  await expect(folded.locator('.fold-path wbr')).toHaveCount(1);
   await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
   await expect(exported.getByRole('button')).toHaveCount(0);
   await expect(exported.getByRole('textbox')).toHaveCount(0);

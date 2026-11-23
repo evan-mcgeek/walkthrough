@@ -436,6 +436,26 @@
   margin: var(--s2) 0 var(--s3);
 }
 
+/* A finding that arrived after the decision: one amber-wash line under the title. */
+.late-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  max-width: 68ch;
+  margin: var(--s1) 0 var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
+  background: var(--amber-wash);
+  color: var(--ink);
+  font: var(--text-body-ui);
+}
+
+.late-line > .icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--amber);
+}
+
 .decision-said {
   display: flex;
   flex-direction: column;
@@ -1041,6 +1061,15 @@
 
 .removed-code .mine-who {
   white-space: nowrap;
+}
+
+.old-lines {
+  margin: 0;
+  color: var(--muted);
+  font: 400 12px/1.5 var(--font-mono);
+  font-variant-ligatures: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Not a comment box here: one row among the notes, its label still in the accent. */

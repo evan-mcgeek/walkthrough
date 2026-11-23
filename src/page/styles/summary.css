@@ -1,4 +1,4 @@
-/* The Summary: the last entry of the queue, the verdict and the finishing action; the verdict's status in the header. */
+/* The Summary: the last entry of the queue, the walk as a ledger and the finish rail with the verdict; the verdict's status in the header. */
 
 .queue-item[data-state='summary'] {
   margin-top: auto;
@@ -26,8 +26,147 @@
   font-size: 14.5px;
 }
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 288px;
+  align-items: start;
+  gap: var(--s6);
+  max-width: 1080px;
+}
+
+/* ---------- the ledger ---------- */
+
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.ledger-group > th {
+  padding: var(--s4) 0 var(--s2);
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font: 600 12px/1.4 var(--font-ui);
+  text-align: left;
+}
+
+.ledger-group > th > .counter {
+  margin-left: 6px;
+}
+
+.ledger > tbody:first-child .ledger-group > th {
+  padding-top: 0;
+}
+
+.ledger-row > td {
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+
+.ledger-number {
+  width: 28px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+}
+
+.ledger-mark {
+  width: 24px;
+}
+
+.ledger-mark > .icon {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.ledger-row[data-state='decided'] .ledger-mark > .icon {
+  --icon-knockout: var(--canvas);
+  color: var(--ink-secondary);
+}
+
+.ledger-row[data-state='reopened'] .ledger-mark > .icon {
+  color: var(--amber);
+}
+
+.ledger-title {
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.ledger-title > a {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.ledger-title > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ledger-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.ledger-sub {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.ledger-sub.muted {
+  color: var(--muted);
+}
+
+.ledger-sub.changed {
+  color: var(--amber);
+}
+
+.ledger-sub.own {
+  color: var(--accent-text);
+}
+
+.ledger-sub.own > .icon {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.ledger-sub > .where {
+  margin-right: 2px;
+  color: var(--muted);
+  font: 400 11.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.ledger-decision {
+  width: 120px;
+  color: var(--ink-secondary);
+  line-height: 20px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ledger-decision.muted {
+  color: var(--muted);
+}
+
+.ledger-decision.changed {
+  color: var(--amber);
+}
+
+/* Under the ledger, its sections sit behind a rule. */
 .summary-section {
-  max-width: 860px;
+  margin-top: var(--s5);
   padding: var(--s4) 0;
   border-top: 1px solid var(--rule);
 }
@@ -51,43 +190,6 @@
   flex-direction: column;
   gap: 2px;
   overflow-wrap: anywhere;
-}
-
-.summary-list a {
-  color: var(--ink);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.summary-list a:hover {
-  text-decoration: underline;
-}
-
-.summary-list .muted {
-  font-size: 13px;
-}
-
-.open-list li {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: var(--s2);
-}
-
-.open-list li > span {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.open-list .icon {
-  flex: none;
-  margin-top: 3px;
-  color: var(--muted);
-}
-
-.open-list .reopened .icon {
-  color: var(--amber);
 }
 
 .summary-list .where {
@@ -124,59 +226,37 @@
   color: var(--muted);
 }
 
-.decided-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
+/* ---------- the finish rail ---------- */
+
+.finish-rail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-left: var(--s5);
+  border-left: 1px solid var(--rule);
 }
 
-.decided-table th {
-  width: 78px;
-  padding: var(--s2) var(--s3) var(--s2) 0;
-  color: var(--ink);
-  font: 600 12.5px/1.6 var(--font-ui);
-  text-align: left;
-  vertical-align: top;
-}
-
-.decided-table td {
-  padding: var(--s2) 0;
-  color: var(--ink-secondary);
-  vertical-align: top;
-}
-
-.decided-table tr + tr > * {
-  border-top: 1px solid var(--rule-soft);
-}
-
-.decided-table .count {
-  width: 40px;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.summary-section > .checklist li {
-  padding: var(--s1) 0;
-}
-
-.summary-section > .checklist {
+.finish-rail .section-head {
   margin: 0;
-  padding: 0;
-  list-style: none;
+}
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
 }
 
 .verdict-now {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 var(--s3);
-  font-size: 14px;
+  margin: 0;
+  font-size: 13.5px;
 }
 
-.verdict-now > .icon {
-  color: var(--muted);
+.verdict-now.reopened {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .verdict-now.reopened,
@@ -186,22 +266,23 @@
 
 .verdict-options {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--s2);
-  margin-bottom: var(--s2);
+  margin-top: var(--s1);
 }
 
 /* A chosen verdict is an ink border on the surface tint, never the accent (The Grey Verdict Rule). */
 .verdict-option {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px var(--s3);
+  padding: var(--s1) var(--s3);
   border: 1px solid var(--control-edge);
   border-radius: var(--r-xs);
   background: var(--canvas);
   color: var(--ink-secondary);
   font: 400 13px/1.4 var(--font-ui);
+  text-align: left;
   cursor: pointer;
   transition:
     background-color var(--fast) linear,
@@ -213,6 +294,7 @@
 }
 
 .verdict-option > .icon {
+  flex: none;
   width: 14px;
   height: 14px;
   color: var(--muted);
@@ -230,28 +312,91 @@
   color: var(--ink-secondary);
 }
 
-.summary-section .hint {
-  margin: 0;
-}
-
 .finish {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s3);
-  max-width: 860px;
-  padding-top: var(--s5);
-  border-top: 1px solid var(--rule);
-}
-
-.finish > .hint {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 13px;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s2);
 }
 
 .finish > .choices {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
   margin: 0;
+}
+
+.finish > .tag {
+  align-self: flex-start;
+}
+
+.finish-hint {
+  margin: 0 0 var(--s3);
+  font-size: 12.5px;
+}
+
+.finish-rail > .said {
+  margin: 0;
+}
+
+.finish-rail > .summary-section {
+  margin-top: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+.finish-rail > .summary-section > .section-head {
+  margin-bottom: var(--s2);
+}
+
+.rail-checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.rail-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s1) 0;
+  line-height: 1.4;
+}
+
+.rail-checklist .icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.rail-checklist [data-mark='not-met'] > .icon {
+  color: var(--rust);
+}
+
+/* At phone width the rail drops under the ledger behind a rule. */
+@media (max-width: 760px) {
+  .summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s5);
+  }
+
+  .finish-rail {
+    position: static;
+    padding: var(--s4) 0 0;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+
+  .ledger-number {
+    width: 22px;
+  }
+
+  .ledger-row > .ledger-decision {
+    width: auto;
+    padding-left: var(--s3);
+  }
 }
 
 .verdict-status {
@@ -278,16 +423,6 @@
   .header-end > :is(.finish-review, .verdict-status) {
     display: none;
   }
-}
-
-.decided-table a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.decided-table a:hover {
-  color: var(--accent-text);
-  text-decoration: underline;
 }
 
 .export-head > .verdict-status {

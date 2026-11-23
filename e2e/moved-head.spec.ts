@@ -71,6 +71,8 @@ test('notes whose step or lines are gone show as notes on removed code on the Se
   await expect(version.getByText('was on a step no longer in the change', { exact: true })).toBeVisible();
   const third = detached.getByRole('article', { name: 'Third line' });
   await expect(third.getByText('was on login.ts line 3', { exact: true })).toBeVisible();
+  await expect(third.locator('.old-lines')).toHaveText('three');
+  await expect(version.locator('.old-lines')).toHaveCount(0);
   await expect(third.getByRole('button', { name: 'Reply' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Login check' }).getByText('Is three needed?')).toHaveCount(0);
 });

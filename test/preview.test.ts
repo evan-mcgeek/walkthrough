@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, expect, test } from 'vitest';
+import { pixelSize } from '../src/preview';
 import { git, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
@@ -110,4 +111,21 @@ test('serves a changed image as it was at the base, under its base path when ren
   expect((await baseOf('icons/added.svg')).status).toBe(404);
   expect((await baseOf('docs/flow.svg')).status).toBe(404);
   expect((await baseOf('app.ts')).status).toBe(404);
+});
+
+test('reads the pixel size from the header of each raster image the page previews, and none from anything else', () => {
+  const bytes = (...parts: (string | number[])[]) => Buffer.concat(parts.map(part => (typeof part === 'string' ? Buffer.from(part, 'latin1') : Buffer.from(part))));
+  const jpeg = bytes([0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0, 0xff, 0xc0, 0, 11, 8], [0x03, 0x20, 0x05, 0x00], [3, 1, 0x22, 0]);
+  const webp = (chunk: string, body: number[]) => bytes('RIFF', [0, 0, 0, 0], 'WEBP', chunk, [0, 0, 0, 0], body, new Array<number>(10).fill(0));
+  const bmp = bytes('BM', new Array<number>(16).fill(0), [0x00, 0x05, 0, 0], [0xe0, 0xfc, 0xff, 0xff]);
+
+  expect(pixelSize(PNG)).toEqual({ width: 1, height: 1 });
+  expect(pixelSize(bytes('GIF89a', [0x00, 0x05, 0x20, 0x03, 0, 0]))).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(jpeg)).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(webp('VP8X', [0, 0, 0, 0, 0xff, 0x04, 0, 0x1f, 0x03, 0]))).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(webp('VP8L', [0x2f, 0xff, 0xc4, 0xc7, 0]))).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(webp('VP8 ', [0, 0, 0, 0x9d, 0x01, 0x2a, 0x00, 0x05, 0x20, 0x03]))).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(bmp)).toEqual({ width: 1280, height: 800 });
+  expect(pixelSize(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).toBeNull();
+  expect(pixelSize(Buffer.from([0xff, 0xd8, 0xff]))).toBeNull();
 });

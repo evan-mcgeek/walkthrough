@@ -18,7 +18,7 @@ import { bind, helpSheet, isTyping, MEANS, runShortcut, withKey } from './shortc
 import { animate, now, play, reduced, replay } from './motion';
 
 /** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
-type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string; viewer?: Viewer };
+type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string; viewer?: Viewer; images?: Record<string, { width: number; height: number }> };
 const exportedText = document.getElementById('exported')?.textContent;
 const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
@@ -853,6 +853,13 @@ function placeWas({ file, lines }: Place): string {
   return file !== undefined && lines ? `${file} ${linesLabel(lines).toLowerCase()}` : 'a step no longer in the change';
 }
 
+/** The lines a detached note, ask or comment was pinned on, as they read then, without their shared indent. */
+function oldLines({ linesText }: Place): HTMLElement[] {
+  if (!linesText?.length) return [];
+  const indent = Math.min(...linesText.filter(line => line.trim()).map(line => line.length - line.trimStart().length));
+  return [el('pre', { className: 'old-lines' }, linesText.map(line => line.slice(indent)).join('\n'))];
+}
+
 /** Notes whose Reply box the person opened. */
 const replying = new Set<string>();
 
@@ -889,12 +896,20 @@ function replyView(note: Note): HTMLElement[] {
   return [form];
 }
 
+/** "new since you approved" on a finding that arrived after the person decided its step. */
+function lateWords(note: Note): string | null {
+  const step = walkthrough.steps.find(one => one.id === anchorOf(note));
+  return !readOnly && step && lateFindings(step).includes(note) ? `new since you ${doneWith(step)}` : null;
+}
+
 /** `asked` is the ask the note answers: it shows the question, with the note as the session's reply. */
 function noteView(note: Note, asked?: Ask): HTMLElement {
   const { label, lines } = note.note;
   const item: Item = { type: 'note', id: note.id };
   const key = itemKey(item);
   const detached = anchorOf(note) === null;
+  const since = lateWords(note);
+  const late = since && (lines ? `${linesLabel(lines).toLowerCase()} · ${since}` : since);
   const shown = walkthrough.decided[key] ?? walkthrough.reopened[key];
   const taken = taking?.key === key ? walkthrough.actions[key]?.find(action => action.id === taking?.action) : undefined;
   const view = el(
@@ -905,11 +920,12 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
       { className: 'note-head' },
       ...(detached ? [icon(note.note.finding ? 'warn' : 'message')] : []),
       el('span', { className: note.note.finding ? 'label finding' : 'label' }, ...(note.note.finding && !detached ? [icon('warn')] : []), label),
-      ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(placeOf(note))}`)] : linesOf(lines)),
+      ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(placeOf(note))}`)] : late ? [el('span', { className: 'lines' }, late)] : linesOf(lines)),
       ...(shown ? [stateTag(item, false)] : []),
       el('span', { className: 'spacer' }),
       ...actionsMenu(item, label),
     ),
+    ...(detached ? oldLines(placeOf(note)) : []),
     ...(asked
       ? [el('p', { className: 'you-asked' }, el('span', { className: 'muted' }, 'You asked:'), ` ${asked.text}`), ...replies([note, ...followUps(note)])]
       : [...(taken?.edit ? [] : [markdown(note.text, 'note-text')]), ...replies(followUps(note))]),
@@ -1139,6 +1155,7 @@ function commentView(comment: Comment): HTMLElement {
       el('span', { className: 'spacer' }),
       ...(posted || readOnly ? [] : [edit, remove]),
     ),
+    ...(commentAnchor(comment) === null ? oldLines(comment) : []),
     markdown(comment.text, 'comment-text'),
     ...(posted ? [el('span', { className: 'hint' }, 'Posted')] : commentHint()),
     ...replies(answers),
@@ -1505,6 +1522,14 @@ function addPreview(wrapper: Element, stepId: string, parsed: DiffFile): void {
   const type = previewType(file);
   const image = type?.startsWith('image/') ?? false;
   const diff = wrapper.querySelector<HTMLElement>('.diff-body');
+  // An export has no server to load an image from, so it says what the image is in words.
+  if (readOnly && image && parsed.isBinary && diff) {
+    const size = exported?.images?.[file];
+    const change = parsed.isNew ? 'added' : parsed.isDeleted ? 'deleted' : 'replaced';
+    const words = ['Binary image', ...(size ? [`${String(size.width)} × ${String(size.height)}`] : []), change].join(' · ');
+    diff.replaceChildren(el('p', { className: 'binary-image' }, icon('file'), words));
+    return;
+  }
   // A preview is read from the server, which an exported file does not have; a deleted Markdown file has nothing to show.
   if (!type || !diff || readOnly || (head === null && !image)) return;
   const at = (path: string) => `file?path=${encodeURIComponent(path)}`;
@@ -1612,6 +1637,9 @@ function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
   return [el('div', { className: 'assumptions' }, button, shown)];
 }
 
+/** A path that may break after each slash. */
+const breakable = (path: string) => path.split('/').flatMap((part, at, parts) => (at < parts.length - 1 ? [`${part}/`, el('wbr')] : [part]));
+
 function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HTMLElement[] {
   const key = `fold:${step.id}`;
   // A file with a note on its lines starts shown, and so does the fold that holds it, so no note waits unseen behind Show diff.
@@ -1651,7 +1679,7 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
       return el(
         'li',
         {},
-        el('code', { className: 'fold-path' }, file.path),
+        el('code', { className: 'fold-path' }, ...breakable(file.path)),
         markdown(file.reason, 'fold-reason'),
         ...(wrappers.has(file.path) && !readOnly ? [button] : []),
       );
@@ -1676,15 +1704,24 @@ function stepBody(step: Step): { prose: HTMLElement[]; code: HTMLElement[] } {
   switch (step.kind) {
     case 'step':
       return {
-        prose: [...checkingNotice(step), markdown(step.explanation, 'explanation'), ...filesExplained(step), ...said, ...assumedView(step), ...notes],
+        prose: [...lateLine(step), ...checkingNotice(step), markdown(step.explanation, 'explanation'), ...filesExplained(step), ...said, ...assumedView(step), ...notes],
         code: [el('div', { className: 'block' }, diffView(step, pinned))],
       };
     case 'folded':
       return {
-        prose: [...checkingNotice(step), el('p', { className: 'explanation' }, SKIM), ...said, ...notes],
+        prose: [...lateLine(step), ...checkingNotice(step), el('p', { className: 'explanation' }, SKIM), ...said, ...notes],
         code: foldedView(step, pinned),
       };
   }
+}
+
+/** A decided step that got findings after the decision says so under its title; the decision stays. */
+function lateLine(step: Step): HTMLElement[] {
+  const late = readOnly ? 0 : lateFindings(step).length;
+  if (!late) return [];
+  const what = late === 1 ? 'A finding arrived' : `${String(late)} findings arrived`;
+  const matters = late === 1 ? 'the finding matters' : 'the findings matter';
+  return [el('p', { className: 'late-line' }, icon('warn'), el('span', {}, `${what} after you ${doneWith(step)}. Your decision stays; change it if ${matters}.`))];
 }
 
 function checkingNotice(step: Step): HTMLElement[] {
@@ -1736,7 +1773,12 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   if (held.length)
     for (const button of [choices, ...choices.querySelectorAll('button')]) if (button instanceof HTMLButtonElement) button.disabled = true;
   const asking = asks ? [ask] : [];
-  const count = open ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))] : [];
+  const late = decided ? lateFindings(step).length : 0;
+  const count = late
+    ? [el('span', { className: 'open-findings' }, icon('warn'), plural(late, 'new finding'))]
+    : open
+      ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))]
+      : [];
   if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...held, ...asking, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
@@ -1936,7 +1978,7 @@ function queueView(view: View): HTMLElement[] {
   const undecided = steps.filter(stepLeft);
   const fromSession = sessionRow(view);
   const rows = [...undecided.map(step => stepRow(step, step === current)), ...fromSession];
-  const left: [string, string][] = undecided.map(step => [step.id, step.title]);
+  const left: [string, string][] = undecided.map(step => [step.id, lateFindings(step).length ? `${step.title} · New finding` : step.title]);
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
@@ -2080,38 +2122,110 @@ function summarySection(name: string, count: string | null, ...body: HTMLElement
   return section;
 }
 
-/** Every item offering actions the person has not taken, or that changed since they took one. */
-function stillOpen(): { item: Item; address: string; title: string }[] {
-  const steps = walkthrough.steps.map(step => ({ item: { type: 'step' as const, id: step.id }, address: step.id, title: stepName(step) }));
+/** A row of the Summary's ledger: `open` rows lead, and the decision in words closes the row in its tone. */
+type LedgerRow = {
+  item: Item;
+  address: string;
+  number: string;
+  mark: IconName;
+  title: string;
+  words: string;
+  tone: 'decided' | 'muted' | 'changed';
+  subs: HTMLElement[];
+  open: boolean;
+};
+
+const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim() }, text);
+
+/** The person's own comments on a step, in the accent, each after its file's name and lines. */
+function ownSubs(step: Step): HTMLElement[] {
+  return commentsOf(session.conversation)
+    .filter(comment => commentAnchor(comment) === step.id)
+    .map(comment => {
+      const where = el('span', { className: 'where', title: comment.file }, `${comment.file.split('/').at(-1) ?? comment.file}:${linesShort(comment.lines)}`);
+      return el('span', { className: 'ledger-sub own' }, icon('own', 'Your comment'), where, ' ', plain(comment.text));
+    });
+}
+
+function stepLedgerRow(step: Step): LedgerRow {
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  const reopened = stepReopened(step);
+  const row = { item, address: step.id, number: String(stepNumber(step.id)), title: step.title };
+  const own = ownSubs(step);
+  if (beingChecked(step))
+    return { ...row, mark: 'unchecked', words: 'Being checked', tone: 'muted', subs: [ledgerSub('Findings may still arrive.'), ...own], open: true };
+  if (decision) {
+    const said = [decision.note, decision.text].flatMap(text => (text ? [ledgerSub(`“${plain(text)}”`)] : []));
+    const late = lateFindings(step).length;
+    const arrived = late ? [ledgerSub(`${plural(late, 'new finding')} since you ${doneWith(step)}.`, 'changed')] : [];
+    return { ...row, mark: 'decided', words: labelOf(item, decision.action), tone: 'decided', subs: [...said, ...arrived, ...own], open: false };
+  }
+  if (reopened) {
+    const since = ledgerSub(`Changed since you chose ${labelOf(item, reopened.action)}.`, 'muted');
+    return { ...row, mark: 'reopened', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
+  }
+  const mark = step.kind === 'folded' ? 'folded' : walkthrough.read.includes(step.id) ? 'read' : 'unread';
+  return { ...row, mark, words: 'Undecided', tone: 'muted', subs: own, open: true };
+}
+
+/** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
+function otherOpenRows(): LedgerRow[] {
   const notes = session.conversation.filter(isNote).map(note => ({
     item: { type: 'note' as const, id: note.id },
     address: anchorOf(note) ?? 'session',
+    mark: (note.note.finding ? 'warn' : 'message') as IconName,
     title: `${note.note.label}: ${plain(note.text)}`,
   }));
   const items = (walkthrough.checklist?.items ?? []).map(one => ({
     item: { type: 'checklist' as const, id: one.id },
     address: `checklist-${one.id}`,
+    mark: (one.mark ?? 'unchecked') as IconName,
     title: plain(one.text),
   }));
-  const checking = walkthrough.checking ?? [];
-  return [...steps, ...notes, ...items].filter(
-    one =>
-      (one.item.type === 'step' && checking.includes(one.item.id)) ||
-      (!decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0),
-  );
+  return [...notes, ...items]
+    .filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0)
+    .map(one => {
+      const reopened = walkthrough.reopened[itemKey(one.item)];
+      const subs = reopened ? [ledgerSub(`Changed since you chose ${labelOf(one.item, reopened.action)}.`, 'muted')] : [];
+      return { ...one, number: '', words: reopened ? 'Changed' : 'Undecided', tone: reopened ? 'changed' : 'muted', subs, open: true };
+    });
 }
 
-function openView(): HTMLElement {
-  const rows = stillOpen().map(({ item, address, title }) => {
-    const checking = item.type === 'step' && (walkthrough.checking ?? []).includes(item.id);
-    const reopened = !checking && walkthrough.reopened[itemKey(item)];
-    const state = checking ? 'Being checked' : reopened ? `Changed since you chose ${labelOf(item, reopened.action)}` : 'Undecided';
-    const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `summary-open:${itemKey(item)}`);
-    const mark = checking ? 'unchecked' : reopened ? 'reopened' : 'unread';
-    return el('li', { className: reopened ? 'reopened' : '' }, icon(mark), el('span', {}, link, el('span', { className: 'muted' }, state)));
-  });
-  const body = rows.length ? el('ul', { className: 'summary-list open-list' }, ...rows) : el('p', { className: 'muted' }, 'Nothing; everything is decided.');
-  return summarySection('Still open', null, body);
+const ledgerRows = () => [...walkthrough.steps.map(stepLedgerRow), ...otherOpenRows()];
+
+/** Every step in one table, still open first, then decided; undecided never reads as decided. */
+function ledgerView(rows: LedgerRow[]): HTMLElement {
+  const groups = [
+    ['Still open', rows.filter(row => row.open)],
+    ['Decided', rows.filter(row => !row.open)],
+  ] as const;
+  const bodies = groups
+    .filter(([, group]) => group.length)
+    .map(([name, group]) => {
+      const head = el('th', { colSpan: 4, scope: 'rowgroup' }, name, el('span', { className: 'counter' }, String(group.length)));
+      return el(
+        'tbody',
+        {},
+        el('tr', { className: 'ledger-group' }, head),
+        ...group.map(({ item, address, number, mark, title, words, tone, subs }) => {
+          const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
+          const row = el(
+            'tr',
+            { className: 'ledger-row' },
+            el('td', { className: 'ledger-number' }, number),
+            el('td', { className: 'ledger-mark' }, icon(mark, stateName(mark))),
+            el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : [])),
+            el('td', { className: `ledger-decision ${tone}` }, words),
+          );
+          row.dataset['state'] = mark;
+          return row;
+        }),
+      );
+    });
+  const table = el('table', { className: 'ledger' }, ...bodies);
+  table.setAttribute('aria-label', 'Every step and what you decided');
+  return table;
 }
 
 function verdictView(): HTMLElement {
@@ -2136,16 +2250,11 @@ function verdictView(): HTMLElement {
     };
     return option;
   });
-  const change = el('button', { type: 'button', className: 'link' }, 'Change');
-  change.dataset['key'] = 'verdict-change';
-  change.onclick = () => {
-    (options.find(option => option.getAttribute('aria-checked') === 'true') ?? options[0])?.focus();
-  };
   const now = chosen
-    ? el('p', { className: 'verdict-now' }, icon('finish'), 'Your verdict: ', el('strong', {}, labelOf(VERDICT, chosen.action)), ...(readOnly ? [] : [' ', change]))
+    ? el('p', { className: 'verdict-now' }, 'Your verdict: ', el('strong', {}, labelOf(VERDICT, chosen.action)))
     : reopened
       ? el('p', { className: 'verdict-now reopened' }, icon('reopened'), `Changed since you chose ${labelOf(VERDICT, reopened.action)}`)
-      : el('p', { className: 'verdict-now muted' }, actions.length && !readOnly ? 'No verdict yet. Check what is still open, then choose.' : 'No verdict yet.');
+      : el('p', { className: 'verdict-now muted' }, 'No verdict yet.');
   const group = el('div', { className: 'verdict-options' }, ...options);
   group.setAttribute('role', 'radiogroup');
   group.setAttribute('aria-label', 'Verdict');
@@ -2158,54 +2267,18 @@ function verdictView(): HTMLElement {
     options[(at + by + options.length) % options.length]?.focus();
   };
   const taken = taking?.key === itemKey(VERDICT) ? actions.find(action => action.id === taking?.action) : undefined;
-  const hint = walkthrough.hints?.[itemKey(VERDICT)];
-  return summarySection(
-    'Verdict',
-    null,
+  const heading = el('h2', { className: 'section-head', id: 'summary-verdict' }, 'Verdict');
+  const section = el(
+    'section',
+    { className: 'verdict' },
+    heading,
     now,
     ...(options.length && !readOnly ? [group] : []),
     ...(taken ? [takingForm(VERDICT, taken, '')] : []),
     ...(chosen ? decisionSaid(chosen) : []),
-    ...(hint ? [el('p', { className: 'hint' }, hint)] : []),
   );
-}
-
-function decidedView(): HTMLElement[] {
-  const byLabel = new Map<string, Step[]>();
-  for (const step of walkthrough.steps) {
-    const item: Item = { type: 'step', id: step.id };
-    const decision = decisionOf(item);
-    if (!decision) continue;
-    const label = labelOf(item, decision.action);
-    byLabel.set(label, [...(byLabel.get(label) ?? []), step]);
-  }
-  if (!byLabel.size) return [];
-  const rows = [...byLabel].map(([label, steps]) =>
-    el('tr', {}, el('th', { scope: 'row' }, label), el('td', {}, ...steps.flatMap((step, at) => [...(at ? [', '] : []), el('a', { href: `#${encodeURIComponent(step.id)}` }, stepName(step))])), el('td', { className: 'count' }, String(steps.length))),
-  );
-  return [summarySection('Decided', null, el('table', { className: 'decided-table' }, el('tbody', {}, ...rows)))];
-}
-
-/** Decided steps whose decision carries the person's note. */
-const flaggedSteps = () =>
-  walkthrough.steps.flatMap(step => {
-    const note = decisionOf({ type: 'step', id: step.id })?.note;
-    return note ? [{ step, note }] : [];
-  });
-
-function flaggedView(): HTMLElement[] {
-  const rows = flaggedSteps().map(({ step, note }) =>
-    el('li', {}, el('a', { href: `#${encodeURIComponent(step.id)}` }, stepName(step)), el('span', { className: 'muted' }, note)),
-  );
-  return rows.length ? [summarySection('Flagged', null, el('ul', { className: 'summary-list' }, ...rows))] : [];
-}
-
-function yourCommentsView(): HTMLElement[] {
-  const comments = commentsOf(session.conversation);
-  const rows = comments.map(comment =>
-    el('li', {}, el('span', { className: 'where' }, `${comment.file} · ${linesShort(comment.lines)}`), markdown(comment.text, 'summary-text')),
-  );
-  return rows.length ? [summarySection('Your comments', String(rows.length), el('ul', { className: 'summary-list' }, ...rows))] : [];
+  section.setAttribute('aria-labelledby', heading.id);
+  return section;
 }
 
 const DRAFT_STATES = ['Accepted', 'Edited', 'Dropped', 'Undecided'] as const;
@@ -2242,11 +2315,17 @@ function draftsView(): HTMLElement[] {
   return [summarySection('Comments the session drafted', counts.join(' · '), el('ul', { className: 'summary-list' }, ...rows))];
 }
 
+/** The checklist in the finish rail: each item's mark and text, its status in the row's tooltip. */
 function checklistSummary(): HTMLElement[] {
   const { checklist } = walkthrough;
   if (!checklist) return [];
-  const rows = checklistRows(checklist.items, { kind: 'summary' }, true);
-  return [summarySection('Checklist', metCount(checklist.items), el('ul', { className: 'checklist compact' }, ...rows))];
+  const rows = checklist.items.map(item => {
+    const mark = item.mark ?? 'unchecked';
+    const row = el('li', { title: item.status }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
+    row.dataset['mark'] = mark;
+    return row;
+  });
+  return [summarySection('Checklist', metCount(checklist.items), el('ul', { className: 'rail-checklist' }, ...rows))];
 }
 
 /** The walkthrough's actions, the first of which waits for a verdict. */
@@ -2257,54 +2336,50 @@ function finishGroup(): HTMLElement {
   return group;
 }
 
-/** The walkthrough's own actions close the page: the first, its finishing action, leads and waits for a verdict. */
+/** The walkthrough's own actions close the page: the first, its finishing action, leads and waits for a verdict; one hint says what goes where. */
 function finishView(): HTMLElement[] {
-  const actions = walkthrough.actions[itemKey(WHOLE)] ?? [];
-  if (!actions.length || readOnly) return [];
+  const actions = readOnly ? [] : (walkthrough.actions[itemKey(WHOLE)] ?? []);
   const shown = decisionOf(WHOLE) ?? walkthrough.reopened[itemKey(WHOLE)];
   const taken = taking?.key === itemKey(WHOLE) ? actions.find(action => action.id === taking?.action) : undefined;
-  const waits = finishWaits();
-  const group = finishGroup();
-  const hint = [walkthrough.hints?.[itemKey(WHOLE)], ...(waits ? ['Choose a verdict first.'] : [])].filter(Boolean).join(' ');
+  const hint = [
+    ...(actions.length && finishWaits() ? ['Choose a verdict first.'] : []),
+    walkthrough.hints?.[itemKey(VERDICT)],
+    ...(actions.length ? [walkthrough.hints?.[itemKey(WHOLE)]] : []),
+  ]
+    .filter(Boolean)
+    .join(' ');
   return [
-    el(
-      'div',
-      { className: 'finish' },
-      ...(shown ? [stateTag(WHOLE, true)] : []),
-      taken ? takingForm(WHOLE, taken, '') : group,
-      ...(hint ? [el('p', { className: 'hint' }, hint)] : []),
-      ...(shown ? decisionSaid(shown) : []),
-    ),
+    ...(actions.length ? [el('div', { className: 'finish' }, ...(shown ? [stateTag(WHOLE, true)] : []), taken ? takingForm(WHOLE, taken, '') : finishGroup())] : []),
+    ...(hint ? [el('p', { className: 'hint finish-hint' }, hint)] : []),
+    ...(shown && actions.length ? decisionSaid(shown) : []),
   ];
 }
 
-/** The last entry of the queue: what is decided and what is still open, the verdict, and the finishing action. */
+/** The last entry of the queue: the walk as a ledger, and the rail that finishes it with the verdict. */
 function summaryView(): HTMLElement {
   const { steps } = walkthrough;
-  const open = stillOpen().length;
+  const rows = ledgerRows();
+  const open = rows.filter(row => row.open).length;
   const title = el('h2', { className: 'step-title', id: 'summary' }, 'Summary');
   const comments = commentsOf(session.conversation).length;
-  const flagged = flaggedSteps().length;
+  const flagged = steps.filter(step => decisionOf({ type: 'step', id: step.id })?.note).length;
+  const checking = steps.filter(beingChecked).length;
   const items = walkthrough.checklist?.items ?? [];
   const counts = [
     `${String(steps.filter(stepDecided).length)} of ${plural(steps.length, 'step')} decided`,
+    ...(checking ? [`${String(checking)} being checked`] : []),
     ...(flagged ? [`${String(flagged)} flagged`] : []),
     ...(comments ? [`${String(comments)} of your comments`] : []),
     ...(items.some(item => item.mark !== undefined) ? [`checklist ${String(items.filter(item => item.mark === 'met').length)} of ${String(items.length)} met`] : []),
   ];
+  const rail = el('aside', { className: 'finish-rail' }, verdictView(), ...finishView(), ...checklistSummary());
+  rail.setAttribute('aria-label', 'Finish');
   const section = el(
     'section',
     { className: 'summary' },
     el('div', { className: 'title-row' }, title, el('span', { className: 'tag' }, open ? `${String(open)} still open` : 'Nothing still open')),
     el('p', { className: 'summary-line' }, counts.join(' · ')),
-    openView(),
-    verdictView(),
-    ...decidedView(),
-    ...flaggedView(),
-    ...yourCommentsView(),
-    ...checklistSummary(),
-    ...draftsView(),
-    ...finishView(),
+    el('div', { className: 'summary-grid' }, el('div', { className: 'summary-walk' }, ledgerView(rows), ...draftsView()), rail),
   );
   section.setAttribute('aria-labelledby', title.id);
   return section;
@@ -2668,7 +2743,9 @@ function detachedView(): HTMLElement[] {
       'Notes on removed code',
       count,
       el('p', { className: 'page-about' }, 'Their lines are gone from the change, so they wait here instead of being dropped.'),
-      ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, el('p', { className: 'was' }, `Was on ${placeWas(placeOf(entry))}`), askThread(entry)))),
+      ...gone.map(entry =>
+        isNote(entry) ? noteView(entry) : el('div', {}, el('p', { className: 'was' }, `Was on ${placeWas(entry)}`), ...oldLines(entry), askThread(entry)),
+      ),
       ...comments.map(commentView),
       ...links.map(item => el('p', { className: 'detached-item' }, icon('unlink'), el('span', {}, `Checklist “${plain(item.text)}” linked to a step that no longer exists`))),
     ),

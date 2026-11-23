@@ -165,8 +165,8 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   await page.getByRole('button', { name: 'Send' }).click();
 
   const end = page.getByRole('region', { name: 'Summary' });
-  await expect(end.getByRole('region', { name: 'Decided' }).getByRole('row')).toHaveText(['Approve1 Login check, 2 Regenerated schema2', 'Flag3 App version1']);
-  await expect(end.getByRole('region', { name: 'Flagged' }).getByRole('listitem')).toHaveText(['3 App versionNot this version.']);
+  const ledger = end.getByRole('table', { name: 'Every step and what you decided' });
+  await expect(ledger.getByRole('row')).toHaveText(['Decided3', '1Login checkApprove', '2Regenerated schemaApprove', '3App version“Not this version.”Flag']);
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByText('Everything is decided.')).toBeVisible();
   await expect(rail.getByRole('heading', { name: 'To review 0' })).toBeVisible();
@@ -175,7 +175,7 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await page.keyboard.press('j');
   await expect(end).toBeVisible();
-  await end.getByRole('region', { name: 'Flagged' }).getByRole('link', { name: '3 App version' }).click();
+  await ledger.getByRole('link', { name: 'App version' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
 });
 

@@ -7,17 +7,18 @@ import type { Step, Walkthrough } from './walkthrough';
 
 /** The first and last line, numbered as in the file at the head. */
 export type Lines = [number, number];
-/** `linesHash` fingerprints the lines as they were when pinned. */
-export type Place = { step: string; file?: string; lines?: Lines; linesHash?: string };
+/** `linesHash` fingerprints the lines as they were when pinned, and `linesText` is what they said. */
+export type Place = { step: string; file?: string; lines?: Lines; linesHash?: string; linesText?: string[] };
 /** `finding` is the session's flag, whatever the label says. */
 export type NoteMark = Place & { label: string; low?: true; finding?: true };
 export type NoteInput = NoteMark & { text: string };
 
-export const placeOnly = ({ step, file, lines, linesHash }: Place): Place => ({
+export const placeOnly = ({ step, file, lines, linesHash, linesText }: Place): Place => ({
   step,
   ...(file !== undefined && { file }),
   ...(lines && { lines }),
   ...(linesHash !== undefined && { linesHash }),
+  ...(linesText && { linesText }),
 });
 
 const isLines = (value: unknown): value is Lines =>
@@ -38,10 +39,11 @@ function shownLines(step: Step, file: string): Map<number, string> | null {
   return new Map(lines.flatMap(line => (line.newNumber === undefined ? [] : [[line.newNumber, line.content.slice(1)]])));
 }
 
-function hashOf(shown: Map<number, string>, [first, last]: Lines): string {
-  const text = [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
-  return crypto.createHash('sha256').update(JSON.stringify(text)).digest('hex').slice(0, 16);
-}
+const textOf = (shown: Map<number, string>, [first, last]: Lines) =>
+  [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
+
+const hashOf = (shown: Map<number, string>, lines: Lines) =>
+  crypto.createHash('sha256').update(JSON.stringify(textOf(shown, lines))).digest('hex').slice(0, 16);
 
 // Lines follow their file to whichever step has it, while what they say is unchanged.
 export function anchorOf({ steps }: Walkthrough, { step, file, lines, linesHash }: Place): string | null {
@@ -64,7 +66,7 @@ export function placeIn(walkthrough: Walkthrough | null, { step, file, lines }: 
   const [first, last] = lines;
   if (!numbers.has(first) || !numbers.has(last))
     throw new Error(`lines ${String(first)}-${String(last)} of ${file} are not in the diff of step ${found.id}`);
-  return { step: found.id, file, lines: [first, last], linesHash: hashOf(numbers, [first, last]) };
+  return { step: found.id, file, lines: [first, last], linesHash: hashOf(numbers, [first, last]), linesText: textOf(numbers, [first, last]) };
 }
 
 export function parseNotes(text: string, walkthrough: Walkthrough | null): NoteInput[] {

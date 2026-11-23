@@ -10,8 +10,8 @@ export function commentsOf(conversation: Entry[]): Comment[] {
   for (const entry of conversation) {
     if (entry.from !== 'page') continue;
     if (entry.kind === 'comment' && entry.file !== undefined && entry.lines) {
-      const { id, step, file, lines, linesHash, text } = entry;
-      comments.set(id, { id, step, file, lines, ...(linesHash !== undefined && { linesHash }), text });
+      const { id, step, file, lines, linesHash, linesText, text } = entry;
+      comments.set(id, { id, step, file, lines, ...(linesHash !== undefined && { linesHash }), ...(linesText && { linesText }), text });
     }
     const kept = 'comment' in entry ? comments.get(entry.comment) : undefined;
     if (kept && entry.kind === 'edit-comment') kept.text = entry.text;

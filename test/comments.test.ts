@@ -44,6 +44,15 @@ describe('the person’s own comments', () => {
     ]);
   });
 
+  test('a comment keeps what its lines said when it was made, for when its code is removed', async () => {
+    started();
+
+    await comment('Name the user.', [1, 2]);
+
+    const { conversation } = (await (await fetch(`${repo.url()}data/session.json`)).json()) as { conversation: Record<string, unknown>[] };
+    expect(conversation.at(-1)).toMatchObject({ kind: 'comment', linesText: ['export const login = () => true;', 'export const logout = () => true;'] });
+  });
+
   test('walkthrough comments lists each comment as it is now, and one the session marked posted can no longer change', async () => {
     started();
     const kept = await idOf(await comment('Keep this.'));
