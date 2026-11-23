@@ -33,6 +33,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Give the why, and the alternative the change rejected when the code or the ticket shows one.
 - Describe what the code does; the verdict is mine, so verdict words such as "clean", "correct", "robust" or "good" stay out.
 - What you assumed rather than read goes in the step's assumptions, not in its explanation.
+- The step's explanation is the overview; give a file its own explanation only when it needs a word the overview does not give, such as its part in the step or what to look at in it.
+  Keep it to a sentence or two about that file alone, and never repeat the overview.
 
 ### Checklist
 

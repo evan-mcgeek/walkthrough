@@ -74,6 +74,8 @@ Never check anything out.
 
 Split the change into steps, order them, and fold the files not worth reading line by line, as the review policy and the project's instructions say.
 Write them to a file in the inbox in the shape `walkthrough guide` prints, and record them with `walkthrough steps --file <file>`.
+A step's explanation is its overview, at the top of the step; a file in it can carry a short explanation of its own, shown just above its diff, for what only that file needs, never repeating the overview.
+Whether a file gets one comes from the review policy.
 The CLI only checks that every changed file is in exactly one step; when it refuses, it names every problem, so fix them and record again.
 Recording again replaces the steps and prints their ids; a step keeps its id by its files, and the person's decision while its diff is unchanged.
 

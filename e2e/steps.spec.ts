@@ -1,11 +1,17 @@
+import type { Locator } from '@playwright/test';
 import { expect, test } from './walkthrough';
+
+const expectAbove = async (upper: Locator, lower: Locator) => {
+  const [one, other] = await Promise.all([upper.boundingBox(), lower.boundingBox()]);
+  expect((one?.y ?? Infinity) + (one?.height ?? 0)).toBeLessThanOrEqual(other?.y ?? -Infinity);
+};
 
 const steps = [
   {
     title: 'Login check',
     explanation: 'Adds a login function that lets everyone in.\n\nThe app needs a login entry point.',
     assumptions: ['Nothing else calls login yet.', 'Tests run without a network.'],
-    files: ['login.ts', 'login.test.ts'],
+    files: ['login.ts', { path: 'login.test.ts', explanation: 'Pins that **anyone** gets in.' }],
   },
   {
     title: 'Regenerated schema',
@@ -38,6 +44,20 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(first.getByText('Adds a login function that lets everyone in.', { exact: true })).toBeVisible();
   await expect(first.getByText('The app needs a login entry point.', { exact: true })).toBeVisible();
   await expect(first.locator('.d2h-file-name')).toHaveText(['login.ts', 'login.test.ts']);
+  const testFile = first.locator('.d2h-file-wrapper[data-file="login.test.ts"]');
+  const aboutFile = first.locator('.file-explanation');
+  await expect(aboutFile).toHaveCount(1);
+  await expect(testFile.locator('.file-explanation')).toHaveText('Pins that anyone gets in.');
+  await expect(aboutFile.locator('strong')).toHaveText('anyone');
+  await expectAbove(testFile.locator('.d2h-file-header'), aboutFile);
+  await expectAbove(aboutFile, testFile.locator('.d2h-file-diff'));
+  // Explanations are read at length: primary ink, 15px at 1.6.
+  const ink = await first.getByRole('heading', { name: 'Login check' }).evaluate(title => getComputedStyle(title).color);
+  for (const prose of [first.locator('.explanation'), aboutFile]) {
+    await expect(prose).toHaveCSS('color', ink);
+    await expect(prose).toHaveCSS('font-size', '15px');
+    await expect(prose).toHaveCSS('line-height', '24px');
+  }
   const assumed = first.getByRole('list', { name: 'Assumed, not read' });
   await expect(assumed.getByRole('listitem')).toHaveText(['Nothing else calls login yet.', 'Tests run without a network.']);
   await first.getByRole('button', { name: 'Assumed, not read' }).click();
@@ -74,6 +94,16 @@ test('shows one step at a time with its explanation and files, folded steps coll
 
   await page.goBack();
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
+});
+
+test("in Explanation beside code a file's explanation stays above its diff, beside the step's", async ({ page }) => {
+  await page.getByRole('banner').getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Explanation beside code' }).click();
+  const step = page.getByRole('region', { name: 'Login check' });
+  const code = step.locator('.code');
+  await expect(step.locator('.prose').getByText('The app needs a login entry point.')).toBeVisible();
+  const aboutFile = code.locator('.d2h-file-wrapper[data-file="login.test.ts"] .file-explanation');
+  await expect(aboutFile).toHaveText('Pins that anyone gets in.');
+  await expectAbove(aboutFile, code.locator('.d2h-file-wrapper[data-file="login.test.ts"] .d2h-file-diff'));
 });
 
 test('the rail is reached and used from the keyboard, and keeps its focus through a redraw', async ({ page, repo, browserName }) => {

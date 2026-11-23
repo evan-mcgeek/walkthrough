@@ -247,11 +247,12 @@
   letter-spacing: -0.01em;
 }
 
-.explanation {
+.explanation,
+.file-explanation {
   max-width: 68ch;
   margin: 0 0 var(--s2);
-  color: var(--ink-secondary);
-  font: var(--text-body);
+  color: var(--ink);
+  font: var(--text-prose);
   text-wrap: pretty;
 }
 

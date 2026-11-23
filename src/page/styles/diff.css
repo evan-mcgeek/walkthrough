@@ -75,6 +75,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Under the file's name, above its diff and preview; left edge with the name. */
+.diff .file-explanation {
+  margin: 0;
+  padding: var(--s3) 0 var(--s3) 2px;
+}
+
 .diff .d2h-file-header .segmented {
   margin-left: auto;
 }

@@ -7,7 +7,14 @@ import { stateDir } from './paths';
 
 export type FoldedFile = { path: string; reason: string };
 export type Step = { id: string; title: string; diff: string } & (
-  | { kind: 'step'; explanation: string; assumptions: string[]; files: string[] }
+  | {
+      kind: 'step';
+      explanation: string;
+      assumptions: string[];
+      files: string[];
+      /** The session's short explanation of a file, by its path, for the files it gave one. */
+      fileExplanations?: Record<string, string>;
+    }
   | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
 );
 /** The icon the page shows beside an item's status; the session chooses it, since a status is its own free text. */

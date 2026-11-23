@@ -136,6 +136,39 @@ describe('walkthrough steps', () => {
     expect(steps[1]).toMatchObject({ assumptions: [] });
   });
 
+  test('keeps a short explanation of a file under the step explanation, in the file order given; it may be left out', async () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    const recorded = repo.record([
+      {
+        title: 'All',
+        explanation: 'Adds login and bumps the app.',
+        files: [{ path: 'login.ts', explanation: 'Lets **everyone** in.' }, 'app.ts'],
+      },
+    ]);
+
+    expect(recorded.stderr).toBe('');
+    const [step] = (await shownAt(repo.url())).steps;
+    expect(step).toMatchObject({
+      explanation: 'Adds login and bumps the app.',
+      files: ['login.ts', 'app.ts'],
+      fileExplanations: { 'login.ts': 'Lets **everyone** in.' },
+    });
+    expect([...(step?.diff ?? '').matchAll(/^diff --git a\/.* b\/(.*)$/gm)].map(match => match[1])).toEqual(['login.ts', 'app.ts']);
+  });
+
+  test('refuses a file given without a path, or with an empty explanation', () => {
+    repo = makeRepo();
+    repo.run('start');
+
+    for (const file of [{ explanation: 'Login.' }, { path: 'login.ts', explanation: ' ' }, { path: 'login.ts' }, 3]) {
+      const refused = repo.record([{ title: 'All', explanation: 'All.', files: [file, 'app.ts'] }]);
+      expect(refused.status).toBe(1);
+      expect(refused.stderr).toContain('step 1: each file must be a path, or a path with its explanation');
+    }
+  });
+
   test('refuses assumptions that are not a list of text', () => {
     repo = makeRepo();
     repo.run('start');
@@ -235,6 +268,7 @@ describe('walkthrough guide', () => {
       'walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>]',
       'walkthrough steps',
       '{"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}',
+      '{"path": path, "explanation": string}',
       '{"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}',
       'walkthrough listen',
       '{"kind": "ask", "id": string, "step": string, "text": string}',
@@ -248,8 +282,9 @@ describe('walkthrough guide', () => {
 
   test('the steps it gives as an example are recorded as they are', () => {
     const example = /Example:\n(\[[\s\S]*?\n\])\n/.exec(makeRepo().run('guide').stdout)?.[1] ?? '';
-    const steps = JSON.parse(example) as { files: (string | { path: string })[]; assumptions?: string[] }[];
+    const steps = JSON.parse(example) as { files: (string | { path: string; explanation?: string })[]; assumptions?: string[] }[];
     expect(steps.some(step => step.assumptions?.length)).toBe(true);
+    expect(steps.some(step => step.files.some(file => typeof file !== 'string' && file.explanation))).toBe(true);
     const paths = steps.flatMap(step => step.files.map(file => (typeof file === 'string' ? file : file.path)));
     repo = makeRepo({ feature: Object.fromEntries(paths.map(file => [file, `${file}\n`])) });
     repo.run('start');
