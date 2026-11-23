@@ -2039,6 +2039,10 @@ function render(): void {
   // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
   const panes = [queue, main, prosePane, codePane, side, tools];
   const scrolled = panes.map(pane => pane.scrollTop);
+  // A kept diff leaves the page while its step is redrawn, which loses how far it was scrolled sideways.
+  const sideways = [...document.querySelectorAll<HTMLElement>('.d2h-file-diff, .preview, .preview pre')]
+    .filter(box => box.scrollLeft > 0)
+    .map(box => [box, box.scrollLeft] as const);
   const before = drawnState;
   const decided = new Set(Object.keys(walkthrough.decided).filter(key => walkthrough.decided[key]));
   const newly = before ? [...decided].filter(key => !before.decided.has(key)) : [];
@@ -2071,6 +2075,7 @@ function render(): void {
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });
+  for (const [box, left] of sideways) box.scrollLeft = left;
   for (const part of shown) part.dataset['motion'] = 'pane-enter';
   leaveRows(rows, newly);
   placeGhosts();

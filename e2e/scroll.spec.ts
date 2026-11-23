@@ -33,3 +33,16 @@ test('at phone width too, where a diff scrolls sideways inside its file', async 
   const diff = page.locator('.d2h-file-diff').first();
   expect(await diff.evaluate(one => one.scrollWidth > one.clientWidth)).toBe(true);
 });
+
+test('a diff scrolled sideways stays there when the page redraws', async ({ page, repo }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const diff = page.locator('.d2h-file-wrapper[data-file="long.ts"] .d2h-file-diff');
+  await diff.evaluate(one => {
+    one.scrollLeft = 100;
+  });
+
+  repo.run('say', 'Still here.');
+
+  await expect(page.getByRole('combobox', { name: 'Step' }).getByRole('option', { name: 'From the session' })).toHaveCount(1);
+  expect(await diff.evaluate(one => one.scrollLeft)).toBe(100);
+});
