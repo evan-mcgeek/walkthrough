@@ -1,0 +1,281 @@
+/* The Summary: the last entry of the queue, the verdict and the finishing action; the verdict's status in the header. */
+
+.queue-item[data-state='summary'] {
+  margin-top: auto;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+.queue-foot + .queue-item[data-state='summary'] {
+  margin-top: var(--s2);
+}
+
+.queue-item[data-state='summary'] > .icon {
+  color: var(--ink-secondary);
+}
+
+.queue-item[data-state='summary'][aria-current] {
+  border-top-color: transparent;
+  border-radius: var(--r-md);
+}
+
+.summary-line {
+  margin: 0 0 var(--s5);
+  color: var(--ink-secondary);
+  font-size: 14.5px;
+}
+
+.summary-section {
+  max-width: 860px;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.summary-section > .section-head {
+  margin-bottom: var(--s3);
+}
+
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.summary-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.summary-list a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.summary-list a:hover {
+  text-decoration: underline;
+}
+
+.summary-list .muted {
+  font-size: 13px;
+}
+
+.open-list li {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.open-list li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.open-list .icon {
+  flex: none;
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.open-list .reopened .icon {
+  color: var(--amber);
+}
+
+.summary-list .where {
+  color: var(--muted);
+  font: 400 12px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.summary-text > :first-child {
+  margin-top: 0;
+}
+
+.summary-text > :last-child {
+  margin-bottom: 0;
+}
+
+.draft-text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.draft-state {
+  flex: none;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+  font: 600 12px/1.5 var(--font-ui);
+}
+
+.summary-list .dropped,
+.summary-list .dropped s {
+  color: var(--muted);
+}
+
+.decided-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.decided-table th {
+  width: 90px;
+  padding: var(--s2) var(--s3) var(--s2) 0;
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+  vertical-align: top;
+}
+
+.decided-table td {
+  padding: var(--s2) 0;
+  color: var(--ink-secondary);
+  vertical-align: top;
+}
+
+.decided-table tr + tr > * {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.decided-table .count {
+  width: 40px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.summary-section > .checklist li {
+  padding: var(--s1) 0;
+}
+
+.summary-section > .checklist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.verdict-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--s3);
+  font-size: 14px;
+}
+
+.verdict-now > .icon {
+  color: var(--muted);
+}
+
+.verdict-now.reopened,
+.verdict-now.reopened > .icon {
+  color: var(--amber);
+}
+
+.verdict-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+
+/* A chosen verdict is an ink border on the surface tint, never the accent (The Grey Verdict Rule). */
+.verdict-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px var(--s3);
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font: 500 13px/1.4 var(--font-ui);
+  cursor: pointer;
+  transition:
+    background-color var(--fast) linear,
+    border-color var(--fast) linear;
+}
+
+.verdict-option:hover {
+  background: var(--surface-tint);
+}
+
+.verdict-option > .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+
+.verdict-option[aria-checked='true'] {
+  --icon-knockout: var(--surface-tint);
+  border-color: var(--ink-secondary);
+  background: var(--surface-tint);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.verdict-option[aria-checked='true'] > .icon {
+  color: var(--ink-secondary);
+}
+
+.summary-section .hint {
+  margin: 0;
+}
+
+.finish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  max-width: 860px;
+  padding-top: var(--s5);
+  border-top: 1px solid var(--rule);
+}
+
+.finish > .hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+}
+
+.finish > .choices {
+  margin: 0;
+}
+
+.verdict-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+  font: 500 12.5px/1.4 var(--font-ui);
+  white-space: nowrap;
+}
+
+.verdict-status > .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+
+.finish-review {
+  text-decoration: none;
+}
+
+/* At phone width the Summary is in the step select, and the header keeps to the session. */
+@media (max-width: 760px) {
+  .header-end > :is(.finish-review, .verdict-status) {
+    display: none;
+  }
+}

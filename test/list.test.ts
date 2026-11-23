@@ -83,6 +83,25 @@ describe('walkthrough list', () => {
     ]);
   });
 
+  test('gives the label of the verdict the person chose, and none before', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+    repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
+    await post(repo.url(), '/decide', { item: { type: 'verdict' }, action: 'fixes' });
+    repo.run('start', ...RANGE);
+    repo.run('stop', ...RANGE);
+    repo.run('stop');
+    repo.run('list');
+
+    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; verdict?: string }[] };
+
+    expect(walkthroughs.map(({ name, verdict }) => ({ name, verdict }))).toEqual([
+      { name: 'Login change', verdict: undefined },
+      { name: 'feature/login', verdict: 'Needs fixes' },
+    ]);
+  });
+
   test('opens a walkthrough by starting its page server, and nothing outside the list', async () => {
     await twoWalkthroughs();
     repo.run('list');

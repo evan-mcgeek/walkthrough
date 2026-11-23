@@ -743,55 +743,10 @@
   padding: 0 0 0 24px;
 }
 
-/* ---------- end of the walkthrough ---------- */
-
-.decisions {
-  width: 100%;
-  margin-top: 6px;
-  border-collapse: collapse;
-  font: var(--text-body-ui);
-}
-
-.decisions td {
-  padding: 9px 6px;
-  border-top: 1px solid var(--rule-soft);
-  vertical-align: top;
-}
-
-.decisions .number {
-  width: 24px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.decisions a {
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.decisions a:hover {
-  color: var(--violet-text);
-}
-
-.decisions .decision {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.decision-note {
-  display: block;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.end > .checklist,
+/* The walkthrough's own actions, at the foot of the export. */
 .whole {
-  margin-top: var(--s6);
   padding-top: var(--s4);
   border-top: 1px solid var(--rule);
-}
-
-.whole {
   display: flex;
   flex-direction: column;
   gap: var(--s3);

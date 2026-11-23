@@ -16,6 +16,9 @@ test('the list shows every walkthrough of the repo with its progress and opens o
     'aria-valuetext',
     '1 of 1 step decided, 0 left, 1 read',
   );
+  repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
+  await page.getByRole('radio', { name: 'Needs fixes' }).click();
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
   // Away from the page first, whose polls would fail once its server stops.
   await page.goto('about:blank');
   repo.run('stop');
@@ -30,13 +33,13 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(page.getByRole('banner').locator('.logo svg.icon-mark')).toBeVisible();
   const icon = await page.request.get(new URL((await page.locator('link[rel="icon"]').getAttribute('href')) ?? '', repo.url()).href);
   expect(icon.headers()['content-type']).toBe('image/svg+xml');
-  await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Last activity']);
+  await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Verdict', 'Last activity']);
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerequestedrange-Login%20change', 'Preparing', /now|ago/]);
+  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerequestedrange-Login%20change', 'Preparing', 'No verdict yet', /now|ago/]);
   await expect(rows.nth(1).locator('.kind')).toHaveAttribute('title', 'The kind of walkthrough');
   await expect(rows.nth(2).locator('.kind')).toHaveCount(0);
-  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', /now|ago/]);
+  await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', 'Needs fixes', /now|ago/]);
   // A decided segment is filled in violet, as the mark is.
   const violet = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);
   const decided = rows.nth(2).locator('.segment[data-state="decided"]');
@@ -47,7 +50,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await rows.nth(2).getByRole('button', { name: 'feature/login' }).click();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(page.getByRole('region', { name: 'All 1 step decided' }).getByRole('row')).toHaveText(['1LoginApprove']);
+  await expect(page.getByRole('region', { name: 'Decided' }).getByRole('row')).toHaveText(['Approve1 Login1']);
 });
 
 test('the Stop button ends the list', async ({ page, repo, url }) => {

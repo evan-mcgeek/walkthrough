@@ -44,6 +44,7 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
       entry.from === 'session' && entry.note ? [{ item: { type: 'note' as const, id: entry.id }, content: entry.text }] : [],
     ),
     ...(checklist?.items ?? []).map(one => ({ item: { type: 'checklist' as const, id: one.id }, content: one.text })),
+    { item: { type: 'verdict' }, content: `${base}..${head}` },
     { item: { type: 'walkthrough' }, content: `${base}..${head}` },
   ];
   return items.map(one => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
@@ -96,20 +97,26 @@ export function walkthroughView(dir: string): WalkthroughView | null {
   };
 }
 
-const ITEM_TYPES = new Set(['step', 'note', 'checklist', 'walkthrough']);
+const ITEM_TYPES = new Set(['step', 'note', 'checklist', 'verdict', 'walkthrough']);
 const nameOfItem = (item: Item) =>
-  item.type === 'walkthrough' ? 'the walkthrough' : `${item.type === 'checklist' ? 'checklist item' : item.type} ${item.id}`;
+  'id' in item ? `${item.type === 'checklist' ? 'checklist item' : item.type} ${item.id}` : `the ${item.type}`;
 
-export function parseActions(text: string, walkthrough: Walkthrough, conversation: Entry[]): { item: Item; actions: Action[] }[] {
+export function parseActions(
+  text: string,
+  walkthrough: Walkthrough,
+  conversation: Entry[],
+): { item: Item; actions: Action[]; hint?: string }[] {
   const known = new Map(itemsOf(walkthrough, conversation).map(one => [one.key, one.item]));
-  return parseList(text, 'the actions', ({ item, actions }, number) => {
+  return parseList(text, 'the actions', ({ item, actions, hint }, number) => {
     const fail = (problem: string) => new Error(`entry ${String(number)}: ${problem}`);
     const { type } = fieldsOf(item);
     if (typeof type !== 'string' || !ITEM_TYPES.has(type))
-      throw fail('the item must be a step, a note, a checklist item or the walkthrough');
+      throw fail('the item must be a step, a note, a checklist item, the verdict or the walkthrough');
     const found = known.get(keyOf(item));
     if (!found) throw fail(`the walkthrough has no ${nameOfItem(item as Item)}`);
     if (!Array.isArray(actions)) throw fail('actions must be a list');
+    if (hint !== undefined && !filled(hint)) throw fail('a hint needs words');
+    if (hint !== undefined && 'id' in found) throw fail('only the verdict and the walkthrough take a hint');
     const ids = new Set<string>();
     return {
       item: found,
@@ -126,8 +133,15 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
         ids.add(id);
         return { id, label, ...(note && { note: true as const }), ...(edit && { edit: true as const }) };
       }),
+      ...(hint !== undefined && { hint: hint.trim() }),
     };
   });
+}
+
+/** While the session offers a verdict and none is chosen, the walkthrough's first action, its finishing one, waits. */
+function waitsForVerdict(walkthrough: Walkthrough, conversation: Entry[], item: Item): boolean {
+  if (item.type !== 'walkthrough' || !actionsOf(walkthrough, { type: 'verdict' }).length) return false;
+  return !decisionsOf(walkthrough, conversation).find(one => one.item.type === 'verdict')?.decision;
 }
 
 type Decided = { walkthrough: WalkthroughView | null; session: SessionView };
@@ -151,6 +165,7 @@ export async function decide(
   }
   const offered = actionsOf(walkthrough, found.item).find(one => one.id === action);
   if (!offered) return null;
+  if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
   if (offered.note ? !filled(note) : note !== undefined) return null;
   if (offered.edit ? !filled(text) : text !== undefined) return null;
   const session = await request(dir, {

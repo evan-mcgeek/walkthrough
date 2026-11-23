@@ -71,7 +71,7 @@ type View =
   | { kind: 'step'; step: Step }
   | { kind: 'session' }
   | { kind: 'checklist'; item?: string }
-  | { kind: 'end' }
+  | { kind: 'summary' }
   | { kind: 'deck' }
   | { kind: 'preparing' };
 
@@ -84,11 +84,11 @@ function currentView(): View {
   if (named === 'checklist' && walkthrough.checklist) return { kind: 'checklist' };
   const item = CHECKLIST_ITEM.exec(named)?.[1];
   if (item !== undefined && walkthrough.checklist) return { kind: 'checklist', item };
-  if (named === 'end' && steps.length) return { kind: 'end' };
+  if (named === 'summary' && steps.length) return { kind: 'summary' };
   if (named === 'deck' && !readOnly) return { kind: 'deck' };
   const step = steps.find(one => one.id === named) ?? steps.find(one => !stepDecided(one));
   if (step) return { kind: 'step', step };
-  return steps.length ? { kind: 'end' } : { kind: 'preparing' };
+  return steps.length ? { kind: 'summary' } : { kind: 'preparing' };
 }
 
 const currentStep = () => {
@@ -127,7 +127,7 @@ async function decide(item: Item, action: string, fields: { note?: string; text?
     const { steps } = walkthrough;
     const at = steps.findIndex(one => one.id === item.id);
     const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find(one => !stepDecided(one));
-    go(next ? next.id : 'end');
+    go(next ? next.id : 'summary');
   }
   render();
   offerUndo(item, action, moving);
@@ -180,8 +180,9 @@ function itemName(item: Item): string {
       const noted = session.conversation.find(entry => entry.id === item.id);
       return noted && isNote(noted) ? `the ${noted.note.label} note` : 'the note';
     }
+    case 'verdict':
     case 'walkthrough':
-      return 'the walkthrough';
+      return `the ${item.type}`;
   }
 }
 
@@ -462,12 +463,18 @@ function around(parent: HTMLElement, kept: HTMLElement, before: Node[], after: N
   kept.after(...after);
 }
 
+/** The header's way to the Summary, where the verdict is chosen. */
+const finishReview = () =>
+  walkthrough.steps.length
+    ? [keyed(el('a', { href: '#summary', className: 'btn small ghost finish-review', title: 'Finish review: go to the Summary (G S)' }, 'Finish review'), 'finish-review')]
+    : [];
+
 function drawHeader(): void {
   const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   around(
     headerEnd,
     statusView(),
-    [layoutSwitch()],
+    [layoutSwitch(), ...verdictStatus(), ...finishReview()],
     [...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop')]), moreMenu()],
   );
   around(
@@ -1687,8 +1694,8 @@ function viewAddress(view: View): [string, string] | null {
       const item = walkthrough.checklist?.items.find(one => one.id === view.item);
       return item ? [`checklist-${item.id}`, plain(item.text)] : ['checklist', walkthrough.checklist?.title ?? ''];
     }
-    case 'end':
-      return ['end', 'End of the walkthrough'];
+    case 'summary':
+      return ['summary', 'Summary'];
     case 'deck':
       return ['deck', 'Swipe to decide'];
     case 'preparing':
@@ -1696,12 +1703,12 @@ function viewAddress(view: View): [string, string] | null {
   }
 }
 
-/** The rail at phone width: a select of the rows left, then the decided steps and the end. */
+/** The rail at phone width: a select of the rows left, then the decided steps and the Summary. */
 function queueSelect(view: View, left: [string, string][], decided: Step[]): HTMLElement {
   const shown = viewAddress(view);
   const option = ([address, title]: [string, string]) =>
     el('option', { value: address, selected: address === shown?.[0] }, address === shown?.[0] ? `Left ${String(left.length)} · ${title}` : title);
-  const known = [...left, ...decided.map(step => [step.id, step.title]), ['end', '']].some(([address]) => address === shown?.[0]);
+  const known = [...left, ...decided.map(step => [step.id, step.title]), ['summary', '']].some(([address]) => address === shown?.[0]);
   const select = el(
     'select',
     { onchange: () => { go(select.value); } },
@@ -1709,7 +1716,7 @@ function queueSelect(view: View, left: [string, string][], decided: Step[]): HTM
     ...(walkthrough.steps.length || left.length ? [] : [el('option', { disabled: true, selected: true }, 'No steps yet')]),
     ...left.map(option),
     ...(decided.length ? [el('optgroup', { label: `${String(decided.length)} decided` }, ...decided.map(step => option([step.id, step.title])))] : []),
-    ...(walkthrough.steps.length ? [option(['end', 'End of the walkthrough'])] : []),
+    ...(walkthrough.steps.length ? [option(['summary', 'Summary'])] : []),
   );
   select.setAttribute('aria-label', 'Step');
   select.dataset['key'] = 'queue-select';
@@ -1759,7 +1766,8 @@ function queueView(view: View): HTMLElement[] {
         ),
       ]
     : [];
-  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot];
+  const summary = steps.length ? [queueRow('summary', 'summary', 'summary', 'Summary', null, view.kind === 'summary' && 'page')] : [];
+  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot, ...summary];
 }
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
@@ -1769,13 +1777,8 @@ const metCount = (items: ChecklistItem[]) =>
   items.some(item => item.mark !== undefined) ? `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}` : null;
 
 /** `compact` beside a step: marks, text and links only, with the title opening the checklist's own page for statuses and actions. */
-function checklistView({ title, items }: Checklist, view: View, compact = false): HTMLElement {
-  const heading = el(
-    'h2',
-    { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' },
-    compact ? el('a', { href: '#checklist' }, title) : title,
-  );
-  const rows = items.map(item => {
+function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HTMLElement[] {
+  return items.map(item => {
     const links: HTMLElement[] = item.steps.flatMap(id => {
       const at = stepNumber(id);
       const step = walkthrough.steps[at - 1];
@@ -1801,6 +1804,15 @@ function checklistView({ title, items }: Checklist, view: View, compact = false)
     row.id = `checklist-item-${item.id}`;
     return row;
   });
+}
+
+function checklistView({ title, items }: Checklist, view: View, compact = false): HTMLElement {
+  const heading = el(
+    'h2',
+    { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' },
+    compact ? el('a', { href: '#checklist' }, title) : title,
+  );
+  const rows = checklistRows(items, view, compact);
   const head = view.kind === 'checklist' ? el('div', { className: 'title-row' }, heading) : heading;
   const met = metCount(items);
   if (met !== null) head.append(el('span', { className: 'counter' }, met));
@@ -1827,33 +1839,247 @@ function wholeView(): HTMLElement[] {
   return [section];
 }
 
-function endView(): HTMLElement {
-  const { steps } = walkthrough;
-  const decided = steps.filter(stepDecided).length;
-  const title = el(
-    'h2',
-    { className: 'step-title', id: 'end' },
-    decided === steps.length ? `All ${plural(steps.length, 'step')} decided` : `${String(decided)} of ${plural(steps.length, 'step')} decided`,
+const VERDICT: Item = { type: 'verdict' };
+const WHOLE: Item = { type: 'walkthrough' };
+
+/** The label of the verdict the person chose, while it holds. */
+function verdictLabel(): string | null {
+  const chosen = decisionOf(VERDICT);
+  return chosen ? labelOf(VERDICT, chosen.action) : null;
+}
+
+/** The chosen verdict as a status, never a control; neutral whatever it says. */
+const verdictStatus = (): HTMLElement[] => {
+  const label = verdictLabel();
+  return label === null ? [] : [el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label)];
+};
+
+/** While the session offers a verdict and none is chosen, the walkthrough's first action, its finishing one, waits. */
+const finishWaits = () => (walkthrough.actions[itemKey(VERDICT)] ?? []).length > 0 && !decisionOf(VERDICT);
+
+const linesShort = ([first, last]: Lines) => (first === last ? String(first) : `${String(first)}–${String(last)}`);
+const stepName = (step: Step) => `${String(stepNumber(step.id))} ${step.title}`;
+
+function summarySection(name: string, count: string | null, ...body: HTMLElement[]): HTMLElement {
+  const id = `summary-${name.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+  const heading = el('h2', { className: 'section-head', id }, name, ...(count === null ? [] : [el('span', { className: 'counter' }, count)]));
+  const section = el('section', { className: 'summary-section' }, heading, ...body);
+  section.setAttribute('aria-labelledby', id);
+  return section;
+}
+
+/** Every item offering actions the person has not taken, or that changed since they took one. */
+function stillOpen(): { item: Item; address: string; title: string }[] {
+  const steps = walkthrough.steps.map(step => ({ item: { type: 'step' as const, id: step.id }, address: step.id, title: stepName(step) }));
+  const notes = session.conversation.filter(isNote).map(note => ({
+    item: { type: 'note' as const, id: note.id },
+    address: anchorOf(note) ?? 'session',
+    title: `${note.note.label}: ${plain(note.text)}`,
+  }));
+  const items = (walkthrough.checklist?.items ?? []).map(one => ({
+    item: { type: 'checklist' as const, id: one.id },
+    address: `checklist-${one.id}`,
+    title: plain(one.text),
+  }));
+  return [...steps, ...notes, ...items].filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0);
+}
+
+function openView(): HTMLElement {
+  const rows = stillOpen().map(({ item, address, title }) => {
+    const reopened = walkthrough.reopened[itemKey(item)];
+    const state = reopened ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : 'Undecided';
+    const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `summary-open:${itemKey(item)}`);
+    return el('li', { className: reopened ? 'reopened' : '' }, icon(reopened ? 'reopened' : 'unread'), el('span', {}, link, el('span', { className: 'muted' }, state)));
+  });
+  const body = rows.length ? el('ul', { className: 'summary-list open-list' }, ...rows) : el('p', { className: 'muted' }, 'Nothing; everything is decided.');
+  return summarySection('Still open', null, body);
+}
+
+function verdictView(): HTMLElement {
+  const actions = walkthrough.actions[itemKey(VERDICT)] ?? [];
+  const chosen = decisionOf(VERDICT);
+  const reopened = walkthrough.reopened[itemKey(VERDICT)];
+  const options = actions.map((action, at) => {
+    const checked = chosen?.action === action.id;
+    const option = keyed(
+      el(
+        'button',
+        { type: 'button', className: 'verdict-option', tabIndex: checked || (!chosen && at === 0) ? 0 : -1 },
+        icon(checked ? 'decided' : 'unread'),
+        action.label,
+      ),
+      `verdict:${action.id}`,
+    );
+    option.setAttribute('role', 'radio');
+    option.setAttribute('aria-checked', String(checked));
+    option.onclick = () => {
+      take(VERDICT, action);
+    };
+    return option;
+  });
+  const change = el('button', { type: 'button', className: 'link' }, 'Change');
+  change.dataset['key'] = 'verdict-change';
+  change.onclick = () => {
+    (options.find(option => option.getAttribute('aria-checked') === 'true') ?? options[0])?.focus();
+  };
+  const now = chosen
+    ? el('p', { className: 'verdict-now' }, icon('finish'), 'Your verdict: ', el('strong', {}, labelOf(VERDICT, chosen.action)), ...(readOnly ? [] : [' ', change]))
+    : reopened
+      ? el('p', { className: 'verdict-now reopened' }, icon('reopened'), `Reopened: changed since you chose ${labelOf(VERDICT, reopened.action)}`)
+      : el('p', { className: 'verdict-now muted' }, actions.length && !readOnly ? 'No verdict yet. Check what is still open, then choose.' : 'No verdict yet.');
+  const group = el('div', { className: 'verdict-options' }, ...options);
+  group.setAttribute('role', 'radiogroup');
+  group.setAttribute('aria-label', 'Verdict');
+  // Arrows only move between the choices; Enter or Space chooses, since a choice goes to the session.
+  group.onkeydown = event => {
+    const by = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[event.key];
+    const at = options.indexOf(event.target as HTMLButtonElement);
+    if (by === undefined || at < 0) return;
+    event.preventDefault();
+    options[(at + by + options.length) % options.length]?.focus();
+  };
+  const taken = taking?.key === itemKey(VERDICT) ? actions.find(action => action.id === taking?.action) : undefined;
+  const hint = walkthrough.hints?.[itemKey(VERDICT)];
+  return summarySection(
+    'Verdict',
+    null,
+    now,
+    ...(options.length && !readOnly ? [group] : []),
+    ...(taken ? [takingForm(VERDICT, taken, '')] : []),
+    ...(chosen ? decisionSaid(chosen) : []),
+    ...(hint ? [el('p', { className: 'hint' }, hint)] : []),
   );
-  const rows = steps.map((step, at) => {
+}
+
+function decidedView(): HTMLElement[] {
+  const byLabel = new Map<string, Step[]>();
+  for (const step of walkthrough.steps) {
     const item: Item = { type: 'step', id: step.id };
     const decision = decisionOf(item);
+    if (!decision) continue;
+    const label = labelOf(item, decision.action);
+    byLabel.set(label, [...(byLabel.get(label) ?? []), step]);
+  }
+  if (!byLabel.size) return [];
+  const rows = [...byLabel].map(([label, steps]) =>
+    el('tr', {}, el('th', { scope: 'row' }, label), el('td', {}, steps.map(stepName).join(', ')), el('td', { className: 'count' }, String(steps.length))),
+  );
+  return [summarySection('Decided', null, el('table', { className: 'decided-table' }, el('tbody', {}, ...rows)))];
+}
+
+/** Decided steps whose decision carries the person's note. */
+const flaggedSteps = () =>
+  walkthrough.steps.flatMap(step => {
+    const note = decisionOf({ type: 'step', id: step.id })?.note;
+    return note ? [{ step, note }] : [];
+  });
+
+function flaggedView(): HTMLElement[] {
+  const rows = flaggedSteps().map(({ step, note }) =>
+    el('li', {}, el('a', { href: `#${encodeURIComponent(step.id)}` }, stepName(step)), el('span', { className: 'muted' }, note)),
+  );
+  return rows.length ? [summarySection('Flagged', null, el('ul', { className: 'summary-list' }, ...rows))] : [];
+}
+
+function yourCommentsView(): HTMLElement[] {
+  const comments = commentsOf(session.conversation);
+  const rows = comments.map(comment =>
+    el('li', {}, el('span', { className: 'where' }, `${comment.file} · ${linesShort(comment.lines)}`), markdown(comment.text, 'summary-text')),
+  );
+  return rows.length ? [summarySection('Your comments', String(rows.length), el('ul', { className: 'summary-list' }, ...rows))] : [];
+}
+
+const DRAFT_STATES = ['Accepted', 'Edited', 'Dropped', 'Undecided'] as const;
+
+/** A note the person can edit before taking it is a draft: taking that edit sends it, any other action drops it. */
+function draftsView(): HTMLElement[] {
+  const drafts = session.conversation.filter(isNote).flatMap(note => {
+    const actions = walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? [];
+    if (!actions.some(action => action.edit)) return [];
+    const decision = decisionOf({ type: 'note', id: note.id });
+    const sent = decision && actions.find(action => action.id === decision.action)?.edit;
+    const edited = sent && decision.text !== undefined && decision.text !== note.text ? decision.text : undefined;
+    const state: (typeof DRAFT_STATES)[number] = !decision ? 'Undecided' : !sent ? 'Dropped' : edited === undefined ? 'Accepted' : 'Edited';
+    return [{ note, state, text: edited ?? note.text }];
+  });
+  if (!drafts.length) return [];
+  const counts = DRAFT_STATES.flatMap(state => {
+    const count = drafts.filter(one => one.state === state).length;
+    return count ? [`${String(count)} ${state.toLowerCase()}`] : [];
+  });
+  const rows = drafts.map(({ note, state, text }) => {
+    const { file, lines } = note.note;
+    const step = walkthrough.steps.find(one => one.id === anchorOf(note));
+    const where = file !== undefined && lines ? `${file} · ${linesShort(lines)}` : step ? `Step ${String(stepNumber(step.id))}` : 'Detached';
+    const said = markdown(text, 'summary-text');
+    if (state === 'Dropped') said.replaceChildren(el('s', {}, ...said.childNodes));
     return el(
-      'tr',
-      {},
-      el('td', { className: 'number' }, String(at + 1)),
-      el('td', {}, keyed(el('a', { href: `#${encodeURIComponent(step.id)}` }, step.title), `end-link:${step.id}`), ...(decision?.note ? [el('span', { className: 'decision-note' }, decision.note)] : [])),
-      el('td', { className: 'decision' }, decision ? el('span', { className: 'tag decided' }, labelOf(item, decision.action)) : stateTag(item, false)),
+      'li',
+      { className: state === 'Dropped' ? 'dropped' : '' },
+      el('span', { className: 'where' }, where),
+      el('span', { className: 'draft-text' }, el('span', { className: 'draft-state' }, state), said),
     );
   });
+  return [summarySection('[AI] drafts', counts.join(' · '), el('ul', { className: 'summary-list' }, ...rows))];
+}
+
+function checklistSummary(): HTMLElement[] {
+  const { checklist } = walkthrough;
+  if (!checklist) return [];
+  const rows = checklistRows(checklist.items, { kind: 'summary' }, true);
+  return [summarySection('Checklist', metCount(checklist.items), el('ul', { className: 'checklist compact' }, ...rows))];
+}
+
+/** The walkthrough's own actions close the page: the first, its finishing action, leads and waits for a verdict. */
+function finishView(): HTMLElement[] {
+  const actions = walkthrough.actions[itemKey(WHOLE)] ?? [];
+  if (!actions.length || readOnly) return [];
+  const shown = decisionOf(WHOLE) ?? walkthrough.reopened[itemKey(WHOLE)];
+  const taken = taking?.key === itemKey(WHOLE) ? actions.find(action => action.id === taking?.action) : undefined;
+  const waits = finishWaits();
+  const group = actionGroup(WHOLE, firstLeads);
+  const first = group.querySelector('button');
+  if (first) first.disabled = waits;
+  const hint = [walkthrough.hints?.[itemKey(WHOLE)], ...(waits ? ['Choose a verdict first.'] : [])].filter(Boolean).join(' ');
+  return [
+    el(
+      'div',
+      { className: 'finish' },
+      ...(shown ? [stateTag(WHOLE, true)] : []),
+      taken ? takingForm(WHOLE, taken, '') : group,
+      ...(hint ? [el('p', { className: 'hint' }, hint)] : []),
+      ...(shown ? decisionSaid(shown) : []),
+    ),
+  ];
+}
+
+/** The last entry of the queue: what is decided and what is still open, the verdict, and the finishing action. */
+function summaryView(): HTMLElement {
+  const { steps } = walkthrough;
+  const open = stillOpen().length;
+  const title = el('h2', { className: 'step-title', id: 'summary' }, 'Summary');
+  const comments = commentsOf(session.conversation).length;
+  const flagged = flaggedSteps().length;
+  const items = walkthrough.checklist?.items ?? [];
+  const counts = [
+    `${String(steps.filter(stepDecided).length)} of ${plural(steps.length, 'step')} decided`,
+    ...(flagged ? [`${String(flagged)} flagged`] : []),
+    ...(comments ? [`${String(comments)} of your comments`] : []),
+    ...(items.some(item => item.mark !== undefined) ? [`checklist ${String(items.filter(item => item.mark === 'met').length)} of ${String(items.length)} met`] : []),
+  ];
   const section = el(
     'section',
-    { className: 'end' },
-    el('div', { className: 'title-row' }, title),
-    el('p', { className: 'explanation' }, 'Decisions stay changeable until you finish.'),
-    el('table', { className: 'decisions' }, el('tbody', {}, ...rows)),
-    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'end' })] : []),
-    ...wholeView(),
+    { className: 'summary' },
+    el('div', { className: 'title-row' }, title, el('span', { className: 'tag' }, open ? `${String(open)} still open` : 'Nothing still open')),
+    el('p', { className: 'summary-line' }, counts.join(' · ')),
+    openView(),
+    verdictView(),
+    ...decidedView(),
+    ...flaggedView(),
+    ...yourCommentsView(),
+    ...checklistSummary(),
+    ...draftsView(),
+    ...finishView(),
   );
   section.setAttribute('aria-labelledby', title.id);
   return section;
@@ -2087,7 +2313,7 @@ function deckView(): HTMLElement {
   section.setAttribute('aria-label', 'Swipe to decide');
   const top = deckTop();
   if (!top) {
-    section.append(el('p', { className: 'deck-empty' }, 'Everything is decided.'), el('a', { href: '#end' }, 'See the end of the walkthrough'));
+    section.append(el('p', { className: 'deck-empty' }, 'Everything is decided.'), el('a', { href: '#summary' }, 'See the summary'));
     return section;
   }
   const next = walkthrough.steps.find(step => step !== top && !stepDecided(step));
@@ -2212,9 +2438,9 @@ function viewBody(view: View, notices: HTMLElement[]): HTMLElement {
     case 'session':
       return sessionView();
     case 'checklist':
-      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : endView();
-    case 'end':
-      return endView();
+      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : summaryView();
+    case 'summary':
+      return summaryView();
     case 'deck':
       return deckView();
     case 'preparing':
@@ -2225,19 +2451,19 @@ function viewBody(view: View, notices: HTMLElement[]): HTMLElement {
 /** The checklist sits beside the step in every layout but the default, unless the main pane shows it already. */
 function besideChecklist(view: View): HTMLElement[] {
   const { checklist } = walkthrough;
-  if (layout === 'queue' || !checklist || view.kind === 'checklist' || view.kind === 'end') return [];
+  if (layout === 'queue' || !checklist || view.kind === 'checklist' || view.kind === 'summary') return [];
   return [checklistView(checklist, view, true)];
 }
 
-/** Where Previous and Next lead: the steps in order, then the end; from a page of its own, back to the steps. */
+/** Where Previous and Next lead: the steps in order, then the Summary; from a page of its own, back to the steps. */
 function neighbours(view: View): [string | null, string | null] {
   const { steps } = walkthrough;
   if (view.kind === 'step') {
     const at = steps.indexOf(view.step);
-    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? 'end'];
+    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? 'summary'];
   }
-  if (view.kind === 'end') return [steps.at(-1)?.id ?? null, null];
-  return [null, steps.find(step => !stepDecided(step))?.id ?? (steps.length ? 'end' : null)];
+  if (view.kind === 'summary') return [steps.at(-1)?.id ?? null, null];
+  return [null, steps.find(step => !stepDecided(step))?.id ?? (steps.length ? 'summary' : null)];
 }
 
 /** "Explanation beside code" has no rail, so the prose pane walks the steps with Previous and Next. */
@@ -2414,11 +2640,12 @@ function exportView(at: string): HTMLElement[] {
       el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
       el('h1', {}, nameOf(walkthrough)),
       el('p', { className: 'muted' }, `Walkthrough export · ${when} · ${plural(steps.length, 'step')}, ${String(decided)} decided`),
+      ...(verdictLabel() === null ? [el('p', { className: 'muted' }, 'No verdict yet')] : verdictStatus()),
     ),
     ...unplacedNotice(),
     ...detachedView(),
     ...steps.map((step, index) => exportStep(step, index + 1)),
-    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'end' })] : []),
+    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'summary' })] : []),
     ...(sessionMessages().length ? [sessionView(false)] : []),
     ...wholeView(),
   ];
@@ -2627,13 +2854,17 @@ function viewedByKey(step: Step, target: EventTarget | null): void {
   if (file) void markViewed(step, file.dataset['file'] ?? '');
 }
 
-/** j and k walk the steps, and past the last one to the end of the walkthrough. */
+/** j and k walk the steps, and past the last one to the Summary. */
 function stepBy(delta: number): void {
   const view = currentView();
-  if (view.kind !== 'step' && view.kind !== 'end') return;
+  if (view.kind !== 'step' && view.kind !== 'summary') return;
   const to = neighbours(view)[delta > 0 ? 1 : 0];
   if (to) go(to);
 }
+
+/** When G was pressed, for the G S chord. */
+let pressedG = 0;
+const CHORD_MS = 1000;
 
 document.addEventListener('keydown', event => {
   if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -2651,6 +2882,9 @@ document.addEventListener('keydown', event => {
   }
   // Inside what scrolls sideways the arrows scroll it, so long lines stay reachable from the keyboard.
   const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu') !== null;
+  // G then S goes to the Summary.
+  if (event.key === 's' && pressedG > Date.now() - CHORD_MS && walkthrough.steps.length) go('summary');
+  pressedG = event.key === 'g' ? Date.now() : 0;
   if (event.key === 'j' || (event.key === 'ArrowRight' && !sideways)) stepBy(1);
   else if (event.key === 'k' || (event.key === 'ArrowLeft' && !sideways)) stepBy(-1);
 });

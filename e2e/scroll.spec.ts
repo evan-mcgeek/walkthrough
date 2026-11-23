@@ -58,6 +58,6 @@ test('the right arrow in a diff scrolls its long lines instead of moving to the 
   await page.keyboard.press('ArrowRight', { delay: 100 });
 
   await expect(page.getByRole('region', { name: 'Long' })).toBeVisible();
-  expect(new URL(page.url()).hash).not.toBe('#end');
+  expect(new URL(page.url()).hash).not.toBe('#summary');
   await expect.poll(() => diff.evaluate(one => one.scrollLeft)).toBeGreaterThan(0);
 });

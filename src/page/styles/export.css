@@ -94,10 +94,6 @@
   border-top: 1px solid var(--rule);
 }
 
-.export > .whole {
-  margin-top: 0;
-}
-
 .assumed-head {
   margin: 0;
   color: var(--muted);

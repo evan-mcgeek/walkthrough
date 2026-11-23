@@ -99,7 +99,7 @@ for (const layout of LAYOUTS)
     await second.getByRole('textbox', { name: 'Note' }).fill('Too early.');
     await second.getByRole('button', { name: 'Send' }).click();
 
-    await expect(page.getByRole('region', { name: 'All 2 steps decided' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
     await page.keyboard.press('k');
     await expect(second.getByText('Decided: Flag', { exact: true })).toBeVisible();
     await expect(second.getByText('Too early.', { exact: true })).toBeVisible();
@@ -181,7 +181,7 @@ test('Explanation beside code has no rail: Previous and Next walk the steps, and
   await walk('Next step').click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await walk('Next step').click();
-  await expect(page.getByRole('region', { name: '0 of 2 steps decided' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
   await expect(walk('Next step')).toBeDisabled();
   await walk('Previous step').click();
 

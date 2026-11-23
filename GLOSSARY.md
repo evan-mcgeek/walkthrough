@@ -55,12 +55,21 @@ A list the agent shows beside the steps, each item with a status and links to st
 _Avoid_: AC map, outstanding list
 
 **Action**:
-A choice the agent offers on a step, a note, a checklist item or the whole walkthrough, which the person can take with an optional note.
+A choice the agent offers on a step, a note, a checklist item, the verdict or the whole walkthrough, which the person can take with an optional note.
+The whole walkthrough's first action is its finishing action, such as handing over the fix list or posting the review.
 _Avoid_: Button, command
 
 **Decision**:
 The action a person took on an item, with their note, sent to the session and kept with the walkthrough.
 Taking it back with Undo is sent the same way and leaves the item undecided.
+
+**Summary**:
+The last entry of the queue: what the person decided and what is still open, their comments and the drafts, the verdict and the finishing action.
+
+**Verdict**:
+The person's decision on the whole walkthrough, one of the choices the session offers for it, such as Approve or Needs fixes; chosen only on the Summary, and shown as a neutral status once chosen.
+The finishing action waits for it.
+_Avoid_: Final decision, review state
 
 ### Whose rules
 

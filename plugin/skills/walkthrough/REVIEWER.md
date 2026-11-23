@@ -80,9 +80,10 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Fix list
 
-- Offer "Hand over fixes" on the whole walkthrough.
+- Offer my verdict on the verdict, "Ready for colleagues" or "Needs fixes", with the hint "Shown to colleagues with the fix list."
+- Offer "Hand over fixes" first on the whole walkthrough, with a hint saying it gives me the fix list in the chat.
 - Flagged steps, accepted findings and my own line comments go on a fix list: for each, the step, the file and lines, my note, the finding or my comment.
-- When I take Hand over fixes, give me the fix list in the chat as one message, ready to paste into an author session.
+- When I take Hand over fixes, give me the fix list in the chat as one message, ready to paste into an author session, headed by my verdict.
 - The author session makes the fixes; the walkthrough session's work ends at the fix list.
 
 ### Rejected findings become conventions
@@ -110,8 +111,9 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Turn each flagged step and accepted finding into a draft comment on its lines.
 - My own line comments go into the review as line comments, as I wrote them.
-- Offer "Send my review" on the whole walkthrough.
-- When I take Send my review, put the posted drafts and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself.
+- Offer my verdict on the verdict, "Approve", "Request changes" or "Comment", with the hint "Sent with the review."
+- Offer "Send my review" first on the whole walkthrough, with a hint saying it goes into a pending review I submit myself.
+- When I take Send my review, put the posted drafts and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
 - The author's branch and the change's description stay as they are.
 
 ### Rejected findings

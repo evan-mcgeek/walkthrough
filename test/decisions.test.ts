@@ -155,7 +155,7 @@ describe('walkthrough actions', () => {
     for (const [input, problem] of [
       [{ item: { type: 'step', id: '9' }, actions: [] }, 'entry 2: the walkthrough has no step 9'],
       [{ item: { type: 'note', id: 'nope' }, actions: [] }, 'entry 2: the walkthrough has no note nope'],
-      [{ item: { type: 'file' }, actions: [] }, 'entry 2: the item must be a step, a note, a checklist item or the walkthrough'],
+      [{ item: { type: 'file' }, actions: [] }, 'entry 2: the item must be a step, a note, a checklist item, the verdict or the walkthrough'],
       [{ item: step1, actions: {} }, 'entry 2: actions must be a list'],
       [action({ id: ' ' }), 'entry 2: action 1 needs an id'],
       [action({ label: '' }), 'entry 2: action 1 needs a label'],
@@ -193,6 +193,72 @@ describe('walkthrough actions', () => {
   });
 });
 
+const verdict = { type: 'verdict' };
+const whole = { type: 'walkthrough' };
+const VERDICTS = { item: verdict, hint: 'Sent with the review.', actions: [{ id: 'approve', label: 'Approve' }, { id: 'changes', label: 'Request changes' }] };
+const FINISHING = { item: whole, hint: 'Posts your review.', actions: [{ id: 'post', label: 'Post my review' }, { id: 'recheck', label: 'Re-check' }] };
+
+describe('the verdict', () => {
+  test('the session offers the verdict as actions on the verdict item, with its own words for where it goes', async () => {
+    started();
+
+    expect(repo.record([VERDICTS, FINISHING], 'actions').stderr).toBe('');
+
+    const view = await shownAt(repo.url());
+    expect(view.actions['verdict']).toEqual(VERDICTS.actions);
+    expect(view.hints).toEqual({ verdict: 'Sent with the review.', walkthrough: 'Posts your review.' });
+    expect(view.decided['verdict']).toBeNull();
+  });
+
+  test('the chosen verdict reaches listen as a decision on the verdict, and walkthrough decisions lists it', async () => {
+    started();
+    repo.record([VERDICTS], 'actions');
+    const listener = repo.background('listen');
+
+    expect((await decide({ item: verdict, action: 'changes' })).status).toBe(200);
+
+    expect(handed((await listener.ended).stdout)).toMatchObject([{ kind: 'decision', item: verdict, action: 'changes' }]);
+    expect(decisionsNow().find(line => JSON.stringify(line.item) === JSON.stringify(verdict))?.decision).toMatchObject({ action: 'changes' });
+  });
+
+  test('the finishing action, the first on the walkthrough, waits for a verdict; the others and a walkthrough with no verdict offered do not', async () => {
+    started();
+    repo.record([FINISHING], 'actions');
+    expect((await decide({ item: whole, action: 'post' })).status).toBe(200);
+    repo.record([VERDICTS], 'actions');
+
+    expect((await decide({ item: whole, action: 'post' })).status).toBe(400);
+    expect((await decide({ item: whole, action: 'recheck' })).status).toBe(200);
+    await decide({ item: verdict, action: 'approve' });
+    expect((await decide({ item: whole, action: 'post' })).status).toBe(200);
+  });
+
+  test('a hint is only for the verdict and the walkthrough, and recording an item again without one drops it', async () => {
+    started();
+    repo.record([VERDICTS], 'actions');
+
+    const refused = repo.record([{ ...VERDICTS, item: step1 }], 'actions');
+    repo.record([{ ...VERDICTS, hint: undefined }], 'actions');
+
+    expect(refused.stderr).toContain('entry 1: only the verdict and the walkthrough take a hint');
+    expect((await shownAt(repo.url())).hints).toEqual({});
+  });
+
+  test('a verdict on a head that moved since is reopened', async () => {
+    started();
+    repo.record([VERDICTS], 'actions');
+    await decide({ item: verdict, action: 'approve' });
+
+    fs.writeFileSync(path.join(repo.dir, 'login.ts'), 'export const login = () => false;\n');
+    git(repo.dir, 'commit', '-am', 'More');
+    repo.run('start');
+
+    const view = await shownAt(repo.url());
+    expect(view.decided['verdict']).toBeNull();
+    expect(view.reopened['verdict']).toMatchObject({ action: 'approve' });
+  });
+});
+
 const decisionsNow = () =>
   repo
     .run('decisions')
@@ -206,11 +272,12 @@ describe('decisions', () => {
 
     const { decided } = await shownAt(repo.url());
 
-    expect(decided).toEqual({ 'step:1': null, [`note:${noteId}`]: null, 'checklist:1': null, walkthrough: null });
+    expect(decided).toEqual({ 'step:1': null, [`note:${noteId}`]: null, 'checklist:1': null, verdict: null, walkthrough: null });
     expect(decisionsNow()).toEqual([
       { item: step1, decision: null },
       { item: { type: 'note', id: noteId }, decision: null },
       { item: { type: 'checklist', id: '1' }, decision: null },
+      { item: { type: 'verdict' }, decision: null },
       { item: { type: 'walkthrough' }, decision: null },
     ]);
     repo.run('stop');

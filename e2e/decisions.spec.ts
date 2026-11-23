@@ -194,8 +194,8 @@ test('the session actions show on notes, checklist items and the whole walkthrou
 
   await rail.getByRole('link', { name: 'App version' }).click();
   await page.keyboard.press('j');
-  const whole = page.getByRole('region', { name: 'Whole walkthrough' });
-  await expect(whole.getByText('Undecided', { exact: true })).toHaveCount(0);
+  const whole = page.getByRole('region', { name: 'Summary' });
+  await expect(whole.locator('.finish').getByText('Undecided', { exact: true })).toHaveCount(0);
   await whole.getByRole('button', { name: 'Post my comments' }).click();
   await expect(whole.getByText('Decided: Post my comments', { exact: true })).toBeVisible();
 });

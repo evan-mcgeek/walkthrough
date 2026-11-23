@@ -67,6 +67,13 @@ function row(one: Listed): HTMLTableRowElement {
     // The id is what walkthrough prune takes to remove this one.
     el('td', {}, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
     el('td', {}, progress(one)),
+    el(
+      'td',
+      {},
+      one.verdict === undefined
+        ? el('span', { className: 'muted' }, 'No verdict yet')
+        : el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), one.verdict),
+    ),
     el('td', { className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );
 }
@@ -81,7 +88,7 @@ function render(page: ListPage): void {
     el('span', { className: 'session-label' }, page.repo),
     el('div', { className: 'header-end' }, el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')),
   );
-  const head = el('tr', {}, ...['Walkthrough', 'Progress', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
+  const head = el('tr', {}, ...['Walkthrough', 'Progress', 'Verdict', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
   main.replaceChildren(
     el('h1', { className: 'list-title' }, 'Walkthroughs'),
     el('p', { className: 'muted list-sub' }, 'In this repository'),

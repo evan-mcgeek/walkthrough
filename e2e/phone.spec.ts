@@ -154,11 +154,11 @@ test('Explanation beside code stacks the step over its code, with the same botto
     .toBeGreaterThanOrEqual(0);
 });
 
-test('the rail becomes a select of what is left, with decided steps and the end after it', async ({ page }) => {
+test('the rail becomes a select of what is left, with decided steps and the Summary after it', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByRole('link')).toHaveCount(0);
   const select = rail.getByRole('combobox', { name: 'Step' });
-  await expect(select.locator('option')).toHaveText(['Left 2 · Login check', 'App version', 'End of the walkthrough']);
+  await expect(select.locator('option')).toHaveText(['Left 2 · Login check', 'App version', 'Summary']);
   await expect(select).toHaveValue('1');
 
   await select.selectOption('2');
@@ -169,10 +169,10 @@ test('the rail becomes a select of what is left, with decided steps and the end 
   await page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(select.locator('optgroup')).toHaveAttribute('label', '1 decided');
-  await expect(select.locator('option')).toHaveText(['Left 1 · Login check', 'App version', 'End of the walkthrough']);
-  await select.selectOption('end');
-  await expect(page.getByRole('heading', { name: '1 of 2 steps decided' })).toBeVisible();
-  await expect(select.locator('option:checked')).toHaveText('Left 1 · End of the walkthrough');
+  await expect(select.locator('option')).toHaveText(['Left 1 · Login check', 'App version', 'Summary']);
+  await select.selectOption('summary');
+  await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
+  await expect(select.locator('option:checked')).toHaveText('Left 1 · Summary');
 });
 
 test('a card swiped right approves its step, and the next card takes its place', async ({ page, repo }) => {
@@ -257,8 +257,8 @@ test('the deck ends when every step is decided', async ({ page }) => {
     await page.getByRole('group', { name: 'Decide' }).getByRole('button', { name: 'Approve' }).click();
   }
   await expect(page.getByRole('region', { name: 'Swipe to decide' }).getByText('Everything is decided.')).toBeVisible();
-  await page.getByRole('link', { name: 'See the end of the walkthrough' }).click();
-  await expect(page.getByRole('heading', { name: 'All 2 steps decided' })).toBeVisible();
+  await page.getByRole('link', { name: 'See the summary' }).click();
+  await expect(page.getByRole('heading', { name: 'Summary', exact: true })).toBeVisible();
 });
 
 test('a second tap on Approve while the card flies sends no second decision', async ({ page }) => {

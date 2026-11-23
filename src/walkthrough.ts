@@ -41,6 +41,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   /** The highest checklist item id given out, never given again. */
   lastChecklistItem?: number;
   actions?: Record<string, Action[]>;
+  /** The session's words under the verdict's or the walkthrough's actions, such as where the verdict goes, by item key. */
+  hints?: Record<string, string>;
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
@@ -143,7 +145,7 @@ export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) =
   });
 }
 
-export function recordActions(dir: string, build: (walkthrough: Walkthrough) => { item: Item; actions: Action[] }[]) {
+export function recordActions(dir: string, build: (walkthrough: Walkthrough) => { item: Item; actions: Action[]; hint?: string }[]) {
   return update(dir, walkthrough => {
     const recorded = build(walkthrough);
     const named = new Map(recorded.map(({ item, actions }) => [itemKey(item), actions]));
@@ -151,6 +153,9 @@ export function recordActions(dir: string, build: (walkthrough: Walkthrough) => 
       ...keepActions(walkthrough, key => !named.has(key)),
       ...Object.fromEntries([...named].filter(([, actions]) => actions.length)),
     };
+    const kept = Object.entries(walkthrough.hints ?? {}).filter(([key]) => !named.has(key));
+    const given = recorded.flatMap(({ item, hint }): [string, string][] => (hint ? [[itemKey(item), hint]] : []));
+    walkthrough.hints = Object.fromEntries([...kept, ...given]);
     return recorded;
   });
 }
