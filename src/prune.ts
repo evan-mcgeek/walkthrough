@@ -13,7 +13,7 @@ const gitStatus = (cwd: string, ...args: string[]) => spawnSync('git', args, { c
 
 function over(cwd: string, walkthrough: Walkthrough): string | null {
   const { target, head } = walkthrough;
-  if (walkthrough.kind === 'branch' && gitStatus(cwd, 'show-ref', '--exists', `refs/heads/${walkthrough.branch}`) === 2)
+  if (walkthrough.kind === 'branch' && gitStatus(cwd, 'rev-parse', '--verify', '--quiet', `refs/heads/${walkthrough.branch}`) === 1)
     return 'its branch is gone';
   if (gitStatus(cwd, 'merge-base', '--is-ancestor', head, target) === 0) return `its head is merged into ${targetName(target)}`;
   return null;

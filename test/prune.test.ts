@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
@@ -60,6 +61,22 @@ describe('walkthrough prune', () => {
 
     expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its branch is gone.');
     expect(saved('feature/login')).toBe(false);
+    expect(saved('feature/cart')).toBe(true);
+  });
+
+  test('removes the walkthrough whose branch is gone on a git older than show-ref --exists', () => {
+    twoWalkthroughs();
+    git(repo.dir, 'branch', '-D', 'feature/login');
+    const real = spawnSync('which', ['git'], { encoding: 'utf8' }).stdout.trim();
+    fs.writeFileSync(
+      path.join(path.dirname(repo.dir), 'bin', 'git'),
+      `#!/bin/sh\n[ "$1" = show-ref ] && [ "$2" = --exists ] && exit 129\nexec "${real}" "$@"\n`,
+      { mode: 0o755 },
+    );
+
+    const pruned = repo.run('prune');
+
+    expect(pruned.stdout).toContain('Removed the walkthrough of feature/login: its branch is gone.');
     expect(saved('feature/cart')).toBe(true);
   });
 
