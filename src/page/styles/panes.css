@@ -792,12 +792,22 @@
   cursor: pointer;
 }
 
-/* Until the phone layout: the rail stacks above the step and the page scrolls as one. */
+/* The rail's phone form, shown only at phone width. */
+.queue-select {
+  display: none;
+}
+
+/* ---------- phone ---------- */
+
 @media (max-width: 760px) {
+  .panes {
+    flex-direction: column;
+  }
+
+  /* Full width, just above the bottom bar (12px + 44px + 12px and its rule). */
   .toast-region {
-    position: fixed;
     right: var(--s4);
-    bottom: var(--s4);
+    bottom: calc(69px + var(--s3));
     left: var(--s4);
   }
 
@@ -805,26 +815,76 @@
     max-width: none;
   }
 
-  .walkthrough {
-    height: auto;
-  }
-
-  .panes {
-    flex-direction: column;
-  }
-
   .queue {
+    flex-direction: row;
     width: auto;
+    padding: var(--s2) var(--s3);
     border-right: 0;
     border-bottom: 1px solid var(--rule);
+    overflow: visible;
+  }
+
+  .queue > :not(.queue-select),
+  .walkthrough[data-view='deck'] .queue {
+    display: none;
+  }
+
+  .queue-select {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .queue-select select {
+    min-width: 0;
+    text-overflow: ellipsis;
   }
 
   .main {
     padding: var(--s4) var(--s4) 0;
-    overflow: visible;
   }
 
   .main > :last-child {
     padding-bottom: var(--s4);
+  }
+
+  .step-title {
+    font-size: 19px;
+  }
+
+  /* A diff scrolls sideways inside its file; its notes stay pinned to the visible width. */
+  .d2h-file-diff {
+    overflow-x: auto;
+  }
+
+  .d2h-diff-table {
+    min-width: 620px;
+  }
+
+  .step-ask {
+    margin: var(--s5) 0 var(--s4);
+  }
+
+  .step-ask input,
+  .action-bar .btn {
+    min-height: 44px;
+  }
+
+  .action-bar,
+  .block ~ .action-bar,
+  .conversation ~ .action-bar {
+    display: flex;
+    margin: auto calc(-1 * var(--s4)) calc(-1 * var(--s4));
+    padding: var(--s3);
+    border-top-color: var(--rule);
+  }
+
+  .action-bar > *,
+  .action-bar > .choices > .btn {
+    flex: 1;
+  }
+
+  .action-bar > .choices {
+    margin: 0;
   }
 }

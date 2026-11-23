@@ -5,7 +5,7 @@ import { locked, readJson, writeJson } from './json-files';
 import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
 import { anchorOf } from './notes';
 import { fieldsOf, filled, parseList } from './input';
-import { type Action, type Item, itemKey } from './items';
+import { type Action, type Item, itemKey, STEP_ACTIONS } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
@@ -20,11 +20,6 @@ export type WalkthroughView = Walkthrough & {
   /** The id of the step each note and ask shows on, by its id, null when its step or lines are gone. */
   anchored: Record<string, string | null>;
 };
-
-const STEP_ACTIONS: Action[] = [
-  { id: 'approve', label: 'Approve' },
-  { id: 'flag', label: 'Flag', note: true },
-];
 
 const readFile = (dir: string) => path.join(dir, 'read.json');
 const fingerprint = (content: string) => crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);

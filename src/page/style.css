@@ -11,6 +11,7 @@
 @import './styles/header.css';
 @import './styles/panes.css';
 @import './styles/layouts.css';
+@import './styles/deck.css';
 
 #alert {
   margin: 0;
@@ -253,7 +254,9 @@ details summary {
   background: var(--surface);
 }
 
+/* diff2html places line numbers absolutely; anchored here they scroll with the pane and the file. */
 .d2h-file-diff {
+  position: relative;
   container-type: inline-size;
 }
 
