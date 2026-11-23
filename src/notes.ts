@@ -1,6 +1,6 @@
 // The session pins notes to a step or to lines of a file in it; this checks only that the place is in the walkthrough.
 import crypto from 'node:crypto';
-import { parse } from 'diff2html/lib-esm/diff-parser';
+import { parseDiff } from './diff';
 import { filled, parseList } from './input';
 import { pathsOf } from './steps';
 import type { Step, Walkthrough } from './walkthrough';
@@ -26,10 +26,10 @@ const isLines = (value: unknown): value is Lines =>
   (value[0] as number) <= (value[1] as number);
 
 // The page asks for every note's place on each poll; a step read from disk is parsed once per read.
-const parsed = new WeakMap<Step, ReturnType<typeof parse>>();
+const parsed = new WeakMap<Step, ReturnType<typeof parseDiff>>();
 
 function shownLines(step: Step, file: string): Map<number, string> | null {
-  const files = parsed.get(step) ?? parse(step.diff);
+  const files = parsed.get(step) ?? parseDiff(step.diff);
   parsed.set(step, files);
   const shown = files.find(one => one.newName === file);
   if (!shown) return null;

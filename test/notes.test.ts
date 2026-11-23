@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import type { WalkthroughView } from '../src/decisions';
 import type { SessionView } from '../src/session';
 import { makeRepo, type Repo } from './helpers';
 
@@ -50,6 +51,19 @@ describe('walkthrough note', () => {
         note: { step: '1', file: 'cart.ts', lines: [2, 4], linesHash: hash, label: 'Finding', low: true },
       }),
     ]);
+  });
+
+  test('pins notes to lines of files whose names git quotes or pads in a diff', async () => {
+    const names = ['docs/my file.md', 'docs/café.md', 'docs/back\\slash "q".md'];
+    repo = makeRepo({ feature: Object.fromEntries(names.map(name => [name, 'one\ntwo\n'])) });
+    repo.run('start');
+    repo.record([{ title: 'All', explanation: 'Everything.', files: ['login.ts', 'app.ts', ...names] }]);
+
+    const noted = note(names.map(file => ({ step: '1', file, lines: [1, 2], label: 'On', text: file })));
+
+    expect(noted.stderr).toBe('');
+    const { anchored } = (await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as WalkthroughView;
+    expect(Object.values(anchored)).toEqual(['1', '1', '1']);
   });
 
   test('records nothing and names the problem when a note does not fit the walkthrough', async () => {

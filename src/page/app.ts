@@ -1,7 +1,7 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
-import { parse } from 'diff2html/lib-esm/diff-parser';
 import { ColorSchemeType, type DiffFile, LineType } from 'diff2html/lib-esm/types';
 import type { Lines, NoteMark, Place } from '../notes';
+import { parseDiff } from '../diff';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
@@ -871,7 +871,7 @@ function drawDiff(step: Step): Drawn {
   const kept = drawn.get(step.id);
   if (kept?.diff === step.diff) return kept;
   const view = el('div', { className: 'diff' });
-  const files = parse(step.diff);
+  const files = parseDiff(step.diff);
   new Diff2HtmlUI(view, files, {
     outputFormat: 'line-by-line',
     drawFileList: false,
@@ -1615,7 +1615,7 @@ function swipeable(deck: HTMLElement, card: HTMLElement, step: Step, swipes: boo
 
 /** Three lines of the step's diff: those ending at its first note's lines, or the start of its first hunk. */
 function miniDiff(step: Step, note: Note | undefined): HTMLElement[] {
-  const files = parse(step.diff);
+  const files = parseDiff(step.diff);
   const file = files.find(one => one.newName === note?.note.file) ?? files[0];
   if (!file) return [];
   const rows = file.blocks.flatMap(block => [block.header, ...block.lines]);

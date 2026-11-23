@@ -25,11 +25,11 @@ const guide = [
 const logo =
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="teal"/></svg>\n';
 
-test.use({ files: { 'docs/guide.md': guide, 'logo.svg': logo } });
+test.use({ files: { 'docs/guide.md': guide, 'logo.svg': logo, 'docs/my café.md': '# Café\n' } });
 
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
-  const files = ['docs/guide.md', 'logo.svg', 'login.ts', 'app.ts'];
+  const files = ['docs/guide.md', 'logo.svg', 'docs/my café.md', 'login.ts', 'app.ts'];
   const recorded = repo.record([{ title: 'Docs and login', explanation: 'Adds docs and login.', files }]);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   await expect(page.getByRole('region', { name: 'Docs and login' })).toBeVisible();
@@ -79,6 +79,14 @@ test('a changed Markdown file previews rendered and safe, and switches back to i
   await expect(file.locator('.d2h-file-diff')).toBeVisible();
 });
 
+test('a file whose name git quotes in a diff is shown and previewed by its name', async ({ page }) => {
+  const file = fileIn(page, 'docs/my café.md');
+
+  await file.getByRole('group', { name: 'Show docs/my café.md as' }).getByRole('button', { name: 'Preview' }).click();
+
+  await expect(file.getByRole('region', { name: 'Preview of docs/my café.md' }).getByRole('heading', { name: 'Café' })).toBeVisible();
+});
+
 test('a changed image previews as it is at the head commit; other files have no switch', async ({ page }) => {
   const file = fileIn(page, 'logo.svg');
 
@@ -105,7 +113,7 @@ test('a redraw from the session keeps a file in preview, even when its step is r
   await expect(file.locator('.d2h-file-diff')).toBeHidden();
 
   repo.record([
-    { title: 'Docs', explanation: 'Adds docs.', files: ['docs/guide.md', 'logo.svg'] },
+    { title: 'Docs', explanation: 'Adds docs.', files: ['docs/guide.md', 'logo.svg', 'docs/my café.md'] },
     { title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts'] },
   ]);
   await expect(page.getByRole('region', { name: 'Docs', exact: true })).toBeVisible();
