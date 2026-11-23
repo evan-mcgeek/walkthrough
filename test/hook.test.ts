@@ -31,6 +31,9 @@ describe('the plugin hook', () => {
     `walkthrough say --answer 3f2a --file '${inbox}/answer.md'`,
     "walkthrough say --answer 3f2a 'It'\\''s `fine`, costs $5 {\"a\": 1}\nand more.'",
     'walkthrough say --question "Merge it?" --choice Yes --choice No',
+    'walkthrough start --base 2885b85^1 --head 2885b85 --label "Ticket 24"',
+    'walkthrough files --base HEAD~2 --head HEAD --label Last',
+    `walkthrough steps --file '${inbox}/a~b^c.json'`,
   ])('approves the CLI on its own: %s', command => {
     expect(bash(command)).toBe('allow');
   });
@@ -48,6 +51,9 @@ describe('the plugin hook', () => {
     'walkthrough files\nrm -rf ~',
     'walkthrough say ~/x',
     'walkthrough say =ls',
+    'walkthrough say ^x',
+    `walkthrough steps --file ${inbox}/a~b.json`,
+    `walkthrough steps --file ${inbox}/a^b.json`,
     "walkthrough say 'a''b'",
     "walkthrough say 'unclosed",
     "walkthrough steps <<'EOF'\n[]\nEOF",
@@ -62,8 +68,10 @@ describe('the plugin hook', () => {
     expect(bash(command)).toBe('none');
   });
 
-  test('approves a write into an inbox and nowhere else', () => {
+  test('approves a write or an edit in an inbox and nowhere else', () => {
     expect(decide('Write', { file_path: path.join(inbox, 'steps.json'), content: '[]' })).toBe('allow');
+    expect(decide('Edit', { file_path: path.join(inbox, 'steps.json'), old_string: '[', new_string: '[ ' })).toBe('allow');
+    expect(decide('Edit', { file_path: path.join(state, 'shop-12345678', 'branch-feature', 'walkthrough.json') })).toBe('none');
     expect(decide('Write', { file_path: path.join(inbox, '..', 'walkthrough.json'), content: '{}' })).toBe('none');
     expect(decide('Write', { file_path: path.join(elsewhere, 'inbox', 'x.json'), content: '' })).toBe('none');
     expect(decide('Write', { file_path: path.join(state, 'shop-12345678', 'linked', 'inbox', 'x.json'), content: '' })).toBe('none');

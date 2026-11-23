@@ -4,52 +4,58 @@ import fs from 'node:fs';
 import { inInbox } from './paths';
 
 const PLAIN = /[A-Za-z0-9_./:=@%+,-]/;
+// Mid-word, as in HEAD~2 or a1b2c3^1; a shell may glob them, which changes a word but runs nothing.
+const REVISION = /[~^]/;
+
+type Word = { text: string; globbed: boolean };
 
 // The words of a command that runs nothing but itself: plain words, single quotes, and double quotes that expand nothing.
-export function words(command: string): string[] | null {
-  const found: string[] = [];
-  let word: string | null = null;
+function words(command: string): Word[] | null {
+  const found: Word[] = [];
+  let text: string | null = null;
+  let globbed = false;
   for (let at = 0; at < command.length; at++) {
     const char = command.charAt(at);
+    let part = char;
     if (char === ' ' || char === '\t') {
-      if (word !== null) found.push(word);
-      word = null;
+      if (text !== null) found.push({ text, globbed });
+      text = null;
+      globbed = false;
+      continue;
     } else if (char === "'" || char === '"') {
       const end = command.indexOf(char, at + 1);
-      const quoted = command.slice(at + 1, end);
-      if (end < 0 || (char === '"' && /[$`\\!]/.test(quoted))) return null;
+      part = command.slice(at + 1, end);
+      if (end < 0 || (char === '"' && /[$`\\!]/.test(part))) return null;
       // zsh's RC_QUOTES reads '' inside single quotes as a quote.
       if (char === "'" && command.charAt(end + 1) === "'") return null;
-      word = (word ?? '') + quoted;
       at = end;
     } else if (char === '\\') {
-      const next = command.charAt(at + 1);
-      if (!next || next === '\n') return null;
-      word = (word ?? '') + next;
-      at++;
-    } else if (PLAIN.test(char) && !(char === '=' && word === null)) word = (word ?? '') + char;
-    else return null;
+      part = command.charAt(++at);
+      if (!part || part === '\n') return null;
+    } else if (REVISION.test(char) && text !== null) globbed = true;
+    else if (!PLAIN.test(char) || (char === '=' && text === null)) return null;
+    text = (text ?? '') + part;
   }
-  if (word !== null) found.push(word);
+  if (text !== null) found.push({ text, globbed });
   return found;
 }
 
 // `--out` writes wherever it names, so an export stays with the person.
 function ownCommand(command: string): boolean {
   const found = words(command);
-  if (found?.[0] !== 'walkthrough') return false;
-  return found.every((word, at) => {
-    if (word === '--out' || word.startsWith('--out=') || word.startsWith('--file=')) return false;
-    if (word !== '--file') return true;
+  if (found?.[0]?.text !== 'walkthrough') return false;
+  return found.every(({ text }, at) => {
+    if (text === '--out' || text.startsWith('--out=') || text.startsWith('--file=')) return false;
+    if (text !== '--file') return true;
     const file = found[at + 1];
-    return file !== undefined && inInbox(file);
+    return file !== undefined && !file.globbed && inInbox(file.text);
   });
 }
 
 function approved({ tool_name, tool_input }: { tool_name?: string; tool_input?: Record<string, unknown> }): boolean {
   const field = (name: string) => (typeof tool_input?.[name] === 'string' ? tool_input[name] : '');
   if (tool_name === 'Bash') return ownCommand(field('command'));
-  if (tool_name === 'Write') return field('file_path').startsWith('/') && inInbox(field('file_path'));
+  if (tool_name === 'Write' || tool_name === 'Edit') return field('file_path').startsWith('/') && inInbox(field('file_path'));
   return false;
 }
 

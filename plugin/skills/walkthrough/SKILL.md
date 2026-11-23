@@ -56,7 +56,8 @@ Never read or edit the policy file itself; the `walkthrough policy` commands are
 ## Steps
 
 Run `walkthrough files` for the changed files.
-Read the change from git only, between the pinned base and head: `git diff <base> <head>` and `git show <head>:<path>`.
+Read the change from git only, between the pinned base and head: `git diff <base> <head>`, `git show <head>:<path>`, `git log`, and `git grep -n <pattern> <head> -- <paths>` to search.
+Keep to these: other git commands, such as `git ls-tree`, and flags such as `git grep -A`, ask the person.
 Never check anything out.
 
 Split the change into steps, order them, and fold the files not worth reading line by line, as the review policy and the project's instructions say.
