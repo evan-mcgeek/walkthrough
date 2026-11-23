@@ -51,10 +51,11 @@ test('the right arrow in a diff scrolls its long lines instead of moving to the 
   await page.setViewportSize({ width: 390, height: 844 });
   const diff = page.locator('.d2h-file-wrapper[data-file="long.ts"] .d2h-file-diff');
   // Once the step's read mark is drawn, no redraw cuts the scroll short.
-  await page.waitForResponse(answer => answer.url().includes('data/walkthrough.json') && answer.status() === 304);
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /, 1 read$/);
   await diff.locator('tr[data-line] td.d2h-code-linenumber').first().focus();
 
-  await page.keyboard.press('ArrowRight');
+  // Held as long as a person holds a key: WebKit can drop a press released before its scroll animation starts.
+  await page.keyboard.press('ArrowRight', { delay: 100 });
 
   await expect(page.getByRole('region', { name: 'Long' })).toBeVisible();
   expect(new URL(page.url()).hash).not.toBe('#end');

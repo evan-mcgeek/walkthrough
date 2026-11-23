@@ -36,9 +36,13 @@ test('shows the session preparing until it records steps, then the steps without
 test('a poll of a walkthrough that has not changed gets no body', async ({ page, url }) => {
   await expect(page).toHaveURL(url);
 
-  const unchanged = await page.waitForResponse(answer => answer.url().endsWith('data/walkthrough.json') && answer.status() === 304);
+  // WebKit reports the server's 304 as a 200, so the poll is found by the version it sent still being the current one.
+  const unchanged = await page.waitForResponse(
+    answer => answer.url().endsWith('data/walkthrough.json') && answer.request().headers()['if-none-match'] === answer.headers()['etag'],
+  );
 
   expect(unchanged.request().headers()['if-none-match']).toMatch(/^"[0-9a-f]{16}"$/);
+  expect((await unchanged.request().sizes()).responseBodySize).toBe(0);
 });
 
 test('an approved step stays approved when the page is opened again', async ({ page, context, repo, url }) => {
