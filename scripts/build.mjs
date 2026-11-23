@@ -30,6 +30,8 @@ await build({
   bundle: true,
   format: 'esm',
   target: 'es2022',
+  // Fonts are inlined so the page and its one-file export need nothing but the stylesheet.
+  loader: { '.woff2': 'dataurl' },
   outdir: path.join(out, 'page'),
 });
 for (const page of ['index.html', 'list.html']) fs.copyFileSync(path.join(root, 'src', 'page', page), path.join(out, 'page', page));

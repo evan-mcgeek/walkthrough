@@ -1,0 +1,140 @@
+/*
+  The 48px header: .logo, the mono .session-label, the segmented .progress bar with its .progress-count,
+  then .header-end (layout switch, .status, Stop) pushed to the right.
+*/
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  height: 48px;
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--canvas);
+}
+
+.logo {
+  flex: none;
+  margin: 0;
+  font: 700 14.5px/1.5 var(--font-ui);
+  letter-spacing: -0.005em;
+}
+
+.session-label {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font: var(--text-mono-label);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.progress {
+  display: flex;
+  flex: none;
+  gap: 3px;
+  width: 180px;
+}
+
+.segment,
+.progress:empty {
+  flex: 1;
+  height: 5px;
+  border-radius: var(--r-hairline);
+  background: var(--rule);
+}
+
+.segment[data-state='decided'] {
+  background: var(--indigo);
+}
+
+.segment[data-state='current'],
+.segment[data-state='read'] {
+  background: var(--indigo-line);
+}
+
+.segment[data-state='reopened'] {
+  background: var(--amber);
+}
+
+.progress-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.header-end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--s3);
+  margin-left: auto;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 13px/1.4 var(--font-ui);
+  white-space: nowrap;
+}
+
+.status .dot {
+  width: 7px;
+  height: 7px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status[data-state='listening'] {
+  color: var(--live);
+}
+
+.status[data-state='working'] {
+  color: var(--indigo-text);
+}
+
+.status[data-state='needs-you'] {
+  color: var(--amber);
+}
+
+.status[data-state='needs-you'] .dot {
+  box-shadow: 0 0 0 3px var(--amber-wash);
+}
+
+.status[data-state='gone'] {
+  color: var(--muted);
+}
+
+.status[data-state='gone'] .dot {
+  border: 1.5px solid currentColor;
+  background: none;
+}
+
+/* At phone width the bar takes its own full-width row under the header's first line. */
+@media (max-width: 600px) {
+  .app-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 48px;
+    padding: var(--s2) var(--s3);
+    row-gap: var(--s2);
+  }
+
+  .session-label {
+    flex: 1 1 0;
+  }
+
+  .progress {
+    order: 1;
+    width: 100%;
+  }
+}
+
+.header-note {
+  color: var(--muted);
+  font-size: 13px;
+}

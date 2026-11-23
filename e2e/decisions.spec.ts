@@ -145,18 +145,18 @@ test('a checklist item the session records again after a decision shows reopened
 
 test('steps shown are read apart from decided, and decided steps collapse in the step list', async ({ page }) => {
   const nav = page.getByRole('navigation', { name: 'Steps' });
-  await expect(page.getByText('0 of 2 steps decided, 2 left, 1 read')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '0 of 2 steps decided, 2 left, 1 read');
   await expect(nav.getByRole('listitem').filter({ hasText: 'Login check' })).toContainText('Read');
   await expect(nav.getByRole('listitem').filter({ hasText: 'App version' })).not.toContainText('Read');
 
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
-  await expect(page.getByText('1 of 2 steps decided, 1 left, 2 read')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
   await expect(nav.getByRole('link', { name: '1. Login check' })).toBeHidden();
   await expect(nav.getByRole('link', { name: '2. App version' })).toBeVisible();
   await nav.getByText('1 decided').click();
   await expect(nav.getByRole('link', { name: '1. Login check' })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText('1 of 2 steps decided, 1 left, 2 read')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
 });

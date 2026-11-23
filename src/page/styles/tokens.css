@@ -1,0 +1,117 @@
+/*
+  Design tokens (docs/design/DESIGN.md). Every colour on the page comes from a semantic token below,
+  defined once per theme; the theme follows the system setting.
+*/
+
+:root {
+  color-scheme: light dark;
+
+  /* Neutrals */
+  --canvas: #ffffff;
+  --surface: #f6f7f9;
+  --surface-tint: #eef0f3;
+  --rule: #dde1e6;
+  --rule-soft: #e9ecef;
+  --control-edge: #d0d5dc;
+  --ink: #1d2126;
+  --ink-secondary: #3a4048;
+  --muted: #5b636d;
+
+  /* Interaction, selection, focus and progress */
+  --indigo: #3b5bdb;
+  --indigo-hover: #2f4bc4;
+  --indigo-text: #3348b8;
+  --indigo-wash: #eef1fb;
+  --indigo-line: #d4dbf6;
+  --on-indigo: #ffffff;
+  --icon-knockout: #ffffff;
+
+  /* Status: amber is reopened or attention, rust is not met, live is the Listening session */
+  --amber: #8a5a00;
+  --amber-wash: #fbf1dc;
+  --rust: #9a3412;
+  --live: #2b7a4b;
+
+  /* Diff */
+  --diff-add: #e8f6ec;
+  --diff-add-gutter: #d3eedc;
+  --diff-del: #fcebea;
+  --diff-del-gutter: #f6d6d3;
+  --line-pick: #e6eafb;
+  --line-pick-gutter: #d2d9f7;
+
+  --shadow-float: 0 1px 2px rgb(20 24 30 / 6%), 0 8px 24px rgb(20 24 30 / 10%);
+
+  /* Type */
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --text-headline: 650 21px/1.25 var(--font-ui);
+  --text-title: 650 17px/1.4 var(--font-ui);
+  --text-body: 400 14.5px/1.5 var(--font-ui);
+  --text-body-ui: 400 13.5px/1.4 var(--font-ui);
+  --text-label: 650 13px/1.4 var(--font-ui);
+  --text-meta: 500 12px/1.4 var(--font-ui);
+  --text-code: 400 12.5px/21px var(--font-mono);
+  --text-mono-label: 500 12.5px/1.4 var(--font-mono);
+
+  /* Spacing: the one 4px scale */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* Radii */
+  --r-hairline: 2px;
+  --r-xs: 4px;
+  --r-sm: 5px;
+  --r-md: 6px;
+  --r-lg: 7px;
+  --r-xl: 8px;
+  --r-card: 12px;
+  --r-pill: 999px;
+
+  /* Motion */
+  --fast: 120ms;
+  --base: 200ms;
+  --slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #15181d;
+    --surface: #1b1f25;
+    --surface-tint: #232830;
+    --rule: #2c323b;
+    --rule-soft: #252a32;
+    --control-edge: #3a414b;
+    --ink: #e5e8ec;
+    --ink-secondary: #c3c8cf;
+    --muted: #9aa2ac;
+
+    --indigo: #6e86f0;
+    --indigo-hover: #8599f4;
+    --indigo-text: #a3b3ff;
+    --indigo-wash: #232b45;
+    --indigo-line: #34406b;
+    --on-indigo: #0f1424;
+    --icon-knockout: #15181d;
+
+    --amber: #e3b260;
+    --amber-wash: #33280f;
+    --rust: #f0a083;
+    --live: #6fcf97;
+
+    --diff-add: #14281c;
+    --diff-add-gutter: #193423;
+    --diff-del: #33191a;
+    --diff-del-gutter: #3f1f20;
+    --line-pick: #222a4a;
+    --line-pick-gutter: #2c3664;
+
+    --shadow-float: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 35%);
+  }
+}

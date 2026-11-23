@@ -46,6 +46,9 @@ test('a step whose diff changed shows reopened with the decision it had', async 
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Reopened: changed since you chose Approve', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
+  const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
+  await expect(segments).toHaveCount(1);
+  await expect(segments).toHaveAttribute('data-state', 'reopened');
 });
 
 test('notes whose step or lines are gone show detached, still open to a reply', async ({ page }) => {

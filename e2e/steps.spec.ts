@@ -89,18 +89,18 @@ test('j and k, and the right and left arrows, move between steps, but not while 
 });
 
 test('shows how many steps are decided and left, and approving moves on to the next open step', async ({ page }) => {
-  await expect(page.getByText('0 of 3 steps decided, 3 left')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^0 of 3 steps decided, 3 left/);
 
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
-  await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^1 of 3 steps decided, 2 left/);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Steps' });
   await nav.getByText('1 decided').click();
   await expect(nav.getByRole('link', { name: '1. Login check' })).toHaveClass(/decided/);
 
   await page.reload();
-  await expect(page.getByText('1 of 3 steps decided, 2 left')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^1 of 3 steps decided, 2 left/);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 

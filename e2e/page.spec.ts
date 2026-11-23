@@ -8,10 +8,11 @@ test('shows the session preparing until it records steps, then the steps without
 }) => {
   await expect(page).toHaveURL(url);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(page.getByText(`${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`)).toBeVisible();
+  const range = `${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`;
+  await expect(page.getByRole('heading', { level: 1 })).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
   const preparing = page.getByText('The session is preparing the steps; they appear here as it records them.');
   await expect(preparing).toBeVisible();
-  await expect(page.getByText(/steps? decided/)).toHaveCount(0);
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveCount(0);
   let loads = 0;
   page.on('load', () => loads++);
 
@@ -25,7 +26,7 @@ test('shows the session preparing until it records steps, then the steps without
   await expect(file('app.ts').locator('.d2h-del')).toContainText(['export const app = 1;']);
   await expect(file('app.ts').locator('.d2h-ins')).toContainText(['export const app = 2;']);
   await expect(preparing).toHaveCount(0);
-  await expect(page.getByText('0 of 1 step decided, 1 left')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^0 of 1 step decided, 1 left/);
   expect(loads).toBe(0);
 });
 
@@ -48,6 +49,8 @@ test('the Stop button ends the server', async ({ page, request, url }) => {
   await page.getByRole('button', { name: 'Stop' }).click();
 
   await expect(page.getByText('The walkthrough has stopped. You can close this tab.')).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Stopped');
+  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
   await expect(request.get(url)).rejects.toThrow();
 });
 
@@ -102,7 +105,10 @@ test('a step shows read before the server stores it, and storing it neither redr
   });
   repo.record(ONE_STEP);
   const step = page.getByRole('region', { name: 'Login' });
-  await expect(page.getByText('0 of 1 step decided, 1 left, 1 read')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute(
+    'aria-valuetext',
+    '0 of 1 step decided, 1 left, 1 read',
+  );
   await step.getByRole('textbox', { name: 'Ask about this step' }).fill('a'.repeat(4001));
   await step.getByRole('button', { name: 'Ask' }).click();
   await expect(page.getByRole('alert')).toBeVisible();

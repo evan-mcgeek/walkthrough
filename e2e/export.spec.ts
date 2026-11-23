@@ -38,7 +38,7 @@ test('the export shows the walkthrough read-only, offline, from its one file', a
   await exported.goto(`${pathToFileURL(out).href}#1`);
 
   await expect(exported.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(exported.getByText('1 of 2 steps decided, 1 left, 2 read')).toBeVisible();
+  await expect(exported.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
   const shown = exported.getByRole('region', { name: 'Login check' });
   await expect(shown.getByRole('strong')).toHaveText('login');
   await expect(shown.locator('.d2h-ins')).toContainText(['export const login = () => true;']);

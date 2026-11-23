@@ -9,6 +9,7 @@ import { type Action, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, type PageName, post as postTo, postQuietly, region, showAlert, unreachable } from './dom';
+import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
@@ -91,10 +92,13 @@ async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft
 let lastSession = '';
 let lastWalkthrough = '';
 
+let stopped = false;
+
 async function stop(): Promise<void> {
   if (!(await post('stop', {}))) return;
   clearInterval(poller);
-  header.replaceChildren(el('h1', {}, 'Walkthrough'));
+  stopped = true;
+  header.replaceChildren(...headerView());
   main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
 }
 
@@ -105,13 +109,73 @@ const SESSION: Record<SessionState, readonly [string, string]> = {
   gone: ['Gone', 'The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code.'],
 };
 
-function sessionChip(): HTMLElement {
-  const [label, about] = SESSION[session.state];
-  const chip = el('span', { className: 'chip', title: about }, label);
-  chip.dataset['state'] = session.state;
-  chip.setAttribute('role', 'status');
-  chip.setAttribute('aria-label', 'Session');
-  return chip;
+function statusView(): HTMLElement {
+  const state = stopped ? 'gone' : session.state;
+  const [label, about] = stopped ? ['Stopped', 'The walkthrough has stopped.'] : SESSION[state];
+  const mark = state === 'working' ? icon('spinner') : el('span', { className: 'dot' });
+  const status = el('span', { className: 'status', title: about }, mark, label);
+  status.dataset['state'] = state;
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-label', 'Session');
+  return status;
+}
+
+type SegmentState = 'decided' | 'reopened' | 'current' | 'read' | 'unread';
+
+function segmentState(step: Step, current: Step | undefined): SegmentState {
+  if (stepDecided(step)) return 'decided';
+  if (walkthrough.reopened[itemKey({ type: 'step', id: step.id })]) return 'reopened';
+  if (step === current) return 'current';
+  return walkthrough.read.includes(step.id) ? 'read' : 'unread';
+}
+
+/** One segment per step in step order, coloured by its state, and the count of decided steps. */
+function progressView(): HTMLElement[] {
+  const { steps } = walkthrough;
+  const decided = steps.filter(stepDecided).length;
+  const current = currentStep(walkthrough);
+  const said = steps.length
+    ? `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`
+    : 'No steps yet';
+  const bar = el(
+    'div',
+    { className: 'progress', title: said },
+    ...steps.map(step => {
+      const segment = el('span', { className: 'segment' });
+      segment.dataset['state'] = segmentState(step, current);
+      return segment;
+    }),
+  );
+  if (steps.length) {
+    bar.setAttribute('role', 'progressbar');
+    bar.setAttribute('aria-label', 'Steps decided');
+    bar.setAttribute('aria-valuemin', '0');
+    bar.setAttribute('aria-valuemax', String(steps.length));
+    bar.setAttribute('aria-valuenow', String(decided));
+    bar.setAttribute('aria-valuetext', said);
+  }
+  const count = el('span', { className: 'progress-count' }, `${String(decided)}/${String(steps.length)}`);
+  count.setAttribute('aria-hidden', 'true');
+  return [bar, count];
+}
+
+function headerView(): HTMLElement[] {
+  const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
+  return [
+    el('span', { className: 'logo' }, 'Walkthrough'),
+    el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
+    ...progressView(),
+    el(
+      'div',
+      { className: 'header-end' },
+      ...(readOnly
+        ? [el('span', { className: 'header-note' }, 'Exported, read-only')]
+        : [
+            statusView(),
+            ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
+          ]),
+    ),
+  ];
 }
 
 /** Nothing in an exported file is sent anywhere, so it has no boxes to type into. */
@@ -126,7 +190,7 @@ function draftArea(draft: string, label: string, start = '', rows = 2): HTMLText
 }
 
 function draftForm(boxes: HTMLTextAreaElement[], action: string, onSend: () => void): HTMLFormElement {
-  const form = el('form', { className: 'draft' }, ...boxes, el('button', { type: 'submit' }, action));
+  const form = el('form', { className: 'draft' }, ...boxes, el('button', { type: 'submit', className: 'btn primary' }, action));
   form.onsubmit = event => {
     event.preventDefault();
     onSend();
@@ -174,7 +238,7 @@ function askThread(asked: Ask): HTMLElement {
     said(asked),
     ...(answers.length
       ? answers.filter(entry => !inNotes.has(entry.id)).map(entry => (isNote(entry) ? noteView(entry) : said(entry)))
-      : [el('p', { className: 'notice' }, 'Waiting for the session to answer.')]),
+      : [el('p', { className: 'muted' }, 'Waiting for the session to answer.')]),
   );
 }
 
@@ -190,12 +254,12 @@ function decideView(item: Item, text = ''): HTMLElement[] {
   // A reopened item keeps what the person and the session said about the decision it had.
   const shown = decision ?? reopened;
   const state = decision
-    ? el('p', { className: 'decision decided' }, `Decided: ${labelOf(item, decision.action)}`)
+    ? el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`)
     : reopened
-      ? el('p', { className: 'decision reopened' }, `Reopened: changed since you chose ${labelOf(item, reopened.action)}`)
-      : el('p', { className: 'decision' }, 'Undecided');
+      ? el('span', { className: 'tag reopened' }, `Reopened: changed since you chose ${labelOf(item, reopened.action)}`)
+      : el('span', { className: 'tag' }, 'Undecided');
   const buttons = actions.map(action => {
-    const button = el('button', { type: 'button', className: 'quiet' }, action.label);
+    const button = el('button', { type: 'button', className: 'btn' }, action.label);
     button.setAttribute('aria-pressed', String(decision?.action === action.id));
     button.onclick = () => {
       if (action.note || action.edit) {
@@ -246,7 +310,7 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
     });
   });
   form.classList.add('taking');
-  form.append(el('button', { type: 'button', className: 'quiet', onclick: () => { taking = null; render(); } }, 'Cancel'));
+  form.append(el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; render(); } }, 'Cancel'));
   return form;
 }
 
@@ -362,7 +426,7 @@ function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
       if (sent) unpick();
     });
   });
-  form.append(el('button', { type: 'button', className: 'quiet', onclick: unpick }, 'Cancel'));
+  form.append(el('button', { type: 'button', className: 'btn ghost', onclick: unpick }, 'Cancel'));
   form.classList.add('picked-ask');
   return form;
 }
@@ -370,7 +434,7 @@ function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
 function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
   if (!choices.length) return [];
   const buttons = choices.map(choice =>
-    el('button', { type: 'button', onclick: () => void send('reply', { to: id, text: choice }) }, choice),
+    el('button', { type: 'button', className: 'btn', onclick: () => void send('reply', { to: id, text: choice }) }, choice),
   );
   return [el('div', { className: 'choices' }, ...buttons)];
 }
@@ -385,12 +449,14 @@ function sessionMessages(): HTMLElement[] {
       entry => entry.from === 'page' && entry.kind === 'reply' && entry.to === message.id,
     );
     const draft = `reply:${message.id}`;
+    const asking = message.question && !replies.length && !readOnly;
     return el(
       'div',
-      { className: 'thread' },
+      { className: asking ? 'thread question-box' : 'thread' },
+      ...(asking ? [el('p', { className: 'question-head' }, icon('ask'), 'The session asks')] : []),
       said(message),
       ...followUps(message).map(said),
-      ...(message.question && !replies.length && !readOnly
+      ...(asking
         ? [
             ...choiceButtons(message),
             draftBox(draft, 'Reply', 'Reply', () => {
@@ -507,13 +573,13 @@ function addPreview(wrapper: Element, stepId: string, file: string): void {
       preview.replaceChildren(el('img', { src: source, alt: file }));
       return;
     }
-    preview.replaceChildren(el('p', { className: 'notice' }, 'Loading the preview.'));
+    preview.replaceChildren(el('p', { className: 'muted' }, 'Loading the preview.'));
     const answer = await fetch(source).catch(() => null);
     if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), file);
-    else preview.replaceChildren(el('p', { className: 'notice' }, 'Could not load the preview.'));
+    else preview.replaceChildren(el('p', { className: 'muted' }, 'Could not load the preview.'));
   };
   const choices = (['Diff', 'Preview'] as const).map(label =>
-    el('button', { type: 'button', className: 'quiet', onclick: () => void choose(label === 'Preview') }, label),
+    el('button', { type: 'button', onclick: () => void choose(label === 'Preview') }, label),
   );
   const key = JSON.stringify([stepId, file]);
   const choose = async (previewing: boolean) => {
@@ -524,7 +590,7 @@ function addPreview(wrapper: Element, stepId: string, file: string): void {
     preview.hidden = !previewing;
     if (previewing && !preview.hasChildNodes()) await fill();
   };
-  const toggle = el('div', { className: 'switch' }, ...choices);
+  const toggle = el('div', { className: 'segmented' }, ...choices);
   toggle.setAttribute('role', 'group');
   toggle.setAttribute('aria-label', `Show ${file} as`);
   void choose(previewed.has(key));
@@ -600,7 +666,7 @@ function stepView(step: Step, steps: Step[]): HTMLElement {
   const title = el('h2', { id: `step-${step.id}` }, step.title);
   const at = steps.indexOf(step);
   const move = (label: string, to: Step | undefined) =>
-    el('button', { type: 'button', className: 'quiet', disabled: !to, onclick: () => { show(to); } }, label);
+    el('button', { type: 'button', className: 'btn', disabled: !to, onclick: () => { show(to); } }, label);
   const section = el(
     'section',
     { className: 'step' },
@@ -686,7 +752,7 @@ function unplacedView(): HTMLElement[] {
     'section',
     { className: 'messages conversation' },
     title,
-    el('p', { className: 'notice' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
+    el('p', { className: 'muted' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
     paths('Files', files),
   );
   section.setAttribute('aria-labelledby', title.id);
@@ -701,9 +767,9 @@ function detachedView(): HTMLElement[] {
   const title = el('h2', { id: 'detached' }, 'Detached');
   const section = el(
     'section',
-    { className: 'messages conversation' },
+    { className: 'messages conversation detached-box' },
     title,
-    el('p', { className: 'notice' }, 'Notes and questions whose step or lines are no longer in the change.'),
+    el('p', { className: 'muted' }, 'Notes and questions whose step or lines are no longer in the change.'),
     ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, wasView(entry), askThread(entry)))),
   );
   section.setAttribute('aria-labelledby', title.id);
@@ -721,26 +787,7 @@ function render(): void {
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const { steps } = walkthrough;
-  const pinned = `${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  const decided = steps.filter(stepDecided).length;
-  const progress = `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`;
-  header.replaceChildren(
-    el(
-      'div',
-      { className: 'title' },
-      el('h1', {}, nameOf(walkthrough)),
-      el('p', { className: 'pinned' }, `against ${walkthrough.target}, `, el('code', {}, pinned)),
-    ),
-    ...(steps.length ? [el('p', { className: 'progress' }, progress)] : []),
-    readOnly
-      ? el('p', { className: 'notice' }, 'Exported, read-only')
-      : el(
-          'div',
-          { className: 'actions' },
-          sessionChip(),
-          el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop'),
-        ),
-  );
+  header.replaceChildren(...headerView());
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
