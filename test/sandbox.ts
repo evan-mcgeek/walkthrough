@@ -4,8 +4,9 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { alive } from '../src/processes';
-import { shareHistory } from './helpers';
+// With extensions, as the Vite config imports this file.
+import { alive } from '../src/processes.ts';
+import { shareHistory } from './helpers.ts';
 
 const folders = (dir: string): string[] => {
   try {
