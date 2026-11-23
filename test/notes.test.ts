@@ -53,6 +53,19 @@ describe('walkthrough note', () => {
     ]);
   });
 
+  test('a note the session flags as a finding carries the flag, whatever its label', async () => {
+    repo = started();
+
+    note([
+      { step: '1', file: 'cart.ts', lines: [2, 2], label: 'Bug', text: 'B is never read.', finding: true },
+      { step: '1', label: 'Finding', text: 'Only a word in the label.' },
+    ]);
+
+    const marks = (await sessionAt(repo.url())).conversation.map(entry => (entry.from === 'session' ? entry.note : undefined));
+    expect(marks).toEqual([expect.objectContaining({ label: 'Bug', finding: true }), { step: '1', label: 'Finding' }]);
+    expect(note([{ step: '1', label: 'L', text: 'T', finding: 'yes' }]).stderr).toContain('note 1: finding must be true or false');
+  });
+
   test('pins notes to lines of files whose names git quotes or pads in a diff', async () => {
     const names = ['docs/my file.md', 'docs/café.md', 'docs/back\\slash "q".md'];
     repo = makeRepo({ feature: Object.fromEntries(names.map(name => [name, 'one\ntwo\n'])) });

@@ -48,6 +48,18 @@ const ICONS = {
   more: [3.5, 8, 12.5].map((cx): Shape => ['circle', { cx, cy: 8, r: 1.4, fill: 'currentColor' }]),
   'chevron-right': [line('M6 4l4 4-4 4')],
   'chevron-down': [line('M4 6l4 4 4-4')],
+  eye: [
+    ['path', { d: 'M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z', ...round, 'stroke-width': 1.4 }],
+    ['circle', { cx: 8, cy: 8, r: 2, fill: 'currentColor' }],
+  ],
+  plus: [line('M8 3.5v9M3.5 8h9', 1.8)],
+  /** The person's own words. */
+  own: [
+    ['circle', { cx: 8, cy: 5.6, r: 2.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5 }],
+    line('M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6', 1.5),
+  ],
+  edit: [line('M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z', 1.4)],
+  trash: [line('M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5', 1.4)],
   previous: [line('M10 3.5L5.5 8l4.5 4.5')],
   next: [line('M6 3.5L10.5 8 6 12.5')],
   /** The brand's walked W: the last stroke, still to go, is lighter. */

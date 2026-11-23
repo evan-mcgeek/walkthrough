@@ -7,7 +7,8 @@ import { parseChecklist } from './checklist';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
 import { parseNotes } from './notes';
-import { conversationOf, listen, note, say, starting } from './session';
+import { commentsOf } from './comments';
+import { conversationOf, listen, markPosted, note, postedOf, say, starting } from './session';
 import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
 import { listView } from './list';
@@ -61,12 +62,15 @@ function located<T extends Options>(
 }
 
 async function start(args: string[]): Promise<void> {
-  const { cwd, source, dir, values } = located(args, { options: { kind: { type: 'string' } } });
+  const { cwd, source, dir, values } = located(args, { options: { kind: { type: 'string' }, comments: { type: 'string' } } });
   const kind = values.kind?.trim();
   if (kind === '') throw new Error('--kind needs a label that names the kind of walkthrough');
+  const hint = values.comments?.trim();
+  if (hint === '') throw new Error('--comments needs words that say what becomes of the person\'s comments');
+  const labelled = { ...(kind !== undefined && { kindLabel: kind }), ...(hint !== undefined && { commentHint: hint }) };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = await openWalkthrough(dir, source, change, kind, moved => carrySteps(cwd, moved));
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, labelled, moved => carrySteps(cwd, moved));
   await starting(dir);
   const inbox = makeInbox(dir);
   const { steps } = walkthrough;
@@ -160,6 +164,20 @@ function decisions(args: string[]): void {
     console.log(JSON.stringify({ item, decision: decision && shown(decision), ...(reopened && { reopened: shown(reopened) }) }));
 }
 
+function comments(args: string[]): void {
+  const { dir } = current(args);
+  const posted = postedOf(dir);
+  for (const { id, step, file, lines, text } of commentsOf(conversationOf(dir)))
+    console.log(JSON.stringify({ id, step, file, lines, text, ...(posted.includes(id) && { posted: true }) }));
+}
+
+async function posted(args: string[]): Promise<void> {
+  const { dir, positionals } = current(args, { allowPositionals: true });
+  if (!positionals.length) throw new Error('usage: walkthrough posted <comment id>...');
+  await markPosted(dir, positionals);
+  console.log(`Marked ${plural(positionals.length, 'comment')} posted.`);
+}
+
 function exportCommand(args: string[]): void {
   const { values, dir, walkthrough } = current(args, { options: { out: { type: 'string' } } });
   const out = path.resolve(values.out ?? path.join(dir, 'export.html'));
@@ -223,6 +241,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   checklist,
   actions,
   decisions,
+  comments,
+  posted,
   list,
   export: exportCommand,
   guide: () => {
@@ -265,8 +285,8 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--kind <label>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
-        '    | actions --file <file> | decisions | listen\n' +
+        '  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
+        '    | actions --file <file> | decisions | comments | posted <comment id>... | listen\n' +
         '    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
         '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',

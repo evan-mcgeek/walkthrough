@@ -27,6 +27,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   target: string;
   /** The session's own name for the kind of walkthrough, which the page shows and nothing reads. */
   kindLabel?: string;
+  /** The session's own words for what becomes of the person's comments, which the page shows under each. */
+  commentHint?: string;
   base: string;
   head: string;
   /** Empty until the session records its steps. */
@@ -62,7 +64,8 @@ export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
-  kind: string | undefined,
+  /** The session's labels given to this start; a label left out keeps the one given before. */
+  labelled: Pick<Walkthrough, 'kindLabel' | 'commentHint'>,
   carry: (moved: Walkthrough) => Promise<{ steps: Step[]; unplaced: string[] }>,
 ): Promise<{
   walkthrough: Walkthrough;
@@ -70,9 +73,9 @@ export function openWalkthrough(
 }> {
   return locked(file(dir), async () => {
     const saved = savedWalkthrough(dir);
-    const labelled = kind === undefined ? {} : { kindLabel: kind };
     if (saved?.head === change.head && saved.base === change.base) {
-      if (kind === undefined || kind === saved.kindLabel) return { walkthrough: saved, opened: 'resumed' };
+      if (Object.entries(labelled).every(([key, value]) => saved[key as keyof typeof labelled] === value))
+        return { walkthrough: saved, opened: 'resumed' };
       const relabelled = { ...saved, ...labelled };
       writeJson(file(dir), relabelled);
       return { walkthrough: relabelled, opened: 'resumed' };

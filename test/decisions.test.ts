@@ -1,7 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { WalkthroughView } from '../src/decisions';
 import type { SessionView } from '../src/session';
-import { ONE_STEP, makeRepo, type Repo } from './helpers';
+import { git, ONE_STEP, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
 afterEach(async () => {
@@ -376,5 +378,57 @@ describe('read steps', () => {
     ]);
 
     expect((await shownAt(repo.url())).read).toEqual([]);
+  });
+});
+
+describe('viewed files', () => {
+  const view = (body: unknown) => post(repo.url(), '/viewed', body);
+
+  test('a file the person marks viewed stays viewed, never decides its step, and never reaches the session', async () => {
+    started();
+    const listener = repo.background('listen');
+    const { on } = await shownAt(repo.url());
+
+    expect((await view({ step: '1', file: 'login.ts', viewed: true, on: on['step:1'] })).status).toBe(200);
+
+    const shown = await shownAt(repo.url());
+    expect(shown.viewed).toEqual(['login.ts']);
+    expect(shown.decided['step:1']).toBeNull();
+    repo.run('stop');
+    expect((await listener.ended).stdout.trim()).toBe(JSON.stringify({ kind: 'stopped' }));
+    repo.run('start');
+    expect((await shownAt(repo.url())).viewed).toEqual(['login.ts']);
+    expect((await view({ step: '1', file: 'login.ts', viewed: false })).status).toBe(200);
+    expect((await shownAt(repo.url())).viewed).toEqual([]);
+  });
+
+  test('a file outside the step, or a step changed since the page showed it, is refused', async () => {
+    started();
+    const { on } = await shownAt(repo.url());
+
+    expect((await view({ step: '1', file: 'other.ts', viewed: true })).status).toBe(400);
+    expect((await view({ step: '1', file: 'login.ts', viewed: 'yes' })).status).toBe(400);
+    repo.record([
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
+      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+    ]);
+    expect((await view({ step: '1', file: 'login.ts', viewed: true, on: on['step:1'] })).status).toBe(409);
+  });
+
+  test('a viewed file follows its unchanged diff into another step, and is no longer viewed once its diff changes', async () => {
+    started();
+    await view({ step: '1', file: 'login.ts', viewed: true });
+    await view({ step: '1', file: 'app.ts', viewed: true });
+
+    repo.record([
+      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
+    ]);
+    expect((await shownAt(repo.url())).viewed.toSorted()).toEqual(['app.ts', 'login.ts']);
+
+    fs.writeFileSync(path.join(repo.dir, 'login.ts'), 'export const login = () => false;\n');
+    git(repo.dir, 'commit', '-am', 'Refuse logins');
+    repo.run('start');
+    expect((await shownAt(repo.url())).viewed).toEqual(['app.ts']);
   });
 });

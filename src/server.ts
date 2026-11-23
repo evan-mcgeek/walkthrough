@@ -11,9 +11,9 @@ import { locked, readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
-import { CHANGED, decide, markRead, walkthroughVersion, walkthroughView } from './decisions';
+import { CHANGED, decide, markRead, markViewed, walkthroughVersion, walkthroughView } from './decisions';
 import { listPage, listView } from './list';
-import { ask, reply, sessionView } from './session';
+import { ask, comment, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
 import { tooLong } from './words';
 
@@ -123,8 +123,10 @@ export function serve(dir: string, list = false): void {
     : {
         '/decide': async fields => answered(await decide(dir, fields)),
         '/read': async ({ step, on }) => answered(await markRead(dir, step, on)),
+        '/viewed': async fields => answered(await markViewed(dir, fields)),
         '/ask': async fields => answered(await ask(dir, fields)),
         '/reply': async ({ to, text }) => answered(await reply(dir, to, text)),
+        '/comment': async fields => answered(await comment(dir, fields)),
         '/stop': stop,
       };
   let seen = Date.now();

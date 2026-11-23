@@ -3,8 +3,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
-import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
+import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, postedOf, request, type SessionView, type Taken } from './session';
 import { anchorOf } from './notes';
+import { parseDiff } from './diff';
 import { fieldsOf, filled, parseList } from './input';
 import { type Action, type Item, itemKey, STEP_ACTIONS } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
@@ -20,11 +21,16 @@ export type WalkthroughView = Walkthrough & {
   on: Record<string, string>;
   /** The ids of the steps the page has shown. */
   read: string[];
-  /** The id of the step each note and ask shows on, by its id, null when its step or lines are gone. */
+  /** The paths of the files the person marked viewed, while their diff is unchanged; a reading mark, never a decision. */
+  viewed: string[];
+  /** The ids of the person's comments the session marked posted. */
+  posted: string[];
+  /** The id of the step each note, ask and comment shows on, by its id, null when its step or lines are gone. */
   anchored: Record<string, string | null>;
 };
 
 const readFile = (dir: string) => path.join(dir, 'read.json');
+const viewedFile = (dir: string) => path.join(dir, 'viewed.json');
 const fingerprint = (content: string) => crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
 const isChoice = (entry: Entry): entry is Choice => entry.from === 'page' && entry.kind === 'decision';
 const taken = (choice: Choice | undefined): Decision | null => (choice && !('clear' in choice) ? choice : null);
@@ -58,7 +64,7 @@ export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
 
 /** Changes whenever a file walkthroughView reads does, so the page's poll of an unchanged view is answered without one. */
 export function walkthroughVersion(dir: string): string {
-  const stats = ['walkthrough.json', 'conversation.jsonl', 'read.json'].map(name => {
+  const stats = ['walkthrough.json', 'conversation.jsonl', 'read.json', 'viewed.json', 'posted.json'].map(name => {
     const stat = fs.statSync(path.join(dir, name), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : '';
   });
@@ -71,6 +77,7 @@ export function walkthroughView(dir: string): WalkthroughView | null {
   const conversation = conversationOf(dir);
   const items = decisionsOf(walkthrough, conversation);
   const read = readJson<string[]>(readFile(dir), []);
+  const viewed = readJson<string[]>(viewedFile(dir), []);
   return {
     ...walkthrough,
     actions: Object.fromEntries(items.filter(one => one.actions.length).map(one => [one.key, one.actions])),
@@ -78,9 +85,11 @@ export function walkthroughView(dir: string): WalkthroughView | null {
     reopened: Object.fromEntries(items.flatMap(one => (one.reopened ? [[one.key, one.reopened]] : []))),
     on: Object.fromEntries(items.map(one => [one.key, one.on])),
     read: walkthrough.steps.filter(step => read.includes(`${step.id}:${fingerprint(step.diff)}`)).map(step => step.id),
+    posted: postedOf(dir),
+    viewed: Object.entries(fileMarks(walkthrough)).flatMap(([file, mark]) => (viewed.includes(mark) ? [file] : [])),
     anchored: Object.fromEntries(
       conversation.flatMap(entry => {
-        const place = entry.from === 'session' ? entry.note : entry.kind === 'ask' ? entry : undefined;
+        const place = entry.from === 'session' ? entry.note : entry.kind === 'ask' || entry.kind === 'comment' ? entry : undefined;
         return place ? [[entry.id, anchorOf(walkthrough, place)]] : [];
       }),
     ),
@@ -153,6 +162,36 @@ export async function decide(
     on: found.on,
   });
   return { walkthrough: walkthroughView(dir), session };
+}
+
+// A mark follows the file's own diff, so it outlives the file moving between steps but not the file changing.
+function fileMarks({ steps }: Walkthrough): Record<string, string> {
+  return Object.fromEntries(
+    steps.flatMap(step =>
+      parseDiff(step.diff).map(file => {
+        const name = file.isDeleted ? file.oldName : file.newName;
+        return [name, `${name}:${fingerprint(JSON.stringify(file))}`];
+      }),
+    ),
+  );
+}
+
+export async function markViewed(
+  dir: string,
+  { step: stepId, file, viewed, on }: Record<string, unknown>,
+): Promise<WalkthroughView | typeof CHANGED | null> {
+  const walkthrough = readWalkthrough(dir);
+  const step = walkthrough?.steps.find(one => one.id === stepId);
+  if (!walkthrough || !step || typeof viewed !== 'boolean' || typeof file !== 'string') return null;
+  if (on !== undefined && on !== fingerprint(step.diff)) return CHANGED;
+  const mark = fileMarks({ ...walkthrough, steps: [step] })[file];
+  if (!mark) return null;
+  const marks = viewedFile(dir);
+  await locked(marks, () => {
+    const kept = readJson<string[]>(marks, []).filter(one => one !== mark);
+    writeJson(marks, viewed ? [...kept, mark] : kept);
+  });
+  return walkthroughView(dir);
 }
 
 export async function markRead(dir: string, stepId: unknown, on?: unknown): Promise<WalkthroughView | typeof CHANGED | null> {

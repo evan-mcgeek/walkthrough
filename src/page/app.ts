@@ -1,5 +1,6 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
 import { ColorSchemeType, type DiffFile, LineType } from 'diff2html/lib-esm/types';
+import { type Comment, commentsOf } from '../comments';
 import type { Lines, NoteMark, Place } from '../notes';
 import { parseDiff } from '../diff';
 import { previewType } from '../preview';
@@ -263,7 +264,7 @@ function readShown(): void {
   if (currentStep()?.id === step) readNow(step);
 }
 
-async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
+async function send(route: 'ask' | 'reply' | 'comment', body: Record<string, unknown>, draft?: string): Promise<boolean> {
   readShown();
   const answer = await post(route, body);
   if (!answer) return false;
@@ -756,9 +757,8 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
   return form;
 }
 
-/** Where a detached note or ask was. */
-function placeWas(entry: Note | Ask): string {
-  const { file, lines } = placeOf(entry);
+/** Where a detached note, ask or comment was. */
+function placeWas({ file, lines }: Place): string {
   return file !== undefined && lines ? `${file} ${linesLabel(lines).toLowerCase()}` : 'a step no longer in the change';
 }
 
@@ -813,8 +813,8 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
       'div',
       { className: 'note-head' },
       ...(detached ? [icon('message')] : []),
-      el('span', { className: 'label' }, label),
-      ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(note)}`)] : linesOf(lines)),
+      el('span', { className: note.note.finding ? 'label finding' : 'label' }, ...(note.note.finding ? [icon('warn')] : []), label),
+      ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(placeOf(note))}`)] : linesOf(lines)),
       ...(shown ? [stateTag(item, false)] : []),
       el('span', { className: 'spacer' }),
       ...actionsMenu(item, label),
@@ -859,8 +859,11 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
   return [...views, more];
 }
 
-/** `ended` once the last line is picked too; from the keyboard the first line is picked on its own first. */
-let picked: { step: string; file: string; from: number; lines: Lines; ended: boolean } | null = null;
+/**
+ * `ended` once the last line is picked too; from the keyboard the first line is picked on its own first.
+ * A picked range first offers Ask and Comment (`choose`), then shows the box for the one taken.
+ */
+let picked: { step: string; file: string; from: number; lines: Lines; ended: boolean; mode: 'choose' | 'ask' | 'comment' } | null = null;
 
 function lineAt(event: Event): { cell: HTMLElement; file: string; line: number } | null {
   const target = event.target instanceof Element ? event.target : null;
@@ -872,9 +875,26 @@ function lineAt(event: Event): { cell: HTMLElement; file: string; line: number }
 
 function pick(step: Step, file: string, line: number, extend: boolean, ended: boolean): void {
   const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line;
-  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended };
+  picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended, mode: 'choose' };
   render();
-  if (ended) document.querySelector<HTMLInputElement>('.picked-ask input')?.focus();
+  if (ended) document.querySelector<HTMLElement>('.picked-choose .btn')?.focus();
+}
+
+const focusDraft = (draft: string) => document.querySelector<HTMLElement>(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
+const newCommentDraft = ({ step, file, lines }: { step: string; file: string; lines: Lines }) => `comment:${step}:${file}:${lines.join('-')}`;
+
+function choosePicked(mode: 'ask' | 'comment'): void {
+  if (!picked?.ended) return;
+  picked = { ...picked, mode };
+  render();
+  if (mode === 'ask') document.querySelector<HTMLInputElement>('.picked-ask input')?.focus();
+  else focusDraft(newCommentDraft(picked));
+}
+
+function startComment(step: Step, file: string, line: number): void {
+  picked = { step: step.id, file, from: line, lines: [line, line], ended: true, mode: 'comment' };
+  render();
+  focusDraft(newCommentDraft(picked));
 }
 
 function pickLine(step: Step, event: MouseEvent): void {
@@ -904,6 +924,135 @@ function pickByKey(step: Step, event: KeyboardEvent): void {
 function unpick(): void {
   picked = null;
   render();
+}
+
+/** Lets the picked lines go and puts the keyboard back on the last of them. */
+function cancelPick(): void {
+  if (!picked) return;
+  const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
+  unpick();
+  end?.querySelector<HTMLElement>('.d2h-code-linenumber')?.focus();
+}
+
+function pickedChoice(step: Step, lines: Lines): HTMLElement {
+  const ask = keyed(el('button', { type: 'button', className: 'btn small' }, icon('ask'), 'Ask about lines'), `pick-ask:${step.id}`);
+  ask.onclick = () => {
+    choosePicked('ask');
+  };
+  const comment = keyed(el('button', { type: 'button', className: 'btn small' }, icon('own'), 'Comment'), `pick-comment:${step.id}`);
+  comment.onclick = () => {
+    choosePicked('comment');
+  };
+  comment.title = 'Comment on these lines (C)';
+  return el('div', { className: 'picked-choose' }, el('span', { className: 'picked-lines' }, linesLabel(lines)), el('span', { className: 'spacer' }), ask, comment);
+}
+
+const commentHint = () => (walkthrough.commentHint ? [el('span', { className: 'hint' }, walkthrough.commentHint)] : []);
+
+/** The box the person writes a comment in, new or edited; Escape or Cancel leaves it. */
+function commentBox(draft: string, start: string, where: HTMLElement[], onSave: (text: string) => void, onCancel: () => void): HTMLFormElement {
+  const box = draftArea(draft, 'Your comment', start, 3);
+  box.required = true;
+  const cancel = () => {
+    drafts.delete(draft);
+    onCancel();
+  };
+  const form = el(
+    'form',
+    { className: 'mine composing' },
+    el('div', { className: 'note-head' }, el('span', { className: 'mine-who' }, icon('own'), 'Your comment'), ...where),
+    box,
+    el(
+      'div',
+      { className: 'mine-row' },
+      ...commentHint(),
+      el('span', { className: 'spacer' }),
+      keyed(el('button', { type: 'button', className: 'btn ghost small', onclick: cancel }, 'Cancel'), `cancel:${draft}`),
+      keyed(el('button', { type: 'submit', className: 'btn primary small' }, 'Save comment'), `save:${draft}`),
+    ),
+  );
+  form.onsubmit = event => {
+    event.preventDefault();
+    if (filledIn(form)) onSave(drafts.get(draft) ?? start);
+  };
+  form.onkeydown = event => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    cancel();
+  };
+  return form;
+}
+
+function newComment(step: Step, file: string, lines: Lines): HTMLFormElement {
+  const draft = newCommentDraft({ step: step.id, file, lines });
+  return commentBox(draft, '', linesOf(lines), text => {
+    void send('comment', { step: step.id, file, lines, text }, draft).then(sent => {
+      if (sent) unpick();
+    });
+  }, cancelPick);
+}
+
+/** The step a comment shows on, null when its lines are gone. */
+const commentAnchor = (comment: Comment) => {
+  const at = walkthrough.anchored[comment.id];
+  return at === undefined ? comment.step : at;
+};
+
+/** Saved comments the person opened to edit. */
+const editingComments = new Set<string>();
+
+function commentView(comment: Comment): HTMLElement {
+  const { id, lines } = comment;
+  const posted = walkthrough.posted.includes(id);
+  const where = commentAnchor(comment) === null ? [el('span', { className: 'was' }, `was on ${placeWas(comment)}`)] : linesOf(lines);
+  const view = el('article', { className: 'mine' });
+  view.setAttribute('aria-label', 'Your comment');
+  view.dataset['motion'] = `comment:${id}`;
+  if (editingComments.has(id) && !posted && !readOnly) {
+    const draft = `edit-comment:${id}`;
+    const done = () => {
+      editingComments.delete(id);
+      render();
+      document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`edit:${id}`)}"]`)?.focus();
+    };
+    view.append(commentBox(draft, comment.text, where, text => {
+      void send('comment', { comment: id, text }, draft).then(sent => {
+        if (sent) done();
+      });
+    }, done));
+    return view;
+  }
+  const edit = keyed(el('button', { type: 'button', className: 'icon-button' }, icon('edit')), `edit:${id}`);
+  edit.setAttribute('aria-label', 'Edit comment');
+  edit.title = 'Edit comment';
+  edit.onclick = () => {
+    editingComments.add(id);
+    render();
+    focusDraft(`edit-comment:${id}`);
+  };
+  const remove = keyed(el('button', { type: 'button', className: 'icon-button' }, icon('trash')), `delete:${id}`);
+  remove.setAttribute('aria-label', 'Delete comment');
+  remove.title = 'Delete comment';
+  remove.onclick = () => {
+    void send('comment', { comment: id, delete: true });
+  };
+  // The session answers each comment, edit and deletion the page sent about it.
+  const sent = new Set(session.conversation.flatMap(entry => (entry.from === 'page' && (entry.id === id || ('comment' in entry && entry.comment === id)) ? [entry.id] : [])));
+  const answers = session.conversation.filter(entry => entry.from === 'session' && entry.answer !== undefined && sent.has(entry.answer));
+  view.append(
+    el(
+      'div',
+      { className: 'note-head' },
+      el('span', { className: 'mine-who' }, icon('own'), 'Your comment'),
+      ...where,
+      el('span', { className: 'spacer' }),
+      ...(posted || readOnly ? [] : [edit, remove]),
+    ),
+    markdown(comment.text, 'comment-text'),
+    ...(posted ? [el('span', { className: 'hint' }, 'Posted')] : commentHint()),
+    ...replies(answers),
+  );
+  return view;
 }
 
 function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
@@ -949,9 +1098,15 @@ function drawDiff(step: Step): Drawn {
     const parsed = files[at];
     const file = parsed?.newName ?? '';
     (wrapper as HTMLElement).dataset['file'] = parsed?.isDeleted ? parsed.oldName : file;
-    if (parsed) {
+    const fileDiff = wrapper.querySelector('.d2h-file-diff');
+    if (parsed && fileDiff) {
       wrapper.querySelector('.d2h-file-name-wrapper')?.after(fileStats(parsed));
+      (wrapper as HTMLElement).dataset['changed'] = String(parsed.addedLines + parsed.deletedLines);
+      const body = el('div', { className: 'diff-body' });
+      fileDiff.replaceWith(body);
+      body.append(fileDiff, overviewStripe(fileDiff));
       addPreview(wrapper, step.id, parsed);
+      if (!readOnly) fileControls(wrapper as HTMLElement, step);
     }
     for (const number of wrapper.querySelectorAll('.line-num2')) {
       const line = number.textContent.trim();
@@ -963,9 +1118,23 @@ function drawDiff(step: Step): Drawn {
     }
   });
   view.onclick = event => {
-    pickLine(step, event);
+    const at = lineAt(event);
+    if (at && event.target instanceof Element && event.target.closest('.add-comment')) startComment(step, at.file, at.line);
+    else pickLine(step, event);
   };
   if (!readOnly) {
+    // One "+" for the whole diff, moved to the line number under the pointer or the keyboard.
+    const plus = el('button', { type: 'button', className: 'add-comment', tabIndex: -1 }, icon('plus'));
+    const place = (event: Event) => {
+      const at = lineAt(event);
+      if (!at || plus.parentElement === at.cell) return;
+      const name = `Comment on line ${String(at.line)}`;
+      plus.setAttribute('aria-label', name);
+      plus.title = `${name} (C)`;
+      at.cell.append(plus);
+    };
+    view.addEventListener('pointerover', place);
+    view.addEventListener('focusin', place);
     const cells = [...view.querySelectorAll<HTMLElement>('tr[data-line] .d2h-code-linenumber')];
     // One line number is in the tab order, and the arrows move from it, so the diff is one stop.
     cells.forEach((cell, at) => {
@@ -983,6 +1152,110 @@ function drawDiff(step: Step): Drawn {
   return made;
 }
 
+const SVG = 'http://www.w3.org/2000/svg';
+
+/** A mark on the overview stripe from row `from` of `total`, `size` rows long; a note's tick keeps 3px however long the file. */
+function stripeMark(className: string, from: number, size: number | null, total: number): SVGRectElement {
+  const mark = document.createElementNS(SVG, 'rect');
+  mark.classList.add(className);
+  mark.setAttribute('y', `${String((from / total) * 100)}%`);
+  mark.setAttribute('height', size === null ? '3' : `${String((size / total) * 100)}%`);
+  mark.setAttribute('x', size === null ? '0' : '2');
+  mark.setAttribute('width', size === null ? '100%' : '6');
+  return mark;
+}
+
+/** The whole file's added and removed runs, in a slim column beside its code that does not scroll with it. */
+function overviewStripe(fileDiff: Element): SVGSVGElement {
+  const stripe = document.createElementNS(SVG, 'svg');
+  stripe.classList.add('overview-stripe');
+  stripe.setAttribute('aria-hidden', 'true');
+  const rows = [...fileDiff.querySelectorAll<HTMLElement>('tbody > tr')];
+  const types = rows.map(row => (row.querySelector('.d2h-ins') ? 'add' : row.querySelector('.d2h-del') ? 'del' : null));
+  rows.forEach((row, at) => {
+    row.dataset['at'] = String(at);
+    const type = types[at];
+    if (!type || types[at - 1] === type) return;
+    let end = at;
+    while (types[end + 1] === type) end++;
+    stripe.append(stripeMark(`run-${type}`, at, end - at + 1, rows.length));
+  });
+  stripe.dataset['rows'] = String(rows.length);
+  return stripe;
+}
+
+/** Files with more changed lines than this start collapsed. */
+const LARGE_FILE = 400;
+/** Files the person collapsed or opened, by path; the others are collapsed while viewed or large. */
+const folds = new Map<string, boolean>();
+
+const isClosed = (wrapper: HTMLElement) => {
+  const file = wrapper.dataset['file'] ?? '';
+  return folds.get(file) ?? (walkthrough.viewed.includes(file) || Number(wrapper.dataset['changed']) > LARGE_FILE);
+};
+
+/** Viewed is the person's reading mark: it folds the file away and never decides anything. */
+async function markViewed(step: Step, file: string): Promise<void> {
+  const viewed = !walkthrough.viewed.includes(file);
+  walkthrough = { ...walkthrough, viewed: viewed ? [...walkthrough.viewed, file] : walkthrough.viewed.filter(one => one !== file) };
+  folds.set(file, viewed);
+  render();
+  const answer = await post('viewed', { step: step.id, file, viewed, on: walkthrough.on[itemKey({ type: 'step', id: step.id })] });
+  if (answer) {
+    walkthrough = (await answer.json()) as WalkthroughView;
+    render();
+    return;
+  }
+  // The page showed its own mark, so the server's is fetched whole.
+  walkthroughTag = '';
+  poll();
+}
+
+function fileControls(wrapper: HTMLElement, step: Step): void {
+  const file = wrapper.dataset['file'] ?? '';
+  const header = wrapper.querySelector('.d2h-file-header');
+  const toggle = el('button', { type: 'button', className: 'icon-button file-toggle' }, icon('chevron-right'));
+  toggle.onclick = () => {
+    folds.set(file, !isClosed(wrapper));
+    render();
+  };
+  const viewed = el('button', { type: 'button', className: 'viewed-toggle' }, icon('eye'), el('span', {}, 'Viewed'));
+  viewed.setAttribute('aria-label', `Mark ${file} as viewed`);
+  viewed.onclick = () => {
+    void markViewed(step, file);
+  };
+  header?.prepend(toggle);
+  header?.append(viewed);
+}
+
+/** What a line's gutter marks, the strongest first: a finding, the person's own comment, any other note. */
+type Marked = 'finding' | 'own' | 'note';
+const MARKED: Marked[] = ['finding', 'own', 'note'];
+const MARK_ICONS: Record<Marked, IconName> = { finding: 'warn', own: 'own', note: 'message' };
+
+function jumpTo(row: HTMLElement): void {
+  const next = row.nextElementSibling;
+  (next?.classList.contains('pinned-row') ? next : row).scrollIntoView({ block: 'center' });
+}
+
+function markLines(view: HTMLElement, rows: Map<string, HTMLTableRowElement>, marks: Map<string, Marked>): void {
+  for (const old of view.querySelectorAll('.gutter-mark, .overview-stripe .tick')) old.remove();
+  for (const [key, kind] of marks) {
+    const row = rows.get(key);
+    const stripe = row?.closest('.diff-body')?.querySelector<SVGSVGElement>('.overview-stripe');
+    if (!row || !stripe) continue;
+    const mark = el('span', { className: `gutter-mark ${kind}` }, icon(MARK_ICONS[kind]));
+    mark.setAttribute('aria-hidden', 'true');
+    row.querySelector('.d2h-code-linenumber')?.append(mark);
+    const tick = stripeMark(`tick-${kind}`, Number(row.dataset['at']), null, Number(stripe.dataset['rows']));
+    tick.classList.add('tick');
+    tick.addEventListener('click', () => {
+      jumpTo(row);
+    });
+    stripe.append(tick);
+  }
+}
+
 function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll('.pinned-row')) old.remove();
@@ -994,16 +1267,40 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   for (const old of view.querySelectorAll('.file-explanation')) old.remove();
   const explained = step.kind === 'step' ? (step.fileExplanations ?? {}) : {};
   for (const wrapper of view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')) {
-    const text = explained[wrapper.dataset['file'] ?? ''];
+    const file = wrapper.dataset['file'] ?? '';
+    const text = explained[file];
     if (text) wrapper.querySelector('.d2h-file-header')?.after(markdown(text, 'file-explanation'));
+    if (readOnly) continue;
+    const closed = isClosed(wrapper);
+    const viewed = walkthrough.viewed.includes(file);
+    wrapper.classList.toggle('closed', closed);
+    wrapper.classList.toggle('viewed', viewed);
+    const toggle = wrapper.querySelector('.file-toggle');
+    toggle?.setAttribute('aria-expanded', String(!closed));
+    toggle?.setAttribute('aria-label', `${closed ? 'Expand' : 'Collapse'} ${file}`);
+    const mark = wrapper.querySelector<HTMLElement>('.viewed-toggle');
+    mark?.setAttribute('aria-pressed', String(viewed));
+    if (mark) mark.title = viewed ? 'Viewed (V)' : 'Mark as viewed (V)';
   }
-  const at = new Map<string, (Note | Ask)[]>();
+  const mine = commentsOf(session.conversation).filter(comment => commentAnchor(comment) === step.id);
+  const at = new Map<string, { entries: (Note | Ask)[]; comments: Comment[] }>();
+  const marks = new Map<string, Marked>();
+  const add = (file: string | undefined, lines: Lines | undefined, mark: Marked, entry: Note | Ask | Comment) => {
+    if (file === undefined || !lines) return;
+    const key = lineKey(file, lines[1]);
+    const here = at.get(key) ?? { entries: [], comments: [] };
+    if ('from' in entry) here.entries.push(entry);
+    else here.comments.push(entry);
+    at.set(key, here);
+    const was = marks.get(key);
+    if (!was || MARKED.indexOf(mark) < MARKED.indexOf(was)) marks.set(key, mark);
+  };
   for (const entry of pinned) {
     const { file, lines } = placeOf(entry);
-    if (file === undefined || !lines) continue;
-    const key = lineKey(file, lines[1]);
-    at.set(key, [...(at.get(key) ?? []), entry]);
+    add(file, lines, isNote(entry) && entry.note.finding ? 'finding' : 'note', entry);
   }
+  for (const comment of mine) add(comment.file, comment.lines, 'own', comment);
+  markLines(view, rows, marks);
   const pick = picked?.step === step.id ? picked : null;
   const pickKey = pick && lineKey(pick.file, pick.lines[1]);
   if (pick && pickKey) {
@@ -1011,15 +1308,18 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
       const line = Number(row.dataset['line']);
       if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) press(row, true);
     }
-    if (pick.ended && !at.has(pickKey)) at.set(pickKey, []);
+    if (pick.ended && !at.has(pickKey)) at.set(pickKey, { entries: [], comments: [] });
   }
-  for (const [key, entries] of at) {
+  const composer = (shown: NonNullable<typeof picked>) =>
+    shown.mode === 'ask' ? pickedAsk(step, shown.file, shown.lines) : shown.mode === 'comment' ? newComment(step, shown.file, shown.lines) : pickedChoice(step, shown.lines);
+  for (const [key, { entries, comments }] of at) {
     const shown = el(
       'div',
       { className: 'pinned' },
       ...notesView(entries.filter(isNote), `more:${step.id}:${key}`),
       ...entries.filter(isAsk).map(askThread),
-      ...(pick?.ended && key === pickKey ? [pickedAsk(step, pick.file, pick.lines)] : []),
+      ...comments.map(commentView),
+      ...(pick?.ended && key === pickKey ? [composer(pick)] : []),
     );
     rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
   }
@@ -1050,7 +1350,7 @@ function addPreview(wrapper: Element, stepId: string, parsed: DiffFile): void {
   const file = head ?? base ?? '';
   const type = previewType(file);
   const image = type?.startsWith('image/') ?? false;
-  const diff = wrapper.querySelector<HTMLElement>('.d2h-file-diff');
+  const diff = wrapper.querySelector<HTMLElement>('.diff-body');
   // A preview is read from the server, which an exported file does not have; a deleted Markdown file has nothing to show.
   if (!type || !diff || readOnly || (head === null && !image)) return;
   const at = (path: string) => `file?path=${encodeURIComponent(path)}`;
@@ -1255,12 +1555,15 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   const decided = stepDecided(step) && !changing.has(key);
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
   change.dataset['key'] = `change:${key}`;
-  const choices = decided ? change : actionGroup(item, stepLook);
+  // While findings are open, Approve weighs no more than Flag.
+  const open = openFindings(step);
+  const choices = decided ? change : actionGroup(item, action => (open && action.id === 'approve' ? 'secondary' : stepLook(action)));
   const asking = asks ? [ask] : [];
-  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...asking))];
+  const count = open ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))] : [];
+  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...asking, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
-  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, choices)];
+  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, ...count, choices)];
 }
 
 /** Asks about the whole step, as threads under it. */
@@ -1870,30 +2173,32 @@ function unplacedNotice(): HTMLElement[] {
 }
 
 /** Notes and asks whose step or lines left the change, and checklist items linked to a step that is gone. */
-function detached(): { gone: (Note | Ask)[]; links: ChecklistItem[] } {
+function detached(): { gone: (Note | Ask)[]; comments: Comment[]; links: ChecklistItem[] } {
   const gone = session.conversation.filter(
     (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null,
   );
+  const comments = commentsOf(session.conversation).filter(comment => commentAnchor(comment) === null);
   const known = new Set(walkthrough.steps.map(step => step.id));
   const links = (walkthrough.checklist?.items ?? []).filter(item => item.steps.some(id => !known.has(id)));
-  return { gone, links };
+  return { gone, comments, links };
 }
 
 const detachedCount = () => {
-  const { gone, links } = detached();
-  return gone.length + links.length;
+  const { gone, comments, links } = detached();
+  return gone.length + comments.length + links.length;
 };
 
 function detachedView(): HTMLElement[] {
-  const { gone, links } = detached();
-  const count = gone.length + links.length;
+  const { gone, comments, links } = detached();
+  const count = gone.length + comments.length + links.length;
   if (!count) return [];
   const title = el('h2', { className: 'detached-head', id: 'detached' }, icon('unlink'), 'Detached', el('span', { className: 'counter' }, String(count)));
   const section = el(
     'section',
     { className: 'detached-box' },
     title,
-    ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, el('p', { className: 'was' }, `Was on ${placeWas(entry)}`), askThread(entry)))),
+    ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, el('p', { className: 'was' }, `Was on ${placeWas(placeOf(entry))}`), askThread(entry)))),
+    ...comments.map(commentView),
     ...links.map(item => el('p', { className: 'detached-item' }, icon('unlink'), el('span', {}, `Checklist “${plain(item.text)}” linked to a step that no longer exists`))),
   );
   section.setAttribute('aria-labelledby', title.id);
@@ -1958,6 +2263,9 @@ let tool: Tool | null = null;
 
 const stepNotesOf = (step: Step) =>
   session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+
+/** The step's findings the person has not decided yet; which notes are findings is the session's flag. */
+const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id })).length;
 
 /** Opens whatever hides a note in the step and brings it into view. */
 function showNote(step: Step, note: Note): void {
@@ -2311,6 +2619,14 @@ function moveDecided(newly: string[], counts: Map<string, string>, before = new 
 const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 
+/** V marks the file the keyboard is in, or else the step's first file not viewed yet. */
+function viewedByKey(step: Step, target: EventTarget | null): void {
+  const files = [...main.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].filter(file => !file.hidden && !leavingPane?.contains(file));
+  const within = target instanceof Element ? target.closest<HTMLElement>('.d2h-file-wrapper') : null;
+  const file = within && files.includes(within) ? within : files.find(one => !walkthrough.viewed.includes(one.dataset['file'] ?? ''));
+  if (file) void markViewed(step, file.dataset['file'] ?? '');
+}
+
 /** j and k walk the steps, and past the last one to the end of the walkthrough. */
 function stepBy(delta: number): void {
   const view = currentView();
@@ -2322,12 +2638,17 @@ function stepBy(delta: number): void {
 document.addEventListener('keydown', event => {
   if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && picked) {
-    const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
-    unpick();
-    end?.querySelector<HTMLElement>('.d2h-code-linenumber')?.focus();
+    cancelPick();
     return;
   }
   if (isTyping(event.target)) return;
+  const step = event.target instanceof Element && event.target.closest('.menu') ? undefined : currentStep();
+  if (step && event.key === 'v') viewedByKey(step, event.target);
+  if (step && event.key === 'c') {
+    const at = lineAt(event);
+    if (picked?.ended && picked.mode === 'choose') choosePicked('comment');
+    else if (at) startComment(step, at.file, at.line);
+  }
   // Inside what scrolls sideways the arrows scroll it, so long lines stay reachable from the keyboard.
   const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu') !== null;
   if (event.key === 'j' || (event.key === 'ArrowRight' && !sideways)) stepBy(1);
