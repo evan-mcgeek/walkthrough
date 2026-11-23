@@ -14,7 +14,9 @@ test.beforeEach(async ({ page, repo, url }) => {
 
 /** How far line `line` of long.ts sits from its line number, after the main pane scrolled to the bottom. */
 async function offsetAtBottom(page: Page, line: number): Promise<number> {
-  await page.locator('#main').evaluate(main => main.scrollTo(0, main.scrollHeight));
+  await page.locator('#main').evaluate(main => {
+    main.scrollTo(0, main.scrollHeight);
+  });
   const row = page.locator(`tr[data-file="long.ts"][data-line="${String(line)}"]`);
   const [code, number] = await Promise.all([row.locator('.d2h-code-line').boundingBox(), row.locator('.d2h-code-linenumber').boundingBox()]);
   if (!code || !number) throw new Error('the line is not shown');
