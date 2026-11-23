@@ -445,6 +445,12 @@ function draftArea(draft: string, label: string, start = '', rows = 2): HTMLText
   return box;
 }
 
+/** A control a redraw rebuilds, found again by `key` so it keeps the keyboard's focus. */
+function keyed<T extends HTMLElement>(control: T, key: string): T {
+  control.dataset['key'] = key;
+  return control;
+}
+
 /** Blank words are never sent: a box of only spaces is emptied, so the browser says it needs words. */
 function filledIn(form: HTMLFormElement): boolean {
   for (const box of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]'))
@@ -690,8 +696,8 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
       'div',
       { className: 'taking-row' },
       el('span', { className: 'hint' }, 'Goes to the session with your decision.'),
-      el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; flung = null; render(); } }, 'Cancel'),
-      el('button', { type: 'submit', className: 'btn primary' }, 'Send'),
+      keyed(el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; flung = null; render(); } }, 'Cancel'), draft('cancel')),
+      keyed(el('button', { type: 'submit', className: 'btn primary' }, 'Send'), draft('send')),
     ),
   );
   form.onsubmit = event => {
@@ -735,7 +741,7 @@ function replyView(note: Note): HTMLElement[] {
     });
   });
   form.className = 'reply';
-  form.append(el('button', { type: 'submit', className: 'btn small' }, 'Send'));
+  form.append(keyed(el('button', { type: 'submit', className: 'btn small' }, 'Send'), `send:${draft}`));
   form.onkeydown = event => {
     if (event.key !== 'Escape') return;
     event.preventDefault();
@@ -868,8 +874,8 @@ function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
   form.className = 'picked-ask';
   form.prepend(el('label', { htmlFor: `picked-${step.id}` }, label));
   form.append(
-    el('button', { type: 'button', className: 'btn ghost small', onclick: unpick }, 'Cancel'),
-    el('button', { type: 'submit', className: 'btn primary small' }, 'Ask'),
+    keyed(el('button', { type: 'button', className: 'btn ghost small', onclick: unpick }, 'Cancel'), `cancel:${draft}`),
+    keyed(el('button', { type: 'submit', className: 'btn primary small' }, 'Ask'), `send:${draft}`),
   );
   return form;
 }
@@ -1403,7 +1409,7 @@ function checklistView({ title, items }: Checklist, view: View, compact = false)
       const at = stepNumber(id);
       const step = walkthrough.steps[at - 1];
       if (!step) return [];
-      const link = el('a', { href: `#${encodeURIComponent(id)}`, className: 'step-link', title: step.title }, String(at));
+      const link = keyed(el('a', { href: `#${encodeURIComponent(id)}`, className: 'step-link', title: step.title }, String(at)), `step-link:${item.id}:${id}`);
       link.setAttribute('aria-label', `Step ${String(at)}`);
       return [link];
     });
@@ -1465,7 +1471,7 @@ function endView(): HTMLElement {
       'tr',
       {},
       el('td', { className: 'number' }, String(at + 1)),
-      el('td', {}, el('a', { href: `#${encodeURIComponent(step.id)}` }, step.title), ...(decision?.note ? [el('span', { className: 'decision-note' }, decision.note)] : [])),
+      el('td', {}, keyed(el('a', { href: `#${encodeURIComponent(step.id)}` }, step.title), `end-link:${step.id}`), ...(decision?.note ? [el('span', { className: 'decision-note' }, decision.note)] : [])),
       el('td', { className: 'decision' }, decision ? el('span', { className: 'tag decided' }, labelOf(item, decision.action)) : stateTag(item, false)),
     );
   });
@@ -1699,6 +1705,7 @@ function cardView(step: Step, top: boolean, swipes: boolean): HTMLElement {
     el('span', { className: 'card-meta' }, `${plural(step.files.length, 'file')} · ${notes.length ? plural(notes.length, 'note') : 'no notes'}`),
   );
   card.setAttribute('aria-label', `Open step ${String(stepNumber(step.id))}, ${step.title}`);
+  card.dataset['key'] = `card:${step.id}`;
   return card;
 }
 
@@ -1749,7 +1756,10 @@ function deckView(): HTMLElement {
 function questionBox(message: SessionMessage): HTMLElement {
   const draft = `reply:${message.id}`;
   const choices = (message.choices ?? []).map((choice, at) =>
-    el('button', { type: 'button', className: at === 0 ? 'btn primary' : 'btn', onclick: () => void send('reply', { to: message.id, text: choice }) }, choice),
+    keyed(
+      el('button', { type: 'button', className: at === 0 ? 'btn primary' : 'btn', onclick: () => void send('reply', { to: message.id, text: choice }) }, choice),
+      `choice:${message.id}:${String(at)}`,
+    ),
   );
   const reply = lineBox(draft, 'Reply', choices.length ? 'Or reply…' : 'Reply…', () => {
     void send('reply', { to: message.id, text: drafts.get(draft) ?? '' }, draft);

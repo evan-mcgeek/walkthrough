@@ -116,3 +116,27 @@ test('a question over 4000 characters is refused with the reason and stays in it
   await expect(box).toHaveValue('a'.repeat(4001));
   await expect(step.getByText('Waiting for the session to answer.')).toHaveCount(0);
 });
+
+test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
+  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
+  const choice = page.getByRole('region', { name: 'The session asks' }).getByRole('button', { name: 'Everyone' });
+  await choice.focus();
+
+  repo.run('say', 'Still here.');
+
+  await expect(fromSession).toHaveText('From the session2 messages');
+  await expect(choice).toBeFocused();
+
+  const step = page.getByRole('region', { name: 'Login' });
+  await step.getByRole('button', { name: 'Flag' }).click();
+  const send = step.getByRole('button', { name: 'Send' });
+  await send.focus();
+
+  repo.run('say', 'And here.');
+
+  await expect(fromSession).toHaveText('From the session3 messages');
+  await expect(send).toBeFocused();
+});
