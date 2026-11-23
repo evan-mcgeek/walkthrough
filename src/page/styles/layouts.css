@@ -114,7 +114,7 @@
 
 /* ---------- tool panel ---------- */
 
-[data-layout='panel'] .tools {
+[data-layout='panel'] .tools:not([hidden]) {
   display: block;
   flex: none;
   max-height: 40%;

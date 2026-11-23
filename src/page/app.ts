@@ -1917,12 +1917,14 @@ function toolPanel(view: View): HTMLElement[] {
   }
   const items = walkthrough.checklist?.items ?? [];
   if (checklist.length) tabs.push({ id: 'checklist', label: 'Checklist', count: metCount(items) ?? String(items.length), body: () => checklist });
-  tabs.push({
-    id: 'session',
-    label: 'From the session',
-    count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
-    body: () => sessionThreads(),
-  });
+  // As with the checklist, not again beside the main pane that shows it.
+  if (view.kind !== 'session')
+    tabs.push({
+      id: 'session',
+      label: 'From the session',
+      count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
+      body: () => sessionThreads(),
+    });
   const chosen = tool ?? (walkthrough.checklist ? 'checklist' : 'notes');
   const shown = tabs.find(tab => tab.id === chosen) ?? tabs[0];
   if (!shown) return [];
@@ -2072,6 +2074,7 @@ function render(): void {
   side.replaceChildren(...(layout === 'three' ? besideChecklist(view) : []));
   side.hidden = !side.hasChildNodes();
   tools.replaceChildren(...(layout === 'panel' ? toolPanel(view) : []));
+  tools.hidden = !tools.hasChildNodes();
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });

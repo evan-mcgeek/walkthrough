@@ -225,6 +225,18 @@ test('Tool panel puts notes, the checklist and the session in tabs under the ste
   await expect(nit).toBeFocused();
 });
 
+test('Tool panel leaves out its session tab while the main pane shows the session', async ({ page, repo }) => {
+  repo.run('say', 'The lockfile is in no step.');
+  await choose(page, 'Tool panel');
+
+  await page.getByRole('link', { name: 'From the session' }).click();
+
+  await expect(page.getByRole('region', { name: 'From the session' })).toBeVisible();
+  await expect(page.getByText('The lockfile is in no step.')).toHaveCount(1);
+  await expect(page.getByRole('tab', { name: /^From the session/ })).toHaveCount(0);
+  await expect(page.locator('#tools')).toBeHidden();
+});
+
 test.describe('with a long file', () => {
   test.use({ files: { 'login.ts': Array.from({ length: 120 }, (_, at) => `export const line${String(at)} = ${String(at)};`).join('\n') } });
 
