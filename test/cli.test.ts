@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -70,6 +71,25 @@ describe('walkthrough start', () => {
     expect(page.headers.get('content-security-policy')).toContain("script-src 'self'");
     const shown = (await (await fetch(`${url.href}data/walkthrough.json`)).json()) as Walkthrough;
     expect(shown).toMatchObject({ branch: 'feature/login', base: repo.base, head: repo.head });
+  });
+
+  test('serves no folder outside its state', () => {
+    repo = makeRepo();
+    const elsewhere = path.join(path.dirname(repo.dir), 'elsewhere');
+    fs.mkdirSync(elsewhere);
+    fs.writeFileSync(path.join(elsewhere, 'token'), 'my notes\n');
+    fs.writeFileSync(path.join(elsewhere, 'server.json'), '{"a":1}\n');
+
+    const served = spawnSync(path.resolve(import.meta.dirname, '..', 'plugin', 'bin', 'walkthrough'), ['serve', elsewhere], {
+      encoding: 'utf8',
+      env: { ...process.env, WALKTHROUGH_STATE: repo.state },
+      timeout: 10_000,
+    });
+
+    expect(served.status).toBe(1);
+    expect(served.stderr).toContain('serves only a walkthrough folder');
+    expect(fs.readFileSync(path.join(elsewhere, 'token'), 'utf8')).toBe('my notes\n');
+    expect(fs.readFileSync(path.join(elsewhere, 'server.json'), 'utf8')).toBe('{"a":1}\n');
   });
 });
 

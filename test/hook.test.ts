@@ -64,6 +64,13 @@ describe('the plugin hook', () => {
     `walkthrough steps --file ${inbox}/../walkthrough.json`,
     'walkthrough steps --file',
     'FOO=1 walkthrough files',
+    'walkthrough serve /tmp/x',
+    'walkthrough serve',
+    'walkthrough',
+    'walkthrough export --o^x /tmp/x.html',
+    'walkthrough export --out~x /tmp/x.html',
+    'walkthrough say -^x',
+    "walkthrough say ''^x",
   ])('leaves anything else to the person: %s', command => {
     expect(bash(command)).toBe('none');
   });

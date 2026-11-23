@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { changedFiles, commonDir, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
+import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
 import { decide, markRead, walkthroughView } from './decisions';
@@ -110,6 +111,8 @@ export async function stopServer(dir: string): Promise<boolean> {
 }
 
 export function serve(dir: string, list = false): void {
+  if (!inState(dir))
+    throw new Error(`serve serves only a walkthrough folder under ${stateDir()}`);
   const token = pageToken(dir);
   const stop: Route = () => ({ status: 200, body: { stopped: true }, after: shutDown });
   const routes: Record<string, Route> = list

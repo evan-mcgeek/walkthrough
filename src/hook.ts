@@ -32,7 +32,7 @@ function words(command: string): Word[] | null {
     } else if (char === '\\') {
       part = command.charAt(++at);
       if (!part || part === '\n') return null;
-    } else if (REVISION.test(char) && text !== null) globbed = true;
+    } else if (REVISION.test(char) && text) globbed = true;
     else if (!PLAIN.test(char) || (char === '=' && text === null)) return null;
     text = (text ?? '') + part;
   }
@@ -40,11 +40,16 @@ function words(command: string): Word[] | null {
   return found;
 }
 
+// Not serve, which start runs itself and which writes in the folder it names.
+const SUBCOMMANDS = new Set(['start', 'files', 'steps', 'note', 'checklist', 'actions', 'decisions', 'list', 'export', 'guide', 'listen', 'policy', 'say', 'stop', 'prune']);
+
 // `--out` writes wherever it names, so an export stays with the person.
 function ownCommand(command: string): boolean {
   const found = words(command);
-  if (found?.[0]?.text !== 'walkthrough') return false;
-  return found.every(({ text }, at) => {
+  if (found?.[0]?.text !== 'walkthrough' || !SUBCOMMANDS.has(found[1]?.text ?? '')) return false;
+  return found.every(({ text, globbed }, at) => {
+    // A glob keeps what comes before its ~ or ^, so only a word led by a dash can become an option.
+    if (globbed && text.startsWith('-')) return false;
     if (text === '--out' || text.startsWith('--out=') || text.startsWith('--file=')) return false;
     if (text !== '--file') return true;
     const file = found[at + 1];

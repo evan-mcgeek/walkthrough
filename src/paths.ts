@@ -26,12 +26,20 @@ export function makeInbox(dir: string): string {
   return inbox;
 }
 
+// A folder that is in the state once links are followed.
+export function inState(dir: string): boolean {
+  try {
+    return fs.realpathSync(dir).startsWith(fs.realpathSync(stateDir()) + path.sep);
+  } catch {
+    return false;
+  }
+}
+
 // A file directly in a folder named inbox under the state, not a link out of it.
 export function inInbox(file: string): boolean {
   const parent = path.dirname(path.resolve(file));
-  if (path.basename(parent) !== INBOX) return false;
+  if (path.basename(parent) !== INBOX || !inState(parent)) return false;
   try {
-    if (!fs.realpathSync(parent).startsWith(fs.realpathSync(stateDir()) + path.sep)) return false;
     const stat = fs.lstatSync(file, { throwIfNoEntry: false });
     return !stat || stat.isFile();
   } catch {
