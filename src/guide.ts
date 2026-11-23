@@ -44,7 +44,16 @@ const actionsExample = [
     ],
   },
   { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'fix', label: 'Needs a fix', note: true }] },
-  { item: { type: 'walkthrough' }, actions: [{ id: 'post', label: 'Post my comments' }] },
+  {
+    item: { type: 'verdict' },
+    hint: 'Sent with the review.',
+    actions: [
+      { id: 'approve', label: 'Approve' },
+      { id: 'changes', label: 'Request changes' },
+      { id: 'comment', label: 'Comment' },
+    ],
+  },
+  { item: { type: 'walkthrough' }, hint: 'Posts your comments as one review.', actions: [{ id: 'post', label: 'Post my review' }] },
 ];
 
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>] [--comments <text>]
@@ -120,12 +129,17 @@ ${JSON.stringify(checklistExample, null, 2)}
 walkthrough actions --file <file>
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
   The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
-    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
+  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
+    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
-  Other items offer nothing until actions are recorded on them; the walkthrough's actions show at its end, after the last step.
+  Other items offer nothing until actions are recorded on them.
+  The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
+  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status.
+  The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
+  "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
+  A note offering an action with "edit": true is a draft: the Summary lists it as accepted or edited when the person took that action, and dropped when they took another.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
@@ -137,7 +151,8 @@ walkthrough decisions
   Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
   A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
-  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the verdict's and the walkthrough's base and head.
+  The verdict is the line with {"type": "verdict"}: its decision's action is the verdict the person chose, or null before they choose one.
   A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
 
 walkthrough listen
@@ -148,6 +163,7 @@ walkthrough listen
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
+    {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
     {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
     {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
     {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
@@ -175,7 +191,7 @@ walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]..
   Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
 
 walkthrough export [--out <file>]
-  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist and decisions.
+  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist, decisions and the verdict.
   The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
   With --out the person approves the command, since it writes where it names.
 
@@ -190,6 +206,6 @@ walkthrough policy [show | init | save --file <file>]
   save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list
-  Opens a page of the repo's walkthroughs with their progress and last activity; opening one starts its page when it is not running.
+  Opens a page of the repo's walkthroughs with their progress, verdict and last activity; opening one starts its page when it is not running.
   It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
 `;

@@ -29,7 +29,7 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const recorded = repo.record(steps);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
-  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link')).toHaveCount(3);
+  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link')).toHaveCount(4);
 });
 
 test('shows one step at a time with its explanation and files, folded steps collapsed, and moves between steps', async ({
@@ -37,7 +37,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
 }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByRole('heading', { name: 'To review 3' })).toBeVisible();
-  await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version']);
+  await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('aria-current', 'step');
   const first = page.getByRole('region', { name: 'Login check' });
   await expect(first.getByText('Undecided', { exact: true })).toBeVisible();
@@ -133,9 +133,9 @@ test('j and k, and the right and left arrows, move between steps, but not while 
   await page.keyboard.press('ArrowRight');
   await expect(region('App version')).toBeVisible();
   await page.keyboard.press('j');
-  await expect(region('0 of 3 steps decided')).toBeVisible();
+  await expect(region('Summary')).toBeVisible();
   await page.keyboard.press('j');
-  await expect(region('0 of 3 steps decided')).toBeVisible();
+  await expect(region('Summary')).toBeVisible();
   await page.keyboard.press('k');
   await expect(region('App version')).toBeVisible();
   await page.keyboard.press('k');
@@ -168,15 +168,16 @@ test('shows how many steps are decided and left, and approving moves on to the n
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
-test('deciding the last open step opens the end of the walkthrough, which j reaches from the last step too', async ({ page }) => {
+test('deciding the last open step opens the Summary, which j reaches from the last step too', async ({ page }) => {
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
   await page.getByRole('region', { name: 'Regenerated schema' }).getByRole('button', { name: 'Approve' }).click();
   await page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Flag' }).click();
   await page.getByRole('textbox', { name: 'Note' }).fill('Not this version.');
   await page.getByRole('button', { name: 'Send' }).click();
 
-  const end = page.getByRole('region', { name: 'All 3 steps decided' });
-  await expect(end.getByRole('row')).toHaveText(['1Login checkApprove', '2Regenerated schemaApprove', '3App versionNot this version.Flag']);
+  const end = page.getByRole('region', { name: 'Summary' });
+  await expect(end.getByRole('region', { name: 'Decided' }).getByRole('row')).toHaveText(['Approve1 Login check, 2 Regenerated schema2', 'Flag3 App version1']);
+  await expect(end.getByRole('region', { name: 'Flagged' }).getByRole('listitem')).toHaveText(['3 App versionNot this version.']);
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByText('Everything is decided.')).toBeVisible();
   await expect(rail.getByRole('heading', { name: 'To review 0' })).toBeVisible();
@@ -185,8 +186,8 @@ test('deciding the last open step opens the end of the walkthrough, which j reac
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await page.keyboard.press('j');
   await expect(end).toBeVisible();
-  await end.getByRole('link', { name: 'Login check' }).click();
-  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  await end.getByRole('region', { name: 'Flagged' }).getByRole('link', { name: '3 App version' }).click();
+  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
 });
 
 test('a redraw from the session or from steps recorded again keeps the step being read and its opened diff', async ({

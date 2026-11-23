@@ -91,7 +91,7 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    A list of whatever your policy tracks, each item with a status and links to the steps.
    The template tracks the ticket's acceptance criteria.
 4. **Actions.**
-   The session offers actions on steps, notes, checklist items and the whole walkthrough.
+   The session offers actions on steps, notes, checklist items, your verdict and the whole walkthrough.
    Some ask for a note, some let you edit the text first, for example a draft comment for a colleague, which always starts with `[AI]`.
    A step with nothing else recorded offers Approve and Flag.
 5. **Ask.**
@@ -105,7 +105,12 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
 7. **Undo.**
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
-8. **The change moves.**
+8. **Summary and verdict.**
+   The last entry of the queue, or Finish review in the header (G S), is the Summary: your decisions by label, flags with their notes, your comments, the `[AI]` drafts you accepted, edited or dropped, the checklist, and what is still open, listed as undecided or reopened.
+   You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
+   Until then the walkthrough reads "No verdict yet", and the finishing action, such as handing over fixes or sending your review, waits for it.
+   Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
+9. **The change moves.**
    When you push fixes, the same walkthrough goes on.
    Steps whose diff didn't change keep your decisions, changed steps reopen, and new files go into new steps.
    Notes whose lines changed stay on the page as detached, never dropped.

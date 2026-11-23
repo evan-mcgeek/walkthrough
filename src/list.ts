@@ -11,6 +11,8 @@ export type Listed = {
   id: string;
   name: string;
   kind?: string;
+  /** The label of the verdict the person chose, while it holds. */
+  verdict?: string;
   target: string;
   steps: number;
   decided: number;
@@ -34,12 +36,14 @@ export function listView(repoDir: string): Listed[] {
       if (view.reopened[key]) return 'reopened';
       return view.read.includes(step.id) ? 'read' : 'unread';
     });
+    const verdict = view.decided['verdict'];
     const changed = ACTIVITY.map(file => fs.statSync(path.join(dir, file), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
         name: nameOf(view),
         ...(view.kindLabel !== undefined && { kind: view.kindLabel }),
+        ...(verdict && { verdict: view.actions['verdict']?.find(one => one.id === verdict.action)?.label ?? verdict.action }),
         target: view.target,
         steps: view.steps.length,
         decided: segments.filter(segment => segment === 'decided').length,

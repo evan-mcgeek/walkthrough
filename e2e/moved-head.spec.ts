@@ -41,7 +41,7 @@ test.beforeEach(async ({ page, repo, url }) => {
 
 test('a step whose diff changed shows reopened with the decision it had', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened', 'From the session3 detached']);
+  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened', 'From the session3 detached', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reopened');
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Reopened', { exact: true })).toBeVisible();
@@ -97,7 +97,7 @@ test('changed files in no step yet are named until the session records steps for
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await page.keyboard.press('j');
-  const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
+  const item = page.getByRole('region', { name: 'Checklist' }).getByRole('listitem');
   await expect(item.getByRole('link', { name: 'Step 1' })).toHaveText('1');
   await expect(item.getByText('1 linked step is no longer in the change', { exact: true })).toBeVisible();
 });

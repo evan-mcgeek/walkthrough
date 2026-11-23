@@ -95,8 +95,10 @@ A note whose step or lines leave the change, or whose lines change, stays on the
 
 ## Actions
 
-Record the actions the page offers on steps, notes, checklist items and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
+Record the actions the page offers on steps, notes, checklist items, the verdict and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
 Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
+The page ends with a Summary, where the person chooses their verdict on the whole walkthrough and takes its finishing action.
+Offer the verdict's choices on the verdict and the finishing action first on the whole walkthrough, as the review policy names them, each with a short hint saying where it goes; the finishing action waits for a verdict.
 A step or checklist item that is gone takes its actions with it, so record actions on new ones.
 `walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
@@ -113,6 +115,7 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
      Pass short text in single quotes, writing a single quote in it as `'\''`; for longer text, write it to a file in the inbox and pass `--file <file>` in place of the text.
    - A reply: the person's reply to a question you asked or to a note, which comes with the note's label and text; act on it, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
    - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
+     A decision on the verdict is the person's verdict on the whole walkthrough; keep it for the finishing action, which carries it as the review policy says.
      A later decision on the same item replaces the earlier one.
      A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
    - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.

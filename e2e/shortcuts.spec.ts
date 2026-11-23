@@ -83,7 +83,7 @@ test('A approves, F flags with a note and / goes to the Ask box; none fires whil
   await expect(page.getByText('2/2', { exact: true })).toBeVisible();
 });
 
-test('G then S goes to the end of the walkthrough, and G alone does nothing', async ({ page }) => {
+test('G then S goes to the Summary, and G alone does nothing', async ({ page }) => {
   await page.keyboard.press('g');
   await page.keyboard.press('j');
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
@@ -91,5 +91,5 @@ test('G then S goes to the end of the walkthrough, and G alone does nothing', as
   await page.keyboard.press('g');
   await page.keyboard.press('s');
 
-  await expect(page.getByRole('region', { name: '0 of 2 steps decided' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
 });

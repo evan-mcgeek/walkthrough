@@ -29,6 +29,10 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   const stored = new URL('data/walkthrough.json', url).href;
   const read = async () => ((await (await page.request.get(stored)).json()) as { read: string[] }).read;
   await expect.poll(read).toEqual(['1', '2']);
+  repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
+  await page.getByRole('banner').getByRole('link', { name: 'Finish review' }).click();
+  await page.getByRole('radio', { name: 'Needs fixes' }).click();
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
   const out = path.join(path.dirname(repo.dir), 'login.html');
   expect(repo.run('export', '--out', out).status).toBe(0);
   await page.close();
@@ -47,6 +51,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(exported.locator('.export-head .logo')).toHaveText('Walkthrough');
   expect(await exported.locator('link[rel="icon"]').getAttribute('href')).toMatch(/^data:image\/svg\+xml;base64,/);
   await expect(exported.getByText(/^Walkthrough export · .+ · 3 steps, 1 decided$/)).toBeVisible();
+  await expect(exported.locator('.export-head').getByTitle('Your verdict')).toHaveText('Needs fixes');
   expect((await exported.getByRole('main').boundingBox())?.width).toBe(900);
   const shown = exported.getByRole('region', { name: 'Login check' });
   await expect(shown.getByRole('heading', { level: 2 })).toHaveText('1Login checkDecided: Flag');

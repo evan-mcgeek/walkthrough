@@ -152,9 +152,9 @@ for (const [name, setUp] of [
     await second.getByRole('textbox', { name: 'Note' }).fill('Too early.');
     await second.getByRole('button', { name: 'Send' }).click();
 
-    await expect(page.getByRole('region', { name: 'All 2 steps decided' })).toBeVisible();
-    // The end of the walkthrough keeps the checklist within reach, whichever panels are shown.
-    await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
+    // The Summary keeps the checklist within reach, whichever panels are shown.
+    await expect(page.getByRole('main').getByRole('region', { name: 'Checklist' })).toBeVisible();
     await page.keyboard.press('k');
     await expect(second.getByText('Decided: Flag', { exact: true })).toBeVisible();
     await expect(second.getByText('Too early.', { exact: true })).toBeVisible();

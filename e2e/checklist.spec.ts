@@ -55,7 +55,7 @@ test('a status word alone never puts an item in the rail; only the mark the sess
   repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'Who may log in?' }] }, 'checklist');
   await page.reload();
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version']);
+  await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version', 'Summary']);
 
   repo.record({ title: 'Criteria', items: [{ status: 'not met', mark: 'not-met', text: 'Who may log in?' }] }, 'checklist');
 
@@ -76,14 +76,14 @@ test('an item link opens the step it links to', async ({ page, repo }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toHaveCount(0);
 });
 
-test('the checklist shows at the end of the walkthrough, and is absent when none is recorded', async ({ page, repo }) => {
-  await page.goto(`${page.url().split('#')[0] ?? ''}#end`);
-  await expect(page.getByRole('region', { name: '0 of 2 steps decided' })).toBeVisible();
+test('the checklist shows on the Summary, and is absent when none is recorded', async ({ page, repo }) => {
+  await page.goto(`${page.url().split('#')[0] ?? ''}#summary`);
+  await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
   await expect(page.locator('.checklist')).toHaveCount(0);
 
   repo.record(checklist, 'checklist');
 
-  await expect(page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveCount(3);
 });
 
 test('checklist marks and rail states are named for screen readers, not only drawn', async ({ page, repo }) => {

@@ -2,7 +2,7 @@
   Base elements and controls (docs/design/DESIGN.md, Components).
   Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
-  Pills: .tag, .tag.decided, .tag.reopened, .counter, .kind, .file-chip.
+  State: .tag, .tag.decided, .tag.reopened (a dot and a word). Pills: .counter, .kind, .file-chip.
   Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box; .menu floats under its button.
 */
 
@@ -60,13 +60,13 @@ samp,
   align-items: center;
   justify-content: center;
   gap: var(--s2);
-  min-height: 34px;
-  padding: 0 var(--s4);
+  min-height: 30px;
+  padding: 0 var(--s3);
   border: 1px solid var(--control-edge);
-  border-radius: var(--r-md);
+  border-radius: var(--r-xs);
   background: var(--surface);
   color: var(--ink);
-  font: 500 13.5px/1.2 var(--font-ui);
+  font: 500 13px/1.2 var(--font-ui);
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -124,9 +124,9 @@ samp,
 }
 
 .btn.small {
-  min-height: 28px;
-  padding: 0 var(--s3);
-  font-size: 13px;
+  min-height: 26px;
+  padding: 0 var(--s2);
+  font-size: 12.5px;
 }
 
 .btn:disabled {
@@ -239,9 +239,9 @@ input,
 textarea,
 select {
   box-sizing: border-box;
-  min-height: 34px;
+  min-height: 30px;
   border: 1px solid var(--control-edge);
-  border-radius: var(--r-md);
+  border-radius: var(--r-xs);
   background: var(--canvas);
   color: var(--ink);
   font: var(--text-body-ui);
@@ -257,6 +257,7 @@ input {
 
 textarea {
   padding: 9px 11px;
+  border-radius: var(--r-md);
   line-height: 1.5;
   resize: vertical;
 }
@@ -304,7 +305,6 @@ select:disabled {
 
 /* ---------- pills ---------- */
 
-.tag,
 .counter,
 .kind {
   display: inline-block;
@@ -314,20 +314,40 @@ select:disabled {
   white-space: nowrap;
 }
 
+/* State is a dot and a word, never a pill: hollow undecided, filled grey decided, dashed amber reopened. */
 .tag {
-  border: 1px solid var(--control-edge);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
+  font: 500 12.5px/1.5 var(--font-ui);
+  white-space: nowrap;
+}
+
+.tag::before {
+  flex: none;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  content: '';
 }
 
 .tag.decided {
-  border-color: transparent;
-  background: var(--surface-tint);
   color: var(--ink-secondary);
 }
 
+.tag.decided::before {
+  background: currentColor;
+}
+
 .tag.reopened {
-  border-color: currentColor;
   color: var(--amber);
+}
+
+.tag.reopened::before {
+  border-style: dashed;
 }
 
 .counter,

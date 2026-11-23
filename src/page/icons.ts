@@ -15,6 +15,7 @@ const ICONS = {
   /** Queue and step states. */
   unread: [ring()],
   read: [ring(), ['path', { d: 'M8 1.8a6.2 6.2 0 0 1 0 12.4z', fill: 'currentColor' }]],
+  current: [ring(), ['circle', { cx: 8, cy: 8, r: 2.8, fill: 'currentColor' }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
@@ -23,6 +24,9 @@ const ICONS = {
   reopened: [line('M13 8a5 5 0 1 1-1.6-3.7'), line('M11.8 1.8v3h-3')],
   folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],
   message: [line('M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 1.5)],
+  summary: [line('M3 3.5h10M3 8h10M3 12.5h6', 1.6)],
+  /** The verdict. */
+  finish: [['path', { d: 'M3.5 14V2.5M3.5 3h8.2l-1.6 2.6 1.6 2.6H3.5', ...round, 'stroke-width': 1.5 }]],
   /** Checklist statuses. */
   met: [ring(), line('M5 8.2l2 2 4-4.3')],
   'not-met': [ring(), line('M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8')],

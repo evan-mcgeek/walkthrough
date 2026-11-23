@@ -52,7 +52,7 @@
   /* Type */
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --text-headline: 650 21px/1.25 var(--font-ui);
+  --text-headline: 650 19px/1.25 var(--font-ui);
   --text-title: 650 17px/1.4 var(--font-ui);
   --text-prose: 400 15px/1.6 var(--font-ui);
   --text-body: 400 14.5px/1.5 var(--font-ui);
