@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -53,6 +53,21 @@ describe('walkthrough policy', () => {
     expect(run('policy').stdout).toContain(`template: the review policy at ${policy} is an earlier unchanged template`);
     expect(run('policy', 'show').stdout).toBe(released);
     expect(fs.readFileSync(policy, 'utf8')).toBe(TEMPLATE);
+  });
+
+  test('takes a copy of a template from an earlier release for the template', () => {
+    const config = fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', 'config-'));
+    const repo = makeRepo({ env: { XDG_CONFIG_HOME: config } });
+    const policy = policyIn(config);
+    // The template before its last change.
+    const earlier = execFileSync('git', ['cat-file', 'blob', '50ea67b69315ec16b51779b2be5b7d17d4ceee2c'], {
+      cwd: import.meta.dirname,
+    });
+    fs.mkdirSync(path.dirname(policy), { recursive: true });
+    fs.writeFileSync(policy, earlier);
+
+    expect(repo.run('policy').stdout).toContain(`template: the review policy at ${policy} is an earlier unchanged template`);
+    expect(repo.run('policy', 'show').stdout).toBe(TEMPLATE);
   });
 
   test('refuses to save an empty policy', () => {

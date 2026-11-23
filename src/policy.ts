@@ -14,16 +14,19 @@ const policyPath = () =>
 
 const read = (file: string) => fs.readFileSync(file);
 
-// What init copied, so a copy left unchanged is still the template after a release changes it.
-const copiedPath = () => path.join(path.dirname(policyPath()), '.template-sha256');
-const sha256 = (bytes: Buffer) => crypto.createHash('sha256').update(bytes).digest('hex');
+// The sha256 of every template that ever shipped, current included, so an unchanged copy stays the template; a template change adds its hash.
+const TEMPLATES = new Set([
+  '15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0',
+  '2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e',
+  '92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359',
+  'f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b',
+]);
 
 function stateOf(policy: string): 'none' | 'template' | 'earlier' | 'yours' {
   if (!fs.existsSync(policy)) return 'none';
   const bytes = read(policy);
   if (bytes.equals(read(TEMPLATE))) return 'template';
-  const copied = fs.existsSync(copiedPath()) ? fs.readFileSync(copiedPath(), 'utf8').trim() : '';
-  return sha256(bytes) === copied ? 'earlier' : 'yours';
+  return TEMPLATES.has(crypto.createHash('sha256').update(bytes).digest('hex')) ? 'earlier' : 'yours';
 }
 
 function status(): void {
@@ -53,9 +56,7 @@ export function policyCommand(args: string[]): void {
   else if (action === 'show') process.stdout.write(read(stateOf(policyPath()) === 'yours' ? policyPath() : TEMPLATE));
   else if (action === 'init') {
     if (fs.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
-    const template = read(TEMPLATE);
-    save(template, 'Copied the template to');
-    fs.writeFileSync(copiedPath(), `${sha256(template)}\n`);
+    save(read(TEMPLATE), 'Copied the template to');
   } else if (action === 'save') {
     const text = readInput(values.file);
     if (!text.trim()) throw new Error('the review policy is empty; nothing was saved');
