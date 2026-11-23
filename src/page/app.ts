@@ -109,8 +109,11 @@ const changing = new Set<string>();
 async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
   const before = moves;
   const from = currentStep()?.id;
-  const answer = await post('decide', { item, action, ...fields });
-  if (!answer) return;
+  const answer = await post('decide', { item, action, ...fields, on: walkthrough.on[itemKey(item)] });
+  if (!answer) {
+    poll();
+    return;
+  }
   ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
   for (const field of ['note', 'text']) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
@@ -213,8 +216,11 @@ async function undo(): Promise<void> {
   if (!taken) return;
   const hadFocus = toast.contains(document.activeElement);
   hideToast();
-  const answer = await post('decide', { item: taken.item, clear: true });
-  if (!answer) return;
+  const answer = await post('decide', { item: taken.item, clear: true, on: walkthrough.on[itemKey(taken.item)] });
+  if (!answer) {
+    poll();
+    return;
+  }
   ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
   if (taken.item.type === 'step' && taken.landed === location.hash) go(taken.item.id);
   render();
@@ -228,7 +234,7 @@ function markRead(step: Step): void {
   // In step order, as the server lists them, so the next poll finds nothing new to draw.
   walkthrough = { ...walkthrough, read: walkthrough.steps.filter(one => read.has(one.id)).map(one => one.id) };
   posted++;
-  void postQuietly('read', { step: step.id });
+  void postQuietly('read', { step: step.id, on: walkthrough.on[itemKey({ type: 'step', id: step.id })] });
 }
 
 async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {

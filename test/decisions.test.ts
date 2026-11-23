@@ -328,6 +328,28 @@ describe('decisions', () => {
   });
 });
 
+describe('what the page showed', () => {
+  test('a decision or read mark sent for a step the session has since changed is refused, and the page is told why', async () => {
+    started();
+    const { on } = await shownAt(repo.url());
+    repo.record([
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
+      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+    ]);
+
+    const decided = await decide({ item: step1, action: 'approve', on: on['step:1'] });
+    const read = await post(repo.url(), '/read', { step: '1', on: on['step:1'] });
+
+    expect(decided.status).toBe(409);
+    expect(await decided.json()).toEqual({ error: 'This changed since the page showed it; look at it again.' });
+    expect(read.status).toBe(409);
+    const shown = await shownAt(repo.url());
+    expect(shown.decided['step:1']).toBeNull();
+    expect(shown.read).toEqual([]);
+    expect((await decide({ item: step1, action: 'approve', on: shown.on['step:1'] })).status).toBe(200);
+  });
+});
+
 describe('read steps', () => {
   test('a step the page has shown is read, apart from decided, and stays so', async () => {
     started();

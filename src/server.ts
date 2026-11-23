@@ -11,7 +11,7 @@ import { readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
-import { decide, markRead, walkthroughView } from './decisions';
+import { CHANGED, decide, markRead, walkthroughView } from './decisions';
 import { listPage, listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
@@ -119,7 +119,7 @@ export function serve(dir: string, list = false): void {
     ? { '/open': ({ id }) => open(dir, id), '/stop': stop }
     : {
         '/decide': async fields => answered(await decide(dir, fields)),
-        '/read': async ({ step }) => answered(await markRead(dir, step)),
+        '/read': async ({ step, on }) => answered(await markRead(dir, step, on)),
         '/ask': async fields => answered(await ask(dir, fields)),
         '/reply': async ({ to, text }) => answered(await reply(dir, to, text)),
         '/stop': stop,
@@ -156,7 +156,12 @@ export function serve(dir: string, list = false): void {
   });
 }
 
-const answered = (view: object | null): Answer => (view ? { status: 200, body: view } : { status: 400 });
+const answered = (view: object | typeof CHANGED | null): Answer =>
+  view === CHANGED
+    ? { status: 409, body: { error: 'This changed since the page showed it; look at it again.' } }
+    : view
+      ? { status: 200, body: view }
+      : { status: 400 };
 
 async function open(repoDir: string, id: unknown): Promise<Answer> {
   const listed = listView(repoDir).find(one => one.id === id);

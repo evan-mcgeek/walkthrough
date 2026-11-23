@@ -73,6 +73,25 @@ test('a decision answered after the person opened another step leaves them on th
   await expect(step).toBeVisible();
 });
 
+test('a decision on a step the session changed since the page drew it is refused, and the page shows the change', async ({ page, repo }) => {
+  let release = () => {};
+  const held = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  await page.route('**/data/walkthrough.json', async route => {
+    await held;
+    await route.continue();
+  });
+  record(repo, [{ title: 'Everything', explanation: 'Login and the app.', files: ['login.ts', 'app.ts'] }], 'steps');
+
+  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
+
+  await expect(page.getByText('This changed since the page showed it; look at it again.')).toBeVisible();
+  release();
+  const step = page.getByRole('region', { name: 'Everything' });
+  await expect(step.getByText('Undecided', { exact: true })).toBeVisible();
+});
+
 test('a press on an action survives the page redrawing before the release', async ({ page, repo }) => {
   const approve = page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' });
   await approve.hover();

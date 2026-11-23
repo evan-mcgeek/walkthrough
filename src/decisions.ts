@@ -15,6 +15,8 @@ export type WalkthroughView = Walkthrough & {
   decided: Record<string, Decision | null>;
   /** The decision each reopened item had before what it is about changed, by item key. */
   reopened: Record<string, Decision>;
+  /** What a decision on each item is bound to, by item key; the page sends back the one it showed. */
+  on: Record<string, string>;
   /** The ids of the steps the page has shown. */
   read: string[];
   /** The id of the step each note and ask shows on, by its id, null when its step or lines are gone. */
@@ -49,7 +51,7 @@ export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
     const latest = choices.findLast(one => itemKey(one.item) === key && one.on === on);
     // A clear on what the item is now leaves nothing to reopen.
     const earlier = latest ? undefined : choices.findLast(one => itemKey(one.item) === key);
-    return { item, key, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
+    return { item, key, on, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
   });
 }
 
@@ -64,6 +66,7 @@ export function walkthroughView(dir: string): WalkthroughView | null {
     actions: Object.fromEntries(items.filter(one => one.actions.length).map(one => [one.key, one.actions])),
     decided: Object.fromEntries(items.map(one => [one.key, one.decision])),
     reopened: Object.fromEntries(items.flatMap(one => (one.reopened ? [[one.key, one.reopened]] : []))),
+    on: Object.fromEntries(items.map(one => [one.key, one.on])),
     read: walkthrough.steps.filter(step => read.includes(`${step.id}:${fingerprint(step.diff)}`)).map(step => step.id),
     anchored: Object.fromEntries(
       conversation.flatMap(entry => {
@@ -109,12 +112,18 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
 }
 
 type Decided = { walkthrough: WalkthroughView | null; session: SessionView };
+/** The item changed after the page showed it, so a decision sent on it would bind what the person never saw. */
+export const CHANGED = 'changed';
 
-export async function decide(dir: string, { item, action, note, text, clear }: Record<string, unknown>): Promise<Decided | null> {
+export async function decide(
+  dir: string,
+  { item, action, note, text, clear, on }: Record<string, unknown>,
+): Promise<Decided | typeof CHANGED | null> {
   const walkthrough = readWalkthrough(dir);
   const conversation = conversationOf(dir);
   const found = walkthrough && itemsOf(walkthrough, conversation).find(one => one.key === keyOf(item));
   if (!found) return null;
+  if (on !== undefined && on !== found.on) return CHANGED;
   if (clear !== undefined) {
     const decided = decisionsOf(walkthrough, conversation).find(one => one.key === found.key)?.decision;
     if (clear !== true || !decided || action !== undefined || note !== undefined || text !== undefined) return null;
@@ -136,9 +145,10 @@ export async function decide(dir: string, { item, action, note, text, clear }: R
   return { walkthrough: walkthroughView(dir), session };
 }
 
-export async function markRead(dir: string, stepId: unknown): Promise<WalkthroughView | null> {
+export async function markRead(dir: string, stepId: unknown, on?: unknown): Promise<WalkthroughView | typeof CHANGED | null> {
   const step = readWalkthrough(dir)?.steps.find(one => one.id === stepId);
   if (!step) return null;
+  if (on !== undefined && on !== fingerprint(step.diff)) return CHANGED;
   const file = readFile(dir);
   const mark = `${step.id}:${fingerprint(step.diff)}`;
   await locked(file, () => {

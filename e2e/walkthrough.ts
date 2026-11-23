@@ -22,7 +22,8 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
     const problems: string[] = [];
     page.on('pageerror', error => problems.push(error.message));
     page.on('console', message => {
-      if (message.type() === 'error') problems.push(message.text());
+      // The browser logs a 409, which the page answers by telling the person what changed.
+      if (message.type() === 'error' && !message.text().includes('status of 409')) problems.push(message.text());
     });
     await page.goto(repo.url());
     await use(repo.url());
