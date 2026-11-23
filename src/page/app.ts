@@ -11,10 +11,14 @@ import { plural } from '../words';
 import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
 import { renderMarkdown } from './markdown';
+import { animate, now, play, reduced, replay } from './motion';
 
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
 const exported = document.getElementById('exported')?.textContent;
 const readOnly = exported !== undefined;
+
+/** What reduced motion keeps of an element arriving. */
+const FADE_IN = [{ opacity: 0 }, { opacity: 1 }];
 
 function markdown(text: string, className: string): HTMLElement {
   const box = document.createElement('div');
@@ -97,13 +101,107 @@ async function decide(item: Item, action: string, fields: { note?: string; text?
   for (const field of ['note', 'text']) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
   changing.delete(itemKey(item));
+  // Moving on is only for the person still on the step they decided; it comes before drawing, so the pane swaps once.
+  if (item.type === 'step' && moves === before) {
+    const { steps } = walkthrough;
+    const at = steps.findIndex(one => one.id === item.id);
+    const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find(one => !stepDecided(one));
+    go(next ? next.id : 'end');
+  }
   render();
-  // Moving on is only for the person still on the step they decided.
-  if (item.type !== 'step' || moves !== before) return;
-  const { steps } = walkthrough;
-  const at = steps.findIndex(one => one.id === item.id);
-  const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find(one => !stepDecided(one));
-  go(next ? next.id : 'end');
+  offerUndo(item, action);
+}
+
+/** The decision the toast offers to take back, and the address deciding it left the person at. */
+let undoable: { item: Item; landed: string } | null = null;
+const UNDO_MS = 6000;
+const toastText = el('span', { className: 'toast-text' });
+const toast = el(
+  'div',
+  { className: 'toast' },
+  icon('met'),
+  toastText,
+  el('button', { type: 'button', className: 'toast-undo', onclick: () => void undo() }, 'Undo'),
+);
+const toastRegion = el('div', { className: 'toast-region' });
+toastRegion.setAttribute('role', 'status');
+if (!readOnly) region('panes').append(toastRegion);
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let toastHeld = { pointer: false, focus: false };
+
+/** The toast stays while the pointer or focus is on it, and leaves a while after both are gone. */
+function holdToast(held: Partial<typeof toastHeld> = {}): void {
+  toastHeld = { ...toastHeld, ...held };
+  clearTimeout(toastTimer);
+  if (!toastHeld.pointer && !toastHeld.focus) toastTimer = setTimeout(hideToast, UNDO_MS);
+}
+toast.onpointerenter = () => {
+  holdToast({ pointer: true });
+};
+toast.onpointerleave = () => {
+  holdToast({ pointer: false });
+};
+toast.addEventListener('focusin', () => {
+  holdToast({ focus: true });
+});
+toast.addEventListener('focusout', () => {
+  holdToast({ focus: false });
+});
+
+function itemName(item: Item): string {
+  switch (item.type) {
+    case 'step':
+      return `step ${String(stepNumber(item.id))}`;
+    case 'checklist':
+      return `checklist item ${String((walkthrough.checklist?.items.findIndex(one => one.id === item.id) ?? -1) + 1)}`;
+    case 'note': {
+      const noted = session.conversation.find(entry => entry.id === item.id);
+      return noted && isNote(noted) ? `the ${noted.note.label} note` : 'the note';
+    }
+    case 'walkthrough':
+      return 'the walkthrough';
+  }
+}
+
+function offerUndo(item: Item, action: string): void {
+  undoable = { item, landed: location.hash };
+  toastText.textContent = `Decided ${itemName(item)}: ${labelOf(item, action)}`;
+  for (const leaving of toast.getAnimations()) leaving.cancel();
+  if (!toast.isConnected) {
+    toastHeld = { pointer: false, focus: false };
+    toastRegion.append(toast);
+    const rise = [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }];
+    animate(toast, 'toast-in', reduced() ? FADE_IN : rise, { ms: 'base', curve: 'ease-out', delay: 120 });
+  }
+  holdToast();
+}
+
+function hideToast(): void {
+  clearTimeout(toastTimer);
+  undoable = null;
+  if (!toast.isConnected) return;
+  const out = animate(toast, 'toast-out', [{ opacity: 1 }, { opacity: 0 }], { ms: 'fast', curve: 'ease-in', fill: 'forwards' });
+  out.finished.then(
+    () => {
+      toast.remove();
+      out.cancel();
+    },
+    () => {},
+  );
+}
+
+/** Takes the decision back, and returns the person to the step when they are still where deciding it took them. */
+async function undo(): Promise<void> {
+  const taken = undoable;
+  if (!taken) return;
+  const hadFocus = toast.contains(document.activeElement);
+  hideToast();
+  const answer = await post('decide', { item: taken.item, clear: true });
+  if (!answer) return;
+  ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
+  if (taken.item.type === 'step' && location.hash === taken.landed) go(taken.item.id);
+  render();
+  if (hadFocus) document.querySelector<HTMLElement>('.action-bar button, #main button')?.focus();
 }
 
 const reading = new Set<string>();
@@ -138,6 +236,7 @@ async function stop(): Promise<void> {
   clearInterval(poller);
   stopped = true;
   taking = null;
+  hideToast();
   render();
   const banner = region('alert');
   banner.className = 'banner';
@@ -161,6 +260,7 @@ function statusView(): HTMLElement {
   const state = stopped ? 'gone' : session.state;
   const [label, about] = stopped ? ['Stopped', 'The walkthrough has stopped.'] : SESSION[state];
   const mark = state === 'working' ? icon('spinner') : el('span', { className: 'dot' });
+  if (state === 'needs-you') mark.dataset['motion'] = 'pulse';
   const status = el('span', { className: 'status', title: about }, mark, label);
   status.dataset['state'] = state;
   status.setAttribute('role', 'status');
@@ -189,8 +289,11 @@ function progressView(): HTMLElement[] {
     'div',
     { className: 'progress', title: said },
     ...steps.map(step => {
-      const segment = el('span', { className: 'segment' });
-      segment.dataset['state'] = segmentState(step, current);
+      const state = segmentState(step, current);
+      const fill = el('span', { className: 'segment-fill' });
+      fill.dataset['motion'] = `fill:${step.id}`;
+      const segment = el('span', { className: 'segment' }, ...(state === 'decided' ? [fill] : []));
+      segment.dataset['state'] = state;
       return segment;
     }),
   );
@@ -204,6 +307,7 @@ function progressView(): HTMLElement[] {
   }
   const count = el('span', { className: 'progress-count' }, `${String(decided)}/${String(steps.length)}`);
   count.setAttribute('aria-hidden', 'true');
+  count.dataset['motion'] = 'count:progress';
   return [bar, count];
 }
 
@@ -441,6 +545,7 @@ function noteView(note: Note): HTMLElement {
     })),
   );
   view.setAttribute('aria-label', label);
+  view.dataset['motion'] = `note:${note.id}`;
   return view;
 }
 
@@ -451,6 +556,14 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
   const more = el('details', { className: 'more', open: opened.has(place) }, el('summary', {}, `${String(low.length)} more`));
   more.append(...low.map(noteView));
   more.ontoggle = () => {
+    // A redraw opens it again on its own, which reveals nothing.
+    if (more.open && !opened.has(place)) {
+      const rise = [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }];
+      low.forEach((note, at) => {
+        play(`note:${note.id}`, 'rise', reduced() ? FADE_IN : rise, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out', delay: at * 40 });
+      });
+      replay();
+    }
     if (more.open) opened.add(place);
     else opened.delete(place);
   };
@@ -653,23 +766,41 @@ function toggle(set: Set<string>, key: string): void {
   render();
 }
 
-function disclosure(label: (Node | string)[], open: boolean, onToggle: () => void, className: string): HTMLButtonElement {
-  const button = el('button', { type: 'button', className }, icon(open ? 'chevron-down' : 'chevron-right'), ...label);
+function disclosure(label: (Node | string)[], open: boolean, onToggle: () => void, className: string, key: string): HTMLButtonElement {
+  const chevron = icon('chevron-right');
+  chevron.dataset['motion'] = `turn:${key}`;
+  const button = el('button', { type: 'button', className }, chevron, ...label);
   button.setAttribute('aria-expanded', String(open));
   button.dataset['key'] = className;
-  button.onclick = onToggle;
+  button.onclick = () => {
+    if (!reduced()) {
+      const turn = [{ transform: 'rotate(0deg)' }, { transform: 'rotate(90deg)' }];
+      play(`turn:${key}`, 'turn', open ? turn.reverse() : turn, { ms: 'fast', curve: 'ease-out' });
+    }
+    onToggle();
+  };
   return button;
 }
 
 function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
   if (!step.assumptions.length) return [];
   const open = !closed.has(step.id);
-  const button = disclosure(['Assumed, not read'], open, () => { toggle(closed, step.id); }, 'disclosure assumed-toggle');
+  const motion = `reveal:${step.id}`;
+  const onToggle = () => {
+    if (!open) {
+      const rows = [{ gridTemplateRows: '0fr', opacity: 0 }, { gridTemplateRows: '1fr', opacity: 1 }];
+      play(motion, 'reveal', reduced() ? FADE_IN : rows, reduced() ? { ms: 'base', curve: 'linear' } : { ms: 'slow', curve: 'ease-out' });
+    }
+    toggle(closed, step.id);
+  };
+  const button = disclosure(['Assumed, not read'], open, onToggle, 'disclosure assumed-toggle', `assumed:${step.id}`);
   button.id = `assumed-${step.id}`;
-  const list = el('ul', { className: 'assumed', hidden: !open }, ...step.assumptions.map(assumption => el('li', {}, assumption)));
+  const list = el('ul', { className: 'assumed' }, ...step.assumptions.map(assumption => el('li', {}, assumption)));
   list.setAttribute('aria-labelledby', button.id);
   button.setAttribute('aria-controls', (list.id = `assumed-list-${step.id}`));
-  return [el('div', { className: 'assumptions' }, button, list)];
+  const shown = el('div', { className: 'assumed-wrap', hidden: !open }, list);
+  shown.dataset['motion'] = motion;
+  return [el('div', { className: 'assumptions' }, button, shown)];
 }
 
 function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HTMLElement[] {
@@ -681,6 +812,7 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
     open,
     () => { toggle(opened, key); },
     'fold-summary',
+    key,
   );
   if (!open) return [el('div', { className: 'block' }, summary)];
   const files = el(
@@ -835,15 +967,19 @@ function queueView(view: View): HTMLElement[] {
     rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
   }
   const counted = steps.length > 0 || rows.length > 0;
-  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [el('span', { className: 'counter' }, String(rows.length))] : []));
+  const left = el('span', { className: 'counter' }, String(rows.length));
+  left.dataset['motion'] = 'count:left';
+  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [left] : []));
   const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
   const decided = steps.filter(stepDecided);
   const open = opened.has('decided') || (current !== undefined && decided.includes(current));
+  const decidedCount = el('span', {}, `${String(decided.length)} decided`);
+  decidedCount.dataset['motion'] = 'count:decided';
   const toggleDecided = el(
     'button',
     { type: 'button', className: 'decided-toggle', onclick: () => { toggle(opened, 'decided'); } },
     icon('decided'),
-    el('span', {}, `${String(decided.length)} decided`),
+    decidedCount,
     icon(open ? 'chevron-down' : 'chevron-right'),
   );
   toggleDecided.setAttribute('aria-expanded', String(open));
@@ -1066,6 +1202,18 @@ function render(): void {
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const view = currentView();
+  const before = drawnState;
+  const decided = new Set(Object.keys(walkthrough.decided).filter(key => walkthrough.decided[key]));
+  const newly = before ? [...decided].filter(key => !before.decided.has(key)) : [];
+  const decisionsMoved = newly.length > 0 || [...(before?.decided ?? [])].some(key => !decided.has(key));
+  const shownView = viewKey(view);
+  const swapped = before !== null && before.view !== shownView;
+  const rows = [...queue.querySelectorAll<HTMLElement>(':scope > .queue-item[data-key]')].map(row => {
+    const { paddingTop, paddingBottom } = getComputedStyle(row);
+    return { row, key: row.dataset['key'] ?? '', height: row.offsetHeight, paddingTop, paddingBottom };
+  });
+  const scrolled = main.scrollTop;
+  const oldPane = swapped ? [...main.childNodes].filter(node => node !== leavingPane) : [];
   header.replaceChildren(...headerView());
   queue.replaceChildren(...queueView(view));
   main.replaceChildren(
@@ -1075,16 +1223,131 @@ function render(): void {
     ...detachedView(),
     viewBody(view),
   );
+  for (const child of main.children) if (child instanceof HTMLElement) child.dataset['motion'] = 'pane-enter';
+  leaveRows(rows, newly);
+  placeGhosts();
+  if (swapped) swapPanes(oldPane, scrolled);
+  else if (leavingPane) main.prepend(leavingPane);
+  const counts = new Map(
+    [...document.querySelectorAll<HTMLElement>('[data-motion^="count:"]')].map(count => [count.dataset['motion'] ?? '', count.textContent]),
+  );
+  if (decisionsMoved) moveDecided(newly, counts, before?.counts);
+  const state = stopped ? 'stopped' : session.state;
+  if (state === 'needs-you' && before?.state !== 'needs-you' && !reduced())
+    play('pulse', 'pulse', [{ boxShadow: '0 0 0 0 currentColor' }, { boxShadow: '0 0 0 6px transparent' }], { ms: 1200, curve: 'ease-out', iterations: 2 });
+  drawnState = { decided, view: shownView, state, counts };
+  replay();
   if (view.kind === 'step') void markRead(view.step);
+  // The pane leaving is a picture of what was, so nothing in it takes focus again.
+  const current = (selector: string) => [...document.querySelectorAll<HTMLElement>(selector)].find(found => !leavingPane?.contains(found));
+  const lost = focused instanceof HTMLElement && (!focused.isConnected || !!leavingPane?.contains(focused));
   // A diff is kept across redraws, so a line number focused in it is still there to focus again; a redrawn control is found by its key.
-  const kept = focused instanceof HTMLElement && !focused.isConnected && focused.dataset['key'] !== undefined
-    ? document.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused.dataset['key'])}"]`)
-    : focused;
+  const kept = lost && focused.dataset['key'] !== undefined ? current(`[data-key="${CSS.escape(focused.dataset['key'])}"]`) : focused;
   if (kept instanceof HTMLElement && kept.isConnected && document.activeElement !== kept) kept.focus();
   if (draft === undefined) return;
-  const box = document.querySelector<HTMLTextAreaElement | HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`);
+  const box = current(`[data-draft="${CSS.escape(draft)}"]`) as HTMLTextAreaElement | HTMLInputElement | undefined;
   box?.focus();
   box?.setSelectionRange(...caret);
+}
+
+/** What the last drawing showed, so the next one moves only what changed. */
+let drawnState: { decided: Set<string>; view: string; state: string; counts: Map<string, string> } | null = null;
+
+const viewKey = (view: View) => (view.kind === 'step' ? `step:${view.step.id}` : view.kind);
+
+/** A rail row that left because its item was decided, kept in place while it slides out and collapses. */
+type Ghost = { row: HTMLElement; after: string[]; until: number };
+const ghosts = new Set<Ghost>();
+
+const itemOfRow = (key: string) => {
+  const address = key.slice('row:'.length);
+  const item = CHECKLIST_ITEM.exec(address)?.[1];
+  return item === undefined ? `step:${address}` : `checklist:${item}`;
+};
+
+function leaveRows(rows: { row: HTMLElement; key: string; height: number; paddingTop: string; paddingBottom: string }[], newly: string[]): void {
+  rows.forEach(({ row, key, height, paddingTop, paddingBottom }, at) => {
+    if (!newly.includes(itemOfRow(key)) || queue.querySelector(`:scope > [data-key="${CSS.escape(key)}"]`)) return;
+    const motion = `leave:${key}`;
+    row.classList.add('leaving');
+    row.removeAttribute('aria-current');
+    row.setAttribute('aria-hidden', 'true');
+    row.inert = true;
+    delete row.dataset['key'];
+    row.dataset['motion'] = motion;
+    const ghost = { row, after: rows.slice(at + 1).map(one => one.key), until: Infinity };
+    ghosts.add(ghost);
+    const fade = [{ opacity: 1 }, { opacity: 0 }];
+    const lasts = reduced()
+      ? [play(motion, 'row-fade', fade, { ms: 'base', curve: 'linear', fill: 'forwards' })]
+      : [
+          play(motion, 'row-slide', [{ transform: 'none' }, { transform: 'translateX(-16px)' }], { ms: 160, curve: 'ease-out', fill: 'forwards' }),
+          play(motion, 'row-fade', fade, { ms: 160, curve: 'linear', fill: 'forwards' }),
+          play(
+            motion,
+            'row-collapse',
+            [
+              { height: `${String(height)}px`, paddingTop, paddingBottom, marginBottom: '0px' },
+              // The rail's 2px gap goes with the row.
+              { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '-2px' },
+            ],
+            { ms: 'slow', curve: 'ease-out', delay: 120, fill: 'both' },
+          ),
+        ];
+    ghost.until = now() + Math.max(...lasts);
+    setTimeout(() => {
+      ghosts.delete(ghost);
+      row.remove();
+    }, Math.max(...lasts));
+  });
+}
+
+function placeGhosts(): void {
+  for (const ghost of ghosts) if (ghost.until <= now()) ghosts.delete(ghost);
+  for (const { row, after } of ghosts) {
+    const next = after.map(key => queue.querySelector(`:scope > [data-key="${CSS.escape(key)}"]`)).find(found => found !== null);
+    const end = queue.querySelector(':scope > .queue-empty, :scope > .queue-foot');
+    if (next) next.before(row);
+    else if (end) end.before(row);
+    else queue.append(row);
+  }
+}
+
+/** The pane that was, shown over the new one while it leaves; the new one enters after it has gone. */
+let leavingPane: HTMLElement | null = null;
+
+function swapPanes(old: Node[], scrolled: number): void {
+  leavingPane?.remove();
+  const shown = el('div', { className: 'main' }, ...old);
+  const pane = el('div', { className: 'pane-leaving' }, shown);
+  pane.inert = true;
+  pane.setAttribute('aria-hidden', 'true');
+  pane.dataset['motion'] = 'pane-leave';
+  main.scrollTo(0, 0);
+  main.prepend(pane);
+  shown.scrollTop = scrolled;
+  leavingPane = pane;
+  const gone = play('pane-leave', 'pane-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 100, curve: 'linear', fill: 'forwards' });
+  if (!reduced()) play('pane-leave', 'pane-out', [{ transform: 'none' }, { transform: 'translateX(-12px)' }], { ms: 100, curve: 'ease-in', fill: 'forwards' });
+  const enter = [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }];
+  play('pane-enter', 'pane-enter', reduced() ? FADE_IN : enter, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out', delay: 100 });
+  setTimeout(() => {
+    if (leavingPane !== pane) return;
+    pane.remove();
+    leavingPane = null;
+  }, gone);
+}
+
+/** Decided steps fill their progress segment and every count that changed ticks. */
+function moveDecided(newly: string[], counts: Map<string, string>, before = new Map<string, string>()): void {
+  for (const key of newly.filter(one => one.startsWith('step:'))) {
+    const fill = [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }];
+    play(`fill:${key.slice('step:'.length)}`, 'fill', reduced() ? FADE_IN : fill, reduced() ? { ms: 'base', curve: 'linear' } : { ms: 'slow', curve: 'ease-out' });
+  }
+  const tick = [{ opacity: 0.55, transform: 'translateY(2px)' }, { opacity: 1, transform: 'none' }];
+  for (const [key, text] of counts)
+    if (before.get(key) !== text)
+      play(key, 'tick', reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out' });
 }
 
 const isTyping = (target: EventTarget | null) =>
