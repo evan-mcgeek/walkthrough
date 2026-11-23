@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { makeRepo } from './helpers';
+import { inboxOf, makeRepo } from './helpers';
 
 const TEMPLATE = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'plugin', 'skills', 'walkthrough', 'REVIEWER.md'), 'utf8');
 
@@ -24,8 +24,7 @@ describe('walkthrough policy', () => {
     expect(repo.run('policy').stdout).toContain(`template: the review policy at ${policy} is the unchanged template.`);
     expect(repo.run('policy', 'init').stderr).toContain(`there is a review policy at ${policy} already`);
 
-    const inbox = /files in (\S+) and save/.exec(none.stdout)?.[1] ?? '';
-    const draft = path.join(inbox, 'REVIEWER.md');
+    const draft = path.join(inboxOf(none), 'REVIEWER.md');
     fs.writeFileSync(draft, `${TEMPLATE}\n- One more rule.\n`);
     expect(repo.run('policy', 'save', '--file', draft).stdout).toBe(`Saved the review policy at ${policy}.\n`);
     expect(fs.existsSync(draft)).toBe(false);

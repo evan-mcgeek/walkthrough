@@ -31,6 +31,13 @@ const commit = (cwd: string, message: string, files: Files) => {
 
 export type Repo = ReturnType<typeof makeRepo>;
 
+/** The inbox that start or policy printed; throws rather than give a path that resolves into the checkout. */
+export const inboxOf = (printed: { stdout: string }) => {
+  const found = /files in (\S+) and (?:pass|save)/.exec(printed.stdout)?.[1];
+  if (!found) throw new Error(`printed no inbox: ${printed.stdout}`);
+  return found;
+};
+
 const sandboxed = (prefix: string) => fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', prefix));
 
 type History = { root: string; base: string; head: string };

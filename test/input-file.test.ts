@@ -3,18 +3,12 @@ import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { SessionView } from '../src/session';
 import type { Walkthrough } from '../src/walkthrough';
-import { ONE_STEP, makeRepo, type Repo } from './helpers';
+import { ONE_STEP, inboxOf, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
 afterEach(() => {
   repo.run('stop');
 });
-
-const inboxOf = (started: { stdout: string }) => {
-  const found = /files in (\S+) and pass/.exec(started.stdout)?.[1];
-  if (!found) throw new Error(`start printed no inbox: ${started.stdout}`);
-  return found;
-};
 
 describe('recording from a file', () => {
   test('start prints an inbox, and steps takes a file written there and removes it', async () => {
