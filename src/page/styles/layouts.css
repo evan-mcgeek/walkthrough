@@ -147,6 +147,7 @@
   background: none;
   color: var(--ink-secondary);
   font: 400 13px/1.4 var(--font-ui);
+  white-space: nowrap;
   cursor: pointer;
   transition: color var(--fast) linear;
 }
@@ -233,10 +234,6 @@
 
 /* Until the phone layout: every pane stacks in page order and the page scrolls as one. */
 @media (max-width: 760px) {
-  [data-layout='split'] .queue {
-    display: flex;
-  }
-
   [data-layout='three'] .side:not([hidden]) {
     width: auto;
     border-top: 1px solid var(--rule);
@@ -247,16 +244,35 @@
     max-height: none;
   }
 
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tool-body .checklist > ul {
+    columns: 1;
+  }
+
   .main.split {
     overflow: visible;
   }
 
   .main.split > .step {
+    flex: 1 0 auto;
     flex-direction: column;
+  }
+
+  .split > .prose,
+  .split > .code {
+    overflow: visible;
   }
 
   .split > .prose {
     width: auto;
+    padding: var(--s4);
     border-right: 0;
+  }
+
+  .split > .code {
+    padding: var(--s4);
   }
 }
