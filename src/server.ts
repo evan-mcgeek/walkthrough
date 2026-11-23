@@ -11,7 +11,7 @@ import { readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
-import { CHANGED, decide, markRead, walkthroughView } from './decisions';
+import { CHANGED, decide, markRead, walkthroughVersion, walkthroughView } from './decisions';
 import { listPage, listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
@@ -217,7 +217,15 @@ async function serveFileAt(dir: string, file: string, atBase: boolean, res: http
     .end(content);
 }
 
-function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
+function serveFile(dir: string, list: boolean, what: string, req: http.IncomingMessage, res: http.ServerResponse): void {
+  const query = new URL(req.url ?? '', 'http://127.0.0.1').searchParams;
+  if (!list && what === 'data/walkthrough.json') {
+    // Taken before the view is built, so a change meanwhile only makes the next poll fetch it again.
+    const tag = `"${walkthroughVersion(dir)}"`;
+    if (req.headers['if-none-match'] === tag) res.writeHead(304, { etag: tag, 'cache-control': 'no-store' }).end();
+    else res.writeHead(200, { ...JSON_HEADERS, etag: tag }).end(JSON.stringify(walkthroughView(dir)));
+    return;
+  }
   if (!list && what === 'file') {
     serveFileAt(dir, query.get('path') ?? '', query.get('at') === 'base', res).catch((error: unknown) => {
       failRequest(res, error);
@@ -226,7 +234,7 @@ function serveFile(dir: string, list: boolean, what: string, query: URLSearchPar
   }
   const data: Record<string, () => unknown> = list
     ? { 'data/list.json': () => listPage(dir) }
-    : { 'data/walkthrough.json': () => walkthroughView(dir), 'data/session.json': () => sessionView(dir) };
+    : { 'data/session.json': () => sessionView(dir) };
   const view = Object.hasOwn(data, what) ? data[what] : undefined;
   if (view) {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));
@@ -287,7 +295,7 @@ function gate(req: http.IncomingMessage, res: http.ServerResponse, { dir, list, 
     return;
   }
   if (req.method === 'GET' && url.pathname.startsWith(prefix)) {
-    serveFile(dir, list, url.pathname.slice(prefix.length), url.searchParams, res);
+    serveFile(dir, list, url.pathname.slice(prefix.length), req, res);
     return;
   }
   const given = Buffer.from(url.searchParams.get('token') ?? '');

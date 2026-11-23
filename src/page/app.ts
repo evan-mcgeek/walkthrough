@@ -2250,10 +2250,13 @@ if (readOnly && location.hash) document.getElementById(decodeURIComponent(locati
 
 const POLL_MS = 1500;
 let polling = false;
-const fetchText = async (data: string) => {
-  const answer = await fetch(data);
+/** The version of the walkthrough the page last took from a poll, which the server answers with no body while it holds. */
+let walkthroughTag = '';
+const fetchText = async (data: string, tag = '') => {
+  const answer = await fetch(data, tag ? { headers: { 'if-none-match': tag } } : {});
+  if (answer.status === 304) return { text: null, tag };
   if (!answer.ok) throw new Error(`${data}: ${String(answer.status)}`);
-  return answer.text();
+  return { text: await answer.text(), tag: answer.headers.get('etag') ?? '' };
 };
 
 // The session records and answers through the CLI, so the page asks for the walkthrough and the session again and again.
@@ -2261,12 +2264,15 @@ function poll(): void {
   if (polling || stopped) return;
   polling = true;
   const since = posted;
-  Promise.all([fetchText('data/walkthrough.json'), fetchText('data/session.json')])
-    .then(([walkthroughText, sessionText]) => {
+  Promise.all([fetchText('data/walkthrough.json', walkthroughTag), fetchText('data/session.json')])
+    .then(([fresh, { text: sessionText }]) => {
       if (document.body.classList.contains('unreachable')) showAlert(null);
-      if (since !== posted || (walkthroughText === lastWalkthrough && sessionText === lastSession)) return;
+      if (since !== posted) return;
+      walkthroughTag = fresh.tag;
+      const walkthroughText = fresh.text ?? lastWalkthrough;
+      if (walkthroughText === lastWalkthrough && sessionText === lastSession) return;
       walkthrough = JSON.parse(walkthroughText) as WalkthroughView;
-      session = JSON.parse(sessionText) as SessionView;
+      session = JSON.parse(sessionText ?? lastSession) as SessionView;
       render();
     })
     .catch(() => {

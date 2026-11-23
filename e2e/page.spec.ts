@@ -33,6 +33,14 @@ test('shows the session preparing until it records steps, then the steps without
   expect(loads).toBe(0);
 });
 
+test('a poll of a walkthrough that has not changed gets no body', async ({ page, url }) => {
+  await expect(page).toHaveURL(url);
+
+  const unchanged = await page.waitForResponse(answer => answer.url().endsWith('data/walkthrough.json') && answer.status() === 304);
+
+  expect(unchanged.request().headers()['if-none-match']).toMatch(/^"[0-9a-f]{16}"$/);
+});
+
 test('an approved step stays approved when the page is opened again', async ({ page, context, repo, url }) => {
   repo.record(ONE_STEP);
   const step = page.getByRole('region', { name: 'Login' });

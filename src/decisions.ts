@@ -1,5 +1,6 @@
 // The person's decisions and which steps they read; the tool attaches no meaning to any action.
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
@@ -53,6 +54,15 @@ export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
     const earlier = latest ? undefined : choices.findLast(one => itemKey(one.item) === key);
     return { item, key, on, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
   });
+}
+
+/** Changes whenever a file walkthroughView reads does, so the page's poll of an unchanged view is answered without one. */
+export function walkthroughVersion(dir: string): string {
+  const stats = ['walkthrough.json', 'conversation.jsonl', 'read.json'].map(name => {
+    const stat = fs.statSync(path.join(dir, name), { throwIfNoEntry: false });
+    return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : '';
+  });
+  return fingerprint(stats.join(':'));
 }
 
 export function walkthroughView(dir: string): WalkthroughView | null {

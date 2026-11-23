@@ -73,6 +73,25 @@ describe('walkthrough start', () => {
     expect(shown).toMatchObject({ branch: 'feature/login', base: repo.base, head: repo.head });
   });
 
+  test('answers a poll for an unchanged walkthrough with no body, and a changed one in full', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const data = `${repo.url()}data/walkthrough.json`;
+    const first = await fetch(data);
+    const tag = first.headers.get('etag') ?? '';
+
+    const unchanged = await fetch(data, { headers: { 'if-none-match': tag } });
+    repo.record(ONE_STEP);
+    const changed = await fetch(data, { headers: { 'if-none-match': tag } });
+
+    expect(tag).not.toBe('');
+    expect(unchanged.status).toBe(304);
+    expect(await unchanged.text()).toBe('');
+    expect(changed.status).toBe(200);
+    expect(((await changed.json()) as Walkthrough).steps).toHaveLength(1);
+    expect(changed.headers.get('etag')).not.toBe(tag);
+  });
+
   test('refuses to start over a saved walkthrough it cannot read, and leaves it as it is', () => {
     repo = makeRepo();
     repo.run('start');
