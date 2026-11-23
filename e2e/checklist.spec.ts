@@ -32,7 +32,7 @@ test('an item the session marks not met is left in the rail and opens the checkl
   await expect(left).toHaveText('The app shows its version.Checklist');
   await expect(left).toHaveAttribute('data-state', 'not-met');
   await expect(rail.getByRole('link', { name: 'A person can log in.' })).toHaveCount(0);
-  await expect(rail.getByRole('heading', { name: 'Left 3' })).toBeVisible();
+  await expect(rail.getByRole('heading', { name: 'To review 3' })).toBeVisible();
 
   await left.click();
 

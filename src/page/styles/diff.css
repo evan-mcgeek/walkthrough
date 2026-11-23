@@ -198,7 +198,7 @@
 }
 
 .overview-stripe .tick-own {
-  fill: var(--violet);
+  fill: var(--accent);
 }
 
 .overview-stripe .tick-note {
@@ -281,7 +281,7 @@
 
 .diff .d2h-file-diff tr.selected > td.d2h-code-linenumber {
   background-color: var(--line-pick-gutter);
-  color: var(--violet-text);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -312,7 +312,7 @@
 }
 
 .gutter-mark.own {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .gutter-mark.note {
@@ -331,8 +331,8 @@
   padding: 0;
   border: 0;
   border-radius: var(--r-sm);
-  background: var(--violet);
-  color: var(--on-violet);
+  background: var(--accent);
+  color: var(--on-accent);
   box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
   cursor: pointer;
 }
@@ -389,14 +389,14 @@
   gap: var(--s2);
   margin-top: -1px;
   padding: var(--s2) var(--s3) var(--s2) var(--code-column);
-  border-top: 1px solid var(--violet-line);
-  border-bottom: 1px solid var(--violet-line);
-  background: var(--violet-wash);
+  border-top: 1px solid var(--accent-line);
+  border-bottom: 1px solid var(--accent-line);
+  background: var(--accent-wash);
   font: var(--text-body-ui);
 }
 
 .picked-lines {
-  color: var(--violet-text);
+  color: var(--accent-text);
   white-space: nowrap;
   font-size: 13px;
   font-weight: 600;
@@ -418,9 +418,9 @@
   box-sizing: border-box;
   max-width: 70ch;
   padding: var(--s3) var(--s4);
-  border: 1px solid var(--violet-line);
+  border: 1px solid var(--accent-line);
   border-radius: var(--r-xl);
-  background: var(--violet-wash);
+  background: var(--accent-wash);
   font: 400 14px/1.55 var(--font-ui);
 }
 
@@ -433,12 +433,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--violet-text);
+  color: var(--accent-text);
   font-weight: 650;
 }
 
 .mine .icon-button {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .mine .comment-text {
@@ -496,9 +496,9 @@
   gap: var(--s2);
   margin-top: -1px;
   padding: var(--s3) var(--s4) var(--s3) var(--code-column);
-  border-top: 1px solid var(--violet-line);
-  border-bottom: 1px solid var(--violet-line);
-  background: var(--violet-wash);
+  border-top: 1px solid var(--accent-line);
+  border-bottom: 1px solid var(--accent-line);
+  background: var(--accent-wash);
   font: var(--text-body-ui);
 }
 
@@ -611,7 +611,7 @@
 }
 
 .more-link {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .more > summary:hover .more-link {
@@ -716,7 +716,7 @@
 }
 
 .preview a {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .image-compare {
@@ -754,31 +754,4 @@
   color: var(--muted);
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
-}
-
-/* ---------- syntax colours ---------- */
-
-/* The highlight.js theme's colours, deepened where they fall under 4.5:1 on the diff's washes and the code pane. */
-@media (prefers-color-scheme: light) {
-  :is(.hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
-    color: #b31d28;
-  }
-
-  :is(.hljs-built_in, .hljs-symbol) {
-    color: #953800;
-  }
-
-  :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo, .hljs-addition) {
-    color: #116329;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .hljs-section {
-    color: #79c0ff;
-  }
-}
-
-:is(.hljs-comment, .hljs-code, .hljs-formula) {
-  color: var(--muted);
 }

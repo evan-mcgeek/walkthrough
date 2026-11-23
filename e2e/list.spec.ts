@@ -40,10 +40,10 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(rows.nth(1).locator('.kind')).toHaveAttribute('title', 'The kind of walkthrough');
   await expect(rows.nth(2).locator('.kind')).toHaveCount(0);
   await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', 'Needs fixes', /now|ago/]);
-  // A decided segment is filled in violet, as the mark is.
-  const violet = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);
+  // A decided segment is filled in the accent, as the mark is.
+  const accent = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);
   const decided = rows.nth(2).locator('.segment[data-state="decided"]');
-  expect(await decided.evaluate(one => getComputedStyle(one.firstElementChild ?? one).backgroundColor)).toBe(violet);
+  expect(await decided.evaluate(one => getComputedStyle(one.firstElementChild ?? one).backgroundColor)).toBe(accent);
   // The full time stays at hand behind the relative one.
   await expect(rows.nth(2).locator('time')).toHaveAttribute('datetime', /^\d{4}-\d\d-\d\dT/);
 

@@ -1,19 +1,19 @@
 /*
-  The 48px header: .logo, the mono .session-label and the session's .kind, the segmented .progress bar with its .progress-count,
-  then .header-end (layout switch, .status, Stop) pushed to the right.
+  The 44px header: .logo, the session's .kind, the mono .session-label, the segmented .progress bar with its .progress-count,
+  then .header-end (.status, Stop, the More menu) pushed to the right.
 */
 
 .app-header {
   display: flex;
   align-items: center;
   gap: var(--s3);
-  height: 48px;
+  height: 44px;
   padding: 0 var(--s4);
   border-bottom: 1px solid var(--rule);
   background: var(--canvas);
 }
 
-/* The lockup: the 16px mark in violet, then the wordmark. */
+/* The lockup: the 16px mark in the accent, then the wordmark. */
 .logo {
   display: inline-flex;
   flex: none;
@@ -25,7 +25,7 @@
 }
 
 .logo > .icon-mark {
-  color: var(--violet);
+  color: var(--accent);
 }
 
 .session-label {
@@ -39,8 +39,15 @@
   text-overflow: ellipsis;
 }
 
+/* A quiet word set off by a rule, not a pill. */
 .app-header .kind {
   flex: none;
+  padding: 0 0 0 var(--s3);
+  border-left: 1px solid var(--rule);
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font: 400 12.5px/20px var(--font-ui);
 }
 
 .progress {
@@ -72,13 +79,13 @@
 .segment-fill {
   position: absolute;
   inset: 0;
-  background: var(--violet);
+  background: var(--accent);
   transform-origin: left;
 }
 
 .segment[data-state='current'],
 .segment[data-state='read'] {
-  background: var(--violet-line);
+  background: var(--progress-read);
 }
 
 .segment[data-state='reopened'] {
@@ -121,7 +128,7 @@
 }
 
 .status[data-state='working'] {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .status[data-state='needs-you'] {
@@ -141,13 +148,12 @@
   background: none;
 }
 
-/* The More menu stands in for what the header has no room for at phone width. */
+/* The More menu holds Appearance, and at phone width what the header has no room for. */
 .more-menu {
   position: relative;
-  display: none;
 }
 
-/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the layouts move into More. */
+/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the panels move into More. */
 @media (max-width: 760px) {
   .app-header {
     flex-wrap: wrap;
@@ -160,7 +166,7 @@
   .session-label,
   .progress-count,
   .header-end {
-    height: 48px;
+    height: 44px;
     display: flex;
     align-items: center;
   }
@@ -170,7 +176,7 @@
     display: block;
     flex: 1 1 0;
     max-width: 120px;
-    line-height: 48px;
+    line-height: 44px;
   }
 
   .progress {
@@ -181,11 +187,7 @@
 
   /* The first row has no room to spare beside the label. */
   .app-header .kind,
-  .header-end > :is(.stop, .layout-switch) {
+  .header-end > .stop {
     display: none;
-  }
-
-  .more-menu {
-    display: block;
   }
 }

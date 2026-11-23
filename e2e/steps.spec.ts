@@ -36,7 +36,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   page,
 }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('heading', { name: 'Left 3' })).toBeVisible();
+  await expect(rail.getByRole('heading', { name: 'To review 3' })).toBeVisible();
   await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('aria-current', 'step');
   const first = page.getByRole('region', { name: 'Login check' });
@@ -96,8 +96,8 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
 });
 
-test("in Explanation beside code a file's explanation stays above its diff, beside the step's", async ({ page }) => {
-  await page.getByRole('banner').getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Explanation beside code' }).click();
+test("in the explanation column a file's explanation stays above its diff, beside the step's", async ({ page }) => {
+  await page.keyboard.press('3');
   const step = page.getByRole('region', { name: 'Login check' });
   const code = step.locator('.code');
   await expect(step.locator('.prose').getByText('The app needs a login entry point.')).toBeVisible();
@@ -159,7 +159,7 @@ test('shows how many steps are decided and left, and approving moves on to the n
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^1 of 3 steps decided, 2 left/);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('heading', { name: 'Left 2' })).toBeVisible();
+  await expect(rail.getByRole('heading', { name: 'To review 2' })).toBeVisible();
   await rail.getByRole('button', { name: '1 decided' }).click();
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveText('Login checkDecided: Approve');
 
@@ -180,7 +180,7 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   await expect(end.getByRole('region', { name: 'Flagged' }).getByRole('listitem')).toHaveText(['3 App versionNot this version.']);
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByText('Everything is decided.')).toBeVisible();
-  await expect(rail.getByRole('heading', { name: 'Left 0' })).toBeVisible();
+  await expect(rail.getByRole('heading', { name: 'To review 0' })).toBeVisible();
 
   await page.keyboard.press('k');
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
@@ -216,10 +216,10 @@ test('a redraw from the session or from steps recorded again keeps the step bein
   await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 });
 
-test('in Tool panel a line note on a folded step opens its file and takes focus from the Notes tab', async ({ page, repo }) => {
+test('in the tool panel a line note on a folded step opens its file and takes focus from the Notes tab', async ({ page, repo }) => {
   const noted = repo.record([{ step: '2', file: 'schema.json', lines: [1, 1], label: 'Stale', text: 'Still lists the field.' }], 'note');
   if (noted.status !== 0) throw new Error(noted.stderr);
-  await page.getByRole('banner').getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Tool panel' }).click();
+  await page.keyboard.press('4');
   await page.getByRole('link', { name: 'Regenerated schema' }).click();
   const panel = page.getByRole('region', { name: 'Tool panel' });
   await panel.getByRole('tab', { name: /^Notes/ }).click();

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { walkthroughView } from './decisions';
-import { PAGE } from './server';
+import { PAGE, readViewer } from './server';
 import { sessionView } from './session';
 
 const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
@@ -18,7 +18,7 @@ export function exportPage(dir: string): string {
   // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.
   const script = read('app.js').replace(/<(?=!--|\/script)/gi, '\\x3C');
   const style = read('style.css');
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString() };
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString(), viewer: readViewer() };
   // The state is data and never runs, so a `<` in it cannot end its element.
   const data = JSON.stringify(state).replaceAll('<', '\\u003c');
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
