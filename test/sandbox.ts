@@ -1,12 +1,14 @@
 // Imported by both test configs, so it runs once in the runner's main process and every worker inherits the sandbox.
 // HOME and the walkthrough folders point into a temp folder, so no test touches real state.
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { shareHistory } from './helpers';
 
 if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
+  // Tests run the built plugin, so even a run of one file tests the source as it is now.
+  execFileSync(process.execPath, [path.resolve(import.meta.dirname, '..', 'scripts', 'build.mjs')], { stdio: 'inherit' });
   const realHome = os.homedir();
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'walkthrough-test-'));
   const home = path.join(sandbox, 'home');
