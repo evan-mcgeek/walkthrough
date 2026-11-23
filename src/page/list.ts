@@ -1,6 +1,6 @@
 import type { Listed } from '../list';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showUnreachable } from './dom';
+import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon } from './icons';
 
 type ListPage = { repo: string; walkthroughs: Listed[] };
@@ -104,6 +104,7 @@ render(JSON.parse(shown) as ListPage);
 const poller = setInterval(() => {
   load()
     .then(text => {
+      if (document.body.classList.contains('unreachable')) showAlert(null);
       if (text !== shown) render(JSON.parse((shown = text)) as ListPage);
       else for (const time of main.querySelectorAll('time')) time.textContent = ago(time.dateTime);
     })

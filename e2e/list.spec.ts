@@ -60,3 +60,22 @@ test('the Stop button ends the list', async ({ page, repo, url }) => {
   await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
   await expect(page.request.get(list)).rejects.toThrow();
 });
+
+// Opened here rather than through `url`, whose check for console errors would catch the failed poll.
+test('the list clears its unreachable banner once the server answers again', async ({ page, repo }) => {
+  repo.run('list');
+  let failing = false;
+  await page.route('**/data/list.json', route => (failing ? route.abort() : route.continue()));
+  await page.clock.install();
+  await page.goto(repo.url());
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Walkthroughs');
+
+  failing = true;
+  await page.clock.runFor(5000);
+  await expect(page.getByRole('alert')).toContainText('Could not reach the list.');
+  failing = false;
+  await page.clock.runFor(5000);
+
+  await expect(page.getByRole('alert')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/unreachable/);
+});
