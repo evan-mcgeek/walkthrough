@@ -20573,6 +20573,26 @@ var Diff2HtmlUI2 = class extends Diff2HtmlUI {
   }
 };
 
+// src/diff.ts
+var encoder = new TextEncoder();
+var ESCAPED = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
+function pathOf(name) {
+  const padless = name.replace(/\t$/, "");
+  if (!padless.includes("\\")) return padless;
+  const bytes = [];
+  for (let at = 0; at < padless.length; at++) {
+    const char = padless.charAt(at);
+    if (char === '"') continue;
+    if (char !== "\\") bytes.push(...encoder.encode(char));
+    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
+      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
+      at += 3;
+    } else bytes.push(ESCAPED[padless.charAt(++at)] ?? 92);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+var parseDiff = (diff2) => parse(diff2).map((file) => ({ ...file, oldName: pathOf(file.oldName), newName: pathOf(file.newName) }));
+
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
 __export(mdurl_exports, {
@@ -24700,10 +24720,10 @@ function newline(state, silent) {
   state.pos = pos;
   return true;
 }
-var ESCAPED = [];
-for (let i = 0; i < 256; i++) ESCAPED.push(0);
+var ESCAPED2 = [];
+for (let i = 0; i < 256; i++) ESCAPED2.push(0);
 "\\!\"#$%&'()*+,./:;<=>?@[]^_`{|}~-".split("").forEach(function(ch) {
-  ESCAPED[ch.charCodeAt(0)] = 1;
+  ESCAPED2[ch.charCodeAt(0)] = 1;
 });
 function escape2(state, silent) {
   let pos = state.pos;
@@ -24744,7 +24764,7 @@ function escape2(state, silent) {
   const origStr = "\\" + escapedStr;
   if (!silent) {
     const token3 = state.push("text_special", "", 0);
-    if (ch1 < 256 && ESCAPED[ch1] !== 0) token3.content = escapedStr;
+    if (ch1 < 256 && ESCAPED2[ch1] !== 0) token3.content = escapedStr;
     else token3.content = origStr;
     token3.markup = origStr;
     token3.info = "escape";
@@ -25913,6 +25933,7 @@ var builtIn = (actions) => actions.length === STEP_ACTIONS.length && actions.eve
   return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit;
 });
 var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
+var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
 
 // src/words.ts
@@ -26018,9 +26039,10 @@ function showAlert(message) {
   box.className = "banner attention";
   box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
   box.hidden = message === null;
-  if (message === null) document.body.classList.remove("unreachable");
+  document.body.classList.remove("unreachable");
 }
 function showUnreachable({ name, reopen, retry }) {
+  if (document.body.classList.contains("unreachable")) return;
   const box = region("alert");
   box.className = "banner attention";
   box.replaceChildren(
@@ -26222,10 +26244,14 @@ var moves = 0;
 var taking = null;
 var changing = /* @__PURE__ */ new Set();
 async function decide(item, action, fields = {}) {
+  readShown();
   const before = moves;
   const from = currentStep()?.id;
-  const answer = await post2("decide", { item, action, ...fields });
-  if (!answer) return;
+  const answer = await post2("decide", { item, action, ...fields, on: walkthrough.on[itemKey(item)] });
+  if (!answer) {
+    poll();
+    return;
+  }
   ({ walkthrough, session } = await answer.json());
   for (const field of ["note", "text"]) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
@@ -26318,21 +26344,45 @@ async function undo() {
   if (!taken) return;
   const hadFocus = toast.contains(document.activeElement);
   hideToast();
-  const answer = await post2("decide", { item: taken.item, clear: true });
-  if (!answer) return;
+  const answer = await post2("decide", { item: taken.item, clear: true, on: walkthrough.on[itemKey(taken.item)] });
+  if (!answer) {
+    poll();
+    return;
+  }
   ({ walkthrough, session } = await answer.json());
   if (taken.item.type === "step" && taken.landed === location.hash) go2(taken.item.id);
   render();
   if (hadFocus) document.querySelector(".action-bar button, #main button")?.focus();
 }
-function markRead(step) {
-  if (readOnly || walkthrough.read.includes(step.id)) return;
-  const read = /* @__PURE__ */ new Set([...walkthrough.read, step.id]);
+var READ_MS = 800;
+var reading = null;
+function readNow(id) {
+  if (walkthrough.read.includes(id)) return;
+  const read = /* @__PURE__ */ new Set([...walkthrough.read, id]);
   walkthrough = { ...walkthrough, read: walkthrough.steps.filter((one) => read.has(one.id)).map((one) => one.id) };
   posted++;
-  void postQuietly("read", { step: step.id });
+  void postQuietly("read", { step: id, on: walkthrough.on[itemKey({ type: "step", id })] });
+}
+function markRead(step) {
+  if (readOnly || walkthrough.read.includes(step.id) || reading?.step === step.id) return;
+  if (reading) clearTimeout(reading.timer);
+  const timer = setTimeout(() => {
+    reading = null;
+    if (currentStep()?.id !== step.id) return;
+    readNow(step.id);
+    render();
+  }, READ_MS);
+  reading = { step: step.id, timer };
+}
+function readShown() {
+  if (!reading) return;
+  clearTimeout(reading.timer);
+  const { step } = reading;
+  reading = null;
+  if (currentStep()?.id === step) readNow(step);
 }
 async function send2(route, body, draft) {
+  readShown();
   const answer = await post2(route, body);
   if (!answer) return false;
   if (draft) drafts.delete(draft);
@@ -26366,15 +26416,19 @@ var SESSION = {
   "needs-you": ["Needs you", "The session asked you something; reply to it below."],
   gone: ["Gone", "The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code."]
 };
+var status = el("span", { className: "status" });
+status.setAttribute("role", "status");
+status.setAttribute("aria-label", "Session");
+var headerEnd = el("div", { className: "header-end" });
 function statusView() {
   const state = stopped ? "gone" : session.state;
   const [label, about] = stopped ? ["Stopped", "The walkthrough has stopped."] : SESSION[state];
+  if (status.dataset["state"] === state && status.textContent === label) return status;
   const mark = state === "working" ? icon("spinner") : el("span", { className: "dot" });
   if (state === "needs-you") mark.dataset["motion"] = "pulse";
-  const status = el("span", { className: "status", title: about }, mark, label);
+  status.replaceChildren(mark, label);
+  status.title = about;
   status.dataset["state"] = state;
-  status.setAttribute("role", "status");
-  status.setAttribute("aria-label", "Session");
   return status;
 }
 function segmentState(step, current) {
@@ -26499,21 +26553,26 @@ function moreMenu() {
   box.append(menu);
   return box;
 }
-function headerView() {
-  const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  return [
-    el("span", { className: "logo" }, icon("mark"), "Walkthrough"),
-    el("h1", { className: "session-label", title: range }, nameOf(walkthrough)),
-    ...progressView(),
-    el(
-      "div",
-      { className: "header-end" },
-      layoutSwitch(),
-      statusView(),
-      ...stopped ? [] : [el("button", { type: "button", className: "btn small stop", onclick: () => void stop() }, "Stop")],
-      moreMenu()
-    )
-  ];
+function around(parent, kept, before, after) {
+  for (const child of [...parent.childNodes]) if (child !== kept) child.remove();
+  if (kept.parentNode !== parent) parent.append(kept);
+  kept.before(...before);
+  kept.after(...after);
+}
+function drawHeader() {
+  const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
+  around(
+    headerEnd,
+    statusView(),
+    [layoutSwitch()],
+    [...stopped ? [] : [el("button", { type: "button", className: "btn small stop", onclick: () => void stop() }, "Stop")], moreMenu()]
+  );
+  around(
+    header,
+    headerEnd,
+    [el("span", { className: "logo" }, icon("mark"), "Walkthrough"), el("h1", { className: "session-label", title: range }, nameOf(walkthrough)), ...progressView()],
+    []
+  );
 }
 function draftArea(draft, label, start = "", rows = 2) {
   const box = el("textarea", { rows, value: drafts.get(draft) ?? start, placeholder: label });
@@ -26522,15 +26581,27 @@ function draftArea(draft, label, start = "", rows = 2) {
   box.oninput = () => drafts.set(draft, box.value);
   return box;
 }
+function keyed(control, key2) {
+  control.dataset["key"] = key2;
+  return control;
+}
+function filledIn(form) {
+  for (const box of form.querySelectorAll("[required]"))
+    if (!box.value.trim()) {
+      box.value = "";
+      drafts.delete(box.dataset["draft"] ?? "");
+    }
+  return form.reportValidity();
+}
 function lineBox(draft, label, placeholder, onSend) {
-  const box = el("input", { type: "text", value: drafts.get(draft) ?? "", placeholder });
+  const box = el("input", { type: "text", value: drafts.get(draft) ?? "", placeholder, required: true });
   box.dataset["draft"] = draft;
   box.setAttribute("aria-label", label);
   box.oninput = () => drafts.set(draft, box.value);
   const form = el("form", { className: "line-box" }, box);
   form.onsubmit = (event) => {
     event.preventDefault();
-    onSend();
+    if (filledIn(form)) onSend();
   };
   return form;
 }
@@ -26700,6 +26771,7 @@ function takingForm(item, action, text2) {
     ...action.edit ? [draftArea(draft("text"), "Text", text2, 3)] : [],
     ...action.note ? [draftArea(draft("note"), "Note", "", 3)] : []
   ];
+  for (const box of boxes) box.required = true;
   const form = el(
     "form",
     { className: "taking" },
@@ -26709,16 +26781,17 @@ function takingForm(item, action, text2) {
       "div",
       { className: "taking-row" },
       el("span", { className: "hint" }, "Goes to the session with your decision."),
-      el("button", { type: "button", className: "btn ghost", onclick: () => {
+      keyed(el("button", { type: "button", className: "btn ghost", onclick: () => {
         taking = null;
         flung = null;
         render();
-      } }, "Cancel"),
-      el("button", { type: "submit", className: "btn primary" }, "Send")
+      } }, "Cancel"), draft("cancel")),
+      keyed(el("button", { type: "submit", className: "btn primary" }, "Send"), draft("send"))
     )
   );
   form.onsubmit = (event) => {
     event.preventDefault();
+    if (!filledIn(form)) return;
     void decide(item, action.id, {
       ...action.note && { note: drafts.get(draft("note")) ?? "" },
       ...action.edit && { text: drafts.get(draft("text")) ?? text2 }
@@ -26752,7 +26825,7 @@ function replyView(note) {
     });
   });
   form.className = "reply";
-  form.append(el("button", { type: "submit", className: "btn small" }, "Send"));
+  form.append(keyed(el("button", { type: "submit", className: "btn small" }, "Send"), `send:${draft}`));
   form.onkeydown = (event) => {
     if (event.key !== "Escape") return;
     event.preventDefault();
@@ -26851,7 +26924,7 @@ function pickByKey(step, event) {
   if (event.key !== "Enter") return;
   event.preventDefault();
   const started = picked?.step === step.id && picked.file === at.file && !picked.ended;
-  pick(step, at.file, at.line, started, event.shiftKey || started && picked?.from !== at.line);
+  pick(step, at.file, at.line, started, event.shiftKey || started);
 }
 function unpick() {
   picked = null;
@@ -26870,8 +26943,8 @@ function pickedAsk(step, file, lines) {
   form.className = "picked-ask";
   form.prepend(el("label", { htmlFor: `picked-${step.id}` }, label));
   form.append(
-    el("button", { type: "button", className: "btn ghost small", onclick: unpick }, "Cancel"),
-    el("button", { type: "submit", className: "btn primary small" }, "Ask")
+    keyed(el("button", { type: "button", className: "btn ghost small", onclick: unpick }, "Cancel"), `cancel:${draft}`),
+    keyed(el("button", { type: "submit", className: "btn primary small" }, "Ask"), `send:${draft}`)
   );
   return form;
 }
@@ -26881,7 +26954,7 @@ function drawDiff(step) {
   const kept = drawn.get(step.id);
   if (kept?.diff === step.diff) return kept;
   const view = el("div", { className: "diff" });
-  const files = parse(step.diff);
+  const files = parseDiff(step.diff);
   new Diff2HtmlUI2(view, files, {
     outputFormat: "line-by-line",
     drawFileList: false,
@@ -26915,6 +26988,8 @@ function drawDiff(step) {
     const cells = [...view.querySelectorAll("tr[data-line] .d2h-code-linenumber")];
     cells.forEach((cell, at) => {
       cell.tabIndex = at === 0 ? 0 : -1;
+      cell.setAttribute("role", "button");
+      cell.setAttribute("aria-pressed", "false");
       cell.setAttribute("aria-label", `Ask about line ${cell.closest("tr")?.dataset["line"] ?? ""} of ${cell.closest("tr")?.dataset["file"] ?? ""}`);
     });
     view.onkeydown = (event) => {
@@ -26928,7 +27003,11 @@ function drawDiff(step) {
 function diffView(step, pinned) {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll(".pinned-row")) old.remove();
-  for (const old of view.querySelectorAll("tr.selected")) old.classList.remove("selected");
+  const press = (row, picked2) => {
+    row.classList.toggle("selected", picked2);
+    if (!readOnly) row.querySelector(".d2h-code-linenumber")?.setAttribute("aria-pressed", String(picked2));
+  };
+  for (const old of view.querySelectorAll("tr.selected")) press(old, false);
   const at = /* @__PURE__ */ new Map();
   for (const entry of pinned) {
     const { file, lines } = placeOf(entry);
@@ -26941,7 +27020,7 @@ function diffView(step, pinned) {
   if (pick2 && pickKey) {
     for (const row of rows.values()) {
       const line2 = Number(row.dataset["line"]);
-      if (row.dataset["file"] === pick2.file && line2 >= pick2.lines[0] && line2 <= pick2.lines[1]) row.classList.add("selected");
+      if (row.dataset["file"] === pick2.file && line2 >= pick2.lines[0] && line2 <= pick2.lines[1]) press(row, true);
     }
     if (pick2.ended && !at.has(pickKey)) at.set(pickKey, []);
   }
@@ -27204,11 +27283,20 @@ function stepView(step, notices, view) {
   section.setAttribute("aria-labelledby", title.id);
   return section;
 }
+var STATE_NAMES = {
+  unread: "Unread",
+  read: "Read",
+  folded: "Folded",
+  met: "Met",
+  "not-met": "Not met",
+  partly: "Partly met",
+  unchecked: "Not checked"
+};
 function queueRow(address, state, mark, title, sub, current) {
   const row = el(
     "a",
     { href: `#${encodeURIComponent(address)}`, className: "queue-item" },
-    icon(mark),
+    icon(mark, STATE_NAMES[mark]),
     el("span", { className: "queue-title" }, title, ...sub ? [el("span", { className: sub.attention ? "queue-sub attention" : "queue-sub" }, sub.text)] : [])
   );
   row.dataset["state"] = state;
@@ -27344,7 +27432,7 @@ function checklistView({ title, items }, view, compact = false) {
       const at = stepNumber(id);
       const step = walkthrough.steps[at - 1];
       if (!step) return [];
-      const link2 = el("a", { href: `#${encodeURIComponent(id)}`, className: "step-link", title: step.title }, String(at));
+      const link2 = keyed(el("a", { href: `#${encodeURIComponent(id)}`, className: "step-link", title: step.title }, String(at)), `step-link:${item.id}:${id}`);
       link2.setAttribute("aria-label", `Step ${String(at)}`);
       return [link2];
     });
@@ -27353,7 +27441,7 @@ function checklistView({ title, items }, view, compact = false) {
     const row = el(
       "li",
       { className: view.kind === "checklist" && view.item === item.id ? "current" : "" },
-      icon(mark),
+      icon(mark, STATE_NAMES[mark]),
       el("div", { className: "item-body" }, markdown2(item.text, "item-text"), ...compact ? [] : [el("span", { className: "item-status" }, item.status)]),
       ...links,
       ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} ${gone === 1 ? "is" : "are"} no longer in the change`)] : [],
@@ -27402,7 +27490,7 @@ function endView() {
       "tr",
       {},
       el("td", { className: "number" }, String(at + 1)),
-      el("td", {}, el("a", { href: `#${encodeURIComponent(step.id)}` }, step.title), ...decision?.note ? [el("span", { className: "decision-note" }, decision.note)] : []),
+      el("td", {}, keyed(el("a", { href: `#${encodeURIComponent(step.id)}` }, step.title), `end-link:${step.id}`), ...decision?.note ? [el("span", { className: "decision-note" }, decision.note)] : []),
       el("td", { className: "decision" }, decision ? el("span", { className: "tag decided" }, labelOf(item, decision.action)) : stateTag(item, false))
     );
   });
@@ -27460,12 +27548,19 @@ function settle() {
   if (redrawLater) render();
 }
 function fling(deck, step, to) {
+  if (deck.classList.contains("flying")) return;
   swiping = true;
   deck.classList.remove("dragging");
   deck.classList.add("flying");
   moveCard(deck, to * (innerWidth + 120));
   setTimeout(() => {
     const item = { type: "step", id: step.id };
+    const top = deckTop();
+    if (top?.id !== step.id || top.diff !== step.diff || !builtIn(walkthrough.actions[itemKey(item)] ?? [])) {
+      swiping = false;
+      render();
+      return;
+    }
     flung = { step: step.id, to };
     if (to < 0) taking = { key: itemKey(item), action: "flag" };
     swiping = false;
@@ -27539,7 +27634,7 @@ function swipeable(deck, card, step, swipes) {
   };
 }
 function miniDiff(step, note) {
-  const files = parse(step.diff);
+  const files = parseDiff(step.diff);
   const file = files.find((one) => one.newName === note?.note.file) ?? files[0];
   if (!file) return [];
   const rows = file.blocks.flatMap((block3) => [block3.header, ...block3.lines]);
@@ -27593,6 +27688,7 @@ function cardView(step, top, swipes) {
     el("span", { className: "card-meta" }, `${plural(step.files.length, "file")} \xB7 ${notes.length ? plural(notes.length, "note") : "no notes"}`)
   );
   card.setAttribute("aria-label", `Open step ${String(stepNumber(step.id))}, ${step.title}`);
+  card.dataset["key"] = `card:${step.id}`;
   return card;
 }
 function deckView() {
@@ -27637,7 +27733,10 @@ function deckView() {
 function questionBox(message) {
   const draft = `reply:${message.id}`;
   const choices = (message.choices ?? []).map(
-    (choice, at) => el("button", { type: "button", className: at === 0 ? "btn primary" : "btn", onclick: () => void send2("reply", { to: message.id, text: choice }) }, choice)
+    (choice, at) => keyed(
+      el("button", { type: "button", className: at === 0 ? "btn primary" : "btn", onclick: () => void send2("reply", { to: message.id, text: choice }) }, choice),
+      `choice:${message.id}:${String(at)}`
+    )
   );
   const reply = lineBox(draft, "Reply", choices.length ? "Or reply\u2026" : "Reply\u2026", () => {
     void send2("reply", { to: message.id, text: drafts.get(draft) ?? "" }, draft);
@@ -27753,7 +27852,7 @@ var stepNotesOf = (step) => session.conversation.filter((entry) => isNote(entry)
 function showNote(step, note) {
   if (step.kind === "folded") {
     opened.add(`fold:${step.id}`);
-    opened.add(step.id);
+    if (note.note.file !== void 0) opened.add(`fold-diff:${step.id}:${note.note.file}`);
   }
   render();
   const shown = document.getElementById(`note-${note.id}`);
@@ -27791,12 +27890,13 @@ function toolPanel(view) {
   }
   const items = walkthrough.checklist?.items ?? [];
   if (checklist.length) tabs.push({ id: "checklist", label: "Checklist", count: metCount(items) ?? String(items.length), body: () => checklist });
-  tabs.push({
-    id: "session",
-    label: "From the session",
-    count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
-    body: () => sessionThreads()
-  });
+  if (view.kind !== "session")
+    tabs.push({
+      id: "session",
+      label: "From the session",
+      count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
+      body: () => sessionThreads()
+    });
   const chosen = tool ?? (walkthrough.checklist ? "checklist" : "notes");
   const shown = tabs.find((tab) => tab.id === chosen) ?? tabs[0];
   if (!shown) return [];
@@ -27845,6 +27945,16 @@ for (const [target, released] of [[document, "pointerup"], [document, "pointerca
     redrawLater = false;
     setTimeout(render, 0);
   }, true);
+var composing = false;
+document.addEventListener("compositionstart", () => {
+  composing = true;
+}, true);
+for (const ended of ["compositionend", "focusout"])
+  document.addEventListener(ended, () => {
+    if (!composing) return;
+    composing = false;
+    if (redrawLater) render();
+  }, true);
 function exportStep(step, number) {
   const title = el("span", { id: `step-${step.id}` }, step.title);
   const { prose, code: code2 } = stepBody(step);
@@ -27884,7 +27994,7 @@ function render() {
     main.replaceChildren(...exportView(exported.at));
     return;
   }
-  if (pressed || swiping) {
+  if (pressed || swiping || composing) {
     redrawLater = true;
     return;
   }
@@ -27901,6 +28011,7 @@ function render() {
   document.body.dataset["view"] = view.kind;
   const panes = [queue, main, prosePane, codePane, side, tools];
   const scrolled = panes.map((pane) => pane.scrollTop);
+  const sideways = [...document.querySelectorAll(".d2h-file-diff, .preview, .preview pre")].filter((box2) => box2.scrollLeft > 0).map((box2) => [box2, box2.scrollLeft]);
   const before = drawnState;
   const decided = new Set(Object.keys(walkthrough.decided).filter((key2) => walkthrough.decided[key2]));
   const newly = before ? [...decided].filter((key2) => !before.decided.has(key2)) : [];
@@ -27913,7 +28024,7 @@ function render() {
   });
   const wasSplit = main.contains(splitStep);
   const oldPane = !swapped ? [] : wasSplit ? [el("section", { className: "step split" }, el("div", { className: "prose" }, ...prosePane.childNodes), el("div", { className: "code" }, ...codePane.childNodes))] : [...main.childNodes].filter((node) => node !== leavingPane);
-  header.replaceChildren(...headerView());
+  drawHeader();
   queue.replaceChildren(...queueView(view));
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
   const split = layout === "split" && view.kind === "step";
@@ -27924,9 +28035,11 @@ function render() {
   side.replaceChildren(...layout === "three" ? besideChecklist(view) : []);
   side.hidden = !side.hasChildNodes();
   tools.replaceChildren(...layout === "panel" ? toolPanel(view) : []);
+  tools.hidden = !tools.hasChildNodes();
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });
+  for (const [box2, left] of sideways) box2.scrollLeft = left;
   for (const part of shown) part.dataset["motion"] = "pane-enter";
   leaveRows(rows, newly);
   placeGhosts();
@@ -28052,8 +28165,9 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (isTyping(event.target)) return;
-  if (event.key === "j" || event.key === "ArrowRight") stepBy(1);
-  else if (event.key === "k" || event.key === "ArrowLeft") stepBy(-1);
+  const sideways = event.target instanceof Element && event.target.closest(".d2h-file-diff, pre, .preview, .menu") !== null;
+  if (event.key === "j" || event.key === "ArrowRight" && !sideways) stepBy(1);
+  else if (event.key === "k" || event.key === "ArrowLeft" && !sideways) stepBy(-1);
 });
 phone.addEventListener("change", render);
 window.addEventListener("hashchange", () => {
@@ -28085,20 +28199,25 @@ render();
 if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 var POLL_MS = 1500;
 var polling = false;
-var fetchText = async (data) => {
-  const answer = await fetch(data);
+var walkthroughTag = "";
+var fetchText = async (data, tag2 = "") => {
+  const answer = await fetch(data, tag2 ? { headers: { "if-none-match": tag2 } } : {});
+  if (answer.status === 304) return { text: null, tag: tag2 };
   if (!answer.ok) throw new Error(`${data}: ${String(answer.status)}`);
-  return answer.text();
+  return { text: await answer.text(), tag: answer.headers.get("etag") ?? "" };
 };
 function poll() {
   if (polling || stopped) return;
   polling = true;
   const since = posted;
-  Promise.all([fetchText("data/walkthrough.json"), fetchText("data/session.json")]).then(([walkthroughText, sessionText]) => {
+  Promise.all([fetchText("data/walkthrough.json", walkthroughTag), fetchText("data/session.json")]).then(([fresh, { text: sessionText }]) => {
     if (document.body.classList.contains("unreachable")) showAlert(null);
-    if (since !== posted || walkthroughText === lastWalkthrough && sessionText === lastSession) return;
+    if (since !== posted) return;
+    walkthroughTag = fresh.tag;
+    const walkthroughText = fresh.text ?? lastWalkthrough;
+    if (walkthroughText === lastWalkthrough && sessionText === lastSession) return;
     walkthrough = JSON.parse(walkthroughText);
-    session = JSON.parse(sessionText);
+    session = JSON.parse(sessionText ?? lastSession);
     render();
   }).catch(() => {
     showUnreachable(PAGE);

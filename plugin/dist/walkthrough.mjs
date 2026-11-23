@@ -65,54 +65,54 @@ var require_polyfills = __commonJS({
     }
     var chdir;
     module.exports = patch;
-    function patch(fs12) {
+    function patch(fs13) {
       if (constants.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
-        patchLchmod(fs12);
+        patchLchmod(fs13);
       }
-      if (!fs12.lutimes) {
-        patchLutimes(fs12);
+      if (!fs13.lutimes) {
+        patchLutimes(fs13);
       }
-      fs12.chown = chownFix(fs12.chown);
-      fs12.fchown = chownFix(fs12.fchown);
-      fs12.lchown = chownFix(fs12.lchown);
-      fs12.chmod = chmodFix(fs12.chmod);
-      fs12.fchmod = chmodFix(fs12.fchmod);
-      fs12.lchmod = chmodFix(fs12.lchmod);
-      fs12.chownSync = chownFixSync(fs12.chownSync);
-      fs12.fchownSync = chownFixSync(fs12.fchownSync);
-      fs12.lchownSync = chownFixSync(fs12.lchownSync);
-      fs12.chmodSync = chmodFixSync(fs12.chmodSync);
-      fs12.fchmodSync = chmodFixSync(fs12.fchmodSync);
-      fs12.lchmodSync = chmodFixSync(fs12.lchmodSync);
-      fs12.stat = statFix(fs12.stat);
-      fs12.fstat = statFix(fs12.fstat);
-      fs12.lstat = statFix(fs12.lstat);
-      fs12.statSync = statFixSync(fs12.statSync);
-      fs12.fstatSync = statFixSync(fs12.fstatSync);
-      fs12.lstatSync = statFixSync(fs12.lstatSync);
-      if (fs12.chmod && !fs12.lchmod) {
-        fs12.lchmod = function(path13, mode, cb) {
+      fs13.chown = chownFix(fs13.chown);
+      fs13.fchown = chownFix(fs13.fchown);
+      fs13.lchown = chownFix(fs13.lchown);
+      fs13.chmod = chmodFix(fs13.chmod);
+      fs13.fchmod = chmodFix(fs13.fchmod);
+      fs13.lchmod = chmodFix(fs13.lchmod);
+      fs13.chownSync = chownFixSync(fs13.chownSync);
+      fs13.fchownSync = chownFixSync(fs13.fchownSync);
+      fs13.lchownSync = chownFixSync(fs13.lchownSync);
+      fs13.chmodSync = chmodFixSync(fs13.chmodSync);
+      fs13.fchmodSync = chmodFixSync(fs13.fchmodSync);
+      fs13.lchmodSync = chmodFixSync(fs13.lchmodSync);
+      fs13.stat = statFix(fs13.stat);
+      fs13.fstat = statFix(fs13.fstat);
+      fs13.lstat = statFix(fs13.lstat);
+      fs13.statSync = statFixSync(fs13.statSync);
+      fs13.fstatSync = statFixSync(fs13.fstatSync);
+      fs13.lstatSync = statFixSync(fs13.lstatSync);
+      if (fs13.chmod && !fs13.lchmod) {
+        fs13.lchmod = function(path13, mode, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs12.lchmodSync = function() {
+        fs13.lchmodSync = function() {
         };
       }
-      if (fs12.chown && !fs12.lchown) {
-        fs12.lchown = function(path13, uid, gid, cb) {
+      if (fs13.chown && !fs13.lchown) {
+        fs13.lchown = function(path13, uid, gid, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs12.lchownSync = function() {
+        fs13.lchownSync = function() {
         };
       }
       if (platform === "win32") {
-        fs12.rename = typeof fs12.rename !== "function" ? fs12.rename : (function(fs$rename) {
+        fs13.rename = typeof fs13.rename !== "function" ? fs13.rename : (function(fs$rename) {
           function rename(from, to, cb) {
             var start2 = Date.now();
             var backoff = 0;
             fs$rename(from, to, function CB(er) {
               if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start2 < 6e4) {
                 setTimeout(function() {
-                  fs12.stat(to, function(stater, st) {
+                  fs13.stat(to, function(stater, st) {
                     if (stater && stater.code === "ENOENT")
                       fs$rename(from, to, CB);
                     else
@@ -128,9 +128,9 @@ var require_polyfills = __commonJS({
           }
           if (Object.setPrototypeOf) Object.setPrototypeOf(rename, fs$rename);
           return rename;
-        })(fs12.rename);
+        })(fs13.rename);
       }
-      fs12.read = typeof fs12.read !== "function" ? fs12.read : (function(fs$read) {
+      fs13.read = typeof fs13.read !== "function" ? fs13.read : (function(fs$read) {
         function read2(fd, buffer, offset, length, position, callback_) {
           var callback;
           if (callback_ && typeof callback_ === "function") {
@@ -138,22 +138,22 @@ var require_polyfills = __commonJS({
             callback = function(er, _, __) {
               if (er && er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
-                return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
+                return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
               }
               callback_.apply(this, arguments);
             };
           }
-          return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
+          return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
         }
         if (Object.setPrototypeOf) Object.setPrototypeOf(read2, fs$read);
         return read2;
-      })(fs12.read);
-      fs12.readSync = typeof fs12.readSync !== "function" ? fs12.readSync : /* @__PURE__ */ (function(fs$readSync) {
+      })(fs13.read);
+      fs13.readSync = typeof fs13.readSync !== "function" ? fs13.readSync : /* @__PURE__ */ (function(fs$readSync) {
         return function(fd, buffer, offset, length, position) {
           var eagCounter = 0;
           while (true) {
             try {
-              return fs$readSync.call(fs12, fd, buffer, offset, length, position);
+              return fs$readSync.call(fs13, fd, buffer, offset, length, position);
             } catch (er) {
               if (er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
@@ -163,10 +163,10 @@ var require_polyfills = __commonJS({
             }
           }
         };
-      })(fs12.readSync);
-      function patchLchmod(fs13) {
-        fs13.lchmod = function(path13, mode, callback) {
-          fs13.open(
+      })(fs13.readSync);
+      function patchLchmod(fs14) {
+        fs14.lchmod = function(path13, mode, callback) {
+          fs14.open(
             path13,
             constants.O_WRONLY | constants.O_SYMLINK,
             mode,
@@ -175,80 +175,80 @@ var require_polyfills = __commonJS({
                 if (callback) callback(err);
                 return;
               }
-              fs13.fchmod(fd, mode, function(err2) {
-                fs13.close(fd, function(err22) {
+              fs14.fchmod(fd, mode, function(err2) {
+                fs14.close(fd, function(err22) {
                   if (callback) callback(err2 || err22);
                 });
               });
             }
           );
         };
-        fs13.lchmodSync = function(path13, mode) {
-          var fd = fs13.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
+        fs14.lchmodSync = function(path13, mode) {
+          var fd = fs14.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
-            ret = fs13.fchmodSync(fd, mode);
+            ret = fs14.fchmodSync(fd, mode);
             threw = false;
           } finally {
             if (threw) {
               try {
-                fs13.closeSync(fd);
+                fs14.closeSync(fd);
               } catch (er) {
               }
             } else {
-              fs13.closeSync(fd);
+              fs14.closeSync(fd);
             }
           }
           return ret;
         };
       }
-      function patchLutimes(fs13) {
-        if (constants.hasOwnProperty("O_SYMLINK") && fs13.futimes) {
-          fs13.lutimes = function(path13, at, mt, cb) {
-            fs13.open(path13, constants.O_SYMLINK, function(er, fd) {
+      function patchLutimes(fs14) {
+        if (constants.hasOwnProperty("O_SYMLINK") && fs14.futimes) {
+          fs14.lutimes = function(path13, at, mt, cb) {
+            fs14.open(path13, constants.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
               }
-              fs13.futimes(fd, at, mt, function(er2) {
-                fs13.close(fd, function(er22) {
+              fs14.futimes(fd, at, mt, function(er2) {
+                fs14.close(fd, function(er22) {
                   if (cb) cb(er2 || er22);
                 });
               });
             });
           };
-          fs13.lutimesSync = function(path13, at, mt) {
-            var fd = fs13.openSync(path13, constants.O_SYMLINK);
+          fs14.lutimesSync = function(path13, at, mt) {
+            var fd = fs14.openSync(path13, constants.O_SYMLINK);
             var ret;
             var threw = true;
             try {
-              ret = fs13.futimesSync(fd, at, mt);
+              ret = fs14.futimesSync(fd, at, mt);
               threw = false;
             } finally {
               if (threw) {
                 try {
-                  fs13.closeSync(fd);
+                  fs14.closeSync(fd);
                 } catch (er) {
                 }
               } else {
-                fs13.closeSync(fd);
+                fs14.closeSync(fd);
               }
             }
             return ret;
           };
-        } else if (fs13.futimes) {
-          fs13.lutimes = function(_a, _b, _c, cb) {
+        } else if (fs14.futimes) {
+          fs14.lutimes = function(_a, _b, _c, cb) {
             if (cb) process.nextTick(cb);
           };
-          fs13.lutimesSync = function() {
+          fs14.lutimesSync = function() {
           };
         }
       }
       function chmodFix(orig) {
         if (!orig) return orig;
         return function(target, mode, cb) {
-          return orig.call(fs12, target, mode, function(er) {
+          return orig.call(fs13, target, mode, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -258,7 +258,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, mode) {
           try {
-            return orig.call(fs12, target, mode);
+            return orig.call(fs13, target, mode);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -267,7 +267,7 @@ var require_polyfills = __commonJS({
       function chownFix(orig) {
         if (!orig) return orig;
         return function(target, uid, gid, cb) {
-          return orig.call(fs12, target, uid, gid, function(er) {
+          return orig.call(fs13, target, uid, gid, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -277,7 +277,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, uid, gid) {
           try {
-            return orig.call(fs12, target, uid, gid);
+            return orig.call(fs13, target, uid, gid);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -297,13 +297,13 @@ var require_polyfills = __commonJS({
             }
             if (cb) cb.apply(this, arguments);
           }
-          return options ? orig.call(fs12, target, options, callback) : orig.call(fs12, target, callback);
+          return options ? orig.call(fs13, target, options, callback) : orig.call(fs13, target, callback);
         };
       }
       function statFixSync(orig) {
         if (!orig) return orig;
         return function(target, options) {
-          var stats = options ? orig.call(fs12, target, options) : orig.call(fs12, target);
+          var stats = options ? orig.call(fs13, target, options) : orig.call(fs13, target);
           if (stats) {
             if (stats.uid < 0) stats.uid += 4294967296;
             if (stats.gid < 0) stats.gid += 4294967296;
@@ -332,7 +332,7 @@ var require_legacy_streams = __commonJS({
   "node_modules/graceful-fs/legacy-streams.js"(exports, module) {
     var Stream = __require("stream").Stream;
     module.exports = legacy;
-    function legacy(fs12) {
+    function legacy(fs13) {
       return {
         ReadStream,
         WriteStream
@@ -375,7 +375,7 @@ var require_legacy_streams = __commonJS({
           });
           return;
         }
-        fs12.open(this.path, this.flags, this.mode, function(err, fd) {
+        fs13.open(this.path, this.flags, this.mode, function(err, fd) {
           if (err) {
             self.emit("error", err);
             self.readable = false;
@@ -414,7 +414,7 @@ var require_legacy_streams = __commonJS({
         this.busy = false;
         this._queue = [];
         if (this.fd === null) {
-          this._open = fs12.open;
+          this._open = fs13.open;
           this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
           this.flush();
         }
@@ -449,7 +449,7 @@ var require_clone = __commonJS({
 // node_modules/graceful-fs/graceful-fs.js
 var require_graceful_fs = __commonJS({
   "node_modules/graceful-fs/graceful-fs.js"(exports, module) {
-    var fs12 = __require("fs");
+    var fs13 = __require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
     var clone = require_clone();
@@ -481,12 +481,12 @@ var require_graceful_fs = __commonJS({
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
       };
-    if (!fs12[gracefulQueue]) {
+    if (!fs13[gracefulQueue]) {
       queue = global[gracefulQueue] || [];
-      publishQueue(fs12, queue);
-      fs12.close = (function(fs$close) {
+      publishQueue(fs13, queue);
+      fs13.close = (function(fs$close) {
         function close(fd, cb) {
-          return fs$close.call(fs12, fd, function(err) {
+          return fs$close.call(fs13, fd, function(err) {
             if (!err) {
               resetQueue();
             }
@@ -498,40 +498,40 @@ var require_graceful_fs = __commonJS({
           value: fs$close
         });
         return close;
-      })(fs12.close);
-      fs12.closeSync = (function(fs$closeSync) {
+      })(fs13.close);
+      fs13.closeSync = (function(fs$closeSync) {
         function closeSync(fd) {
-          fs$closeSync.apply(fs12, arguments);
+          fs$closeSync.apply(fs13, arguments);
           resetQueue();
         }
         Object.defineProperty(closeSync, previousSymbol, {
           value: fs$closeSync
         });
         return closeSync;
-      })(fs12.closeSync);
+      })(fs13.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug(fs12[gracefulQueue]);
-          __require("assert").equal(fs12[gracefulQueue].length, 0);
+          debug(fs13[gracefulQueue]);
+          __require("assert").equal(fs13[gracefulQueue].length, 0);
         });
       }
     }
     var queue;
     if (!global[gracefulQueue]) {
-      publishQueue(global, fs12[gracefulQueue]);
+      publishQueue(global, fs13[gracefulQueue]);
     }
-    module.exports = patch(clone(fs12));
-    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs12.__patched) {
-      module.exports = patch(fs12);
-      fs12.__patched = true;
+    module.exports = patch(clone(fs13));
+    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs13.__patched) {
+      module.exports = patch(fs13);
+      fs13.__patched = true;
     }
-    function patch(fs13) {
-      polyfills(fs13);
-      fs13.gracefulify = patch;
-      fs13.createReadStream = createReadStream;
-      fs13.createWriteStream = createWriteStream;
-      var fs$readFile = fs13.readFile;
-      fs13.readFile = readFile2;
+    function patch(fs14) {
+      polyfills(fs14);
+      fs14.gracefulify = patch;
+      fs14.createReadStream = createReadStream;
+      fs14.createWriteStream = createWriteStream;
+      var fs$readFile = fs14.readFile;
+      fs14.readFile = readFile2;
       function readFile2(path13, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
@@ -547,8 +547,8 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$writeFile = fs13.writeFile;
-      fs13.writeFile = writeFile;
+      var fs$writeFile = fs14.writeFile;
+      fs14.writeFile = writeFile;
       function writeFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
@@ -564,9 +564,9 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$appendFile = fs13.appendFile;
+      var fs$appendFile = fs14.appendFile;
       if (fs$appendFile)
-        fs13.appendFile = appendFile;
+        fs14.appendFile = appendFile;
       function appendFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
@@ -582,9 +582,9 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$copyFile = fs13.copyFile;
+      var fs$copyFile = fs14.copyFile;
       if (fs$copyFile)
-        fs13.copyFile = copyFile;
+        fs14.copyFile = copyFile;
       function copyFile(src, dest, flags, cb) {
         if (typeof flags === "function") {
           cb = flags;
@@ -602,8 +602,8 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$readdir = fs13.readdir;
-      fs13.readdir = readdir;
+      var fs$readdir = fs14.readdir;
+      fs14.readdir = readdir;
       var noReaddirOptionVersions = /^v[0-5]\./;
       function readdir(path13, options, cb) {
         if (typeof options === "function")
@@ -644,21 +644,21 @@ var require_graceful_fs = __commonJS({
         }
       }
       if (process.version.substr(0, 4) === "v0.8") {
-        var legStreams = legacy(fs13);
+        var legStreams = legacy(fs14);
         ReadStream = legStreams.ReadStream;
         WriteStream = legStreams.WriteStream;
       }
-      var fs$ReadStream = fs13.ReadStream;
+      var fs$ReadStream = fs14.ReadStream;
       if (fs$ReadStream) {
         ReadStream.prototype = Object.create(fs$ReadStream.prototype);
         ReadStream.prototype.open = ReadStream$open;
       }
-      var fs$WriteStream = fs13.WriteStream;
+      var fs$WriteStream = fs14.WriteStream;
       if (fs$WriteStream) {
         WriteStream.prototype = Object.create(fs$WriteStream.prototype);
         WriteStream.prototype.open = WriteStream$open;
       }
-      Object.defineProperty(fs13, "ReadStream", {
+      Object.defineProperty(fs14, "ReadStream", {
         get: function() {
           return ReadStream;
         },
@@ -668,7 +668,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      Object.defineProperty(fs13, "WriteStream", {
+      Object.defineProperty(fs14, "WriteStream", {
         get: function() {
           return WriteStream;
         },
@@ -679,7 +679,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileReadStream = ReadStream;
-      Object.defineProperty(fs13, "FileReadStream", {
+      Object.defineProperty(fs14, "FileReadStream", {
         get: function() {
           return FileReadStream;
         },
@@ -690,7 +690,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileWriteStream = WriteStream;
-      Object.defineProperty(fs13, "FileWriteStream", {
+      Object.defineProperty(fs14, "FileWriteStream", {
         get: function() {
           return FileWriteStream;
         },
@@ -739,13 +739,13 @@ var require_graceful_fs = __commonJS({
         });
       }
       function createReadStream(path13, options) {
-        return new fs13.ReadStream(path13, options);
+        return new fs14.ReadStream(path13, options);
       }
       function createWriteStream(path13, options) {
-        return new fs13.WriteStream(path13, options);
+        return new fs14.WriteStream(path13, options);
       }
-      var fs$open = fs13.open;
-      fs13.open = open2;
+      var fs$open = fs14.open;
+      fs14.open = open2;
       function open2(path13, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
@@ -761,20 +761,20 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      return fs13;
+      return fs14;
     }
     function enqueue(elem) {
       debug("ENQUEUE", elem[0].name, elem[1]);
-      fs12[gracefulQueue].push(elem);
+      fs13[gracefulQueue].push(elem);
       retry();
     }
     var retryTimer;
     function resetQueue() {
       var now = Date.now();
-      for (var i = 0; i < fs12[gracefulQueue].length; ++i) {
-        if (fs12[gracefulQueue][i].length > 2) {
-          fs12[gracefulQueue][i][3] = now;
-          fs12[gracefulQueue][i][4] = now;
+      for (var i = 0; i < fs13[gracefulQueue].length; ++i) {
+        if (fs13[gracefulQueue][i].length > 2) {
+          fs13[gracefulQueue][i][3] = now;
+          fs13[gracefulQueue][i][4] = now;
         }
       }
       retry();
@@ -782,9 +782,9 @@ var require_graceful_fs = __commonJS({
     function retry() {
       clearTimeout(retryTimer);
       retryTimer = void 0;
-      if (fs12[gracefulQueue].length === 0)
+      if (fs13[gracefulQueue].length === 0)
         return;
-      var elem = fs12[gracefulQueue].shift();
+      var elem = fs13[gracefulQueue].shift();
       var fn = elem[0];
       var args = elem[1];
       var err = elem[2];
@@ -806,7 +806,7 @@ var require_graceful_fs = __commonJS({
           debug("RETRY", fn.name, args);
           fn.apply(null, args.concat([startTime]));
         } else {
-          fs12[gracefulQueue].push(elem);
+          fs13[gracefulQueue].push(elem);
         }
       }
       if (retryTimer === void 0) {
@@ -1241,10 +1241,10 @@ var require_mtime_precision = __commonJS({
   "node_modules/proper-lockfile/lib/mtime-precision.js"(exports, module) {
     "use strict";
     var cacheSymbol = /* @__PURE__ */ Symbol();
-    function probe(file2, fs12, callback) {
-      const cachedPrecision = fs12[cacheSymbol];
+    function probe(file2, fs13, callback) {
+      const cachedPrecision = fs13[cacheSymbol];
       if (cachedPrecision) {
-        return fs12.stat(file2, (err, stat) => {
+        return fs13.stat(file2, (err, stat) => {
           if (err) {
             return callback(err);
           }
@@ -1252,16 +1252,16 @@ var require_mtime_precision = __commonJS({
         });
       }
       const mtime = new Date(Math.ceil(Date.now() / 1e3) * 1e3 + 5);
-      fs12.utimes(file2, mtime, mtime, (err) => {
+      fs13.utimes(file2, mtime, mtime, (err) => {
         if (err) {
           return callback(err);
         }
-        fs12.stat(file2, (err2, stat) => {
+        fs13.stat(file2, (err2, stat) => {
           if (err2) {
             return callback(err2);
           }
           const precision = stat.mtime.getTime() % 1e3 === 0 ? "s" : "ms";
-          Object.defineProperty(fs12, cacheSymbol, { value: precision });
+          Object.defineProperty(fs13, cacheSymbol, { value: precision });
           callback(null, stat.mtime, precision);
         });
       });
@@ -1283,7 +1283,7 @@ var require_lockfile = __commonJS({
   "node_modules/proper-lockfile/lib/lockfile.js"(exports, module) {
     "use strict";
     var path13 = __require("path");
-    var fs12 = require_graceful_fs();
+    var fs13 = require_graceful_fs();
     var retry = require_retry2();
     var onExit = require_signal_exit();
     var mtimePrecision = require_mtime_precision();
@@ -1414,7 +1414,7 @@ var require_lockfile = __commonJS({
         update: null,
         realpath: true,
         retries: 0,
-        fs: fs12,
+        fs: fs13,
         onCompromised: (err) => {
           throw err;
         },
@@ -1458,7 +1458,7 @@ var require_lockfile = __commonJS({
     }
     function unlock(file2, options, callback) {
       options = {
-        fs: fs12,
+        fs: fs13,
         realpath: true,
         ...options
       };
@@ -1480,7 +1480,7 @@ var require_lockfile = __commonJS({
       options = {
         stale: 1e4,
         realpath: true,
-        fs: fs12,
+        fs: fs13,
         ...options
       };
       options.stale = Math.max(options.stale || 0, 2e3);
@@ -1519,16 +1519,16 @@ var require_lockfile = __commonJS({
 var require_adapter = __commonJS({
   "node_modules/proper-lockfile/lib/adapter.js"(exports, module) {
     "use strict";
-    var fs12 = require_graceful_fs();
-    function createSyncFs(fs13) {
+    var fs13 = require_graceful_fs();
+    function createSyncFs(fs14) {
       const methods = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
-      const newFs = { ...fs13 };
+      const newFs = { ...fs14 };
       methods.forEach((method) => {
         newFs[method] = (...args) => {
           const callback = args.pop();
           let ret;
           try {
-            ret = fs13[`${method}Sync`](...args);
+            ret = fs14[`${method}Sync`](...args);
           } catch (err) {
             return callback(err);
           }
@@ -1566,7 +1566,7 @@ var require_adapter = __commonJS({
     }
     function toSyncOptions(options) {
       options = { ...options };
-      options.fs = createSyncFs(options.fs || fs12);
+      options.fs = createSyncFs(options.fs || fs13);
       if (typeof options.retries === "number" && options.retries > 0 || options.retries && typeof options.retries.retries === "number" && options.retries.retries > 0) {
         throw Object.assign(new Error("Cannot use retries with the sync api"), { code: "ESYNC" });
       }
@@ -1857,7 +1857,7 @@ var require_punycode = __commonJS({
 
 // src/cli.ts
 import { spawnSync as spawnSync4 } from "node:child_process";
-import fs11 from "node:fs";
+import fs12 from "node:fs";
 import path12 from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 
@@ -1905,6 +1905,10 @@ function commitOf(cwd, rev) {
     return null;
   }
 }
+function branchOf(cwd, rev) {
+  const name2 = git(cwd, "rev-parse", "--symbolic-full-name", rev).trim();
+  return /^refs\/(heads|remotes)\//.test(name2) ? name2.replace(/^refs\/(heads|remotes)\//, "") : null;
+}
 async function changeOf(cwd, source) {
   const range = source.kind === "range";
   const target = range ? source.base : source.target ? targetBranch(cwd, source.target) : defaultTarget(cwd);
@@ -1916,12 +1920,15 @@ async function changeOf(cwd, source) {
   try {
     base = git(cwd, "merge-base", target, head).trim();
   } catch {
-    throw new Error(`${target} and ${range ? source.head : source.branch} share no history`);
+    const shallow = git(cwd, "rev-parse", "--is-shallow-repository").trim() === "true";
+    throw new Error(
+      `${target} and ${range ? source.head : source.branch} share no history${shallow ? " this clone has; it is shallow, so run git fetch --unshallow first" : ""}`
+    );
   }
   if ((await changedFiles(cwd, base, head)).length === 0)
     throw new Error(`nothing changed from ${target} to ${range ? source.head : source.branch}`);
   return {
-    target,
+    target: range ? branchOf(cwd, target) ?? commitOf(cwd, target) ?? target : target,
     base,
     head,
     uncommitted: commitOf(cwd, "HEAD") === head ? git(cwd, "status", "--porcelain").split("\n").filter(Boolean).length : 0
@@ -1950,7 +1957,7 @@ var diffOf = async (cwd, base, head, files3) => files3.length === 0 ? "" : gitAs
   base,
   head,
   "--",
-  ...files3.flatMap((file2) => file2.from ? [file2.from, file2.path] : [file2.path])
+  ...files3.flatMap((file2) => file2.from ? [file2.from, file2.path] : [file2.path]).map((one) => `:(top,literal)${one}`)
 );
 function fileAt(cwd, rev, file2) {
   const result = spawnSync("git", ["cat-file", "blob", `${rev}:${file2}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
@@ -1988,11 +1995,17 @@ function makeInbox(dir) {
   fs2.mkdirSync(inbox, { recursive: true, mode: 448 });
   return inbox;
 }
+function inState(dir) {
+  try {
+    return fs2.realpathSync(dir).startsWith(fs2.realpathSync(stateDir()) + path2.sep);
+  } catch {
+    return false;
+  }
+}
 function inInbox(file2) {
   const parent = path2.dirname(path2.resolve(file2));
-  if (path2.basename(parent) !== INBOX) return false;
+  if (path2.basename(parent) !== INBOX || !inState(parent)) return false;
   try {
-    if (!fs2.realpathSync(parent).startsWith(fs2.realpathSync(stateDir()) + path2.sep)) return false;
     const stat = fs2.lstatSync(file2, { throwIfNoEntry: false });
     return !stat || stat.isFile();
   } catch {
@@ -2016,7 +2029,7 @@ function parsed(text2) {
     return null;
   }
 }
-var wrongShape = (what, shape) => new Error(`${what} must be a JSON ${shape} on standard input; see walkthrough guide`);
+var wrongShape = (what, shape) => new Error(`${what} must be a JSON ${shape}; see walkthrough guide`);
 function parseList(text2, what, check) {
   const list3 = parsed(text2);
   if (!Array.isArray(list3)) throw wrongShape(what, "array");
@@ -2037,6 +2050,7 @@ var STEP_ACTIONS = [
   { id: "flag", label: "Flag", note: true }
 ];
 var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
+var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
 
 // src/json-files.ts
@@ -2045,16 +2059,30 @@ import fs4 from "node:fs";
 import path3 from "node:path";
 function readJson(file2, fallback) {
   try {
-    return JSON.parse(fs4.readFileSync(file2, "utf8").replace(/^﻿/, ""));
+    return readSavedJson(file2) ?? fallback;
   } catch {
     return fallback;
+  }
+}
+function readSavedJson(file2) {
+  try {
+    return JSON.parse(fs4.readFileSync(file2, "utf8").replace(/^\uFEFF/, ""));
+  } catch (error) {
+    if (error.code === "ENOENT") return void 0;
+    throw new Error(`cannot read ${file2}: ${error.message}`);
   }
 }
 function writeJson(file2, value) {
   fs4.mkdirSync(path3.dirname(file2), { recursive: true, mode: 448 });
   const beside = `${file2}.${String(process.pid)}.tmp`;
-  fs4.writeFileSync(beside, `${JSON.stringify(value, null, 2)}
-`, { mode: 384 });
+  const fd = fs4.openSync(beside, "w", 384);
+  try {
+    fs4.writeFileSync(fd, `${JSON.stringify(value, null, 2)}
+`);
+    fs4.fsyncSync(fd);
+  } finally {
+    fs4.closeSync(fd);
+  }
   fs4.renameSync(beside, file2);
 }
 async function locked(file2, work) {
@@ -2077,9 +2105,10 @@ function walkthroughDir(repo, source) {
   return path4.join(stateDir(), repo, name2);
 }
 var readWalkthrough = (dir) => readJson(file(dir), null);
+var savedWalkthrough = (dir) => readSavedJson(file(dir)) ?? null;
 function openWalkthrough(dir, source, change, carry) {
   return locked(file(dir), async () => {
-    const saved = readWalkthrough(dir);
+    const saved = savedWalkthrough(dir);
     if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: "resumed" };
     if (saved) {
       const moved = { ...saved, target: change.target, base: change.base, head: change.head };
@@ -2102,7 +2131,7 @@ function openWalkthrough(dir, source, change, carry) {
 }
 function update(dir, change) {
   return locked(file(dir), async () => {
-    const walkthrough = readWalkthrough(dir);
+    const walkthrough = savedWalkthrough(dir);
     if (!walkthrough) throw new Error("there is no such walkthrough yet; run walkthrough start first");
     const changed = await change(walkthrough);
     writeJson(file(dir), walkthrough);
@@ -2188,13 +2217,13 @@ function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastCheck
 
 // src/prune.ts
 import { spawnSync as spawnSync3 } from "node:child_process";
-import fs8 from "node:fs";
+import fs9 from "node:fs";
 import path9 from "node:path";
 
 // src/server.ts
 import { spawn } from "node:child_process";
 import crypto5 from "node:crypto";
-import fs7 from "node:fs";
+import fs8 from "node:fs";
 import http from "node:http";
 import path8 from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7311,6 +7340,7 @@ function alive(record) {
 
 // src/decisions.ts
 import crypto4 from "node:crypto";
+import fs6 from "node:fs";
 import path6 from "node:path";
 
 // src/session.ts
@@ -7651,6 +7681,26 @@ function parse(diffInput, config2 = {}) {
   return files3;
 }
 
+// src/diff.ts
+var encoder = new TextEncoder();
+var ESCAPED2 = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
+function pathOf(name2) {
+  const padless = name2.replace(/\t$/, "");
+  if (!padless.includes("\\")) return padless;
+  const bytes = [];
+  for (let at = 0; at < padless.length; at++) {
+    const char = padless.charAt(at);
+    if (char === '"') continue;
+    if (char !== "\\") bytes.push(...encoder.encode(char));
+    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
+      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
+      at += 3;
+    } else bytes.push(ESCAPED2[padless.charAt(++at)] ?? 92);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+var parseDiff = (diff) => parse(diff).map((file2) => ({ ...file2, oldName: pathOf(file2.oldName), newName: pathOf(file2.newName) }));
+
 // src/steps.ts
 var isFoldedFile = (file2) => typeof file2 === "object" && file2 !== null && filled(file2.path) && filled(file2.reason);
 function parseSteps(text2) {
@@ -7678,23 +7728,23 @@ function parseSteps(text2) {
     return { title, explanation, assumptions, files: files3 };
   });
 }
-var pathOf = (file2) => typeof file2 === "string" ? file2 : file2.path;
-var pathsOf = (step) => step.files.map(pathOf);
+var pathOf2 = (file2) => typeof file2 === "string" ? file2 : file2.path;
+var pathsOf = (step) => step.files.map(pathOf2);
 function stepIds({ steps: steps2, lastStep = 0 }, inputs) {
   let next = Math.max(lastStep, ...steps2.map((step) => Number(step.id)));
-  const free = new Map(steps2.map((step) => [step.id, new Set(pathsOf(step))]));
-  return inputs.map((input) => {
-    const files3 = pathsOf(input);
-    let best;
-    let most = 0;
-    for (const [id, paths] of free) {
-      const shared = files3.filter((one) => paths.has(one)).length;
-      if (shared > most) [best, most] = [id, shared];
-    }
-    if (best === void 0) return String(++next);
-    free.delete(best);
-    return best;
+  const pairs = inputs.flatMap((input, at) => {
+    const files3 = new Set(pathsOf(input));
+    return steps2.map((step, old) => ({ at, old, id: step.id, shared: pathsOf(step).filter((one) => files3.has(one)).length }));
   });
+  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
+  const ids = inputs.map(() => void 0);
+  const taken2 = /* @__PURE__ */ new Set();
+  for (const { at, id, shared } of pairs)
+    if (shared > 0 && ids[at] === void 0 && !taken2.has(id)) {
+      ids[at] = id;
+      taken2.add(id);
+    }
+  return ids.map((id) => id ?? String(++next));
 }
 async function buildSteps(cwd, walkthrough, inputs) {
   const { base, head } = walkthrough;
@@ -7722,7 +7772,7 @@ async function buildSteps(cwd, walkthrough, inputs) {
 }
 async function carrySteps(cwd, { base, head, steps: steps2 }) {
   const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
-  const diff = (files3) => diffOf(cwd, base, head, files3.flatMap((one) => changed.get(pathOf(one)) ?? []));
+  const diff = (files3) => diffOf(cwd, base, head, files3.flatMap((one) => changed.get(pathOf2(one)) ?? []));
   const carried = await Promise.all(
     steps2.map(async (step) => {
       if (step.kind === "folded") {
@@ -7748,7 +7798,7 @@ var placeOnly = ({ step, file: file2, lines, linesHash }) => ({
 var isLines = (value) => Array.isArray(value) && value.length === 2 && value.every((line) => Number.isInteger(line) && line >= 1) && value[0] <= value[1];
 var parsed2 = /* @__PURE__ */ new WeakMap();
 function shownLines(step, file2) {
-  const files3 = parsed2.get(step) ?? parse(step.diff);
+  const files3 = parsed2.get(step) ?? parseDiff(step.diff);
   parsed2.set(step, files3);
   const shown = files3.find((one) => one.newName === file2);
   if (!shown) return null;
@@ -7984,8 +8034,15 @@ function decisionsOf(walkthrough, conversation) {
   return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
     const latest = choices.findLast((one) => itemKey(one.item) === key && one.on === on);
     const earlier = latest ? void 0 : choices.findLast((one) => itemKey(one.item) === key);
-    return { item, key, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
+    return { item, key, on, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
   });
+}
+function walkthroughVersion(dir) {
+  const stats = ["walkthrough.json", "conversation.jsonl", "read.json"].map((name2) => {
+    const stat = fs6.statSync(path6.join(dir, name2), { throwIfNoEntry: false });
+    return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
+  });
+  return fingerprint(stats.join(":"));
 }
 function walkthroughView(dir) {
   const walkthrough = readWalkthrough(dir);
@@ -7998,6 +8055,7 @@ function walkthroughView(dir) {
     actions: Object.fromEntries(items.filter((one) => one.actions.length).map((one) => [one.key, one.actions])),
     decided: Object.fromEntries(items.map((one) => [one.key, one.decision])),
     reopened: Object.fromEntries(items.flatMap((one) => one.reopened ? [[one.key, one.reopened]] : [])),
+    on: Object.fromEntries(items.map((one) => [one.key, one.on])),
     read: walkthrough.steps.filter((step) => read2.includes(`${step.id}:${fingerprint(step.diff)}`)).map((step) => step.id),
     anchored: Object.fromEntries(
       conversation.flatMap((entry) => {
@@ -8038,11 +8096,13 @@ function parseActions(text2, walkthrough, conversation) {
     };
   });
 }
-async function decide(dir, { item, action, note: note2, text: text2, clear }) {
+var CHANGED = "changed";
+async function decide(dir, { item, action, note: note2, text: text2, clear, on }) {
   const walkthrough = readWalkthrough(dir);
   const conversation = conversationOf(dir);
   const found = walkthrough && itemsOf(walkthrough, conversation).find((one) => one.key === keyOf(item));
   if (!found) return null;
+  if (on !== void 0 && on !== found.on) return CHANGED;
   if (clear !== void 0) {
     const decided = decisionsOf(walkthrough, conversation).find((one) => one.key === found.key)?.decision;
     if (clear !== true || !decided || action !== void 0 || note2 !== void 0 || text2 !== void 0) return null;
@@ -8063,9 +8123,10 @@ async function decide(dir, { item, action, note: note2, text: text2, clear }) {
   });
   return { walkthrough: walkthroughView(dir), session };
 }
-async function markRead(dir, stepId) {
+async function markRead(dir, stepId, on) {
   const step = readWalkthrough(dir)?.steps.find((one) => one.id === stepId);
   if (!step) return null;
+  if (on !== void 0 && on !== fingerprint(step.diff)) return CHANGED;
   const file2 = readFile(dir);
   const mark = `${step.id}:${fingerprint(step.diff)}`;
   await locked(file2, () => {
@@ -8076,11 +8137,11 @@ async function markRead(dir, stepId) {
 }
 
 // src/list.ts
-import fs6 from "node:fs";
+import fs7 from "node:fs";
 import path7 from "node:path";
 var ACTIVITY = ["walkthrough.json", "conversation.jsonl", "read.json"];
 function listView(repoDir2) {
-  const entries = fs6.existsSync(repoDir2) ? fs6.readdirSync(repoDir2, { withFileTypes: true }) : [];
+  const entries = fs7.existsSync(repoDir2) ? fs7.readdirSync(repoDir2, { withFileTypes: true }) : [];
   const listed = entries.flatMap((entry) => {
     const dir = path7.join(repoDir2, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
@@ -8091,7 +8152,7 @@ function listView(repoDir2) {
       if (view.reopened[key]) return "reopened";
       return view.read.includes(step.id) ? "read" : "unread";
     });
-    const changed = ACTIVITY.map((file2) => fs6.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
+    const changed = ACTIVITY.map((file2) => fs7.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
@@ -8152,12 +8213,12 @@ var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
   const file2 = path8.join(dir, "token");
   try {
-    const kept = fs7.readFileSync(file2, "utf8").trim();
+    const kept = fs8.readFileSync(file2, "utf8").trim();
     if (/^[0-9a-f]{48}$/.test(kept)) return kept;
   } catch {
   }
   const token = crypto5.randomBytes(24).toString("hex");
-  fs7.writeFileSync(file2, `${token}
+  fs8.writeFileSync(file2, `${token}
 `, { mode: 384 });
   return token;
 }
@@ -8168,43 +8229,47 @@ function serverRunning(dir) {
 var sleep = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
-async function ensureServer(dir, list3 = false) {
-  const running = readRecord(dir);
-  if (running && alive(running)) return running.url;
-  fs7.mkdirSync(dir, { recursive: true, mode: 448 });
-  const log = fs7.openSync(path8.join(dir, "server.log"), "a", 384);
-  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
-    // Not the folder start ran in, which may be a worktree removed while the page is open.
-    cwd: commonDir(process.cwd()),
-    detached: true,
-    stdio: ["ignore", log, log]
+function ensureServer(dir, list3 = false) {
+  fs8.mkdirSync(dir, { recursive: true, mode: 448 });
+  return locked(recordFile(dir), async () => {
+    const running = readRecord(dir);
+    if (running && alive(running)) return running.url;
+    const log = fs8.openSync(path8.join(dir, "server.log"), "a", 384);
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
+      // Not the folder start ran in, which may be a worktree removed while the page is open.
+      cwd: commonDir(process.cwd()),
+      detached: true,
+      stdio: ["ignore", log, log]
+    });
+    child.unref();
+    fs8.closeSync(log);
+    for (const end = Date.now() + 1e4; Date.now() < end; await sleep(50)) {
+      const record = readRecord(dir);
+      if (record && record.pid === child.pid) return record.url;
+    }
+    throw new Error(`the page server did not start; see ${path8.join(dir, "server.log")}`);
   });
-  child.unref();
-  fs7.closeSync(log);
-  for (const end = Date.now() + 1e4; Date.now() < end; await sleep(50)) {
-    const record = readRecord(dir);
-    if (record && record.pid === child.pid) return record.url;
-  }
-  throw new Error(`the page server did not start; see ${path8.join(dir, "server.log")}`);
 }
 async function stopServer(dir) {
   const record = readRecord(dir);
   if (!record || !alive(record)) {
-    fs7.rmSync(recordFile(dir), { force: true });
+    fs8.rmSync(recordFile(dir), { force: true });
     return false;
   }
   process.kill(record.pid, "SIGTERM");
   for (const end = Date.now() + 8e3; Date.now() < end && alive(record); ) await sleep(50);
   if (alive(record)) process.kill(record.pid, "SIGKILL");
-  fs7.rmSync(recordFile(dir), { force: true });
+  fs8.rmSync(recordFile(dir), { force: true });
   return true;
 }
 function serve(dir, list3 = false) {
+  if (!inState(dir))
+    throw new Error(`serve serves only a walkthrough folder under ${stateDir()}`);
   const token = pageToken(dir);
   const stop = () => ({ status: 200, body: { stopped: true }, after: shutDown });
   const routes = list3 ? { "/open": ({ id }) => open(dir, id), "/stop": stop } : {
     "/decide": async (fields) => answered(await decide(dir, fields)),
-    "/read": async ({ step }) => answered(await markRead(dir, step)),
+    "/read": async ({ step, on }) => answered(await markRead(dir, step, on)),
     "/ask": async (fields) => answered(await ask(dir, fields)),
     "/reply": async ({ to, text: text2 }) => answered(await reply(dir, to, text2)),
     "/stop": stop
@@ -8219,7 +8284,7 @@ function serve(dir, list3 = false) {
     }
   });
   const shutDown = () => {
-    if (readRecord(dir)?.pid === process.pid) fs7.rmSync(recordFile(dir), { force: true });
+    if (readRecord(dir)?.pid === process.pid) fs8.rmSync(recordFile(dir), { force: true });
     process.exit(0);
   };
   process.on("SIGTERM", shutDown);
@@ -8239,7 +8304,7 @@ function serve(dir, list3 = false) {
     writeJson(recordFile(dir), record);
   });
 }
-var answered = (view) => view ? { status: 200, body: view } : { status: 400 };
+var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view ? { status: 200, body: view } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
   return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
@@ -8274,14 +8339,21 @@ async function serveFileAt(dir, file2, atBase, res) {
     "content-security-policy": "default-src 'none'; sandbox"
   }).end(content);
 }
-function serveFile(dir, list3, what, query, res) {
+function serveFile(dir, list3, what, req, res) {
+  const query = new URL(req.url ?? "", "http://127.0.0.1").searchParams;
+  if (!list3 && what === "data/walkthrough.json") {
+    const tag = `"${walkthroughVersion(dir)}"`;
+    if (req.headers["if-none-match"] === tag) res.writeHead(304, { etag: tag, "cache-control": "no-store" }).end();
+    else res.writeHead(200, { ...JSON_HEADERS, etag: tag }).end(JSON.stringify(walkthroughView(dir)));
+    return;
+  }
   if (!list3 && what === "file") {
     serveFileAt(dir, query.get("path") ?? "", query.get("at") === "base", res).catch((error) => {
       failRequest(res, error);
     });
     return;
   }
-  const data = list3 ? { "data/list.json": () => listPage(dir) } : { "data/walkthrough.json": () => walkthroughView(dir), "data/session.json": () => sessionView(dir) };
+  const data = list3 ? { "data/list.json": () => listPage(dir) } : { "data/session.json": () => sessionView(dir) };
   const view = Object.hasOwn(data, what) ? data[what] : void 0;
   if (view) {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));
@@ -8294,7 +8366,7 @@ function serveFile(dir, list3, what, query, res) {
     return;
   }
   res.writeHead(200, { "content-type": known.type, "cache-control": "no-store" });
-  fs7.createReadStream(path8.join(PAGE, known.file)).pipe(res);
+  fs8.createReadStream(path8.join(PAGE, known.file)).pipe(res);
 }
 function readBody(req, res, onBody) {
   let size = 0;
@@ -8334,7 +8406,7 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
     return;
   }
   if (req.method === "GET" && url.pathname.startsWith(prefix)) {
-    serveFile(dir, list3, url.pathname.slice(prefix.length), url.searchParams, res);
+    serveFile(dir, list3, url.pathname.slice(prefix.length), req, res);
     return;
   }
   const given = Buffer.from(url.searchParams.get("token") ?? "");
@@ -8370,21 +8442,21 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
 var gitStatus = (cwd, ...args) => spawnSync3("git", args, { cwd, stdio: "ignore" }).status;
 function over(cwd, walkthrough) {
   const { target, head } = walkthrough;
-  if (walkthrough.kind === "branch" && gitStatus(cwd, "show-ref", "--exists", `refs/heads/${walkthrough.branch}`) === 2)
+  if (walkthrough.kind === "branch" && gitStatus(cwd, "rev-parse", "--verify", "--quiet", `refs/heads/${walkthrough.branch}`) === 1)
     return "its branch is gone";
-  if (gitStatus(cwd, "merge-base", "--is-ancestor", head, target) === 0) return `its head is merged into ${target}`;
+  if (gitStatus(cwd, "merge-base", "--is-ancestor", head, target) === 0) return `its head is merged into ${targetName(target)}`;
   return null;
 }
 async function remove(dir, name2, why) {
   await stopServer(dir);
-  fs8.rmSync(dir, { recursive: true, force: true });
+  fs9.rmSync(dir, { recursive: true, force: true });
   return `Removed the walkthrough of ${name2}: ${why}.`;
 }
 async function prune(cwd) {
   const repoDir2 = path9.join(stateDir(), currentRepo(cwd));
   const removed = [];
-  if (!fs8.existsSync(repoDir2)) return removed;
-  for (const entry of fs8.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
+  if (!fs9.existsSync(repoDir2)) return removed;
+  for (const entry of fs9.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
     const dir = path9.join(repoDir2, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
@@ -8410,7 +8482,7 @@ async function pruneDaily(cwd) {
 
 // src/export.ts
 import crypto6 from "node:crypto";
-import fs9 from "node:fs";
+import fs10 from "node:fs";
 import path10 from "node:path";
 var hash = (text2) => `'sha256-${crypto6.createHash("sha256").update(text2).digest("base64")}'`;
 function inline2(html, tag, replacement) {
@@ -8418,14 +8490,14 @@ function inline2(html, tag, replacement) {
   return html.replace(tag, () => replacement);
 }
 function exportPage(dir) {
-  const read2 = (file2) => fs9.readFileSync(path10.join(PAGE, file2), "utf8");
+  const read2 = (file2) => fs10.readFileSync(path10.join(PAGE, file2), "utf8");
   const script = read2("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
   const style = read2("style.css");
   const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString() };
   const data = JSON.stringify(state).replaceAll("<", "\\u003c");
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read2("index.html");
-  const favicon = fs9.readFileSync(path10.join(PAGE, "favicon.svg")).toString("base64");
+  const favicon = fs10.readFileSync(path10.join(PAGE, "favicon.svg")).toString("base64");
   html = inline2(
     html,
     '<link rel="icon" href="favicon.svg" type="image/svg+xml" />\n    <link rel="apple-touch-icon" href="apple-touch-icon.png" />',
@@ -8503,7 +8575,7 @@ var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
 Recording from files
-  steps, checklist, note, actions, say and policy save read what they record from the file --file names, or from standard input without it.
+  steps, checklist, note, actions and policy save read what they record from the file --file names, or from standard input without it; say takes its text on the command line or from --file.
   Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
   The command removes a file from the inbox once it has read it, so each recording is a new file there.
   Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.
@@ -8513,7 +8585,7 @@ walkthrough files
 
 walkthrough steps --file <file>
   Records the steps, replacing those recorded before, and prints each step's id and title in order.
-  A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, or else a new id; its notes and checklist links follow the id.
+  A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, unless a step sharing more took it, or else a new id; its notes and checklist links follow the id.
   A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
   The file is a JSON array of steps in reading order; a step shows its files in the order given.
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
@@ -8605,8 +8677,9 @@ walkthrough policy [show | init | save --file <file>]
   With no action it prints its state and path on the first line, then the inbox to write a new version to:
     none: there is no review policy at <path>, so the template applies.
     template: the review policy at <path> is the unchanged template.
+    template: the review policy at <path> is an earlier unchanged template, so the current template applies.
     yours: the review policy at <path> is the person's own.
-  show prints the policy, or the template when there is none; init copies the template there when there is none;
+  show prints the policy, or the current template while it is none or a template; init copies the template there when there is none;
   save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list
@@ -8615,26 +8688,41 @@ walkthrough list
 `;
 
 // src/policy.ts
-import fs10 from "node:fs";
+import crypto7 from "node:crypto";
+import fs11 from "node:fs";
 import os2 from "node:os";
 import path11 from "node:path";
 import { parseArgs } from "node:util";
 var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEWER.md");
 var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os2.homedir(), ".config"), "walkthrough", "REVIEWER.md");
-var read = (file2) => fs10.readFileSync(file2);
+var read = (file2) => fs11.readFileSync(file2);
+var TEMPLATES = /* @__PURE__ */ new Set([
+  "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
+  "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
+  "92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359",
+  "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b"
+]);
+function stateOf(policy) {
+  if (!fs11.existsSync(policy)) return "none";
+  const bytes = read(policy);
+  if (bytes.equals(read(TEMPLATE))) return "template";
+  return TEMPLATES.has(crypto7.createHash("sha256").update(bytes).digest("hex")) ? "earlier" : "yours";
+}
 function status() {
   const policy = policyPath();
   const inbox = makeInbox(stateDir());
-  if (!fs10.existsSync(policy)) console.log(`none: there is no review policy at ${policy}, so the template applies.`);
-  else if (read(policy).equals(read(TEMPLATE)))
-    console.log(`template: the review policy at ${policy} is the unchanged template.`);
+  const state = stateOf(policy);
+  if (state === "none") console.log(`none: there is no review policy at ${policy}, so the template applies.`);
+  else if (state === "template") console.log(`template: the review policy at ${policy} is the unchanged template.`);
+  else if (state === "earlier")
+    console.log(`template: the review policy at ${policy} is an earlier unchanged template, so the current template applies.`);
   else console.log(`yours: the review policy at ${policy} is the person's own.`);
   console.log(`Write a new version to files in ${inbox} and save it with walkthrough policy save --file <file>.`);
 }
 function save(text2, what) {
   const policy = policyPath();
-  fs10.mkdirSync(path11.dirname(policy), { recursive: true });
-  fs10.writeFileSync(policy, text2);
+  fs11.mkdirSync(path11.dirname(policy), { recursive: true });
+  fs11.writeFileSync(policy, text2);
   console.log(`${what} ${policy}.`);
 }
 function policyCommand(args) {
@@ -8642,9 +8730,9 @@ function policyCommand(args) {
   const [action, ...rest2] = positionals;
   if (rest2.length > 0) throw new Error("usage: walkthrough policy [show | init | save --file <file>]");
   if (action === void 0) status();
-  else if (action === "show") process.stdout.write(read(fs10.existsSync(policyPath()) ? policyPath() : TEMPLATE));
+  else if (action === "show") process.stdout.write(read(stateOf(policyPath()) === "yours" ? policyPath() : TEMPLATE));
   else if (action === "init") {
-    if (fs10.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
+    if (fs11.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
     save(read(TEMPLATE), "Copied the template to");
   } else if (action === "save") {
     const text2 = readInput(values.file);
@@ -8687,7 +8775,7 @@ async function start(args) {
   const inbox = makeInbox(dir);
   const { steps: steps2 } = walkthrough;
   console.log(
-    `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps2.length, "step")}.`
+    `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps2.length, "step")}.`
   );
   const view = walkthroughView(dir);
   const count = (of = {}) => String(steps2.filter((step) => of[`step:${step.id}`]).length);
@@ -8764,7 +8852,7 @@ function decisions(args) {
 function exportCommand(args) {
   const { values, dir, walkthrough } = current(args, { options: { out: { type: "string" } } });
   const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
-  fs11.writeFileSync(out, exportPage(dir));
+  fs12.writeFileSync(out, exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 async function listenCommand(args) {
@@ -8859,7 +8947,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n    | actions < actions.json | decisions\n    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n    | actions --file <file> | decisions | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {

@@ -2407,6 +2407,9 @@ select:disabled {
   text-decoration: underline;
   cursor: pointer;
 }
+.toast-undo:focus-visible {
+  outline-color: var(--canvas);
+}
 .queue-select {
   display: none;
 }
@@ -2953,7 +2956,7 @@ select:disabled {
 .split > .prose > .question-box {
   margin-bottom: var(--s4);
 }
-[data-layout=panel] .tools {
+[data-layout=panel] .tools:not([hidden]) {
   display: block;
   flex: none;
   max-height: 40%;

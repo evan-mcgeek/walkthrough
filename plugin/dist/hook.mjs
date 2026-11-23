@@ -16,11 +16,17 @@ var stateDir = () => outsideOwn(
   process.env["WALKTHROUGH_STATE"] || path.join(process.env["XDG_STATE_HOME"] || path.join(os.homedir(), ".local", "state"), "walkthrough")
 );
 var INBOX = "inbox";
+function inState(dir) {
+  try {
+    return fs.realpathSync(dir).startsWith(fs.realpathSync(stateDir()) + path.sep);
+  } catch {
+    return false;
+  }
+}
 function inInbox(file) {
   const parent = path.dirname(path.resolve(file));
-  if (path.basename(parent) !== INBOX) return false;
+  if (path.basename(parent) !== INBOX || !inState(parent)) return false;
   try {
-    if (!fs.realpathSync(parent).startsWith(fs.realpathSync(stateDir()) + path.sep)) return false;
     const stat = fs.lstatSync(file, { throwIfNoEntry: false });
     return !stat || stat.isFile();
   } catch {
@@ -52,17 +58,19 @@ function words(command) {
     } else if (char === "\\") {
       part = command.charAt(++at);
       if (!part || part === "\n") return null;
-    } else if (REVISION.test(char) && text !== null) globbed = true;
+    } else if (REVISION.test(char) && text) globbed = true;
     else if (!PLAIN.test(char) || char === "=" && text === null) return null;
     text = (text ?? "") + part;
   }
   if (text !== null) found.push({ text, globbed });
   return found;
 }
+var SUBCOMMANDS = /* @__PURE__ */ new Set(["start", "files", "steps", "note", "checklist", "actions", "decisions", "list", "export", "guide", "listen", "policy", "say", "stop", "prune"]);
 function ownCommand(command) {
   const found = words(command);
-  if (found?.[0]?.text !== "walkthrough") return false;
-  return found.every(({ text }, at) => {
+  if (found?.[0]?.text !== "walkthrough" || !SUBCOMMANDS.has(found[1]?.text ?? "")) return false;
+  return found.every(({ text, globbed }, at) => {
+    if (globbed && text.startsWith("-")) return false;
     if (text === "--out" || text.startsWith("--out=") || text.startsWith("--file=")) return false;
     if (text !== "--file") return true;
     const file = found[at + 1];

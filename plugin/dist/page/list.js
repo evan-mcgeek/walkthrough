@@ -98,9 +98,10 @@ function showAlert(message) {
   box.className = "banner attention";
   box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
   box.hidden = message === null;
-  if (message === null) document.body.classList.remove("unreachable");
+  document.body.classList.remove("unreachable");
 }
 function showUnreachable({ name, reopen, retry }) {
+  if (document.body.classList.contains("unreachable")) return;
   const box = region("alert");
   box.className = "banner attention";
   box.replaceChildren(
@@ -219,6 +220,7 @@ shown = await load();
 render(JSON.parse(shown));
 var poller = setInterval(() => {
   load().then((text) => {
+    if (document.body.classList.contains("unreachable")) showAlert(null);
     if (text !== shown) render(JSON.parse(shown = text));
     else for (const time of main.querySelectorAll("time")) time.textContent = ago(time.dateTime);
   }).catch(() => {
