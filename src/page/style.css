@@ -142,6 +142,12 @@ main > .muted {
   border-left: 3px solid var(--rule);
 }
 
+.question-box .said {
+  margin: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
 .thread .muted {
   margin: 0;
 }
