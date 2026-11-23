@@ -233,6 +233,101 @@
   margin-bottom: var(--s4);
 }
 
+/* The step head: the title and explanation, with the "In this step" facts rail beside them. */
+.step-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: var(--s6);
+  align-items: start;
+}
+
+.step-lead {
+  min-width: 0;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: 2px 0 2px var(--s4);
+  border-left: 1px solid var(--rule);
+  color: var(--ink-secondary);
+  font: var(--text-label);
+  font-weight: 400;
+}
+
+.facts-head {
+  margin: 0;
+  color: var(--muted);
+  font: var(--text-meta);
+  font-weight: 600;
+}
+
+.facts ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts ul + ul {
+  padding-top: var(--s2);
+  border-top: 1px solid var(--rule-soft);
+}
+
+.facts li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.facts li > .icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+
+.facts-file {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--r-xs);
+  color: var(--ink);
+  font: 500 12px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.facts-file:hover {
+  color: var(--accent-text);
+}
+
+.facts-count {
+  flex: none;
+  margin-left: auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.facts .finding,
+.facts .finding > .icon {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.facts .own > .icon {
+  color: var(--accent-text);
+}
+
+.facts [data-mark='not-met'] > .icon {
+  color: var(--rust);
+}
+
 .title-row {
   display: flex;
   flex-wrap: wrap;
@@ -257,7 +352,7 @@
 }
 
 .block {
-  margin-top: var(--s5);
+  margin-top: var(--s4);
 }
 
 .step-notes {
@@ -473,9 +568,9 @@
   background: var(--canvas);
 }
 
-.block ~ .action-bar,
-.conversation ~ .action-bar {
-  margin-top: var(--s5);
+/* The gap sits on what comes before, so the bar's auto margin still docks it on a short step. */
+.step > :is(.block, .conversation):has(+ .action-bar) {
+  margin-bottom: var(--s5);
 }
 
 .action-row {
@@ -903,21 +998,34 @@
     min-height: 44px;
   }
 
-  .action-bar,
-  .block ~ .action-bar,
-  .conversation ~ .action-bar {
+  .action-bar {
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
     margin: auto calc(-1 * var(--s4)) calc(-1 * var(--s4));
     padding: var(--s3);
     border-top-color: var(--rule);
   }
 
-  .action-bar > *,
-  .action-bar > .choices > .btn {
-    flex: 1;
+  .action-bar > * {
+    flex: 1 1 100%;
   }
 
   .action-bar > .choices {
+    flex-wrap: wrap;
     margin: 0;
+  }
+
+  .action-bar > .choices > .btn {
+    flex: 1 1 auto;
+  }
+
+  /* The rail's files and notes are right below on a phone. */
+  .step-head {
+    display: block;
+  }
+
+  .facts {
+    display: none;
   }
 }

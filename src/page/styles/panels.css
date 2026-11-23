@@ -287,7 +287,7 @@
   align-items: baseline;
   gap: var(--s2);
   width: 100%;
-  padding: var(--s2) 0;
+  padding: var(--s1) 0;
   border: 0;
   background: none;
   color: var(--ink);
@@ -305,6 +305,11 @@
   flex: none;
   color: var(--muted);
   font-size: 12.5px;
+}
+
+.note-link .lines::after {
+  margin-left: var(--s2);
+  content: '·';
 }
 
 .note-link .gist {

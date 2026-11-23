@@ -61,3 +61,31 @@ test('the right arrow in a diff scrolls its long lines instead of moving to the 
   expect(new URL(page.url()).hash).not.toBe('#summary');
   await expect.poll(() => diff.evaluate(one => one.scrollLeft)).toBeGreaterThan(0);
 });
+
+/** How far the action bar of the step named `name` sits above the foot of the main pane. */
+async function barGap(page: Page, name: string): Promise<number> {
+  const [main, bar] = await Promise.all([
+    page.locator('#main').boundingBox(),
+    page.getByRole('region', { name }).locator('.action-bar').boundingBox(),
+  ]);
+  if (!main || !bar) throw new Error('no main pane or action bar');
+  return Math.round(main.y + main.height - (bar.y + bar.height));
+}
+
+test('a long step keeps its action bar at the foot of the pane while it scrolls', async ({ page }) => {
+  expect(await barGap(page, 'Long')).toBe(0);
+  await page.locator('#main').evaluate(main => {
+    main.scrollTo(0, main.scrollHeight / 2);
+  });
+  expect(await barGap(page, 'Long')).toBe(0);
+});
+
+test('a short step docks its action bar at the foot of the pane', async ({ page, repo }) => {
+  repo.record([
+    { title: 'Long', explanation: 'A long file.', files: ['long.ts', 'login.ts'] },
+    { title: 'Short', explanation: 'Bumps the app constant.', files: ['app.ts'] },
+  ]);
+  await page.getByRole('link', { name: 'Short' }).click();
+  await expect(page.locator('.pane-leaving')).toHaveCount(0);
+  expect(await barGap(page, 'Short')).toBe(0);
+});

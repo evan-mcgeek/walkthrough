@@ -1637,6 +1637,46 @@ function stepAsks(step: Step): HTMLElement[] {
   return asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : [];
 }
 
+/** "In this step" beside the step head: its files, what was noted on it and the criteria linked to it. */
+function factsRail(step: Step): HTMLElement[] {
+  if (step.kind !== 'step') return [];
+  const files = [...drawDiff(step).view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].map(wrapper => {
+    const file = wrapper.dataset['file'] ?? '';
+    const link = el('a', { href: `#${encodeURIComponent(step.id)}`, className: 'facts-file' }, file);
+    link.onclick = event => {
+      event.preventDefault();
+      folds.set(file, false);
+      render();
+      document.querySelector(`#main .d2h-file-wrapper[data-file="${CSS.escape(file)}"]`)?.scrollIntoView({ block: 'start' });
+    };
+    return el('li', {}, link, el('span', { className: 'facts-count' }, wrapper.querySelector('.file-stats')?.textContent ?? ''));
+  });
+  const notes = stepNotesOf(step);
+  const findings = notes.filter(note => note.note.finding).length;
+  const yours = commentsOf(session.conversation).filter(comment => commentAnchor(comment) === step.id).length;
+  const counts = [
+    ...(findings ? [el('li', { className: 'finding' }, icon('warn'), plural(findings, 'finding'))] : []),
+    ...(notes.length > findings ? [el('li', {}, icon('message'), plural(notes.length - findings, 'note'))] : []),
+    ...(yours ? [el('li', { className: 'own' }, icon('own'), `${String(yours)} yours`)] : []),
+  ];
+  const criteria = (walkthrough.checklist?.items ?? [])
+    .filter(item => item.steps.includes(step.id))
+    .map(item => {
+      const mark = item.mark ?? 'unchecked';
+      const row = el('li', {}, icon(mark, STATE_NAMES[mark]), el('span', {}, plain(item.text)));
+      row.dataset['mark'] = mark;
+      return row;
+    });
+  const rail = el(
+    'aside',
+    { className: 'facts' },
+    el('h3', { className: 'facts-head' }, 'In this step'),
+    ...[files, counts, criteria].filter(group => group.length).map(group => el('ul', {}, ...group)),
+  );
+  rail.setAttribute('aria-label', 'In this step');
+  return [rail];
+}
+
 // The step in the explanation column and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
 const prosePane = el('div', { className: 'prose' });
 const codePane = el('div', { className: 'code' });
@@ -1647,9 +1687,9 @@ function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
   const { prose, code } = stepBody(step);
   const explaining = shows('explanation');
+  const lead = [el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)), ...prose];
   const parts = [
-    el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
-    ...prose,
+    ...(explaining ? lead : [el('div', { className: 'step-head' }, el('div', { className: 'step-lead' }, ...lead), ...factsRail(step))]),
     ...(explaining ? [] : code),
     ...stepAsks(step),
     ...actionBar(step),
@@ -1849,7 +1889,7 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
       el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), ...(compact ? [] : [el('span', { className: 'item-status' }, item.status)])),
       ...links,
       ...(gone
-        ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} ${gone === 1 ? 'is' : 'are'} no longer in the change`)]
+        ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)]
         : []),
       ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text)),
     );
@@ -2328,7 +2368,7 @@ function miniDiff(step: Step, note: Note | undefined): HTMLElement[] {
 
 function cardView(step: Step, top: boolean, swipes: boolean): HTMLElement {
   const notes = session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
-  const first = notes.find(note => !note.note.low);
+  const first = notes.find(note => note.note.finding);
   const explanation =
     step.kind === 'step'
       ? markdown(step.explanation, 'explanation')
@@ -2576,7 +2616,7 @@ function noteIndex(step: Step, notes: Note[]): HTMLElement[] {
       'button',
       { type: 'button', className: 'note-link' },
       el('span', { className: 'label' }, label),
-      ...(lines ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
+      ...linesOf(lines),
       el('span', { className: 'gist' }, plain(note.text)),
     );
     button.dataset['key'] = `note-link:${note.id}`;

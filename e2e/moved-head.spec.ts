@@ -99,5 +99,5 @@ test('a checklist link to a step that is gone shows as gone, beside the links th
   await page.keyboard.press('j');
   const item = page.getByRole('region', { name: 'Checklist' }).getByRole('listitem');
   await expect(item.getByRole('link', { name: 'Step 1' })).toHaveText('1');
-  await expect(item.getByText('1 linked step is no longer in the change', { exact: true })).toBeVisible();
+  await expect(item.getByText('1 linked step no longer in the change', { exact: true })).toBeVisible();
 });
