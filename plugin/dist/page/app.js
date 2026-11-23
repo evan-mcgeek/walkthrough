@@ -25969,6 +25969,11 @@ var ICONS = {
   "chevron-down": [line("M4 6l4 4 4-4")],
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
+  /** The brand's walked W: the last stroke, still to go, is lighter. */
+  mark: [
+    ["path", { d: "M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8", ...round, "stroke-width": 2.3 }],
+    ["path", { d: "M11.4 12.8L14.4 3.2", ...round, "stroke-width": 2.3, opacity: 0.4 }]
+  ],
   /** Layouts. */
   "layout-queue": [block2(1, 2, 5, 12), block2(7.3, 2, 7.7, 12, 0.5)],
   "layout-three": [block2(1, 2, 3.5, 12), block2(5.8, 2, 5, 12, 0.5), block2(12, 2, 3, 12)],
@@ -26497,7 +26502,7 @@ function moreMenu() {
 function headerView() {
   const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   return [
-    el("span", { className: "logo" }, "Walkthrough"),
+    el("span", { className: "logo" }, icon("mark"), "Walkthrough"),
     el("h1", { className: "session-label", title: range }, nameOf(walkthrough)),
     ...progressView(),
     el(
@@ -26671,7 +26676,12 @@ function decideView(item, text2 = "", small = true) {
     el(
       "div",
       { className: "decide" },
-      el("div", { className: "decide-row" }, stateTag(item, true), ...readOnly ? [] : [actionGroup(item, firstLeads, small)]),
+      el(
+        "div",
+        { className: "decide-row" },
+        ...shown || readOnly ? [stateTag(item, true)] : [],
+        ...readOnly ? [] : [actionGroup(item, firstLeads, small)]
+      ),
       ...shown ? decisionSaid(shown) : [],
       ...taken ? [takingForm(item, taken, text2)] : []
     )
@@ -26716,10 +26726,9 @@ function takingForm(item, action, text2) {
   };
   return form;
 }
-function wasView(entry) {
+function placeWas(entry) {
   const { file, lines } = placeOf(entry);
-  const where = file !== void 0 && lines ? `${file}, ${linesLabel(lines).toLowerCase()}` : "a step no longer in the change";
-  return el("p", { className: "was" }, `Was on ${where}`);
+  return file !== void 0 && lines ? `${file} ${linesLabel(lines).toLowerCase()}` : "a step no longer in the change";
 }
 var replying = /* @__PURE__ */ new Set();
 function replyView(note) {
@@ -26758,7 +26767,7 @@ function noteView(note, asked) {
   const { label, lines } = note.note;
   const item = { type: "note", id: note.id };
   const key2 = itemKey(item);
-  const detached = anchorOf(note) === null;
+  const detached2 = anchorOf(note) === null;
   const shown = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
   const taken = taking?.key === key2 ? walkthrough.actions[key2]?.find((action) => action.id === taking?.action) : void 0;
   const view = el(
@@ -26767,17 +26776,17 @@ function noteView(note, asked) {
     el(
       "div",
       { className: "note-head" },
+      ...detached2 ? [icon("message")] : [],
       el("span", { className: "label" }, label),
-      ...detached ? [] : linesOf(lines),
+      ...detached2 ? [el("span", { className: "was" }, `was on ${placeWas(note)}`)] : linesOf(lines),
       ...shown ? [stateTag(item, false)] : [],
       el("span", { className: "spacer" }),
       ...actionsMenu(item, label)
     ),
-    ...detached ? [wasView(note)] : [],
-    ...asked ? [el("p", { className: "you-asked" }, el("span", { className: "muted" }, "You asked:"), ` ${asked.text}`), ...replies([note, ...followUps(note)])] : [markdown2(note.text, "note-text"), ...replies(followUps(note))],
+    ...asked ? [el("p", { className: "you-asked" }, el("span", { className: "muted" }, "You asked:"), ` ${asked.text}`), ...replies([note, ...followUps(note)])] : [...taken?.edit ? [] : [markdown2(note.text, "note-text")], ...replies(followUps(note))],
     ...shown ? decisionSaid(shown) : [],
     ...taken ? [takingForm(item, taken, note.text)] : [],
-    ...replyView(note)
+    ...taken ? [] : replyView(note)
   );
   view.setAttribute("aria-label", label);
   view.id = `note-${note.id}`;
@@ -26885,6 +26894,7 @@ function drawDiff(step) {
   view.querySelectorAll(".d2h-file-wrapper").forEach((wrapper, at) => {
     const parsed = files[at];
     const file = parsed?.newName ?? "";
+    wrapper.dataset["file"] = parsed?.isDeleted ? parsed.oldName : file;
     if (parsed) {
       wrapper.querySelector(".d2h-file-name-wrapper")?.after(fileStats(parsed));
       addPreview(wrapper, step.id, parsed);
@@ -27053,7 +27063,8 @@ function assumedView(step) {
     }
     toggle(closed, step.id);
   };
-  const button = disclosure(["Assumed, not read"], open, onToggle, "disclosure assumed-toggle", `assumed:${step.id}`);
+  const label = open ? "Assumed, not read" : plural(step.assumptions.length, "assumption");
+  const button = disclosure([label], open, onToggle, "disclosure assumed-toggle", `assumed:${step.id}`);
   button.id = `assumed-${step.id}`;
   const list2 = el("ul", { className: "assumed" }, ...step.assumptions.map((assumption) => el("li", {}, assumption)));
   list2.setAttribute("aria-labelledby", button.id);
@@ -27066,25 +27077,40 @@ function foldedView(step, pinned) {
   const key2 = `fold:${step.id}`;
   const open = readOnly || opened.has(key2);
   const problems = step.problems.length ? [el("span", { className: "tag reopened" }, plural(step.problems.length, "problem"))] : [];
-  const label = [el("span", {}, plural(step.files.length, "file")), el("span", { className: "spacer" }), ...problems];
+  const reasons = el("span", { className: "fold-reasons" }, ...step.files.map((file) => el("span", { className: "reason" }, plain(file.reason))));
+  const label = [el("span", {}, plural(step.files.length, "file")), ...open ? [] : [reasons], el("span", { className: "spacer" }), ...problems];
   const summary = readOnly ? el("p", { className: "fold-summary" }, icon("folded"), ...label) : disclosure(label, open, () => {
     toggle(opened, key2);
   }, "fold-summary", key2);
   if (!open) return [el("div", { className: "block" }, summary)];
+  const diff2 = step.diff ? diffView(step, pinned) : null;
+  const wrappers = new Map([...diff2?.querySelectorAll(".d2h-file-wrapper") ?? []].map((wrapper) => [wrapper.dataset["file"], wrapper]));
+  const diffKey = (path) => `fold-diff:${step.id}:${path}`;
+  for (const [path, wrapper] of wrappers) wrapper.hidden = !readOnly && !opened.has(diffKey(path ?? ""));
   const files = el(
     "ul",
     { className: "fold-files" },
-    ...step.files.map((file) => el("li", {}, el("code", { className: "fold-path" }, file.path), markdown2(file.reason, "fold-reason")))
+    ...step.files.map((file) => {
+      const shown = opened.has(diffKey(file.path));
+      const button = el("button", { type: "button", className: "btn small", onclick: () => {
+        toggle(opened, diffKey(file.path));
+      } }, shown ? "Hide diff" : "Show diff");
+      button.setAttribute("aria-expanded", String(shown));
+      button.dataset["key"] = diffKey(file.path);
+      return el(
+        "li",
+        {},
+        el("code", { className: "fold-path" }, file.path),
+        markdown2(file.reason, "fold-reason reason"),
+        ...wrappers.has(file.path) && !readOnly ? [button] : []
+      );
+    })
   );
   files.setAttribute("aria-label", "Folded files");
   const found = step.problems.length ? [el("ul", { className: "problems" }, ...step.problems.map((problem) => el("li", { className: "problem" }, icon("warn"), markdown2(problem, "problem-text"))))] : [];
   found[0]?.setAttribute("aria-label", "Problems the session found");
-  const details = el("details", { className: "fold-diff", open: opened.has(step.id) }, el("summary", {}, "Show the diff"), diffView(step, pinned));
-  details.ontoggle = () => {
-    if (details.open) opened.add(step.id);
-    else opened.delete(step.id);
-  };
-  return [el("div", { className: "block" }, summary, files, ...found, ...step.diff ? [details] : [])];
+  const anyShown = [...wrappers.values()].some((wrapper) => !wrapper.hidden);
+  return [el("div", { className: "block" }, summary, files, ...found, ...diff2 && anyShown ? [el("div", { className: "fold-diff" }, diff2)] : [])];
 }
 function stepBody(step) {
   const said2 = stepDecisionView(step);
@@ -27158,17 +27184,22 @@ var splitStep = el("section", { className: "step split" }, prosePane, codePane);
 function stepView(step, notices, view) {
   const title = el("h2", { className: "step-title", id: `step-${step.id}` }, step.title);
   const { prose, code: code2 } = stepBody(step);
+  const bar = actionBar(step);
+  const stacked = layout === "split" && phone.matches;
   const parts = [
     el("div", { className: "title-row" }, title, stateTag({ type: "step", id: step.id }, false)),
     ...prose,
     ...layout === "split" ? [] : code2,
     ...stepAsks(step),
-    ...actionBar(step)
+    ...stacked ? [] : bar
   ];
   let section = splitStep;
   if (layout === "split") {
-    prosePane.replaceChildren(...notices, navRow(view), ...parts, ...besideChecklist(view), ...sessionRow(view));
+    const beside = [...besideChecklist(view), ...sessionRow(view)];
+    prosePane.replaceChildren(...notices, ...stacked ? [] : [navRow(view)], ...parts, ...stacked ? [] : beside);
     codePane.replaceChildren(...code2);
+    while (codePane.nextSibling) codePane.nextSibling.remove();
+    if (stacked) splitStep.append(...beside.length ? [el("div", { className: "beside" }, ...beside)] : [], ...bar);
   } else section = el("section", { className: "step" }, ...parts);
   section.setAttribute("aria-labelledby", title.id);
   return section;
@@ -27209,8 +27240,13 @@ function leftItems() {
 function sessionRow(view) {
   const messages = sessionMessages().length;
   const unplaced = walkthrough.unplaced?.length ?? 0;
-  if (!messages && !unplaced) return [];
-  const sub = [...messages ? [plural(messages, "message")] : [], ...unplaced ? [`${plural(unplaced, "file")} not in a step`] : []];
+  const gone = detachedCount();
+  if (!messages && !unplaced && !gone) return [];
+  const sub = [
+    ...messages ? [plural(messages, "message")] : [],
+    ...unplaced ? [`${plural(unplaced, "file")} not in a step`] : [],
+    ...gone ? [`${String(gone)} detached`] : []
+  ];
   return [queueRow("session", "message", "message", "From the session", { text: sub.join(", ") }, view.kind === "session" && "page")];
 }
 function viewAddress(view) {
@@ -27297,8 +27333,12 @@ function queueView(view) {
 }
 var stepNumber = (id) => walkthrough.steps.findIndex((step) => step.id === id) + 1;
 var metCount = (items) => items.some((item) => item.mark !== void 0) ? `${String(items.filter((item) => item.mark === "met").length)}/${String(items.length)}` : null;
-function checklistView({ title, items }, view) {
-  const heading2 = el("h2", { className: view.kind === "checklist" ? "step-title" : "section-head", id: "checklist" }, title);
+function checklistView({ title, items }, view, compact = false) {
+  const heading2 = el(
+    "h2",
+    { className: view.kind === "checklist" ? "step-title" : "section-head", id: "checklist" },
+    compact ? el("a", { href: "#checklist" }, title) : title
+  );
   const rows = items.map((item) => {
     const links = item.steps.flatMap((id) => {
       const at = stepNumber(id);
@@ -27314,10 +27354,10 @@ function checklistView({ title, items }, view) {
       "li",
       { className: view.kind === "checklist" && view.item === item.id ? "current" : "" },
       icon(mark),
-      el("div", { className: "item-body" }, markdown2(item.text, "item-text"), el("span", { className: "item-status" }, item.status)),
+      el("div", { className: "item-body" }, markdown2(item.text, "item-text"), ...compact ? [] : [el("span", { className: "item-status" }, item.status)]),
       ...links,
       ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} ${gone === 1 ? "is" : "are"} no longer in the change`)] : [],
-      ...decideView({ type: "checklist", id: item.id }, item.text)
+      ...compact ? [] : decideView({ type: "checklist", id: item.id }, item.text)
     );
     row.dataset["mark"] = mark;
     row.id = `checklist-item-${item.id}`;
@@ -27334,8 +27374,8 @@ function wholeView() {
   const item = { type: "walkthrough" };
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   if (!actions.length) return [];
-  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", stateTag(item, true));
   const shown = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
+  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", ...shown || readOnly ? [stateTag(item, true)] : []);
   const taken = taking?.key === itemKey(item) ? actions.find((action) => action.id === taking?.action) : void 0;
   const section = el(
     "section",
@@ -27378,14 +27418,15 @@ function endView() {
   section.setAttribute("aria-labelledby", title.id);
   return section;
 }
-function sessionThreads() {
+function sessionThreads(stepless = true) {
   const waiting = new Set(waitingQuestions().map((message) => message.id));
   const threads = sessionMessages().filter((message) => !waiting.has(message.id)).map((message) => el("div", { className: "thread" }, said(message), ...followUps(message).map(said)));
-  return threads.length ? threads : [el("p", { className: "muted" }, "Nothing from the session yet.")];
+  const notices = stepless ? [...unplacedNotice(), ...detachedView()] : [];
+  return threads.length || notices.length ? [...notices, ...threads] : [el("p", { className: "muted" }, "Nothing from the session yet.")];
 }
-function sessionView() {
+function sessionView(stepless = true) {
   const title = el("h2", { className: "step-title", id: "from-session" }, "From the session");
-  const section = el("section", { className: "messages" }, el("div", { className: "title-row" }, title), ...sessionThreads());
+  const section = el("section", { className: "messages" }, el("div", { className: "title-row" }, title), ...sessionThreads(stepless));
   section.setAttribute("aria-labelledby", title.id);
   return section;
 }
@@ -27393,7 +27434,7 @@ function preparingView() {
   return el(
     "div",
     { className: "preparing" },
-    el("div", { className: "preparing-head" }, icon("spinner"), el("div", {}, el("strong", {}, "Preparing the steps"), el("span", { className: "muted" }, "They appear here as the session records them."))),
+    el("div", { className: "preparing-head" }, icon("mark", "Preparing"), el("div", {}, el("strong", {}, "Preparing the steps"), el("span", { className: "muted" }, "They appear here as the session records them."))),
     el("div", { className: "skeleton title" }),
     el("div", { className: "skeleton" }),
     el("div", { className: "skeleton short" })
@@ -27635,12 +27676,20 @@ function unplacedNotice() {
   notice.setAttribute("aria-label", "Changed files not in any step yet");
   return [notice];
 }
-function detachedView() {
+function detached() {
   const gone = session.conversation.filter(
     (entry) => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null
   );
   const known = new Set(walkthrough.steps.map((step) => step.id));
   const links = (walkthrough.checklist?.items ?? []).filter((item) => item.steps.some((id) => !known.has(id)));
+  return { gone, links };
+}
+var detachedCount = () => {
+  const { gone, links } = detached();
+  return gone.length + links.length;
+};
+function detachedView() {
+  const { gone, links } = detached();
   const count = gone.length + links.length;
   if (!count) return [];
   const title = el("h2", { className: "detached-head", id: "detached" }, icon("unlink"), "Detached", el("span", { className: "counter" }, String(count)));
@@ -27648,7 +27697,7 @@ function detachedView() {
     "section",
     { className: "detached-box" },
     title,
-    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, wasView(entry), askThread(entry))),
+    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, el("p", { className: "was" }, `Was on ${placeWas(entry)}`), askThread(entry))),
     ...links.map((item) => el("p", { className: "detached-item" }, icon("unlink"), el("span", {}, `Checklist \u201C${plain(item.text)}\u201D linked to a step that no longer exists`)))
   );
   section.setAttribute("aria-labelledby", title.id);
@@ -27673,7 +27722,7 @@ function viewBody(view, notices) {
 function besideChecklist(view) {
   const { checklist } = walkthrough;
   if (layout === "queue" || !checklist || view.kind === "checklist" || view.kind === "end") return [];
-  return [checklistView(checklist, view)];
+  return [checklistView(checklist, view, true)];
 }
 function neighbours(view) {
   const { steps } = walkthrough;
@@ -27742,7 +27791,12 @@ function toolPanel(view) {
   }
   const items = walkthrough.checklist?.items ?? [];
   if (checklist.length) tabs.push({ id: "checklist", label: "Checklist", count: metCount(items) ?? String(items.length), body: () => checklist });
-  tabs.push({ id: "session", label: "From the session", count: String(sessionMessages().length), body: sessionThreads });
+  tabs.push({
+    id: "session",
+    label: "From the session",
+    count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
+    body: () => sessionThreads()
+  });
   const chosen = tool ?? (walkthrough.checklist ? "checklist" : "notes");
   const shown = tabs.find((tab) => tab.id === chosen) ?? tabs[0];
   if (!shown) return [];
@@ -27813,6 +27867,7 @@ function exportView(at) {
     el(
       "header",
       { className: "export-head" },
+      el("span", { className: "logo" }, icon("mark"), "Walkthrough"),
       el("h1", {}, nameOf(walkthrough)),
       el("p", { className: "muted" }, `Walkthrough export \xB7 ${when} \xB7 ${plural(steps.length, "step")}, ${String(decided)} decided`)
     ),
@@ -27820,7 +27875,7 @@ function exportView(at) {
     ...detachedView(),
     ...steps.map((step, index) => exportStep(step, index + 1)),
     ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "end" })] : [],
-    ...sessionMessages().length ? [sessionView()] : [],
+    ...sessionMessages().length ? [sessionView(false)] : [],
     ...wholeView()
   ];
 }
@@ -27860,7 +27915,7 @@ function render() {
   const oldPane = !swapped ? [] : wasSplit ? [el("section", { className: "step split" }, el("div", { className: "prose" }, ...prosePane.childNodes), el("div", { className: "code" }, ...codePane.childNodes))] : [...main.childNodes].filter((node) => node !== leavingPane);
   header.replaceChildren(...headerView());
   queue.replaceChildren(...queueView(view));
-  const notices = [...waitingQuestions().map(questionBox), ...goneNotice(), ...unplacedNotice(), ...detachedView()];
+  const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
   const split = layout === "split" && view.kind === "step";
   main.classList.toggle("split", split);
   const shown = [...split ? [] : [...layout === "split" && view.kind !== "preparing" ? [navRow(view)] : [], ...notices], viewBody(view, notices)];

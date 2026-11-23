@@ -8124,16 +8124,20 @@ function tooLong(fields) {
 var MAX_BODY_BYTES = 256 * 1024;
 var IDLE_MS = 30 * 60 * 1e3;
 var PAGE = path8.join(import.meta.dirname, "page");
-var STYLE = { file: "style.css", type: "text/css; charset=utf-8" };
+var SHARED_FILES = {
+  "style.css": { file: "style.css", type: "text/css; charset=utf-8" },
+  "favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
+  "apple-touch-icon.png": { file: "app-icon-180.png", type: "image/png" }
+};
 var PAGE_FILES = {
   "": { file: "index.html", type: "text/html; charset=utf-8" },
   "app.js": { file: "app.js", type: "text/javascript; charset=utf-8" },
-  "style.css": STYLE
+  ...SHARED_FILES
 };
 var LIST_FILES = {
   "": { file: "list.html", type: "text/html; charset=utf-8" },
   "list.js": { file: "list.js", type: "text/javascript; charset=utf-8" },
-  "style.css": STYLE
+  ...SHARED_FILES
 };
 var JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 var SECURITY_HEADERS = {
@@ -8421,6 +8425,12 @@ function exportPage(dir) {
   const data = JSON.stringify(state).replaceAll("<", "\\u003c");
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read2("index.html");
+  const favicon = fs9.readFileSync(path10.join(PAGE, "favicon.svg")).toString("base64");
+  html = inline2(
+    html,
+    '<link rel="icon" href="favicon.svg" type="image/svg+xml" />\n    <link rel="apple-touch-icon" href="apple-touch-icon.png" />',
+    `<link rel="icon" href="data:image/svg+xml;base64,${favicon}" type="image/svg+xml" />`
+  );
   html = inline2(
     html,
     '<link rel="stylesheet" href="style.css" />',
