@@ -5,17 +5,19 @@ import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, type Item, itemKey, nameOf } from '../items';
+import { type Action, builtIn, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
+import { el, type PageName, post as postTo, region, selectBox, showAlert, showUnreachable } from './dom';
 import { icon, type IconName } from './icons';
 import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
 import { animate, now, play, reduced, replay } from './motion';
 
-/** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
-const exported = document.getElementById('exported')?.textContent;
+/** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
+type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string };
+const exportedText = document.getElementById('exported')?.textContent;
+const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
 
 /** What reduced motion keeps of an element arriving. */
@@ -30,6 +32,9 @@ function markdown(text: string, className: string): HTMLElement {
 
 /** Session Markdown as one line of plain text, for a rail row or a mention. */
 const plain = (text: string) => markdown(text, '').textContent.replace(/\s+/g, ' ').trim();
+
+/** Phone width: the step's actions move to a bottom bar and the deck can decide by swipe. */
+const phone = matchMedia('(max-width: 760px)');
 
 const header = region('header');
 const queue = region('queue');
@@ -66,6 +71,7 @@ type View =
   | { kind: 'session' }
   | { kind: 'checklist'; item?: string }
   | { kind: 'end' }
+  | { kind: 'deck' }
   | { kind: 'preparing' };
 
 const CHECKLIST_ITEM = /^checklist-(.+)$/;
@@ -78,6 +84,7 @@ function currentView(): View {
   const item = CHECKLIST_ITEM.exec(named)?.[1];
   if (item !== undefined && walkthrough.checklist) return { kind: 'checklist', item };
   if (named === 'end' && steps.length) return { kind: 'end' };
+  if (named === 'deck' && !readOnly) return { kind: 'deck' };
   const step = steps.find(one => one.id === named) ?? steps.find(one => !stepDecided(one));
   if (step) return { kind: 'step', step };
   return steps.length ? { kind: 'end' } : { kind: 'preparing' };
@@ -101,25 +108,28 @@ const changing = new Set<string>();
 
 async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
   const before = moves;
+  const from = currentStep()?.id;
   const answer = await post('decide', { item, action, ...fields });
   if (!answer) return;
   ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
   for (const field of ['note', 'text']) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
+  flung = null;
   changing.delete(itemKey(item));
   // Moving on is only for the person still on the step they decided; it comes before drawing, so the pane swaps once.
-  if (item.type === 'step' && moves === before) {
+  const moving = item.type === 'step' && moves === before && from === item.id;
+  if (moving) {
     const { steps } = walkthrough;
     const at = steps.findIndex(one => one.id === item.id);
     const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find(one => !stepDecided(one));
     go(next ? next.id : 'end');
   }
   render();
-  offerUndo(item, action);
+  offerUndo(item, action, moving);
 }
 
-/** The decision the toast offers to take back, and the address deciding it left the person at. */
-let undoable: { item: Item; landed: string } | null = null;
+/** The decision the toast offers to take back, and the address deciding it moved the person to, if it did. */
+let undoable: { item: Item; landed: string | null } | null = null;
 const UNDO_MS = 6000;
 const toastText = el('span', { className: 'toast-text' });
 const toast = el(
@@ -170,8 +180,8 @@ function itemName(item: Item): string {
   }
 }
 
-function offerUndo(item: Item, action: string): void {
-  undoable = { item, landed: location.hash };
+function offerUndo(item: Item, action: string, moved: boolean): void {
+  undoable = { item, landed: moved ? location.hash : null };
   toastText.textContent = `Decided ${itemName(item)}: ${labelOf(item, action)}`;
   for (const leaving of toast.getAnimations()) leaving.cancel();
   if (!toast.isConnected) {
@@ -206,7 +216,7 @@ async function undo(): Promise<void> {
   const answer = await post('decide', { item: taken.item, clear: true });
   if (!answer) return;
   ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
-  if (taken.item.type === 'step' && location.hash === taken.landed) go(taken.item.id);
+  if (taken.item.type === 'step' && taken.landed === location.hash) go(taken.item.id);
   render();
   if (hadFocus) document.querySelector<HTMLElement>('.action-bar button, #main button')?.focus();
 }
@@ -288,7 +298,7 @@ function segmentState(step: Step, current: Step | undefined): SegmentState {
 function progressView(): HTMLElement[] {
   const { steps } = walkthrough;
   const decided = steps.filter(stepDecided).length;
-  const current = currentStep();
+  const current = currentView().kind === 'deck' ? deckTop() : currentStep();
   const said = steps.length
     ? `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`
     : 'No steps yet';
@@ -318,6 +328,12 @@ function progressView(): HTMLElement[] {
   return [bar, count];
 }
 
+function chooseLayout(id: Layout): void {
+  layout = id;
+  storeLayout(id);
+  render();
+}
+
 function layoutSwitch(): HTMLElement {
   const choices = LAYOUTS.map(({ id, label, icon: shape }) => {
     const button = el('button', { type: 'button', title: label }, icon(shape));
@@ -325,9 +341,7 @@ function layoutSwitch(): HTMLElement {
     button.setAttribute('aria-pressed', String(id === layout));
     button.dataset['key'] = `layout:${id}`;
     button.onclick = () => {
-      layout = id;
-      storeLayout(id);
-      render();
+      chooseLayout(id);
     };
     return button;
   });
@@ -335,6 +349,72 @@ function layoutSwitch(): HTMLElement {
   group.setAttribute('role', 'group');
   group.setAttribute('aria-label', 'Layout');
   return group;
+}
+
+/** The data-key of the button whose menu is open, the header's More or a note's actions; one at a time, kept across redraws. */
+let menuOpen: string | null = null;
+
+function closeMenu(refocus = false): void {
+  const key = menuOpen;
+  menuOpen = null;
+  render();
+  if (refocus && key !== null) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.focus();
+}
+
+document.addEventListener('click', event => {
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
+});
+
+/** The header's More menu, which holds what the header has no room for at phone width. */
+function moreMenu(): HTMLElement {
+  const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
+    menuOpen = menuOpen === 'more' ? null : 'more';
+    render();
+    document.querySelector<HTMLElement>('.menu [role=menuitem]')?.focus();
+  } }, icon('more'));
+  button.setAttribute('aria-label', 'More');
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', String(menuOpen === 'more'));
+  button.dataset['key'] = 'more';
+  const box = el('div', { className: 'more-menu' }, button);
+  if (menuOpen !== 'more') return box;
+  const choices: [string, () => void][] = stopped
+    ? []
+    : [
+        ...(walkthrough.steps.length && currentView().kind !== 'deck' ? [['Swipe to decide', () => { go('deck'); }] as [string, () => void]] : []),
+        ['Stop', () => void stop()],
+      ];
+  const item = (label: string, choose: () => void, role = 'menuitem') => {
+    const made = el('button', { type: 'button', tabIndex: -1, onclick: () => { closeMenu(); choose(); } }, label);
+    made.setAttribute('role', role);
+    made.dataset['key'] = `menu:${label}`;
+    return made;
+  };
+  const actions = choices.map(([label, choose]) => item(label, choose));
+  const layouts = LAYOUTS.map(({ id, label }) => {
+    const radio = item(label, () => { chooseLayout(id); }, 'menuitemradio');
+    radio.setAttribute('aria-checked', String(id === layout));
+    return radio;
+  });
+  const items = [...actions, ...layouts];
+  const separator = el('div', { className: 'menu-separator' });
+  separator.setAttribute('role', 'separator');
+  const menu = el('div', { className: 'menu' }, ...actions, ...(actions.length ? [separator] : []), ...layouts);
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', 'More');
+  menu.onkeydown = event => {
+    const at = items.indexOf(event.target as HTMLButtonElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      items.at((at + (event.key === 'ArrowDown' ? 1 : -1)) % items.length)?.focus();
+    } else if (event.key === 'Escape' || event.key === 'Tab') {
+      closeMenu();
+      if (event.key === 'Tab') return;
+      document.querySelector<HTMLElement>('[data-key="more"]')?.focus();
+    } else return;
+    event.preventDefault();
+  };
+  box.append(menu);
+  return box;
 }
 
 function headerView(): HTMLElement[] {
@@ -346,13 +426,10 @@ function headerView(): HTMLElement[] {
     el(
       'div',
       { className: 'header-end' },
-      ...(readOnly
-        ? [el('span', { className: 'header-note' }, 'Exported, read-only')]
-        : [
-            layoutSwitch(),
-            statusView(),
-            ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
-          ]),
+      layoutSwitch(),
+      statusView(),
+      ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, 'Stop')]),
+      moreMenu(),
     ),
   ];
 }
@@ -472,45 +549,30 @@ function take(item: Item, action: Action): void {
   } else void decide(item, action.id);
 }
 
-/** The item whose actions menu is open, so a redraw keeps it open. */
-let menuOpen: string | null = null;
-
-function closeMenu(): void {
-  const key = menuOpen;
-  menuOpen = null;
-  render();
-  if (key !== null) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`menu:${key}`)}"]`)?.focus();
-}
-
-document.addEventListener('pointerdown', event => {
-  if (menuOpen === null || (event.target instanceof Element && event.target.closest('.menu, .menu-button'))) return;
-  menuOpen = null;
-  render();
-});
-
 /** A note's actions, behind its button. */
 function actionsMenu(item: Item, label: string): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
   if (readOnly || !actions.length) return [];
-  const open = menuOpen === key;
+  const opener = `menu:${key}`;
+  const open = menuOpen === opener;
   const button = el('button', { type: 'button', className: 'icon-button menu-button' }, icon('more'));
   button.setAttribute('aria-label', 'Note actions');
   button.setAttribute('aria-haspopup', 'menu');
   button.setAttribute('aria-expanded', String(open));
-  button.dataset['key'] = `menu:${key}`;
+  button.dataset['key'] = opener;
   button.onclick = () => {
     if (open) {
       closeMenu();
       return;
     }
-    menuOpen = key;
+    menuOpen = opener;
     render();
     document.querySelector<HTMLElement>('.menu [role="menuitem"]')?.focus();
   };
   if (!open) return [button];
   const choices = actions.map(action => {
-    const choice = el('button', { type: 'button', className: 'menu-item', tabIndex: -1 }, action.label);
+    const choice = el('button', { type: 'button', tabIndex: -1 }, action.label);
     choice.setAttribute('role', 'menuitem');
     choice.dataset['key'] = `menu-item:${key}:${action.id}`;
     choice.onclick = () => {
@@ -532,7 +594,7 @@ function actionsMenu(item: Item, label: string): HTMLElement[] {
       choices[(to + choices.length) % choices.length]?.focus();
     } else if (event.key === 'Escape') {
       event.preventDefault();
-      closeMenu();
+      closeMenu(true);
     } else if (event.key === 'Tab') {
       menuOpen = null;
       // After focus has moved on.
@@ -609,7 +671,7 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
       'div',
       { className: 'taking-row' },
       el('span', { className: 'hint' }, 'Goes to the session with your decision.'),
-      el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; render(); } }, 'Cancel'),
+      el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; flung = null; render(); } }, 'Cancel'),
       el('button', { type: 'submit', className: 'btn primary' }, 'Send'),
     ),
   );
@@ -988,6 +1050,8 @@ function disclosure(label: (Node | string)[], open: boolean, onToggle: () => voi
 
 function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
   if (!step.assumptions.length) return [];
+  if (readOnly)
+    return [el('div', { className: 'assumptions' }, el('p', { className: 'assumed-head' }, 'Assumed, not read'), el('ul', { className: 'assumed' }, ...step.assumptions.map(assumption => el('li', {}, assumption))))];
   const open = !closed.has(step.id);
   const motion = `reveal:${step.id}`;
   const onToggle = () => {
@@ -1009,15 +1073,13 @@ function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
 
 function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HTMLElement[] {
   const key = `fold:${step.id}`;
-  const open = opened.has(key);
+  // An export has no one to open it for, so it shows the files at once.
+  const open = readOnly || opened.has(key);
   const problems = step.problems.length ? [el('span', { className: 'tag reopened' }, plural(step.problems.length, 'problem'))] : [];
-  const summary = disclosure(
-    [el('span', {}, plural(step.files.length, 'file')), el('span', { className: 'spacer' }), ...problems],
-    open,
-    () => { toggle(opened, key); },
-    'fold-summary',
-    key,
-  );
+  const label = [el('span', {}, plural(step.files.length, 'file')), el('span', { className: 'spacer' }), ...problems];
+  const summary = readOnly
+    ? el('p', { className: 'fold-summary' }, icon('folded'), ...label)
+    : disclosure(label, open, () => { toggle(opened, key); }, 'fold-summary', key);
   if (!open) return [el('div', { className: 'block' }, summary)];
   const files = el(
     'ul',
@@ -1072,19 +1134,16 @@ function stepDecisionView(step: Step): HTMLElement[] {
     ];
   }
   if (!decision) return [];
-  return [
-    el(
-      'div',
-      { className: 'decision-said' },
-      ...(decision.note ? [el('span', { className: 'muted' }, 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
-      ...(decision.text ? [markdown(decision.text, 'said person')] : []),
-      ...followUps(decision).map(said),
-    ),
+  const shown = [
+    ...(decision.note ? [el('span', { className: 'muted' }, readOnly ? 'Note' : 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
+    ...(decision.text ? [markdown(decision.text, 'said person')] : []),
+    ...followUps(decision).map(said),
   ];
+  return shown.length ? [el('div', { className: 'decision-said' }, ...shown)] : [];
 }
 
-/** The sticky bar at the foot of a step: its actions, or the form an action asks for, and the Ask box. */
-function actionBar(step: Step): HTMLElement[] {
+/** The sticky bar at the foot of a step: its actions, or the form an action asks for, and the Ask box unless `asks` is false. */
+function actionBar(step: Step, asks = true): HTMLElement[] {
   if (readOnly) return [];
   const item: Item = { type: 'step', id: step.id };
   const key = itemKey(item);
@@ -1098,7 +1157,18 @@ function actionBar(step: Step): HTMLElement[] {
   const decided = stepDecided(step) && !changing.has(key);
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
   change.dataset['key'] = `change:${key}`;
-  return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
+  const choices = decided ? change : actionGroup(item, stepLook);
+  const asking = asks ? [ask] : [];
+  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...asking))];
+  // A thumb reaches the right first, so the leading action goes last.
+  if (!decided) choices.replaceChildren(...[...choices.children].reverse());
+  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, choices)];
+}
+
+/** Asks about the whole step, as threads under it. */
+function stepAsks(step: Step): HTMLElement[] {
+  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
+  return asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : [];
 }
 
 // The split step and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
@@ -1109,13 +1179,12 @@ const splitStep = el('section', { className: 'step split' }, prosePane, codePane
 /** In "Explanation beside code" the prose pane leads with the notices, then the step, its actions and the checklist; the files fill the code pane. */
 function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
-  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
   const { prose, code } = stepBody(step);
   const parts = [
     el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
     ...prose,
     ...(layout === 'split' ? [] : code),
-    ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
+    ...stepAsks(step),
     ...actionBar(step),
   ];
   let section = splitStep;
@@ -1182,18 +1251,65 @@ function sessionRow(view: View): HTMLElement[] {
   return [queueRow('session', 'message', 'message', 'From the session', { text: sub.join(', ') }, view.kind === 'session' && 'page')];
 }
 
+/** The address and title of what the main pane shows, as the phone's select names it. */
+function viewAddress(view: View): [string, string] | null {
+  switch (view.kind) {
+    case 'step':
+      return [view.step.id, view.step.title];
+    case 'session':
+      return ['session', 'From the session'];
+    case 'checklist': {
+      const item = walkthrough.checklist?.items.find(one => one.id === view.item);
+      return item ? [`checklist-${item.id}`, plain(item.text)] : ['checklist', walkthrough.checklist?.title ?? ''];
+    }
+    case 'end':
+      return ['end', 'End of the walkthrough'];
+    case 'deck':
+      return ['deck', 'Swipe to decide'];
+    case 'preparing':
+      return null;
+  }
+}
+
+/** The rail at phone width: a select of the rows left, then the decided steps and the end. */
+function queueSelect(view: View, left: [string, string][], decided: Step[]): HTMLElement {
+  const shown = viewAddress(view);
+  const option = ([address, title]: [string, string]) =>
+    el('option', { value: address, selected: address === shown?.[0] }, address === shown?.[0] ? `Left ${String(left.length)} · ${title}` : title);
+  const known = [...left, ...decided.map(step => [step.id, step.title]), ['end', '']].some(([address]) => address === shown?.[0]);
+  const select = el(
+    'select',
+    { onchange: () => { go(select.value); } },
+    ...(shown && !known ? [option(shown)] : []),
+    ...(walkthrough.steps.length || left.length ? [] : [el('option', { disabled: true, selected: true }, 'No steps yet')]),
+    ...left.map(option),
+    ...(decided.length ? [el('optgroup', { label: `${String(decided.length)} decided` }, ...decided.map(step => option([step.id, step.title])))] : []),
+    ...(walkthrough.steps.length ? [option(['end', 'End of the walkthrough'])] : []),
+  );
+  select.setAttribute('aria-label', 'Step');
+  select.dataset['key'] = 'queue-select';
+  const box = selectBox(select);
+  box.classList.add('queue-select');
+  return box;
+}
+
 function queueView(view: View): HTMLElement[] {
   const { steps } = walkthrough;
   const current = view.kind === 'step' ? view.step : undefined;
-  const rows = [...steps.filter(step => !stepDecided(step)).map(step => stepRow(step, step === current)), ...sessionRow(view)];
+  const undecided = steps.filter(step => !stepDecided(step));
+  const fromSession = sessionRow(view);
+  const rows = [...undecided.map(step => stepRow(step, step === current)), ...fromSession];
+  const left: [string, string][] = undecided.map(step => [step.id, step.title]);
+  if (fromSession.length) left.push(['session', 'From the session']);
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
     rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
+    left.push([`checklist-${item.id}`, plain(item.text)]);
   }
   const counted = steps.length > 0 || rows.length > 0;
-  const left = el('span', { className: 'counter' }, String(rows.length));
-  left.dataset['motion'] = 'count:left';
-  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [left] : []));
+  const leftCount = el('span', { className: 'counter' }, String(rows.length));
+  leftCount.dataset['motion'] = 'count:left';
+  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [leftCount] : []));
   const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
   const decided = steps.filter(stepDecided);
   const open = opened.has('decided') || (current !== undefined && decided.includes(current));
@@ -1218,7 +1334,7 @@ function queueView(view: View): HTMLElement[] {
         ),
       ]
     : [];
-  return [head, ...rows, ...empty, ...foot];
+  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot];
 }
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
@@ -1340,6 +1456,233 @@ function preparingView(): HTMLElement {
   );
 }
 
+/* ---------- the swipe deck ---------- */
+
+/** How far a card travels before letting it go decides it. */
+const SWIPE = 90;
+/** The --base duration a card takes to fly out. */
+const FLIGHT_MS = 200;
+/** From touching a card until it is let go or its flight ends; a redraw meanwhile waits in `redrawLater`. */
+let swiping = false;
+/** The step whose card was swiped away, until its decision is taken or cancelled; 1 is right, -1 left. */
+let flung: { step: string; to: 1 | -1 } | null = null;
+
+const deckTop = () => walkthrough.steps.find(step => !stepDecided(step));
+
+/** Where the dragged card is: the deck's custom properties move the card, its chips, edges and the card beneath. */
+function moveCard(deck: HTMLElement, dx: number): void {
+  const progress = Math.min(Math.abs(dx) / SWIPE, 1);
+  deck.style.setProperty('--dx', `${String(dx)}px`);
+  deck.style.setProperty('--turn', `${String(dx * 0.025)}deg`);
+  deck.style.setProperty('--p', String(progress));
+  deck.style.setProperty('--pa', String(dx > 0 ? progress : 0));
+  deck.style.setProperty('--pf', String(dx < 0 ? progress : 0));
+  deck.dataset['toward'] = dx > 0 ? 'approve' : dx < 0 ? 'flag' : '';
+  deck.classList.toggle('past', progress === 1);
+}
+
+function settle(): void {
+  swiping = false;
+  if (redrawLater) render();
+}
+
+/** Flies the top card out, then approves its step, or asks for the Flag note. */
+function fling(deck: HTMLElement, step: Step, to: 1 | -1): void {
+  swiping = true;
+  deck.classList.remove('dragging');
+  deck.classList.add('flying');
+  moveCard(deck, to * (innerWidth + 120));
+  setTimeout(() => {
+    const item: Item = { type: 'step', id: step.id };
+    flung = { step: step.id, to };
+    if (to < 0) taking = { key: itemKey(item), action: 'flag' };
+    swiping = false;
+    render();
+    if (to < 0) document.querySelector<HTMLTextAreaElement>('.taking textarea')?.focus();
+    // A decision that does not go through brings the card back.
+    else
+      void decide(item, 'approve').then(() => {
+        if (!flung) return;
+        flung = null;
+        render();
+      });
+  }, FLIGHT_MS);
+}
+
+/** The card follows a finger or the mouse sideways when it `swipes`; a vertical move is left to scrolling, and a drag is never a tap. */
+function swipeable(deck: HTMLElement, card: HTMLElement, step: Step, swipes: boolean): void {
+  let moved = false;
+  card.ondragstart = event => {
+    event.preventDefault();
+  };
+  card.onclick = event => {
+    if (moved) event.preventDefault();
+  };
+  card.onpointerdown = down => {
+    if (down.button !== 0 || swiping) return;
+    if (down.pointerType === 'mouse') down.preventDefault();
+    // Captured, the pointer's up or cancel always arrives, so the deck never waits on a lost gesture.
+    if (down.isTrusted) card.setPointerCapture(down.pointerId);
+    moved = false;
+    swiping = true;
+    let dragged = false;
+    let dx = 0;
+    const end = () => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
+    };
+    const move = (event: PointerEvent) => {
+      if (event.pointerId !== down.pointerId) return;
+      const x = event.clientX - down.clientX;
+      const y = event.clientY - down.clientY;
+      if (!dragged) {
+        if (Math.abs(x) <= 8 && Math.abs(y) <= 8) return;
+        moved = true;
+        dragged = Math.abs(x) > Math.abs(y);
+        if (!dragged || !swipes) {
+          end();
+          settle();
+          return;
+        }
+        deck.classList.add('dragging');
+      }
+      dx = x;
+      moveCard(deck, dx);
+    };
+    const up = (event: PointerEvent) => {
+      if (event.pointerId !== down.pointerId) return;
+      end();
+      if (!dragged) {
+        settle();
+        return;
+      }
+      if (event.type === 'pointerup' && Math.abs(dx) > SWIPE) {
+        fling(deck, step, dx > 0 ? 1 : -1);
+        return;
+      }
+      deck.classList.remove('dragging');
+      moveCard(deck, 0);
+      settle();
+    };
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
+  };
+}
+
+/** Three lines of the step's diff: those ending at its first note's lines, or the start of its first hunk. */
+function miniDiff(step: Step, note: Note | undefined): HTMLElement[] {
+  const files = parse(step.diff);
+  const file = files.find(one => one.newName === note?.note.file) ?? files[0];
+  if (!file) return [];
+  const rows = file.blocks.flatMap(block => [block.header, ...block.lines]);
+  const last = note?.note.lines?.[1];
+  const end = last === undefined ? -1 : rows.findIndex(row => typeof row !== 'string' && row.newNumber === last);
+  const shown = end < 0 ? rows.slice(0, 3) : rows.slice(Math.max(0, end - 2), end + 1);
+  const table = el(
+    'table',
+    { className: 'mini-diff' },
+    el(
+      'tbody',
+      {},
+      ...shown.map(row =>
+        typeof row === 'string'
+          ? el('tr', { className: 'hunk' }, el('td'), el('td'), el('td', {}, row))
+          : el(
+              'tr',
+              { className: row.type },
+              el('td', {}, String(row.oldNumber ?? '')),
+              el('td', {}, String(row.newNumber ?? '')),
+              el('td', {}, el('span', { className: 'prefix' }, row.content.slice(0, 1)), row.content.slice(1)),
+            ),
+      ),
+    ),
+  );
+  return [el('div', { className: 'mini' }, table)];
+}
+
+function cardView(step: Step, top: boolean, swipes: boolean): HTMLElement {
+  const notes = session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+  const first = notes.find(note => !note.note.low);
+  const explanation =
+    step.kind === 'step'
+      ? markdown(step.explanation, 'explanation')
+      : el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.');
+  // The card is one link, so links in the explanation read as text.
+  for (const link of explanation.querySelectorAll('a')) link.replaceWith(...link.childNodes);
+  const title = el('div', { className: 'title-row' }, el('span', { className: 'step-title' }, step.title), stateTag({ type: 'step', id: step.id }, false));
+  if (!top) {
+    const beneath = el('div', { className: 'swipe-card next' }, title, explanation);
+    beneath.setAttribute('aria-hidden', 'true');
+    return beneath;
+  }
+  const chip = (kind: 'approve' | 'flag', mark: IconName, label: string) => {
+    const shown = el('span', { className: `decision-chip ${kind}` }, icon(mark), label);
+    shown.setAttribute('aria-hidden', 'true');
+    return shown;
+  };
+  const where = (lines: Lines | undefined) => (lines ? ` · ${linesLabel(lines).toLowerCase()}` : '');
+  const card = el(
+    'a',
+    { className: 'swipe-card top', href: `#${encodeURIComponent(step.id)}`, draggable: false },
+    ...(swipes ? [chip('approve', 'met', 'Approve'), chip('flag', 'warn', 'Flag')] : []),
+    title,
+    explanation,
+    ...(step.kind === 'step' ? miniDiff(step, first) : []),
+    ...(first
+      ? [el('p', { className: 'card-note' }, icon('warn'), el('span', {}, el('b', {}, first.note.label), `${where(first.note.lines)}: ${plain(first.text)}`))]
+      : []),
+    el('span', { className: 'card-meta' }, `${plural(step.files.length, 'file')} · ${notes.length ? plural(notes.length, 'note') : 'no notes'}`),
+  );
+  card.setAttribute('aria-label', `Open step ${String(stepNumber(step.id))}, ${step.title}`);
+  return card;
+}
+
+/** The steps left as a deck of cards: swiping the top one decides it, and the buttons stay for anyone who doesn't swipe. */
+function deckView(): HTMLElement {
+  if (!walkthrough.steps.length) return preparingView();
+  const section = el('section', { className: 'deck-view' });
+  section.setAttribute('aria-label', 'Swipe to decide');
+  const top = deckTop();
+  if (!top) {
+    section.append(el('p', { className: 'deck-empty' }, 'Everything is decided.'), el('a', { href: '#end' }, 'See the end of the walkthrough'));
+    return section;
+  }
+  const next = walkthrough.steps.find(step => step !== top && !stepDecided(step));
+  const item: Item = { type: 'step', id: top.id };
+  // Swiping right means Approve only while the step offers the built-in actions.
+  const swipes = builtIn(walkthrough.actions[itemKey(item)] ?? []);
+  const card = cardView(top, true, swipes);
+  const edge = (side: 'left' | 'right', mark: IconName, label: string) => {
+    const shown = el('span', { className: `edge ${side}` }, ...(side === 'left' ? [icon(mark), label] : [label, icon(mark)]));
+    shown.setAttribute('aria-hidden', 'true');
+    return shown;
+  };
+  const deck = el(
+    'div',
+    { className: swipes ? 'deck swipes' : 'deck' },
+    ...(swipes ? [edge('left', 'previous', 'Flag'), edge('right', 'next', 'Approve')] : []),
+    ...(next ? [cardView(next, false, swipes)] : []),
+    card,
+  );
+  if (flung?.step === top.id) deck.classList.add('flung');
+  swipeable(deck, card, top, swipes);
+  const bar = actionBar(top, false);
+  for (const [id, to] of [['approve', 1], ['flag', -1]] as const) {
+    const button = bar.at(-1)?.querySelector<HTMLButtonElement>(`[data-key="${CSS.escape(`action:${itemKey(item)}:${id}`)}"]`);
+    if (button && swipes)
+      button.onclick = () => {
+        fling(deck, top, to);
+      };
+  }
+  const hint = swipes
+    ? 'Swipe right to approve, left to flag. Tap to open the step.'
+    : "The session chose this step's actions; use the buttons. Tap to open the step.";
+  section.append(deck, el('p', { className: 'swipe-hint' }, hint), ...bar);
+  return section;
+}
+
 function questionBox(message: SessionMessage): HTMLElement {
   const draft = `reply:${message.id}`;
   const choices = (message.choices ?? []).map((choice, at) =>
@@ -1415,6 +1758,8 @@ function viewBody(view: View, notices: HTMLElement[]): HTMLElement {
       return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : endView();
     case 'end':
       return endView();
+    case 'deck':
+      return deckView();
     case 'preparing':
       return preparingView();
   }
@@ -1560,11 +1905,55 @@ for (const [target, released] of [[document, 'pointerup'], [document, 'pointerca
     setTimeout(render, 0);
   }, true);
 
+/** A step in the export: its number, title and state, then all it shows on the page but the actions. */
+function exportStep(step: Step, number: number): HTMLElement {
+  const title = el('span', { id: `step-${step.id}` }, step.title);
+  const { prose, code } = stepBody(step);
+  // Its id is the step's own address, so a link to a step scrolls to it.
+  const section = el(
+    'section',
+    { className: 'export-step', id: step.id },
+    el('h2', { className: 'export-title' }, el('span', { className: 'number' }, String(number)), title, stateTag({ type: 'step', id: step.id }, true)),
+    ...prose,
+    ...code,
+    ...stepAsks(step),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return section;
+}
+
+/** The export is one document: every step in order, then the checklist, the session's messages and the whole walkthrough. */
+function exportView(at: string): HTMLElement[] {
+  const { steps } = walkthrough;
+  const when = new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const decided = steps.filter(stepDecided).length;
+  return [
+    el(
+      'header',
+      { className: 'export-head' },
+      el('h1', {}, nameOf(walkthrough)),
+      el('p', { className: 'muted' }, `Walkthrough export · ${when} · ${plural(steps.length, 'step')}, ${String(decided)} decided`),
+    ),
+    ...unplacedNotice(),
+    ...detachedView(),
+    ...steps.map((step, index) => exportStep(step, index + 1)),
+    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'end' })] : []),
+    ...(sessionMessages().length ? [sessionView()] : []),
+    ...wholeView(),
+  ];
+}
+
 function render(): void {
-  if (pressed) {
+  if (exported) {
+    main.replaceChildren(...exportView(exported.at));
+    return;
+  }
+  // A redraw would swap a pressed control or a dragged card out from under the person, so it waits for the release.
+  if (pressed || swiping) {
     redrawLater = true;
     return;
   }
+  redrawLater = false;
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
@@ -1574,6 +1963,7 @@ function render(): void {
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const view = currentView();
   document.body.dataset['layout'] = layout;
+  document.body.dataset['view'] = view.kind;
   // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
   const panes = [queue, main, prosePane, codePane, side, tools];
   const scrolled = panes.map(pane => pane.scrollTop);
@@ -1751,7 +2141,7 @@ function stepBy(delta: number): void {
 }
 
 document.addEventListener('keydown', event => {
-  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && picked) {
     const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
     unpick();
@@ -1763,9 +2153,14 @@ document.addEventListener('keydown', event => {
   else if (event.key === 'k' || event.key === 'ArrowLeft') stepBy(-1);
 });
 
+phone.addEventListener('change', render);
+
 window.addEventListener('hashchange', () => {
+  // The export is one document the browser scrolls to the address itself.
+  if (readOnly) return;
   moves++;
   taking = null;
+  flung = null;
   render();
   main.scrollTo(0, 0);
   prosePane.scrollTop = 0;
@@ -1774,8 +2169,16 @@ window.addEventListener('hashchange', () => {
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });
 
+if (exported) {
+  document.body.classList.add('exported');
+  header.remove();
+  queue.remove();
+  main.className = 'export';
+  document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
+}
+
 ({ walkthrough, session } = exported
-  ? (JSON.parse(exported) as { walkthrough: WalkthroughView; session: SessionView })
+  ? exported
   : await Promise.all(
       ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
     ).then(([shownWalkthrough, shownSession]) => ({
@@ -1783,6 +2186,8 @@ window.addEventListener('hashchange', () => {
       session: shownSession as SessionView,
     })));
 render();
+// The browser looked for the address before the export drew its steps.
+if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 
 const POLL_MS = 1500;
 let polling = false;

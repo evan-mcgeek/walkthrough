@@ -42,12 +42,29 @@ describe('walkthrough list', () => {
     expect(url.hostname).toBe('127.0.0.1');
     expect(url.pathname).toMatch(/^\/s\/[0-9a-f]{48}\/$/);
     expect((await fetch(url)).headers.get('content-security-policy')).toContain("script-src 'self'");
-    const list = (await (await fetch(`${url.href}data/list.json`)).json()) as { last: string }[];
+    const { repo: name, walkthroughs: list } = (await (await fetch(`${url.href}data/list.json`)).json()) as { repo: string; walkthroughs: { last: string }[] };
+    expect(name).toBe('shop');
     expect(list).toEqual([
-      { id: 'range-Login%20change', name: 'Login change', target: 'origin/main', steps: 0, decided: 0, read: 0, last: expect.any(String) as unknown },
-      { id: 'branch-feature~login', name: 'feature/login', target: 'origin/main', steps: 1, decided: 1, read: 1, last: expect.any(String) as unknown },
+      { id: 'range-Login%20change', name: 'Login change', target: 'origin/main', steps: 0, decided: 0, read: 0, segments: [], last: expect.any(String) as unknown },
+      { id: 'branch-feature~login', name: 'feature/login', target: 'origin/main', steps: 1, decided: 1, read: 1, segments: ['decided'], last: expect.any(String) as unknown },
     ]);
     expect(Date.parse(list[0]?.last ?? '')).toBeGreaterThanOrEqual(Date.parse(list[1]?.last ?? ''));
+  });
+
+  test('gives each step a progress segment in step order: decided, read or unread', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record([
+      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
+      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+    ]);
+    await post(repo.url(), '/read', { step: '2' });
+    repo.run('stop');
+    repo.run('list');
+
+    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { segments: string[] }[] };
+
+    expect(walkthroughs.map(one => one.segments)).toEqual([['unread', 'read']]);
   });
 
   test('opens a walkthrough by starting its page server, and nothing outside the list', async () => {

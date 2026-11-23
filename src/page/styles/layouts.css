@@ -232,16 +232,17 @@
   color: var(--ink);
 }
 
-/* Until the phone layout: every pane stacks in page order and the page scrolls as one. */
+/* At phone width the rail is the step select in every layout, and the side pane stacks under the main pane, which scrolls on its own. */
 @media (max-width: 760px) {
-  [data-layout='three'] .side:not([hidden]) {
-    width: auto;
-    border-top: 1px solid var(--rule);
-    border-left: 0;
+  [data-layout='split'] .queue {
+    display: flex;
   }
 
-  [data-layout='panel'] .tools {
-    max-height: none;
+  [data-layout='three'] .side:not([hidden]) {
+    width: auto;
+    max-height: 40%;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
   }
 
   .tabs {
@@ -253,7 +254,7 @@
   }
 
   .main.split {
-    overflow: visible;
+    overflow-y: auto;
   }
 
   .main.split > .step {

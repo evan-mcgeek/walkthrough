@@ -1,9 +1,9 @@
 /*
   Base elements and controls (docs/design/DESIGN.md, Components).
-  Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link. Floating: .menu, .menu-item.
+  Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
   Pills: .tag, .tag.decided, .tag.reopened, .counter, .file-chip.
-  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box.
+  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box; .menu floats under its button.
 */
 
 body {
@@ -180,48 +180,6 @@ samp,
 
 .link:hover {
   text-decoration: underline;
-}
-
-/* ---------- menu: the one floating surface besides the swipe card ---------- */
-
-/* A popover in the top layer, anchored under its open button; shown at once, so focus can land in it before it lifts. */
-.menu-button[aria-expanded='true'] {
-  anchor-name: --menu;
-}
-
-.menu {
-  position: fixed;
-  position-anchor: --menu;
-  position-area: bottom span-left;
-  position-try-fallbacks: flip-block;
-  inset: auto;
-  display: flex;
-  flex-direction: column;
-  min-width: 210px;
-  margin: var(--s1) 0;
-  padding: var(--s1);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-xl);
-  background: var(--canvas);
-  color: var(--ink);
-  box-shadow: var(--shadow-float);
-}
-
-.menu-item {
-  padding: 7px 10px;
-  border: 0;
-  border-radius: var(--r-sm);
-  background: none;
-  color: var(--ink);
-  font: var(--text-body-ui);
-  text-align: left;
-  cursor: pointer;
-}
-
-.menu-item:hover,
-.menu-item:focus {
-  outline: none;
-  background: var(--surface-tint);
 }
 
 /* ---------- joined switches ---------- */
@@ -450,6 +408,67 @@ select:disabled {
   padding: var(--s3);
   border: 1px dashed var(--control-edge);
   border-radius: var(--r-xl);
+}
+
+/* A menu of [role=menuitem] and [role=menuitemradio] buttons, floating under the control that opened it. */
+.menu {
+  position: absolute;
+  top: calc(100% + var(--s1));
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  padding: var(--s1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+  box-shadow: var(--shadow-float);
+}
+
+.menu :is([role='menuitem'], [role='menuitemradio']) {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink);
+  font: var(--text-body-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu :is([role='menuitem'], [role='menuitemradio']):hover,
+.menu :is([role='menuitem'], [role='menuitemradio']):focus-visible {
+  background: var(--surface-tint);
+}
+
+.menu :is([role='menuitem'], [role='menuitemradio']):focus-visible {
+  outline-offset: -2px;
+}
+
+.menu [aria-checked='true'] {
+  color: var(--indigo-text);
+  font-weight: 600;
+}
+
+/* A note's menu lifts into the top layer, out of the diff's scroll box, anchored under its open button. */
+.menu-button[aria-expanded='true'] {
+  anchor-name: --menu;
+}
+
+.menu[popover] {
+  position: fixed;
+  position-anchor: --menu;
+  position-area: bottom span-left;
+  position-try-fallbacks: flip-block;
+  inset: auto;
+  margin: var(--s1) 0;
+  color: var(--ink);
+}
+
+.menu-separator {
+  margin: var(--s1) 0;
+  border-top: 1px solid var(--rule-soft);
 }
 
 /* Reduced motion keeps opacity and colour only. */

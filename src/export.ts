@@ -18,7 +18,7 @@ export function exportPage(dir: string): string {
   // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.
   const script = read('app.js').replace(/<(?=!--|\/script)/gi, '\\x3C');
   const style = read('style.css');
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir) };
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString() };
   // The state is data and never runs, so a `<` in it cannot end its element.
   const data = JSON.stringify(state).replaceAll('<', '\\u003c');
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;

@@ -123,27 +123,47 @@
   background: none;
 }
 
-/* At phone width the bar takes its own full-width row under the header's first line. */
-@media (max-width: 600px) {
+/* The More menu stands in for what the header has no room for at phone width. */
+.more-menu {
+  position: relative;
+  display: none;
+}
+
+/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the layouts move into More. */
+@media (max-width: 760px) {
   .app-header {
     flex-wrap: wrap;
     height: auto;
-    min-height: 48px;
-    padding: var(--s2) var(--s3);
-    row-gap: var(--s2);
+    padding: 0 var(--s3);
+    gap: 0 10px;
+  }
+
+  .logo,
+  .session-label,
+  .progress-count,
+  .header-end {
+    height: 48px;
+    display: flex;
+    align-items: center;
   }
 
   .session-label {
-    flex: 1 1 0;
+    display: block;
+    max-width: 120px;
+    line-height: 48px;
   }
 
   .progress {
     order: 1;
     width: 100%;
+    padding-bottom: var(--s2);
   }
-}
 
-.header-note {
-  color: var(--muted);
-  font-size: 13px;
+  .header-end > :is(.stop, .layout-switch) {
+    display: none;
+  }
+
+  .more-menu {
+    display: block;
+  }
 }

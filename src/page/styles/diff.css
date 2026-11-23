@@ -150,7 +150,9 @@
 
 /* ---------- rows in the diff ---------- */
 
+/* diff2html places line numbers absolutely; anchored here they scroll with the pane and the file. */
 .d2h-file-diff {
+  position: relative;
   container-type: inline-size;
 }
 

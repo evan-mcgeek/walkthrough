@@ -11,7 +11,7 @@ import { readJson, writeJson } from './json-files';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
 import { decide, markRead, walkthroughView } from './decisions';
-import { listView } from './list';
+import { listPage, listView } from './list';
 import { ask, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
 import { tooLong } from './words';
@@ -213,7 +213,7 @@ function serveFile(dir: string, list: boolean, what: string, query: URLSearchPar
     return;
   }
   const data: Record<string, () => unknown> = list
-    ? { 'data/list.json': () => listView(dir) }
+    ? { 'data/list.json': () => listPage(dir) }
     : { 'data/walkthrough.json': () => walkthroughView(dir), 'data/session.json': () => sessionView(dir) };
   const view = Object.hasOwn(data, what) ? data[what] : undefined;
   if (view) {
