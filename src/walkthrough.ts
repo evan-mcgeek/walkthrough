@@ -21,7 +21,7 @@ export type Step = { id: string; title: string; diff: string } & (
 export const MARKS = ['met', 'partly', 'not-met', 'unchecked'] as const;
 export type Mark = (typeof MARKS)[number];
 export type ChecklistItem = { id: string; status: string; mark?: Mark; text: string; steps: string[] };
-export type Checklist = { title: string; items: ChecklistItem[] };
+export type Checklist = { title: string; description?: string; items: ChecklistItem[] };
 export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;

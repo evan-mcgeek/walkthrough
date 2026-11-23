@@ -94,7 +94,7 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   await expect(section('Decided').getByRole('row')).toHaveText(['Flag1 Login check1']);
   await expect(section('Flagged').getByRole('listitem')).toHaveText(['1 Login checkEveryone gets in.']);
   await expect(section('Your comments').getByRole('listitem')).toHaveText(['login.ts · 1Say who may log in.']);
-  await expect(section('Checklist').getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
+  await expect(section('Checklist').getByRole('listitem')).toHaveText([/^Logs in\.\s*met$/, /^Has a cart\.\s*not shown$/]);
   const drafts = section('[AI] drafts');
   await expect(drafts.getByRole('heading')).toHaveText('[AI] drafts1 edited · 1 dropped');
   await expect(drafts.getByRole('listitem')).toHaveText(['cart.ts · 1Edited[AI] Name the items.', 'Step 3Dropped[AI] Add a test.']);

@@ -1934,11 +1934,14 @@ function queueView(view: View): HTMLElement[] {
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
 
-/** Counted only when the session marks items, since a status alone says nothing the page can count. */
-const metCount = (items: ChecklistItem[]) =>
-  items.some(item => item.mark !== undefined) ? `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}` : null;
+/** Counted only when the session marks items, since a status alone says nothing the page can count; `short` for an edge stripe. */
+function metCount(items: ChecklistItem[], short = false): string | null {
+  if (!items.some(item => item.mark !== undefined)) return null;
+  const met = String(items.filter(item => item.mark === 'met').length);
+  return short ? `${met}/${String(items.length)}` : `${met} of ${String(items.length)} met`;
+}
 
-/** `compact` beside a step: marks, text and links only, with the title opening the checklist's own page for statuses and actions. */
+/** Each item reads down: its mark and text, then its status and linked steps on one line; `compact` leaves its actions to the checklist's own page. */
 function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HTMLElement[] {
   return items.map(item => {
     const links: HTMLElement[] = item.steps.flatMap(id => {
@@ -1951,15 +1954,19 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
     });
     const gone = item.steps.length - links.length;
     const mark = item.mark ?? 'unchecked';
+    const named = [links.length === 1 ? ' · Step ' : ' · Steps ', ...links.flatMap((link, at) => (at ? [', ', link] : [link]))];
+    const steps = links.length ? [el('span', { className: 'item-steps' }, ...named)] : [];
     const row = el(
       'li',
       { className: view.kind === 'checklist' && view.item === item.id ? 'current' : '' },
       icon(mark, STATE_NAMES[mark]),
-      el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), ...(compact ? [] : [el('span', { className: 'item-status' }, item.status)])),
-      ...links,
-      ...(gone
-        ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)]
-        : []),
+      el(
+        'div',
+        { className: 'item-body' },
+        markdown(item.text, 'item-text'),
+        el('p', { className: 'item-line' }, el('span', { className: 'item-status' }, item.status), ...steps),
+        ...(gone ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)] : []),
+      ),
       ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text)),
     );
     row.dataset['mark'] = mark;
@@ -1968,7 +1975,7 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
   });
 }
 
-function checklistView({ title, items }: Checklist, view: View, compact = false): HTMLElement {
+function checklistView({ title, description, items }: Checklist, view: View, compact = false): HTMLElement {
   const heading = el(
     'h2',
     { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' },
@@ -1978,7 +1985,8 @@ function checklistView({ title, items }: Checklist, view: View, compact = false)
   const head = view.kind === 'checklist' ? el('div', { className: 'title-row' }, heading) : heading;
   const met = metCount(items);
   if (met !== null) head.append(el('span', { className: 'counter' }, met));
-  const section = el('section', { className: 'checklist' }, head, el('ul', {}, ...rows));
+  const about = description ? [el('p', { className: 'checklist-description' }, description)] : [];
+  const section = el('section', { className: 'checklist' }, head, ...about, el('ul', {}, ...rows));
   section.setAttribute('aria-labelledby', heading.id);
   return section;
 }
@@ -2842,7 +2850,7 @@ function drawEdges(view: View, side: HTMLElement[], tabs: Tab[]): void {
     ...(hidden('explanation') && view.kind === 'step' ? [showButton('explanation', PANEL.explanation.title, null)] : []),
   );
   const items = walkthrough.checklist?.items ?? [];
-  rightEdge.replaceChildren(...(hidden('checklist') && side.length ? [showButton('checklist', PANEL.checklist.title, metCount(items))] : []));
+  rightEdge.replaceChildren(...(hidden('checklist') && side.length ? [showButton('checklist', PANEL.checklist.title, metCount(items, true))] : []));
   bottomStrip.replaceChildren(
     ...(hidden('tools')
       ? tabs.map(tab => showButton('tools', tab.label, tab.count, () => { tool = tab.id; }))

@@ -49,6 +49,21 @@ test('an item the session marks not met is left in the rail and opens the checkl
   await expect(items.nth(1)).toHaveAttribute('data-mark', 'not-met');
   await expect(items.nth(0)).toHaveAttribute('data-mark', 'unchecked');
   await expect(items.nth(2).getByRole('link')).toHaveCount(0);
+  // The checklist page reads as the panel does: the status, then the steps, on one line under the text.
+  await expect(items.locator('.item-line')).toHaveText(['met · Step 1', 'not yet · Steps 1, 2', 'open question']);
+});
+
+test('inline code in an item stays on one line in the narrow panel', async ({ page, repo }) => {
+  const recorded = repo.record(
+    { title: 'Criteria', items: [{ status: 'met', mark: 'met', text: 'Running `walkthrough start --kind review` records the kind.', steps: ['1'] }] },
+    'checklist',
+  );
+  if (recorded.status !== 0) throw new Error(recorded.stderr);
+  await page.reload();
+  await page.keyboard.press('2');
+  const code = page.getByRole('complementary', { name: 'Checklist' }).locator('.item-text code');
+  await expect(code).toBeVisible();
+  expect(await code.evaluate(inline => inline.getClientRects().length)).toBe(1);
 });
 
 test('a status word alone never puts an item in the rail; only the mark the session records does', async ({ page, repo }) => {

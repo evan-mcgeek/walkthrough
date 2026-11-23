@@ -28,6 +28,7 @@ const notesExample = [
 
 const checklistExample = {
   title: 'Acceptance criteria',
+  description: 'Each acceptance criterion from the tickets, and the steps that deliver it.',
   items: [
     { status: 'met', mark: 'met', text: 'Sessions survive a restart.', steps: ['1'] },
     { status: 'not shown', mark: 'not-met', text: 'Expired sessions are removed.', steps: [] },
@@ -126,12 +127,12 @@ walkthrough checklist --file <file>
   The file is a JSON object with a title and items in reading order.
   An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
   To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
-  Title, status and text are the session's own words.
+  Title, description, status and text are the session's own words; "description" is one optional line under the title saying what the list is for.
   "mark" picks the icon beside the status: "met", "partly", "not-met" or "unchecked" ("mark" may be left out, which shows "unchecked").
   An item marked "not-met", or offering actions the person has not taken, is listed with the steps left, as something that still needs the person.
   An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
   A link to a step that is later gone shows as gone.
-    {"title": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
+    {"title": string, "description": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
     {"id": string, "status": string, "mark": mark, "text": string, "steps": [step id, ...]}   an item kept under a new text
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}

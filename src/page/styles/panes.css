@@ -885,41 +885,49 @@
   overflow-wrap: anywhere;
 }
 
-.item-status {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
+.item-text code {
+  white-space: nowrap;
 }
 
-/* The opened item's status reads as prose. */
-.checklist li.current .item-status {
-  margin-top: var(--s1);
-  color: var(--ink-secondary);
+/* Under the text, one muted line: the session's status, then the steps it links to. */
+.item-line {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font: var(--text-meta);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist li:is([data-mark='partly'], [data-mark='not-met']) .item-status {
+  color: var(--amber);
+}
+
+.item-steps {
+  white-space: nowrap;
+}
+
+.checklist-description {
+  margin: 0 0 var(--s2);
+  color: var(--muted);
   font-size: 13px;
 }
 
 .step-link {
-  height: fit-content;
-  padding: 0 var(--s1);
-  border: 1px solid var(--accent-line);
   border-radius: var(--r-xs);
   color: var(--accent-text);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
   text-decoration: none;
 }
 
 .step-link:hover {
-  background: var(--accent-wash);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .checklist .gone {
   display: flex;
-  flex-basis: 100%;
   align-items: center;
   gap: 6px;
-  margin: 0;
-  padding-left: 24px;
+  margin: 2px 0 0;
   color: var(--muted);
   font-size: 12.5px;
 }

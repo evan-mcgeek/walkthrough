@@ -522,6 +522,16 @@ A step the session is still checking keeps its state icon with the muted sub-lin
 ### In This Step (facts rail)
 Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons.
 
+### Checklist
+The same item layout in the 288px panel, on the checklist's own page and in the Summary's Checklist section.
+The title carries a counter that says what it counts, "15 of 21 met", in the same words for a screen reader; the edge stripe keeps the short "15/21".
+The session's optional description sits under the title as one 13px muted line, such as "Each acceptance criterion from the tickets, and the steps that deliver it."
+Each item reads down: the state icon and the item's text (Body UI) at the full width, then one 12px muted line with the session's status and the steps it links to, "partly met: V still runs after Stop · Steps 4, 10, 13" ("Step 2" for one, nothing for none).
+The step numbers are plain accent-text links, underlined on hover, each with its step's title as its tooltip; "Steps" and its numbers wrap as one piece.
+A status marked partly or not met is amber text; met and unchecked stay muted.
+Inline code in an item's text never breaks inside the code.
+On the checklist page an item's actions follow under its line.
+
 ### Diff, Markers and Overview Stripe
 diff2html line-by-line, restyled through classes: 46px number columns in muted ink, 12.5/21px mono code with 16px right padding, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink.
 - **Gutter markers:** a line that carries a note shows a 13px icon in a 16px box at the left of its new-line number: amber warning triangle for a finding, accent person for your own comment, marker-note speech bubble for any other note.
