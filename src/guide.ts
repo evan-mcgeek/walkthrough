@@ -161,8 +161,9 @@ walkthrough policy [show | init | save --file <file>]
   With no action it prints its state and path on the first line, then the inbox to write a new version to:
     none: there is no review policy at <path>, so the template applies.
     template: the review policy at <path> is the unchanged template.
+    template: the review policy at <path> is an earlier unchanged template, so the current template applies.
     yours: the review policy at <path> is the person's own.
-  show prints the policy, or the template when there is none; init copies the template there when there is none;
+  show prints the policy, or the current template while it is none or a template; init copies the template there when there is none;
   save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list

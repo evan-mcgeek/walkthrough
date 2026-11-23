@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
@@ -30,6 +31,29 @@ describe('walkthrough policy', () => {
     expect(fs.existsSync(draft)).toBe(false);
     expect(repo.run('policy').stdout).toContain(`yours: the review policy at ${policy} is the person's own.`);
     expect(repo.run('policy', 'show').stdout).toBe(`${TEMPLATE}\n- One more rule.\n`);
+  });
+
+  test('still takes a copied template for the template after a release changes it, and shows the new one', () => {
+    const sandbox = process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '';
+    const config = fs.mkdtempSync(path.join(sandbox, 'config-'));
+    const plugin = fs.mkdtempSync(path.join(sandbox, 'plugin-'));
+    for (const folder of ['bin', 'dist', 'skills'])
+      fs.cpSync(path.resolve(import.meta.dirname, '..', 'plugin', folder), path.join(plugin, folder), { recursive: true });
+    const run = (...args: string[]) =>
+      spawnSync(path.join(plugin, 'bin', 'walkthrough'), args, {
+        cwd: sandbox,
+        encoding: 'utf8',
+        env: { ...process.env, XDG_CONFIG_HOME: config },
+      });
+    const policy = policyIn(config);
+    run('policy', 'init');
+
+    const released = `${TEMPLATE}\n- A rule from the next release.\n`;
+    fs.writeFileSync(path.join(plugin, 'skills', 'walkthrough', 'REVIEWER.md'), released);
+
+    expect(run('policy').stdout).toContain(`template: the review policy at ${policy} is an earlier unchanged template`);
+    expect(run('policy', 'show').stdout).toBe(released);
+    expect(fs.readFileSync(policy, 'utf8')).toBe(TEMPLATE);
   });
 
   test('refuses to save an empty policy', () => {
