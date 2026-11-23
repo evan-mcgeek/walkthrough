@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { changedFiles, commonDir, fileAt } from './change';
-import { readJson, writeJson } from './json-files';
+import { locked, readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
@@ -77,24 +77,27 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
-export async function ensureServer(dir: string, list = false): Promise<string> {
-  const running = readRecord(dir);
-  if (running && alive(running)) return running.url;
+// Locked, so starts at the same moment find the one server the first of them started.
+export function ensureServer(dir: string, list = false): Promise<string> {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
-  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
-    // Not the folder start ran in, which may be a worktree removed while the page is open.
-    cwd: commonDir(process.cwd()),
-    detached: true,
-    stdio: ['ignore', log, log],
+  return locked(recordFile(dir), async () => {
+    const running = readRecord(dir);
+    if (running && alive(running)) return running.url;
+    const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
+      // Not the folder start ran in, which may be a worktree removed while the page is open.
+      cwd: commonDir(process.cwd()),
+      detached: true,
+      stdio: ['ignore', log, log],
+    });
+    child.unref();
+    fs.closeSync(log);
+    for (const end = Date.now() + 10_000; Date.now() < end; await sleep(50)) {
+      const record = readRecord(dir);
+      if (record && record.pid === child.pid) return record.url;
+    }
+    throw new Error(`the page server did not start; see ${path.join(dir, 'server.log')}`);
   });
-  child.unref();
-  fs.closeSync(log);
-  for (const end = Date.now() + 10_000; Date.now() < end; await sleep(50)) {
-    const record = readRecord(dir);
-    if (record && record.pid === child.pid) return record.url;
-  }
-  throw new Error(`the page server did not start; see ${path.join(dir, 'server.log')}`);
 }
 
 export async function stopServer(dir: string): Promise<boolean> {

@@ -73,6 +73,15 @@ describe('walkthrough start', () => {
     expect(shown).toMatchObject({ branch: 'feature/login', base: repo.base, head: repo.head });
   });
 
+  test('starts at the same moment share one page server', async () => {
+    repo = makeRepo();
+
+    const ended = await Promise.all([1, 2, 3].map(() => repo.background('start').ended));
+
+    expect(ended.map(one => one.status)).toEqual([0, 0, 0]);
+    expect(new Set(repo.opened()).size).toBe(1);
+  });
+
   test('answers a poll for an unchanged walkthrough with no body, and a changed one in full', async () => {
     repo = makeRepo();
     repo.run('start');
