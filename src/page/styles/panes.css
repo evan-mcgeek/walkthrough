@@ -248,7 +248,8 @@
 }
 
 .reopened-line {
-  margin: 0 0 var(--s2);
+  max-width: 68ch;
+  margin: var(--s2) 0;
   color: var(--ink-secondary);
   font: var(--text-body);
 }
@@ -262,7 +263,7 @@
   flex-direction: column;
   gap: 2px;
   max-width: 68ch;
-  margin: 0 0 var(--s2);
+  margin: var(--s4) 0 var(--s2);
   color: var(--ink-secondary);
   font: var(--text-body-ui);
 }

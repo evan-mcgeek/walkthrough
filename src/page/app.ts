@@ -699,7 +699,9 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
   return [el('div', { className: 'block' }, summary, files, ...found, ...(step.diff ? [details] : []))];
 }
 
+/** A step's explanation, what was said about its decision, then its assumptions, notes and files. */
 function stepBody(step: Step): HTMLElement[] {
+  const said = stepDecisionView(step);
   const pinned = session.conversation.filter(
     (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === step.id,
   );
@@ -707,9 +709,9 @@ function stepBody(step: Step): HTMLElement[] {
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
   switch (step.kind) {
     case 'step':
-      return [markdown(step.explanation, 'explanation'), ...assumedView(step), ...notes, el('div', { className: 'block' }, diffView(step, pinned))];
+      return [markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes, el('div', { className: 'block' }, diffView(step, pinned))];
     case 'folded':
-      return [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...notes, ...foldedView(step, pinned)];
+      return [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...said, ...notes, ...foldedView(step, pinned)];
   }
 }
 
@@ -761,7 +763,6 @@ function stepView(step: Step): HTMLElement {
     'section',
     { className: 'step' },
     el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
-    ...stepDecisionView(step),
     ...stepBody(step),
     ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
     ...actionBar(step),
