@@ -926,8 +926,18 @@ function addPreview(wrapper: Element, stepId: string, parsed: DiffFile): void {
     preview.replaceChildren(el('p', { className: 'muted' }, 'Loading the preview.'));
     const answer = await fetch(at(file)).catch(() => null);
     const added = new Set(parsed.blocks.flatMap(block => block.lines).flatMap(line => (line.type === LineType.INSERT ? [line.newNumber] : [])));
-    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), file, added);
-    else preview.replaceChildren(el('p', { className: 'muted' }, 'Could not load the preview.'));
+    if (!answer?.ok) {
+      preview.replaceChildren(el('p', { className: 'muted' }, 'Could not load the preview.'));
+      return;
+    }
+    preview.innerHTML = renderMarkdown(await answer.text(), file, added);
+    // A table keeps its own width, so its wash comes from a row around it.
+    for (const table of preview.querySelectorAll('table.inserted')) {
+      const row = el('div', { className: 'inserted' });
+      table.classList.remove('inserted');
+      table.replaceWith(row);
+      row.append(table);
+    }
   };
   const choices = (['Diff', 'Preview'] as const).map(label =>
     el('button', { type: 'button', onclick: () => void choose(label === 'Preview') }, label),

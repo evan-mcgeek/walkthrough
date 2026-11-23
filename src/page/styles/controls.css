@@ -219,7 +219,7 @@ samp,
 }
 
 .menu-item:hover,
-.menu-item:focus-visible {
+.menu-item:focus {
   outline: none;
   background: var(--surface-tint);
 }
