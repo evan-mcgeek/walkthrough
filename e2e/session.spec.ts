@@ -140,3 +140,28 @@ test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note',
   await expect(fromSession).toHaveText('From the session3 messages');
   await expect(send).toBeFocused();
 });
+
+test('a redraw waits while the person composes with an input method, and comes after', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  const box = page.getByRole('textbox', { name: 'Ask about this step' });
+  await box.fill('ろぐいん');
+  await box.evaluate(input => {
+    Object.assign(input, { composed: true });
+    input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+  });
+
+  const polled = page.waitForResponse(answer => answer.url().includes('data/session.json') && answer.status() === 200);
+  repo.background('listen');
+  await polled;
+  await page.waitForResponse(answer => answer.url().includes('data/session.json'));
+
+  await expect(page.getByRole('status', { name: 'Session' })).not.toHaveText('Listening');
+  expect(await box.evaluate(input => 'composed' in input)).toBe(true);
+
+  await box.evaluate(input => input.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'ろぐいん' })));
+
+  await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Listening');
+  await expect(box).toHaveValue('ろぐいん');
+  await expect(box).toBeFocused();
+});

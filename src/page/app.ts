@@ -1996,6 +1996,19 @@ for (const [target, released] of [[document, 'pointerup'], [document, 'pointerca
     setTimeout(render, 0);
   }, true);
 
+/** A redraw replaces the box being typed in, which would break a word an input method is still composing. */
+let composing = false;
+document.addEventListener('compositionstart', () => {
+  composing = true;
+}, true);
+// Leaving the box ends a composition too, should a browser not say so.
+for (const ended of ['compositionend', 'focusout'] as const)
+  document.addEventListener(ended, () => {
+    if (!composing) return;
+    composing = false;
+    if (redrawLater) render();
+  }, true);
+
 /** A step in the export: its number, title and state, then all it shows on the page but the actions. */
 function exportStep(step: Step, number: number): HTMLElement {
   const title = el('span', { id: `step-${step.id}` }, step.title);
@@ -2040,8 +2053,8 @@ function render(): void {
     main.replaceChildren(...exportView(exported.at));
     return;
   }
-  // A redraw would swap a pressed control or a dragged card out from under the person, so it waits for the release.
-  if (pressed || swiping) {
+  // A redraw would swap a pressed control, a dragged card or a composing box out from under the person, so it waits.
+  if (pressed || swiping || composing) {
     redrawLater = true;
     return;
   }
