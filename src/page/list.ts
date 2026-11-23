@@ -62,20 +62,21 @@ function progress(one: Listed): HTMLElement {
 function row(one: Listed): HTMLTableRowElement {
   const name = el('button', { type: 'button', className: 'list-open', onclick: () => void open(one) }, one.name);
   name.dataset['key'] = `open:${one.id}`;
+  // Roles keep the table a table to a screen reader once the phone layout restyles its rows.
   return el(
     'tr',
-    {},
+    { role: 'row' },
     // The id is what walkthrough prune takes to remove this one.
-    el('td', {}, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
-    el('td', {}, progress(one)),
+    el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
+    el('td', { role: 'cell' }, progress(one)),
     el(
       'td',
-      {},
+      { role: 'cell' },
       one.verdict === undefined
         ? el('span', { className: 'muted' }, 'No verdict yet')
         : el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), one.verdict),
     ),
-    el('td', { className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
+    el('td', { role: 'cell', className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );
 }
 
@@ -89,12 +90,21 @@ function render(page: ListPage): void {
     el('span', { className: 'session-label' }, page.repo),
     el('div', { className: 'header-end' }, el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')),
   );
-  const head = el('tr', {}, ...['Walkthrough', 'Progress', 'Verdict', 'Last activity'].map(name => el('th', { scope: 'col' }, name)));
+  const head = el(
+    'tr',
+    { role: 'row' },
+    ...['Walkthrough', 'Progress', 'Verdict', 'Last activity'].map(name => el('th', { scope: 'col', role: 'columnheader' }, name)),
+  );
   main.replaceChildren(
     el('h1', { className: 'list-title' }, 'Walkthroughs'),
     el('p', { className: 'muted list-sub' }, 'In this repository'),
     page.walkthroughs.length
-      ? el('table', { className: 'walkthroughs' }, el('thead', {}, head), el('tbody', {}, ...page.walkthroughs.map(row)))
+      ? el(
+          'table',
+          { className: 'walkthroughs', role: 'table' },
+          el('thead', { role: 'rowgroup' }, head),
+          el('tbody', { role: 'rowgroup' }, ...page.walkthroughs.map(row)),
+        )
       : el('p', { className: 'list-empty' }, 'This repo has no walkthroughs; run /walkthrough to start one.'),
   );
   if (focused !== undefined) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();

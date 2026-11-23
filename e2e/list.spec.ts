@@ -84,3 +84,18 @@ test('the list clears its unreachable banner once the server answers again', asy
   await expect(page.getByRole('alert')).toBeHidden();
   await expect(page.locator('body')).not.toHaveClass(/unreachable/);
 });
+
+test('at phone width a walkthrough keeps its name on one line beside its activity, and its cells stay a table', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  await page.goto('about:blank');
+  repo.run('stop');
+  repo.run('list');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(repo.url());
+
+  const row = page.getByRole('row').nth(1);
+  await expect(row.getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '0 of 1 step decided, 0 read', 'No verdict yet', /now|ago/]);
+  expect((await row.getByRole('button', { name: 'feature/login' }).boundingBox())?.height).toBeLessThan(24);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
