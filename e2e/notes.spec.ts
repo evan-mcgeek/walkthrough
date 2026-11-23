@@ -131,6 +131,15 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
   await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
 });
 
+test('one line is picked from the keyboard with Enter on it twice', async ({ page }) => {
+  await row(page, 'cart.ts', 2).locator('td.d2h-code-linenumber').focus();
+
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+
+  await expect(rowAfter(row(page, 'cart.ts', 2)).getByRole('textbox', { name: 'Ask about cart.ts line 2' })).toBeFocused();
+});
+
 test('a note keeps its actions in a menu, opened by its button and left with Escape', async ({ page, repo }) => {
   const id = /([0-9a-f]{8})/.exec(repo.record([{ step: '1', file: 'cart.ts', lines: [2, 2], label: 'Risk', text: 'B is two.' }], 'note').stdout)?.[1];
   pin(repo, [{ step: '1', file: 'cart.ts', lines: [4, 4], label: 'Plain', text: 'No actions here.' }]);

@@ -835,7 +835,7 @@ function pickByKey(step: Step, event: KeyboardEvent): void {
   if (event.key !== 'Enter') return;
   event.preventDefault();
   const started = picked?.step === step.id && picked.file === at.file && !picked.ended;
-  pick(step, at.file, at.line, started, event.shiftKey || (started && picked?.from !== at.line));
+  pick(step, at.file, at.line, started, event.shiftKey || started);
 }
 
 function unpick(): void {
