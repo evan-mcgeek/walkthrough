@@ -1768,7 +1768,7 @@ function factsRail(step: Step): HTMLElement[] {
     .filter(item => item.steps.includes(step.id))
     .map(item => {
       const mark = item.mark ?? 'unchecked';
-      const row = el('li', { title: MEANS[mark] ?? '' }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
+      const row = el('li', { title: stateName(mark) ?? '' }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
       row.dataset['mark'] = mark;
       return row;
     });
