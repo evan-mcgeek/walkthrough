@@ -106,7 +106,8 @@ test('at phone width the kind takes the name’s place beside the logo, on one r
   expect(shown && logo && shown.x > logo.x + logo.width).toBe(true);
   expect(more && shown && Math.abs(more.y + more.height / 2 - (shown.y + shown.height / 2))).toBeLessThan(2);
   await expect(page.getByRole('heading', { level: 1, name: 'feature/login' })).toBeAttached();
-  await expect(banner.locator('.session-label')).not.toBeInViewport();
+  // Kept for screen readers, drawn in no space.
+  expect((await banner.locator('.session-label').boundingBox())?.width).toBeLessThanOrEqual(1);
 });
 
 test('the header signs the page with the mark, and the server serves its favicon and app icon', async ({ page, url }) => {
