@@ -1,5 +1,6 @@
 {
   "name": "walkthrough",
+  "version": "0.0.1",
   "description": "A guided review of a code change on a local page, one step at a time. Provides /walkthrough for your own change, /walkthrough:pr for a review request, and the walkthrough CLI.",
   "author": {
     "name": "evan-mcgeek",
@@ -8,5 +9,8 @@
   "homepage": "https://github.com/evan-mcgeek/walkthrough",
   "repository": "https://github.com/evan-mcgeek/walkthrough",
   "license": "MIT",
-  "keywords": ["code-review", "review"]
+  "keywords": [
+    "code-review",
+    "review"
+  ]
 }
