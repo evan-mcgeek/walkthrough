@@ -48,7 +48,20 @@ In the repo with the change, run:
 ```
 
 With no argument it walks through your current branch against the remote's default branch.
-For another target branch, a range of commits or a colleague's pull request, just say so in plain words, and the session passes the right options to the CLI.
+For another target branch or a range of commits, just say so in plain words, and the session passes the right options to the CLI.
+
+To review a change someone asked you to review, run `/walkthrough:pr` with its number or link:
+
+```text
+/walkthrough:pr 123
+```
+
+The session fetches the change as your policy says, without checking it out.
+Your comments become drafts marked `[AI]` that you post, edit or drop on the page, and what you post goes into one pending review that you submit yourself.
+Open the same change again after its author replied or pushed, and the walkthrough goes on where you left it.
+
+These are the two kinds of walkthrough, your own change and a review request.
+The page header and the list of walkthroughs show which kind each one is.
 
 The first time, the session finds no review policy and offers one.
 Your policy lives at `~/.config/walkthrough/REVIEWER.md` (or under `$XDG_CONFIG_HOME`), outside every project, and starts as a copy of [the template](plugin/skills/walkthrough/REVIEWER.md).
@@ -131,6 +144,7 @@ Everything the session does follows two sources:
 
 1. **Your review policy**, `REVIEWER.md`, outside every project.
    It covers how to split and order steps, how to write explanations, what the checklist tracks, which reviewers run and how their findings are checked, how drafts for colleagues are written, and which actions each kind of walkthrough offers.
+   It has shared rules and a part for each kind of walkthrough, "My change" and "Someone else's change"; each command follows the shared rules and its own part.
    Every rule in it is a default you can edit.
 2. **The project's instructions for agents**: its `CLAUDE.md`, `AGENTS.md` and the files they point to.
    Where the two disagree about the project's own code, the project wins; about how you review, your policy wins.
@@ -153,7 +167,7 @@ The session runs the `walkthrough` CLI for you, so you rarely type it yourself.
 
 | Command | What it does |
 | --- | --- |
-| `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page. |
+| `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page; `--kind <label>` names its kind for the page. |
 | `files` | Lists the changed files. |
 | `steps`, `note`, `checklist`, `actions` | Record what the session wrote, from a file in the walkthrough's inbox (`--file`) or standard input. |
 | `listen` | Waits in the background for what you do on the page. |

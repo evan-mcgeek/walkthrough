@@ -384,7 +384,7 @@ Restrained and exact; the label carries the meaning.
 - **Select:** native select with its own arrow removed, 30px right padding, and a muted drawn 16px chevron 9px from the edge.
 
 ### Navigation
-- **Header:** the 16px lockup (see Brand), mono session label, segmented progress bar (180px) with "3/9" tabular count, layout switch, session status, Stop. No other chrome text.
+- **Header:** the 16px lockup (see Brand), mono session label, the session's kind of walkthrough as a counter-style pill when it gave one (dropped at phone width), segmented progress bar (180px) with "3/9" tabular count, layout switch, session status, Stop. No other chrome text.
 - **Layout switch / Diff-Preview switch:** joined segmented control, 1px control edge, pressed segment violet-wash with violet text.
 - **Tabs (Tool panel):** text tabs; selected is ink 600 with a 2px violet inset underline.
 

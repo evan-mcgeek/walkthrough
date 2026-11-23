@@ -15,6 +15,14 @@ _Avoid_: Diff, PR (a pull request is one place a change can come from)
 One review of one change that a person goes through on the page, kept until it is pruned.
 _Avoid_: Review session, tour
 
+**Kind of walkthrough**:
+Whose change a walkthrough is for: the person's own change (`/walkthrough`), or a review request, a change someone asked them to review (`/walkthrough:pr`).
+Each kind has its own part of the review policy; the session names the kind to the CLI as a label the page shows, and the tool does nothing else with it.
+_Avoid_: Mode, flow
+
+**Review request**:
+A change someone asked the person to review, named by its number or link on the code host.
+
 **Step**:
 A part of the change the agent recorded, made of whole files, shown with its diff and the agent's explanation.
 _Avoid_: Hunk, chunk
@@ -44,7 +52,7 @@ Taking it back with Undo is sent the same way and leaves the item undecided.
 ### Whose rules
 
 **Review policy**:
-The person's own rules for how their walkthroughs are reviewed, written for agents and kept outside any project.
+The person's own rules for how their walkthroughs are reviewed, written for agents and kept outside any project: shared rules and a part for each kind of walkthrough.
 _Avoid_: Reviewer config, settings
 
 **Project instructions**:
