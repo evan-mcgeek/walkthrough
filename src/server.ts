@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { changedFiles, commonDir, fileAt } from './change';
 import { readJson, writeJson } from './json-files';
-import { previewType } from './preview';
+import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
 import { decide, markRead, walkthroughView } from './decisions';
 import { listView } from './list';
@@ -166,15 +166,26 @@ function failRequest(res: http.ServerResponse, error: unknown): void {
   else res.writeHead(500, JSON_HEADERS).end(JSON.stringify({ error: 'walkthrough could not do that' }));
 }
 
-/** A changed file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
-async function serveChangedFile(dir: string, file: string, res: http.ServerResponse): Promise<void> {
+/** Whether the page may preview this file: it changed, or it is an image a changed Markdown file shows. */
+async function inChange(base: string, head: string, file: string, type: string): Promise<boolean> {
+  const changed = (await changedFiles(process.cwd(), base, head)).map(one => one.path);
+  if (changed.includes(file)) return true;
+  return (
+    type.startsWith('image/') &&
+    changed.some(
+      markdown =>
+        previewType(markdown)?.startsWith('text/markdown') &&
+        imagesIn(markdown, fileAt(process.cwd(), head, markdown)?.toString('utf8') ?? '').includes(file),
+    )
+  );
+}
+
+/** A file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
+async function serveFileAtHead(dir: string, file: string, res: http.ServerResponse): Promise<void> {
   const walkthrough = readWalkthrough(dir);
   const type = previewType(file);
-  const changed =
-    walkthrough &&
-    type &&
-    (await changedFiles(process.cwd(), walkthrough.base, walkthrough.head)).some(one => one.path === file);
-  const content = changed ? fileAt(process.cwd(), walkthrough.head, file) : null;
+  const shown = walkthrough && type && (await inChange(walkthrough.base, walkthrough.head, file, type));
+  const content = shown ? fileAt(process.cwd(), walkthrough.head, file) : null;
   if (!type || !content) {
     res.writeHead(404).end();
     return;
@@ -191,7 +202,7 @@ async function serveChangedFile(dir: string, file: string, res: http.ServerRespo
 
 function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
   if (!list && what === 'file') {
-    serveChangedFile(dir, query.get('path') ?? '', res).catch((error: unknown) => {
+    serveFileAtHead(dir, query.get('path') ?? '', res).catch((error: unknown) => {
       failRequest(res, error);
     });
     return;

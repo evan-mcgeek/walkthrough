@@ -1,6 +1,7 @@
 {
   "name": "walkthrough",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -10,7 +11,8 @@
     "test": "npm run build && vitest run && playwright test",
     "test:cli": "npm run build && vitest run",
     "test:page": "npm run build && playwright test",
-    "lint": "tsc --noEmit && eslint . --ignore-pattern .claude/"
+    "lint": "tsc --noEmit && eslint . --ignore-pattern .claude/",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
