@@ -2,7 +2,7 @@
 import path from 'node:path';
 import type { Change, Source } from './change';
 import { type Action, type Item, itemKey, nameOf } from './items';
-import { locked, readJson, writeJson } from './json-files';
+import { locked, readJson, readSavedJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
 export type FoldedFile = { path: string; reason: string };
@@ -46,6 +46,8 @@ export function walkthroughDir(repo: string, source: Source): string {
 }
 
 export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
+// Before a write: a saved walkthrough taken for none would be started over, giving its step ids out again.
+const savedWalkthrough = (dir: string) => (readSavedJson(file(dir)) as Walkthrough | undefined) ?? null;
 
 export function openWalkthrough(
   dir: string,
@@ -57,7 +59,7 @@ export function openWalkthrough(
   opened: 'new' | 'resumed' | 'moved';
 }> {
   return locked(file(dir), async () => {
-    const saved = readWalkthrough(dir);
+    const saved = savedWalkthrough(dir);
     if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: 'resumed' };
     if (saved) {
       const moved = { ...saved, target: change.target, base: change.base, head: change.head };
@@ -82,7 +84,7 @@ export function openWalkthrough(
 
 function update<T>(dir: string, change: (walkthrough: Walkthrough) => T | Promise<T>): Promise<T> {
   return locked(file(dir), async () => {
-    const walkthrough = readWalkthrough(dir);
+    const walkthrough = savedWalkthrough(dir);
     if (!walkthrough) throw new Error('there is no such walkthrough yet; run walkthrough start first');
     const changed = await change(walkthrough);
     writeJson(file(dir), walkthrough);

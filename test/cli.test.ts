@@ -73,6 +73,21 @@ describe('walkthrough start', () => {
     expect(shown).toMatchObject({ branch: 'feature/login', base: repo.base, head: repo.head });
   });
 
+  test('refuses to start over a saved walkthrough it cannot read, and leaves it as it is', () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.run('stop');
+    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'walkthrough.json');
+    fs.writeFileSync(saved, '{"kind": "bran');
+
+    const started = repo.run('start');
+
+    expect(started.status).toBe(1);
+    expect(started.stderr).toContain(`cannot read ${saved}`);
+    expect(fs.readFileSync(saved, 'utf8')).toBe('{"kind": "bran');
+    expect(repo.record(ONE_STEP).stderr).toContain(`cannot read ${saved}`);
+  });
+
   test('serves no folder outside its state', () => {
     repo = makeRepo();
     const elsewhere = path.join(path.dirname(repo.dir), 'elsewhere');

@@ -1,21 +1,37 @@
-// JSON files on disk: read without throwing, written whole or not at all, readable by the user alone.
+// JSON files on disk: written whole or not at all, readable by the user alone.
 import fs from 'node:fs';
 import path from 'node:path';
 import { lock } from 'proper-lockfile';
 
 export function readJson<T>(file: string, fallback: T): T {
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^﻿/, '')) as T;
+    return (readSavedJson(file) as T | undefined) ?? fallback;
   } catch {
     return fallback;
   }
 }
 
-/** Written beside the file and moved into place, so a reader never sees half of it. */
+/** Undefined when there is no such file; a file there that cannot be read throws, so it is never taken for none. */
+export function readSavedJson(file: string): unknown {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw new Error(`cannot read ${file}: ${(error as Error).message}`);
+  }
+}
+
+/** Written beside the file, flushed, and moved into place, so neither a reader nor a crash leaves half of it. */
 export function writeJson(file: string, value: unknown): void {
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
   const beside = `${file}.${String(process.pid)}.tmp`;
-  fs.writeFileSync(beside, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+  const fd = fs.openSync(beside, 'w', 0o600);
+  try {
+    fs.writeFileSync(fd, `${JSON.stringify(value, null, 2)}\n`);
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
   fs.renameSync(beside, file);
 }
 
