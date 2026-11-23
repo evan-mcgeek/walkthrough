@@ -26,6 +26,9 @@ function markdown(text: string, className: string): HTMLElement {
 /** Session Markdown as one line of plain text, for a rail row or a mention. */
 const plain = (text: string) => markdown(text, '').textContent.replace(/\s+/g, ' ').trim();
 
+/** Phone width: the step's actions move to a bottom bar and the deck can decide by swipe. */
+const phone = matchMedia('(max-width: 760px)');
+
 const header = region('header');
 const queue = region('queue');
 const main = region('main');
@@ -808,7 +811,11 @@ function actionBar(step: Step): HTMLElement[] {
   const decided = stepDecided(step) && !changing.has(key);
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
   change.dataset['key'] = `change:${key}`;
-  return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
+  const choices = decided ? change : actionGroup(item, stepLook);
+  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ask))];
+  // A thumb reaches the right first, so the leading action goes last.
+  if (!decided) choices.replaceChildren(...[...choices.children].reverse());
+  return [el('div', { className: 'step-ask' }, ask), el('div', { className: 'action-bar' }, choices)];
 }
 
 function stepView(step: Step): HTMLElement {
@@ -1213,6 +1220,8 @@ document.addEventListener('keydown', event => {
   if (event.key === 'j' || event.key === 'ArrowRight') stepBy(1);
   else if (event.key === 'k' || event.key === 'ArrowLeft') stepBy(-1);
 });
+
+phone.addEventListener('change', render);
 
 window.addEventListener('hashchange', () => {
   moves++;

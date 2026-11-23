@@ -744,4 +744,40 @@
   .main > :last-child {
     padding-bottom: var(--s4);
   }
+
+  /* A diff scrolls sideways inside its file; its notes stay pinned to the visible width. */
+  .d2h-file-diff {
+    overflow-x: auto;
+  }
+
+  .d2h-diff-table {
+    min-width: 620px;
+  }
+
+  .step-ask {
+    margin: var(--s5) 0 var(--s4);
+  }
+
+  .step-ask input,
+  .action-bar .btn {
+    min-height: 44px;
+  }
+
+  .action-bar,
+  .block ~ .action-bar,
+  .conversation ~ .action-bar {
+    display: flex;
+    margin: auto calc(-1 * var(--s4)) calc(-1 * var(--s4));
+    padding: var(--s3);
+    border-top-color: var(--rule);
+  }
+
+  .action-bar > *,
+  .action-bar > .choices > .btn {
+    flex: 1;
+  }
+
+  .action-bar > .choices {
+    margin: 0;
+  }
 }

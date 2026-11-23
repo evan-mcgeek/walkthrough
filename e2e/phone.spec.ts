@@ -41,6 +41,22 @@ test('the header keeps Stop in a More menu, which Escape closes', async ({ page 
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
 });
 
+test('the step decides from a bottom bar of touch-sized buttons, with Ask above it', async ({ page }) => {
+  const step = page.getByRole('region', { name: 'Login check' });
+  const choices = step.getByRole('group', { name: 'Decide' }).getByRole('button');
+  await expect(choices).toHaveText(['Flag', 'Approve']);
+  for (const box of await choices.evaluateAll(all => all.map(one => one.getBoundingClientRect())))
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  const bar = await step.getByRole('group', { name: 'Decide' }).boundingBox();
+  const ask = await step.getByRole('textbox', { name: 'Ask about this step' }).boundingBox();
+  expect(bar && ask && ask.y + ask.height <= bar.y).toBe(true);
+  expect(bar && Math.round(bar.y + bar.height)).toBeGreaterThan(844 - 24);
+  expect(ask?.height).toBeGreaterThanOrEqual(44);
+
+  await choices.getByText('Flag').click();
+  await expect(step.getByRole('textbox', { name: 'Note' })).toBeFocused();
+});
+
 test('the rail becomes a select of what is left, with decided steps and the end after it', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByRole('link')).toHaveCount(0);
