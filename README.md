@@ -113,9 +113,13 @@ The other decisions are in [`docs/adr/`](docs/adr/), and the domain language in 
 ```sh
 npm install
 npx playwright install chromium firefox webkit
-npm test       # builds, then runs the CLI tests (vitest) and the page tests (Playwright) in Chromium, Firefox and WebKit
-npm run lint   # type check and ESLint
+npm test                # builds, then runs the CLI tests (vitest) and the page tests (Playwright) in Chromium
+npm run test:browsers   # the same, with the page tests in Chromium, Firefox and WebKit
+npm run lint            # type check and ESLint
 ```
+
+Use `npm test` while working, and `npm run test:browsers` once before a release.
+Both run at most 4 test workers at a time; `PLAYWRIGHT_WORKERS` sets another number for the page tests.
 
 Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 
