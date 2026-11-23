@@ -61,7 +61,7 @@ test('notes whose step or lines are gone show detached, still open to a reply', 
   await expect(version.getByText('Was on a step no longer in the change', { exact: true })).toBeVisible();
   const third = detached.getByRole('article', { name: 'Third line' });
   await expect(third.getByText('Was on login.ts, line 3', { exact: true })).toBeVisible();
-  await expect(third.getByRole('textbox', { name: 'Reply' })).toBeVisible();
+  await expect(third.getByRole('button', { name: 'Reply' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Login check' }).getByText('Is three needed?')).toHaveCount(0);
 });
 

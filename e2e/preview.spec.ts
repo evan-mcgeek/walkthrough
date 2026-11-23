@@ -47,6 +47,8 @@ test('a changed Markdown file previews rendered and safe, and switches back to i
 
   const preview = file.getByRole('region', { name: 'Preview of docs/guide.md' });
   await expect(preview.getByRole('heading', { name: 'Guide' })).toBeVisible();
+  // The file is new, so every block shows the addition wash.
+  await expect(preview.getByRole('heading', { name: 'Guide' })).toHaveCSS('background-color', 'rgb(232, 246, 236)');
   await expect(preview.locator('strong')).toHaveText('this');
   await expect(preview.getByText('<script>window.ran = true</script>')).toBeVisible();
   await expect(preview.getByText('<img src="x" onerror="window.ran = true">')).toBeVisible();
@@ -75,7 +77,7 @@ test('a changed image previews as it is at the head commit; other files have no 
 
   await file.getByRole('group', { name: 'Show logo.svg as' }).getByRole('button', { name: 'Preview' }).click();
 
-  const image = file.getByRole('region', { name: 'Preview of logo.svg' }).getByRole('img', { name: 'logo.svg' });
+  const image = file.getByRole('region', { name: 'Preview of logo.svg' }).getByRole('img', { name: 'logo.svg, after' });
   await expect(image).toBeVisible();
   expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(40);
   await expect(fileIn(page, 'login.ts').getByRole('group')).toHaveCount(0);

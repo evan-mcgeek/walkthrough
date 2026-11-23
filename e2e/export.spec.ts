@@ -14,8 +14,9 @@ test('the export shows the walkthrough read-only, offline, from its one file', a
   repo.record([{ step: '1', file: 'login.ts', lines: [1, 1], label: 'Risk', text: 'Everyone gets in.' }], 'note');
   const step = page.getByRole('region', { name: 'Login check' });
   const note = step.getByRole('article', { name: 'Risk' });
-  await note.getByRole('textbox', { name: 'Reply' }).fill('Is that on purpose?');
   await note.getByRole('button', { name: 'Reply' }).click();
+  await note.getByRole('textbox', { name: 'Reply' }).fill('Is that on purpose?');
+  await note.getByRole('button', { name: 'Send' }).click();
   await expect(note.getByText('Is that on purpose?')).toBeVisible();
   await step.getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();

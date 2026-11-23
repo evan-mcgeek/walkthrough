@@ -1,0 +1,427 @@
+/*
+  The diff and what sits in it (docs/design/DESIGN.md, Diff and Notes, Image Diff): diff2html's line-by-line output
+  recoloured through its own variables and restyled through its classes; files are rules, not cards.
+  Rows in the diff (notes, "N more notes", the Ask composer) indent to the code column: two 46px number
+  columns, 10px of padding and the 14px sign.
+*/
+
+.diff {
+  --code-column: 116px;
+  --d2h-bg-color: transparent;
+  --d2h-border-color: var(--rule);
+  --d2h-dim-color: var(--muted);
+  --d2h-line-border-color: transparent;
+  --d2h-file-header-bg-color: var(--canvas);
+  --d2h-file-header-border-color: var(--rule-soft);
+  --d2h-ins-bg-color: var(--diff-add);
+  --d2h-ins-border-color: transparent;
+  --d2h-ins-highlight-bg-color: var(--diff-add-gutter);
+  --d2h-del-bg-color: var(--diff-del);
+  --d2h-del-border-color: transparent;
+  --d2h-del-highlight-bg-color: var(--diff-del-gutter);
+  --d2h-change-ins-color: var(--diff-add);
+  --d2h-change-del-color: var(--diff-del);
+  --d2h-info-bg-color: transparent;
+  --d2h-info-border-color: transparent;
+}
+
+.diff .d2h-wrapper {
+  color: var(--ink);
+}
+
+/* ---------- files ---------- */
+
+.diff .d2h-file-wrapper {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+.diff .d2h-file-wrapper + .d2h-file-wrapper {
+  margin-top: var(--s5);
+}
+
+.diff .d2h-file-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  align-items: center;
+  gap: var(--s3);
+  height: auto;
+  min-height: 0;
+  padding: var(--s2) 0 var(--s2) 2px;
+  border-bottom: 1px solid var(--rule-soft);
+  font: var(--text-body-ui);
+}
+
+.diff .d2h-file-name-wrapper {
+  width: auto;
+  min-width: 0;
+  font: var(--text-mono-label);
+}
+
+.diff .d2h-icon,
+.diff .d2h-tag {
+  display: none;
+}
+
+.file-stats {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.diff .d2h-file-header .segmented {
+  margin-left: auto;
+}
+
+/* ---------- lines ---------- */
+
+.diff .d2h-diff-table {
+  font: var(--text-code);
+}
+
+.diff .d2h-code-linenumber {
+  width: 92px;
+  border: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.diff .line-num1,
+.diff .line-num2 {
+  width: 46px;
+  padding: 0 var(--s2);
+}
+
+.diff .d2h-code-line {
+  width: calc(100% - 112px);
+  padding: 0 10px 0 102px;
+}
+
+.diff .d2h-code-line-prefix {
+  display: inline-block;
+  width: 14px;
+}
+
+.diff .d2h-code-line-ctn {
+  width: calc(100% - 14px);
+}
+
+.diff .d2h-code-line :is(ins, del) {
+  border-radius: var(--r-hairline);
+}
+
+.diff td.d2h-code-linenumber.d2h-ins {
+  background-color: var(--diff-add-gutter);
+  color: var(--ink-secondary);
+}
+
+.diff td.d2h-code-linenumber.d2h-del {
+  background-color: var(--diff-del-gutter);
+  color: var(--ink-secondary);
+}
+
+/* Hunk headers lose their fill and step down. */
+.diff .d2h-info {
+  color: var(--muted);
+}
+
+.diff .d2h-info .d2h-code-line {
+  font-size: 12px;
+}
+
+.diff .d2h-file-diff tr.selected > td {
+  background-color: var(--line-pick);
+}
+
+.diff .d2h-file-diff tr.selected > td.d2h-code-linenumber {
+  background-color: var(--line-pick-gutter);
+  color: var(--indigo-text);
+  font-weight: 600;
+}
+
+.diff tr[data-line] .d2h-code-linenumber:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ---------- rows in the diff ---------- */
+
+.d2h-file-diff {
+  container-type: inline-size;
+}
+
+.diff .pinned-row > td {
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+/* The table sets its own font and may scroll sideways; what is pinned keeps the page's font and the visible width. */
+.pinned {
+  position: sticky;
+  left: 0;
+  width: 100cqw;
+  font: 400 14px/1.5 var(--font-ui);
+  white-space: normal;
+}
+
+.pinned .note {
+  padding: var(--s3) var(--s4) var(--s3) var(--code-column);
+  border-bottom: 1px solid var(--rule);
+}
+
+.pinned .more > summary {
+  padding: var(--s2) var(--s4) var(--s2) var(--code-column);
+  font-size: 13px;
+}
+
+.pinned .more[open] > summary {
+  border-bottom: 1px solid var(--rule);
+}
+
+.picked-ask {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: -1px;
+  padding: var(--s3) var(--s4) var(--s3) var(--code-column);
+  border-top: 1px solid var(--indigo-line);
+  border-bottom: 1px solid var(--indigo-line);
+  background: var(--indigo-wash);
+  font: var(--text-body-ui);
+}
+
+.picked-ask label {
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.picked-ask input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- notes ---------- */
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font: 400 14px/1.5 var(--font-ui);
+}
+
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 24px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.note-head .label {
+  font-weight: 650;
+}
+
+.note-head .lines {
+  color: var(--muted);
+}
+
+.note-text,
+.you-asked,
+.note .said {
+  max-width: 66ch;
+  margin: 0;
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.note .said.person {
+  font-weight: 400;
+}
+
+.replies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: var(--s2) 0 var(--s1);
+  padding-left: var(--s3);
+  border-left: 2px solid var(--rule);
+}
+
+.replies .said {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.who {
+  display: block;
+  color: var(--muted);
+  font: 600 12px/1.4 var(--font-ui);
+}
+
+.note-foot {
+  margin-top: var(--s1);
+}
+
+.reply {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+.reply input {
+  flex: 1;
+  min-width: 0;
+}
+
+.note .taking {
+  margin-top: var(--s2);
+}
+
+.more > summary {
+  display: block;
+  padding: var(--s2) 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-link {
+  color: var(--indigo-text);
+}
+
+.more > summary:hover .more-link {
+  text-decoration: underline;
+}
+
+.was {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Outside the diff, notes are rows under a top rule. */
+.step-notes > .note,
+.step-notes > .more > .note,
+.conversation .note {
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.detached-box .note {
+  padding: var(--s2) 0;
+}
+
+/* ---------- previews ---------- */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-width: 72ch;
+  padding: var(--s4) 20px;
+  color: var(--ink-secondary);
+  font: var(--text-body);
+  overflow-x: auto;
+}
+
+.preview > * {
+  margin: 0;
+}
+
+.preview :is(h1, h2) {
+  color: var(--ink);
+  font: var(--text-title);
+}
+
+.preview :is(h3, h4, h5, h6) {
+  color: var(--ink);
+  font: 650 16px/1.4 var(--font-ui);
+}
+
+/* Blocks the change adds, washed out to the preview's edges. */
+.preview .inserted {
+  background: var(--diff-add);
+  box-shadow:
+    -14px 0 0 6px var(--diff-add),
+    14px 0 0 6px var(--diff-add);
+}
+
+.preview img {
+  max-width: 100%;
+}
+
+.preview table {
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.preview th,
+.preview td {
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  text-align: left;
+}
+
+.preview pre,
+.preview code {
+  background: var(--surface);
+  border-radius: var(--r-xs);
+}
+
+.preview pre {
+  padding: var(--s2) var(--s3);
+  overflow-x: auto;
+}
+
+.preview ul,
+.preview ol {
+  padding-left: var(--s5);
+}
+
+.preview a {
+  color: var(--indigo-text);
+}
+
+.image-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  padding: var(--s4) 2px;
+}
+
+.image-compare figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+}
+
+.image-box {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 120px;
+  border-radius: var(--r-md);
+  background: repeating-conic-gradient(var(--surface-tint) 0 25%, var(--canvas) 0 50%) 0 0 / 16px 16px;
+  overflow: hidden;
+}
+
+.image-box img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.image-compare figcaption {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}

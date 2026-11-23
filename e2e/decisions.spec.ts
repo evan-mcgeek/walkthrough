@@ -139,7 +139,8 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   const note = step.getByRole('article', { name: 'Draft' });
   const listener = repo.background('listen');
 
-  await note.getByRole('button', { name: 'Edit first' }).click();
+  await note.getByRole('button', { name: 'Note actions' }).click();
+  await note.getByRole('menuitem', { name: 'Edit first' }).click();
   const text = note.getByRole('textbox', { name: 'Text' });
   await expect(text).toHaveValue('Please **rename** this.');
   await text.fill('Please rename this to cart.');

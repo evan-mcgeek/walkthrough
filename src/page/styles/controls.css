@@ -1,6 +1,6 @@
 /*
   Base elements and controls (docs/design/DESIGN.md, Components).
-  Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button.
+  Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link. Floating: .menu, .menu-item.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
   Pills: .tag, .tag.decided, .tag.reopened, .counter, .file-chip.
   Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box.
@@ -166,6 +166,62 @@ samp,
 .icon-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--indigo-text);
+  font: 400 13px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- menu: the one floating surface besides the swipe card ---------- */
+
+/* A popover in the top layer, anchored under its open button; shown at once, so focus can land in it before it lifts. */
+.menu-button[aria-expanded='true'] {
+  anchor-name: --menu;
+}
+
+.menu {
+  position: fixed;
+  position-anchor: --menu;
+  position-area: bottom span-left;
+  position-try-fallbacks: flip-block;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 210px;
+  margin: var(--s1) 0;
+  padding: var(--s1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+}
+
+.menu-item {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink);
+  font: var(--text-body-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  outline: none;
+  background: var(--surface-tint);
 }
 
 /* ---------- joined switches ---------- */
