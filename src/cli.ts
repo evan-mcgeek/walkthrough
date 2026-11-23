@@ -23,6 +23,7 @@ import {
   openWalkthrough,
   readWalkthrough,
   recordActions,
+  recordChecking,
   recordChecklist,
   recordSteps,
   walkthroughDir,
@@ -135,6 +136,12 @@ async function steps(args: string[]): Promise<void> {
   console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
 }
 
+async function checking(args: string[]): Promise<void> {
+  const { dir, positionals } = located(args, { allowPositionals: true });
+  const ids = await recordChecking(dir, positionals);
+  console.log(ids.length ? `Checking ${plural(ids.length, 'step')}: ${ids.join(', ')}.` : 'Checking no steps.');
+}
+
 async function notes(args: string[]): Promise<void> {
   const { dir, walkthrough, values } = current(args, FILE_OPTION);
   const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
@@ -237,6 +244,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
   steps,
+  checking,
   note: notes,
   checklist,
   actions,
@@ -285,8 +293,8 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
-        '    | actions --file <file> | decisions | comments | posted <comment id>... | listen\n' +
+        '  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checking [<step id>...]\n' +
+        '    | checklist --file <file> | note --file <file> | actions --file <file> | decisions | comments | posted <comment id>... | listen\n' +
         '    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
         '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',

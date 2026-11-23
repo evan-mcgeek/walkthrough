@@ -11,7 +11,7 @@ import { locked, readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
-import { CHANGED, decide, markRead, markViewed, walkthroughVersion, walkthroughView } from './decisions';
+import { CHANGED, CHECKING, decide, markRead, markViewed, walkthroughVersion, walkthroughView } from './decisions';
 import { listPage, listView } from './list';
 import { ask, comment, reply, sessionView } from './session';
 import { readWalkthrough } from './walkthrough';
@@ -175,10 +175,12 @@ export function serve(dir: string, list = false): void {
   });
 }
 
-const answered = (view: object | typeof CHANGED | null): Answer =>
+const answered = (view: object | typeof CHANGED | typeof CHECKING | null): Answer =>
   view === CHANGED
     ? { status: 409, body: { error: 'This changed since the page showed it; look at it again.' } }
-    : view
+    : view === CHECKING
+      ? { status: 409, body: { error: 'Decide once the session has checked this step.' } }
+      : view
       ? { status: 200, body: view }
       : { status: 400 };
 

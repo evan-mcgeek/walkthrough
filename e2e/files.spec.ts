@@ -28,6 +28,17 @@ test('each file collapses from its header and opens again', async ({ page }) => 
   await expect(login.locator('.d2h-file-diff')).toBeVisible();
 });
 
+test('every file header sits right on the file before it, opened or collapsed', async ({ page }) => {
+  await page.getByRole('button', { name: 'Collapse login.ts' }).click();
+  await page.getByRole('button', { name: 'Collapse app.ts' }).click();
+  await page.getByRole('button', { name: 'Expand big.ts' }).click();
+  await expect(file(page, 'big.ts').locator('.d2h-file-diff')).toBeVisible();
+
+  const boxes = await Promise.all(['login.ts', 'app.ts', 'big.ts'].map(path => file(page, path).boundingBox()));
+  const gaps = boxes.slice(1).map((box, at) => (box?.y ?? 0) - ((boxes[at]?.y ?? 0) + (boxes[at]?.height ?? 0)));
+  expect(gaps).toEqual([0, 0]);
+});
+
 test('a large file starts collapsed', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Expand big.ts' })).toBeVisible();
   await expect(file(page, 'big.ts').locator('.d2h-file-diff')).toBeHidden();

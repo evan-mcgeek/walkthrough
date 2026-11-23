@@ -38,15 +38,7 @@
   border-radius: 0;
 }
 
-.diff .d2h-file-wrapper + .d2h-file-wrapper {
-  margin-top: var(--s4);
-}
-
-/* Collapsed files stack with no gap; a collapsed file keeps only its header. */
-.diff .d2h-file-wrapper.closed + .d2h-file-wrapper.closed {
-  margin-top: 0;
-}
-
+/* Files stack with no gap, opened or collapsed, so the list keeps its rhythm as a file opens; a collapsed file keeps only its header. */
 .diff .d2h-file-wrapper.closed > :not(.d2h-file-header) {
   display: none;
 }
@@ -533,6 +525,8 @@
   display: flex;
   align-items: center;
   gap: var(--s2);
+  /* As wide as the note's text column (66ch at the note's 14px), so the menu ends where the text does. */
+  max-width: calc(66ch * 14 / 13);
   min-height: 24px;
   margin: 0;
   font-size: 13px;

@@ -37,6 +37,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   unplaced?: string[];
   /** The highest step id given out, so the id of a step gone is never given again. */
   lastStep?: number;
+  /** The ids of the steps the session is still checking, in reading order; why is the session's own. */
+  checking?: string[];
   checklist?: Checklist;
   /** The highest checklist item id given out, never given again. */
   lastChecklistItem?: number;
@@ -124,12 +126,25 @@ function setSteps(walkthrough: Walkthrough, steps: Step[]) {
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps.map(step => Number(step.id)));
   const kept = new Set(steps.map(step => itemKey({ type: 'step', id: step.id })));
   walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:') || kept.has(key));
+  if (walkthrough.checking) walkthrough.checking = steps.map(step => step.id).filter(id => walkthrough.checking?.includes(id));
 }
 
 export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Promise<Step[]>): Promise<Walkthrough> {
   return update(dir, async walkthrough => {
     setSteps(walkthrough, await build(walkthrough));
     return walkthrough;
+  });
+}
+
+/** Replaces the steps the session is still checking; an id that names no step records nothing. */
+export function recordChecking(dir: string, ids: string[]): Promise<string[]> {
+  return update(dir, walkthrough => {
+    const known = walkthrough.steps.map(step => step.id);
+    const unknown = [...new Set(ids.filter(id => !known.includes(id)))];
+    if (unknown.length)
+      throw new Error(`the walkthrough has no ${unknown.length === 1 ? 'step' : 'steps'} ${unknown.join(', ')}; nothing was recorded`);
+    walkthrough.checking = known.filter(id => ids.includes(id));
+    return walkthrough.checking;
   });
 }
 

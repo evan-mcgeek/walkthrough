@@ -147,16 +147,19 @@ function waitsForVerdict(walkthrough: Walkthrough, conversation: Entry[], item: 
 type Decided = { walkthrough: WalkthroughView | null; session: SessionView };
 /** The item changed after the page showed it, so a decision sent on it would bind what the person never saw. */
 export const CHANGED = 'changed';
+/** The session is still checking the step, so its findings may not all be on the page yet. */
+export const CHECKING = 'checking';
 
 export async function decide(
   dir: string,
   { item, action, note, text, clear, on }: Record<string, unknown>,
-): Promise<Decided | typeof CHANGED | null> {
+): Promise<Decided | typeof CHANGED | typeof CHECKING | null> {
   const walkthrough = readWalkthrough(dir);
   const conversation = conversationOf(dir);
   const found = walkthrough && itemsOf(walkthrough, conversation).find(one => one.key === keyOf(item));
   if (!found) return null;
   if (on !== undefined && on !== found.on) return CHANGED;
+  if (found.item.type === 'step' && walkthrough.checking?.includes(found.item.id)) return CHECKING;
   if (clear !== undefined) {
     const decided = decisionsOf(walkthrough, conversation).find(one => one.key === found.key)?.decision;
     if (clear !== true || !decided || action !== undefined || note !== undefined || text !== undefined) return null;

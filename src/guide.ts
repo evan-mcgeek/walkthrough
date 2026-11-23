@@ -96,6 +96,14 @@ walkthrough steps --file <file>
   Example:
 ${JSON.stringify(example, null, 2)}
 
+walkthrough checking [<step id>...]
+  Records the steps you are still checking, such as with the review policy's reviewers, replacing those recorded before; with no ids, none.
+  It prints the set, such as "Checking 3 steps: 4, 5, 6." or "Checking no steps."; an id that names no step is refused, and nothing is recorded.
+  Recording the steps again keeps the ids that still name a step and drops the rest.
+  Why a step is being checked is yours to say; the CLI only stores the ids.
+  While a step is being checked, the page says so on the step, lists it as being checked in what is left and on the Summary, and holds its actions:
+  the person can read it, ask about it and comment on its lines, but cannot decide it, and a decision sent on it is refused, until you record the set again without it.
+
 walkthrough note --file <file>
   Pins notes to the page, after those pinned before, and prints each note's id.
   The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
@@ -106,6 +114,8 @@ walkthrough note --file <file>
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   "finding": true flags the note as a finding, whatever its label; it may be left out.
   The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
+  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding since you decided"; the step's decision stays as it was.
+  When a finding lands on a step the person has read or decided, the open page also raises a banner naming it.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
