@@ -174,7 +174,7 @@ describe('walkthrough actions', () => {
       expect(answer.status).toBe(1);
       expect(answer.stderr).toContain(problem);
     }
-    expect(repo.record({}, 'actions').stderr).toContain('the actions must be a JSON array on standard input');
+    expect(repo.record({}, 'actions').stderr).toContain('the actions must be a JSON array');
     expect((await shownAt(repo.url())).actions['step:1']?.[0]?.id).toBe('approve');
   });
 

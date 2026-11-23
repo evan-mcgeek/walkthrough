@@ -59,7 +59,7 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
   Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
 
 Recording from files
-  steps, checklist, note, actions, say and policy save read what they record from the file --file names, or from standard input without it.
+  steps, checklist, note, actions and policy save read what they record from the file --file names, or from standard input without it; say takes its text on the command line or from --file.
   Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
   The command removes a file from the inbox once it has read it, so each recording is a new file there.
   Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.

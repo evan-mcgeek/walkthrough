@@ -82,7 +82,7 @@ describe('walkthrough note', () => {
       'note 2: lines 4-9 of cart.ts are not in the diff of step 1',
     );
     expect(refused({ low: 'yes' }).stderr).toContain('note 2: low must be true or false');
-    expect(note({}).stderr).toContain('the notes must be a JSON array on standard input');
+    expect(note({}).stderr).toContain('the notes must be a JSON array');
     expect(refused({ step: 'nope' }).status).toBe(1);
     expect((await sessionAt(repo.url())).conversation).toEqual([]);
   });

@@ -22,7 +22,7 @@ function parsed(text: string): unknown {
   }
 }
 
-const wrongShape = (what: string, shape: string) => new Error(`${what} must be a JSON ${shape} on standard input; see walkthrough guide`);
+const wrongShape = (what: string, shape: string) => new Error(`${what} must be a JSON ${shape}; see walkthrough guide`);
 
 export function parseList<T>(text: string, what: string, check: (fields: Record<string, unknown>, number: number) => T): T[] {
   const list = parsed(text);

@@ -251,3 +251,16 @@ async function until(what: string, done: () => Promise<boolean>, ms = 5000) {
     if (await done()) return;
   throw new Error(`${what} did not happen within ${String(ms / 1000)}s`);
 }
+
+describe('an unknown command', () => {
+  test('prints a usage that records from files, as the plugin lets run without asking', () => {
+    repo = makeRepo();
+
+    const usage = repo.run('notes');
+
+    expect(usage.status).toBe(1);
+    expect(usage.stderr).not.toMatch(/ < \S+\.json/);
+    for (const command of ['steps', 'checklist', 'note', 'actions']) expect(usage.stderr).toContain(`${command} --file <file>`);
+    expect(usage.stderr).toContain('(<text> | --file <file>)');
+  });
+});

@@ -125,8 +125,8 @@ describe('walkthrough checklist', () => {
     repo.run('start');
 
     for (const [input, problem] of [
-      ['not json', 'the checklist must be a JSON object on standard input; see walkthrough guide'],
-      [[], 'the checklist must be a JSON object on standard input; see walkthrough guide'],
+      ['not json', 'the checklist must be a JSON object; see walkthrough guide'],
+      [[], 'the checklist must be a JSON object; see walkthrough guide'],
       [{ title: ' ', items: [] }, 'the checklist needs a title'],
       [{ title: 'T', items: {} }, 'the checklist: items must be a list'],
       [{ title: 'T', items: [{ text: 'A.' }] }, 'item 1 needs a status'],

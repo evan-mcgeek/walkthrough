@@ -263,9 +263,9 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
-        '    | actions < actions.json | decisions\n' +
-        '    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
+        '  commands: start | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n' +
+        '    | actions --file <file> | decisions | listen\n' +
+        '    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n' +
         '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
         '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',
     );
