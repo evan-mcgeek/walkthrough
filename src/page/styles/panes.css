@@ -25,6 +25,7 @@
 }
 
 .panes {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -139,6 +140,13 @@
   color: var(--muted);
 }
 
+/* A decided row on its way out of the rail, collapsing to nothing. */
+.queue-item.leaving {
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .queue-foot {
   display: flex;
   flex-direction: column;
@@ -185,12 +193,27 @@
 /* ---------- main pane ---------- */
 
 .main {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
   padding: var(--s5) var(--s6) 0;
   overflow-y: auto;
+}
+
+/* The pane that was, over the new one while it leaves, scrolled as the person left it. */
+.pane-leaving {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  background: var(--canvas);
+  pointer-events: none;
+}
+
+.pane-leaving > .main {
+  overflow: hidden;
 }
 
 /* What the main pane shows fills it, so the action bar sits at its foot when the step is short. */
@@ -292,19 +315,36 @@
   color: var(--ink-secondary);
 }
 
+/* Opens by its grid row, so the list can grow from nothing to its own height. */
+.assumed-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  margin-top: var(--s1);
+}
+
+.assumed-wrap[hidden] {
+  display: none;
+}
+
 .assumed {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin: var(--s1) 0 0 20px;
+  min-height: 0;
+  margin: 0 0 0 20px;
   padding-left: var(--s4);
+  overflow: hidden;
   color: var(--ink-secondary);
   font: var(--text-body-ui);
   list-style: disc;
 }
 
-.assumed[hidden] {
-  display: none;
+:is(.disclosure, .fold-summary) > .icon-chevron-right {
+  flex: none;
+}
+
+:is(.disclosure, .fold-summary)[aria-expanded='true'] > .icon-chevron-right {
+  transform: rotate(90deg);
 }
 
 /* ---------- folded step ---------- */
@@ -701,8 +741,70 @@
   border-top: 1px solid var(--rule-soft);
 }
 
+/* ---------- undo toast ---------- */
+
+/* A strip at the main pane's foot, in every layout. */
+.toast-anchor {
+  position: relative;
+  z-index: 4;
+  flex: none;
+  height: 0;
+}
+
+/* Just above the main pane's docked action bar (16px + 34px + 24px and its rule). */
+.toast-region {
+  position: absolute;
+  right: var(--s6);
+  bottom: calc(75px + var(--s3));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 440px;
+  box-sizing: border-box;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-xl);
+  background: var(--ink);
+  color: var(--canvas);
+  font: 400 14px/1.4 var(--font-ui);
+  pointer-events: auto;
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-undo {
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Until the phone layout: the rail stacks above the step and the page scrolls as one. */
 @media (max-width: 760px) {
+  .toast-region {
+    position: fixed;
+    right: var(--s4);
+    bottom: var(--s4);
+    left: var(--s4);
+  }
+
+  .toast {
+    max-width: none;
+  }
+
   .walkthrough {
     height: auto;
   }

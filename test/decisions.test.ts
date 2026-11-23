@@ -223,9 +223,56 @@ describe('decisions', () => {
     await decide({ item: step1, action: 'flag', note: 'On second thought, no.' });
 
     const taken = (await sessionAt(repo.url())).conversation.filter(entry => entry.from === 'page');
-    expect(taken.map(entry => entry.kind === 'decision' && entry.action)).toEqual(['approve', 'flag']);
+    expect(taken.map(entry => entry.kind === 'decision' && 'action' in entry && entry.action)).toEqual(['approve', 'flag']);
     expect((await shownAt(repo.url())).decided['step:1']).toMatchObject({ action: 'flag', note: 'On second thought, no.' });
     expect(decisionsNow()[0]?.decision).toMatchObject({ action: 'flag', note: 'On second thought, no.' });
+  });
+
+  test('clearing a decision makes the item undecided everywhere, reaches listen as a clear, and the log keeps both', async () => {
+    started();
+    await decide({ item: step1, action: 'flag', note: 'Too broad.' });
+    await repo.background('listen').ended;
+    const listener = repo.background('listen');
+
+    expect((await decide({ item: step1, clear: true })).status).toBe(200);
+
+    expect(handed((await listener.ended).stdout)).toEqual([
+      {
+        kind: 'decision',
+        id: expect.stringMatching(/^[0-9a-f]{8}$/) as unknown,
+        from: 'page',
+        at: expect.any(String) as unknown,
+        item: step1,
+        clear: true,
+      },
+    ]);
+    const view = await shownAt(repo.url());
+    expect(view.decided['step:1']).toBeNull();
+    expect(view.reopened['step:1']).toBeUndefined();
+    expect(decisionsNow()[0]).toEqual({ item: step1, decision: null });
+    const taken = (await sessionAt(repo.url())).conversation.filter(entry => entry.from === 'page');
+    expect(taken).toMatchObject([{ action: 'flag' }, { clear: true }]);
+    repo.run('stop');
+    repo.run('start');
+    expect((await shownAt(repo.url())).decided['step:1']).toBeNull();
+    expect(repo.run('guide').stdout).toContain('{"kind": "decision", "id": string, "item": item, "clear": true}');
+  });
+
+  test('clearing is refused when the item has no decision, or the clear carries an action, note or text', async () => {
+    started();
+    expect((await decide({ item: step1, clear: true })).status).toBe(400);
+    await decide({ item: step1, action: 'approve' });
+
+    for (const body of [
+      { item: step1, clear: true, action: 'approve' },
+      { item: step1, clear: true, note: 'Why.' },
+      { item: step1, clear: true, text: 'New.' },
+      { item: step1, clear: 'yes' },
+      { item: { type: 'step', id: 'nope' }, clear: true },
+    ])
+      expect((await decide(body)).status, JSON.stringify(body)).toBe(400);
+    expect((await decide({ item: step1, clear: true })).status).toBe(200);
+    expect((await decide({ item: step1, clear: true })).status).toBe(400);
   });
 
   test('a decision is refused when its item, action, note or text does not fit', async () => {

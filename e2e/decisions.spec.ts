@@ -73,6 +73,19 @@ test('a decision answered after the person opened another step leaves them on th
   await expect(step).toBeVisible();
 });
 
+test('a press on an action survives the page redrawing before the release', async ({ page, repo }) => {
+  const approve = page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' });
+  await approve.hover();
+  await page.mouse.down();
+  repo.run('say', 'Reading along.');
+  await page.waitForTimeout(2000);
+
+  await page.mouse.up();
+
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuenow', '1');
+  await expect(page.getByRole('link', { name: /From the session/ })).toBeVisible();
+});
+
 test('a decision can be changed,and the latest one shows with the session answer to it', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
   await step.getByRole('button', { name: 'Approve' }).click();

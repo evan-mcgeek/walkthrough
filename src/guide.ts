@@ -129,6 +129,7 @@ walkthrough decisions
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
   A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
   A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+  A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
 
 walkthrough listen
   Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
@@ -137,8 +138,10 @@ walkthrough listen
     {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
+    {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
+  Act on a clear as the review policy says, and answer it with say --answer like any decision.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
 walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)

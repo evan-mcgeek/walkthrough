@@ -119,6 +119,24 @@ const withChecklist = async (page: Page, repo: Repo) => {
   await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'The app shows its version.' })).toBeVisible();
 };
 
+for (const [layout, beside] of [['Three columns', 'the side pane'], ['Tool panel', 'the tool panel']] as const)
+  test(`in ${layout} the Undo toast sits over the main pane, clear of ${beside}`, async ({ page, repo }) => {
+    await withChecklist(page, repo);
+    await choose(page, layout);
+
+    await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
+
+    const toast = page.getByRole('status').filter({ hasText: 'Decided step 1: Approve' });
+    await expect(toast).toBeVisible();
+    const shown = await toast.boundingBox();
+    const pane = await page.getByRole('main').boundingBox();
+    if (!shown || !pane) throw new Error('The toast or the main pane has no box.');
+    expect(shown.x).toBeGreaterThanOrEqual(pane.x);
+    expect(shown.x + shown.width).toBeLessThanOrEqual(pane.x + pane.width);
+    expect(shown.y).toBeGreaterThanOrEqual(pane.y);
+    expect(shown.y + shown.height).toBeLessThanOrEqual(pane.y + pane.height);
+  });
+
 test('Three columns keeps the rail and puts the checklist in a side pane beside the step', async ({ page, repo }) => {
   await withChecklist(page, repo);
   await choose(page, 'Three columns');
@@ -232,6 +250,9 @@ test.describe('with a long file', () => {
     await page.getByRole('navigation', { name: 'Steps' }).getByRole('button', { name: 'Next step' }).click();
 
     await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
-    expect(await page.locator('.code').evaluate(scroller => scroller.scrollTop)).toBe(0);
+    expect(await page.getByRole('region', { name: 'App version' }).locator('.code').evaluate(scroller => scroller.scrollTop)).toBe(0);
+    // The step that left was shown in panes of its own, which go once it has left.
+    await expect(page.locator('.code')).toHaveCount(1);
+    await expect(page.locator('.prose')).toHaveCount(1);
   });
 });

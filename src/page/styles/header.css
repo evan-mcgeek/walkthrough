@@ -45,11 +45,17 @@
 }
 
 .segment {
+  position: relative;
   flex: 1;
+  overflow: hidden;
 }
 
-.segment[data-state='decided'] {
+/* The fill is its own element, so deciding can draw it in from the left. */
+.segment-fill {
+  position: absolute;
+  inset: 0;
   background: var(--indigo);
+  transform-origin: left;
 }
 
 .segment[data-state='current'],

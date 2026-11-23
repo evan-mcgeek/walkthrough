@@ -10,10 +10,13 @@ import { readWalkthrough } from './walkthrough';
 
 /** `on` fingerprints the item as it was decided. */
 export type Taken = { kind: 'decision'; item: Item; action: string; note?: string; text?: string; on: string };
+/** The person took their decision back: the item is undecided again. */
+export type Cleared = { kind: 'decision'; item: Item; clear: true; note?: never; text?: never; on: string };
 export type PageRequest = { id: string; from: 'page'; at: string } & (
   | ({ kind: 'ask'; text: string } & Place)
   | { kind: 'reply'; to: string; text: string }
   | Taken
+  | Cleared
 );
 export type SessionMessage = {
   id: string;
