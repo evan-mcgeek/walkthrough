@@ -4,7 +4,19 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { alive } from '../src/processes';
 import { shareHistory } from './helpers';
+
+function serverRecords(sandbox: string): string[] {
+  try {
+    return fs
+      .readdirSync(sandbox, { recursive: true, encoding: 'utf8' })
+      .filter(found => path.basename(found) === 'server.json')
+      .map(found => path.join(sandbox, found));
+  } catch {
+    return [];
+  }
+}
 
 if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
   // Tests run the built plugin, so even a run of one file tests the source as it is now.
@@ -29,6 +41,14 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
     WALKTHROUGH_STATE: path.join(sandbox, 'state'),
   });
   process.on('exit', () => {
+    // A test that failed before its teardown leaves its page server up for the idle timeout.
+    for (const found of serverRecords(sandbox))
+      try {
+        const record = JSON.parse(fs.readFileSync(found, 'utf8')) as { pid: number; started: string };
+        if (alive(record)) process.kill(record.pid, 'SIGTERM');
+      } catch {
+        // A record gone or half written has no server to stop.
+      }
     try {
       // macOS gives the Documents, Downloads and Library folders it creates in a home an "everyone deny delete" ACL.
       if (process.platform === 'darwin') spawnSync('chmod', ['-R', '-N', home]);
