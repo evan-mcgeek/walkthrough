@@ -12,7 +12,10 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(page).toHaveURL(url);
   repo.record(ONE_STEP);
   await page.getByRole('button', { name: 'Approve' }).click();
-  await expect(page.getByText('1 of 1 step decided, 0 left, 1 read')).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute(
+    'aria-valuetext',
+    '1 of 1 step decided, 0 left, 1 read',
+  );
   // Away from the page first, whose polls would fail once its server stops.
   await page.goto('about:blank');
   repo.run('stop');

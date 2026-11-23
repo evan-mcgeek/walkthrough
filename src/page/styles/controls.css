@@ -1,0 +1,408 @@
+/*
+  Base elements and controls (docs/design/DESIGN.md, Components).
+  Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button.
+  Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
+  Pills: .tag, .tag.decided, .tag.reopened, .counter, .file-chip.
+  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box.
+*/
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--text-body-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mono only for what is literally code, a path or an identifier. */
+code,
+pre,
+kbd,
+samp,
+.mono {
+  font-family: var(--font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--line-pick-gutter);
+  color: var(--ink);
+}
+
+.icon {
+  display: block;
+  flex: none;
+}
+
+.icon .knockout {
+  stroke: var(--icon-knockout);
+}
+
+.icon-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 34px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 13.5px/1.2 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--fast) linear,
+    border-color var(--fast) linear,
+    transform var(--fast) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--surface-tint);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* A pressed choice is a recorded decision, so it stays grey (The Grey Verdict Rule). */
+.btn[aria-pressed='true'] {
+  background: var(--surface-tint);
+  font-weight: 600;
+}
+
+.btn.primary {
+  border-color: var(--indigo);
+  background: var(--indigo);
+  color: var(--on-indigo);
+  font-weight: 600;
+}
+
+.btn.primary:hover,
+.btn.primary:active {
+  border-color: var(--indigo-hover);
+  background: var(--indigo-hover);
+}
+
+.btn.ghost {
+  border-color: transparent;
+  background: none;
+  color: var(--ink-secondary);
+}
+
+.btn.ghost:hover {
+  background: var(--surface-tint);
+}
+
+/* Offered by the session, not built in. */
+.btn.offer {
+  padding: 0 var(--s3);
+  border-style: dashed;
+  color: var(--ink-secondary);
+}
+
+.btn.offer .icon {
+  color: var(--muted);
+}
+
+.btn.small {
+  min-height: 28px;
+  padding: 0 var(--s3);
+  font-size: 13px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  background: var(--surface);
+}
+
+.btn.ghost:disabled:hover {
+  background: none;
+}
+
+.btn.primary:disabled:hover {
+  border-color: var(--indigo);
+  background: var(--indigo);
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  padding: var(--s1);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.icon-button:hover {
+  background: var(--surface-tint);
+}
+
+.icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- joined switches ---------- */
+
+.segmented {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.segmented button {
+  padding: var(--s1) var(--s3);
+  border: 0;
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font: 500 12.5px/1.4 var(--font-ui);
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--control-edge);
+}
+
+.segmented button:hover {
+  background: var(--surface-tint);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--indigo-wash);
+  color: var(--indigo-text);
+  font-weight: 600;
+}
+
+/* The switch clips its buttons, so their focus ring sits inside. */
+.segmented button:focus-visible {
+  outline-offset: -2px;
+}
+
+.segmented.icons button {
+  display: grid;
+  place-items: center;
+  padding: var(--s1) var(--s2);
+  color: var(--muted);
+}
+
+.segmented.icons button[aria-pressed='true'] {
+  color: var(--indigo-text);
+}
+
+/* ---------- fields ---------- */
+
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  min-height: 34px;
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--text-body-ui);
+  caret-color: var(--indigo);
+  transition:
+    border-color var(--fast) linear,
+    box-shadow var(--fast) linear;
+}
+
+input {
+  padding: 0 11px;
+}
+
+textarea {
+  padding: 9px 11px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--indigo);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--indigo-wash);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.select {
+  position: relative;
+  display: flex;
+}
+
+.select select {
+  flex: 1;
+  padding: 0 30px 0 var(--s2);
+  appearance: none;
+}
+
+.select .icon {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  margin-top: -8px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ---------- pills ---------- */
+
+.tag,
+.counter {
+  display: inline-block;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
+  font: 600 12px/1.5 var(--font-ui);
+  white-space: nowrap;
+}
+
+.tag {
+  border: 1px solid var(--control-edge);
+  color: var(--muted);
+}
+
+.tag.decided {
+  border-color: transparent;
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+}
+
+.tag.reopened {
+  border-color: currentColor;
+  color: var(--amber);
+}
+
+.counter {
+  background: var(--surface-tint);
+  color: var(--muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.file-chip {
+  display: inline-block;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--surface-tint);
+  font: 500 12px/1.5 var(--font-mono);
+}
+
+/* ---------- boxes ---------- */
+
+.notice,
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  font: var(--text-body-ui);
+}
+
+.notice > .icon,
+.banner > .icon {
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+/* Full width under the header. */
+.banner {
+  align-items: center;
+  padding: var(--s3) var(--s4);
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+
+.notice.attention,
+.banner.attention {
+  border-color: transparent;
+  background: var(--amber-wash);
+}
+
+.notice.attention > .icon,
+.banner.attention > .icon {
+  color: var(--amber);
+}
+
+.question-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--amber);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+}
+
+.question-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  color: var(--amber);
+  font: var(--text-label);
+}
+
+.detached-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px dashed var(--control-edge);
+  border-radius: var(--r-xl);
+}
+
+/* Reduced motion keeps opacity and colour only. */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active {
+    transform: none;
+  }
+
+  .icon-spinner {
+    animation: none;
+  }
+}
