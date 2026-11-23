@@ -1,4 +1,5 @@
 import { tooLong } from '../words';
+import { icon } from './icons';
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -8,6 +9,11 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   const node = Object.assign(document.createElement(tag), props);
   node.append(...children);
   return node;
+}
+
+/** A native select with the drawn chevron in place of the browser's arrow. */
+export function selectBox(select: HTMLSelectElement): HTMLElement {
+  return el('div', { className: 'select' }, select, icon('chevron-down'));
 }
 
 export function region(id: string): HTMLElement {
@@ -20,7 +26,7 @@ const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {
   const box = region('alert');
-  box.textContent = message;
+  box.replaceChildren(...(message === null ? [] : [icon('warn'), message]));
   box.hidden = message === null;
 }
 

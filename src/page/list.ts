@@ -16,7 +16,7 @@ async function open(one: Listed): Promise<void> {
 async function stop(): Promise<void> {
   if (!(await post('stop', {}))) return;
   clearInterval(poller);
-  header.replaceChildren(el('h1', {}, 'Walkthroughs'));
+  header.replaceChildren(el('h1', { className: 'logo' }, 'Walkthroughs'));
   main.replaceChildren(el('p', { className: 'notice' }, 'The list has stopped. You can close this tab.'));
 }
 
@@ -26,7 +26,7 @@ function row(one: Listed): HTMLTableRowElement {
   return el(
     'tr',
     {},
-    el('td', {}, el('button', { type: 'button', className: 'quiet', onclick: () => void open(one) }, one.name)),
+    el('td', {}, el('button', { type: 'button', className: 'btn ghost', onclick: () => void open(one) }, one.name)),
     // What walkthrough prune takes to remove this one.
     el('td', {}, el('code', {}, one.id)),
     el('td', {}, one.steps ? progress : 'Preparing'),
@@ -39,8 +39,8 @@ let shown = '';
 function render(list: Listed[]): void {
   shown = JSON.stringify(list);
   header.replaceChildren(
-    el('div', { className: 'title' }, el('h1', {}, 'Walkthroughs')),
-    el('div', { className: 'actions' }, el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop')),
+    el('h1', { className: 'logo' }, 'Walkthroughs'),
+    el('div', { className: 'header-end' }, el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')),
   );
   if (!list.length) {
     main.replaceChildren(el('p', { className: 'notice' }, 'This repo has no walkthroughs; run /walkthrough to start one.'));

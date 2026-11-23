@@ -21,7 +21,7 @@ export function exportPage(dir: string): string {
   const state = { walkthrough: walkthroughView(dir), session: sessionView(dir) };
   // The state is data and never runs, so a `<` in it cannot end its element.
   const data = JSON.stringify(state).replaceAll('<', '\\u003c');
-  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; base-uri 'none'; form-action 'none'`;
+  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read('index.html');
   html = inline(
     html,
