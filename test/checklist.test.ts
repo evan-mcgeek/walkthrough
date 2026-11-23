@@ -171,7 +171,7 @@ describe('walkthrough checklist', () => {
   test('walkthrough guide gives its shape, and its example records as it is', () => {
     repo = makeRepo();
     const guide = repo.run('guide').stdout;
-    expect(guide).toContain('walkthrough checklist < checklist.json');
+    expect(guide).toContain('walkthrough checklist --file <file>');
     expect(guide).toContain('{"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}');
     const example = /Example checklist:\n(\{[\s\S]*?\n\})\n/.exec(guide)?.[1] ?? '';
     repo.run('start');

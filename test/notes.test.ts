@@ -121,7 +121,7 @@ describe('walkthrough guide', () => {
     const { stdout } = repo.run('guide');
 
     for (const shape of [
-      'walkthrough note < notes.json',
+      'walkthrough note --file <file>',
       '{"step": string, "label": string, "text": string, "low": boolean}',
       '{"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}',
       '{"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}',

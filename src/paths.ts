@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -15,3 +16,25 @@ export const stateDir = () =>
     process.env['WALKTHROUGH_STATE'] ||
       path.join(process.env['XDG_STATE_HOME'] || path.join(os.homedir(), '.local', 'state'), 'walkthrough'),
   );
+
+// The session writes what it records to files in an inbox, which the plugin's hook lets it write without a prompt.
+const INBOX = 'inbox';
+
+export function makeInbox(dir: string): string {
+  const inbox = path.join(dir, INBOX);
+  fs.mkdirSync(inbox, { recursive: true, mode: 0o700 });
+  return inbox;
+}
+
+// A file directly in a folder named inbox under the state, not a link out of it.
+export function inInbox(file: string): boolean {
+  const parent = path.dirname(path.resolve(file));
+  if (path.basename(parent) !== INBOX) return false;
+  try {
+    if (!fs.realpathSync(parent).startsWith(fs.realpathSync(stateDir()) + path.sep)) return false;
+    const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+    return !stat || stat.isFile();
+  } catch {
+    return false;
+  }
+}

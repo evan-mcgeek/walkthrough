@@ -181,7 +181,7 @@ describe('walkthrough actions', () => {
   test('walkthrough guide gives its shape, and its example records as it is', () => {
     const noteId = started();
     const guide = repo.run('guide').stdout;
-    expect(guide).toContain('walkthrough actions < actions.json');
+    expect(guide).toContain('walkthrough actions --file <file>');
     const example = /Example actions, for a note with the id 5f0c2a9e:\n(\[[\s\S]*?\n\])\n/.exec(guide)?.[1] ?? '';
 
     const recorded = repo.record(example.replace('5f0c2a9e', noteId), 'actions');

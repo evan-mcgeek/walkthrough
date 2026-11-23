@@ -1,4 +1,15 @@
-// What the session sends as JSON on standard input; this checks shape only, each command its own fields.
+// What the session sends as JSON on standard input or in a file; this checks shape only, each command its own fields.
+import fs from 'node:fs';
+import { inInbox } from './paths';
+
+// A file in an inbox is used up, so the session's next write there is a new file.
+export function readInput(file: string | undefined): string {
+  if (file === undefined) return fs.readFileSync(0, 'utf8');
+  const text = fs.readFileSync(file, 'utf8');
+  if (inInbox(file)) fs.rmSync(file);
+  return text;
+}
+
 export const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
 
 export const fieldsOf = (value: unknown) => (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
