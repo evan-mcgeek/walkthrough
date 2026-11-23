@@ -12,9 +12,11 @@ import { type Decision, decisionsOf, parseActions, walkthroughView } from './dec
 import { exportPage } from './export';
 import { listView } from './list';
 import { GUIDE } from './guide';
+import { policyCommand } from './policy';
 import { plural } from './words';
 import { nameOf } from './items';
-import { stateDir } from './paths';
+import { makeInbox, stateDir } from './paths';
+import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import {
   openWalkthrough,
@@ -64,6 +66,7 @@ async function start(args: string[]): Promise<void> {
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = await openWalkthrough(dir, source, change, moved => carrySteps(cwd, moved));
   await starting(dir);
+  const inbox = makeInbox(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${change.target}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
@@ -82,6 +85,7 @@ async function start(args: string[]): Promise<void> {
     console.log(
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,
     );
+  console.log(`Write what you record to files in ${inbox} and pass each with --file.`);
   openPage(await ensureServer(dir), 'The page', dir);
 }
 
@@ -114,9 +118,11 @@ async function files(args: string[]): Promise<void> {
   for (const { path } of await changedFiles(process.cwd(), base, head)) console.log(path);
 }
 
+const FILE_OPTION = { options: { file: { type: 'string' } } } as const;
+
 async function steps(args: string[]): Promise<void> {
-  const { cwd, dir } = located(args);
-  const inputs = parseSteps(fs.readFileSync(0, 'utf8'));
+  const { cwd, dir, values } = located(args, FILE_OPTION);
+  const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   const folded = recorded.filter(step => step.kind === 'folded').length;
   const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
@@ -124,22 +130,23 @@ async function steps(args: string[]): Promise<void> {
 }
 
 async function notes(args: string[]): Promise<void> {
-  const { dir, walkthrough } = current(args);
-  const noted = await note(dir, parseNotes(fs.readFileSync(0, 'utf8'), walkthrough));
+  const { dir, walkthrough, values } = current(args, FILE_OPTION);
+  const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
   const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
   console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
 }
 
 async function checklist(args: string[]): Promise<void> {
-  const text = fs.readFileSync(0, 'utf8');
-  const { title, items } = await recordChecklist(located(args).dir, walkthrough => parseChecklist(text, walkthrough));
+  const { dir, values } = located(args, FILE_OPTION);
+  const text = readInput(values.file);
+  const { title, items } = await recordChecklist(dir, walkthrough => parseChecklist(text, walkthrough));
   const ids = items.map(item => item.id).join(', ');
   console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}${items.length ? `: ${ids}` : ''}.`);
 }
 
 async function actions(args: string[]): Promise<void> {
-  const text = fs.readFileSync(0, 'utf8');
-  const { dir } = located(args);
+  const { dir, values } = located(args, FILE_OPTION);
+  const text = readInput(values.file);
   const recorded = await recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
   console.log(`Recorded the actions of ${plural(recorded.length, 'item')}.`);
 }
@@ -192,12 +199,16 @@ async function sayCommand(args: string[]): Promise<void> {
       as: { type: 'string' },
       question: { type: 'boolean' },
       choice: { type: 'string', multiple: true },
+      file: { type: 'string' },
     },
     allowPositionals: true,
   });
-  const text = positionals.join(' ').trim();
+  if (values.file !== undefined && positionals.length > 0) throw new Error('say takes its text or a --file, not both');
+  const text = (values.file === undefined ? positionals.join(' ') : readInput(values.file)).trim();
   if (!text)
-    throw new Error('usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] <text>');
+    throw new Error(
+      'usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)',
+    );
   const said = await say(dir, text, { ...values, label: values.as });
   console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : 'Said on the page.');
 }
@@ -216,6 +227,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     process.stdout.write(GUIDE);
   },
   listen: listenCommand,
+  policy: policyCommand,
   say: sayCommand,
   stop: async args => {
     if (args.includes('--list')) {
@@ -254,8 +266,8 @@ try {
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
         '    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
-        '    | export [--out <file>] | list | stop --list\n' +
-        '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
+        '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
+        '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);
 } catch (error) {

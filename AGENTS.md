@@ -6,6 +6,7 @@ The CLI and the page know only git, their own state and the page (ADR 0005).
 Never put a rule about a language, package manager, file name pattern, tracker, code host, reviewer or workflow into the code.
 Judgement about code belongs to the session, guided by the review policy and the project's instructions; the CLI only checks structure (for example that every changed file is in exactly one step) and stores what the session records.
 If a feature seems to need such a rule, it belongs in the skill or the review policy template instead.
+The review policy is the person's, not the tool's state: the CLI only compares it with the template and copies it, byte for byte, and never reads its rules.
 
 ## Agent skills
 
