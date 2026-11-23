@@ -11,12 +11,12 @@ Two skills over the same CLI, one for each kind of walkthrough.
 
 **Blocked by:** none
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `/walkthrough` and `/walkthrough:pr` each state their own procedure and share the listen loop and inbox rules.
-- [ ] Each skill reads only its own section of the policy and the shared rules.
-- [ ] `walkthrough start --kind <label>` stores the label; the page header and the list page show it; the hook still approves only plain `walkthrough` commands.
-- [ ] The shipped template-hash list in `src/policy.ts` has the new template.
+- [x] `/walkthrough` and `/walkthrough:pr` each state their own procedure and share the listen loop and inbox rules.
+- [x] Each skill reads only its own section of the policy and the shared rules.
+- [x] `walkthrough start --kind <label>` stores the label; the page header and the list page show it; the hook still approves only plain `walkthrough` commands.
+- [x] The shipped template-hash list in `src/policy.ts` has the new template.
 
 ## Skill naming, from Claude Code's docs
 
