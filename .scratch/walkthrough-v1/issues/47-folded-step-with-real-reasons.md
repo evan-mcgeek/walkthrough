@@ -10,7 +10,9 @@ Seen in a real walkthrough of this repo (eb1765a..bea7b81, step 17), dark theme,
 2. The session's problems show under the summary whether the step is open or not, since a problem wants the person (DESIGN.md: amber "wants you").
 3. Opened, each file is one row: its path, its reason as text (not a chip) beside or under it, and Show diff; long reasons wrap.
 4. A note's "…" menu sits at the end of the note's own text column, not at the far edge of the pane; check every note on a step, a line and a folded step.
-5. Check the folded step against the board (docs/design/screens.html, "Folded step") with real reasons of a sentence each, in light and dark, at 1280px and 390px, and in the export; update the board's description in DESIGN.md where the built page now differs.
+5. Collapsed and opened files in a step keep one rhythm: today an opened file (DESIGN.md in the Docs step) has a larger gap above its header than the collapsed rows around it (GLOSSARY.md, README.md, PRODUCT.md), so the list jumps when a file opens.
+   Every file header sits the same distance from the one before it, opened or not, as DESIGN.md's spacing says.
+6. Check the folded step against the board (docs/design/screens.html, "Folded step") with real reasons of a sentence each, in light and dark, at 1280px and 390px, and in the export; update the board's description in DESIGN.md where the built page now differs.
 
 **Blocked by:** none
 
@@ -20,6 +22,7 @@ Seen in a real walkthrough of this repo (eb1765a..bea7b81, step 17), dark theme,
 - [ ] Problems show while collapsed.
 - [ ] Opened: each file's reason reads as text, long ones wrap.
 - [ ] A note's menu sits at the end of its text column.
+- [ ] File headers keep the same spacing whether the file is opened or collapsed.
 - [ ] Checked in light, dark, 1280px, 390px and the export; DESIGN.md matches.
 
 ## Seams under test
