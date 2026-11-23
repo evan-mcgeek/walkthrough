@@ -792,6 +792,11 @@ function actionBar(step: Step): HTMLElement[] {
   return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
 }
 
+// The split step and its panes stay in the page across redraws, as the main pane does, so each keeps where it was scrolled.
+const prosePane = el('div', { className: 'prose' });
+const codePane = el('div', { className: 'code' });
+const splitStep = el('section', { className: 'step split' }, prosePane, codePane);
+
 /** In "Explanation beside code" the prose pane leads with the notices, then the step, its actions and the checklist; the files fill the code pane. */
 function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
@@ -804,15 +809,11 @@ function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
     ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
     ...actionBar(step),
   ];
-  const section =
-    layout === 'split'
-      ? el(
-          'section',
-          { className: 'step split' },
-          el('div', { className: 'prose' }, ...notices, navRow(view), ...parts, ...besideChecklist(view), ...sessionRow(view)),
-          el('div', { className: 'code' }, ...code),
-        )
-      : el('section', { className: 'step' }, ...parts);
+  let section = splitStep;
+  if (layout === 'split') {
+    prosePane.replaceChildren(...notices, navRow(view), ...parts, ...besideChecklist(view), ...sessionRow(view));
+    codePane.replaceChildren(...code);
+  } else section = el('section', { className: 'step' }, ...parts);
   section.setAttribute('aria-labelledby', title.id);
   return section;
 }
@@ -1241,22 +1242,23 @@ function render(): void {
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
   const view = currentView();
   document.body.dataset['layout'] = layout;
+  // Emptying a pane to redraw it scrolls it back to the top in WebKit, so each pane is put back where it was.
+  const panes = [queue, main, prosePane, codePane, side, tools];
+  const scrolled = panes.map(pane => pane.scrollTop);
   header.replaceChildren(...headerView());
   queue.replaceChildren(...queueView(view));
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice(), ...unplacedNotice(), ...detachedView()];
   const split = layout === 'split' && view.kind === 'step';
-  // The split panes are drawn anew each time, so a redraw puts them back where the person had scrolled.
-  const scrolled = [...main.querySelectorAll('.prose, .code')].map(pane => pane.scrollTop);
   main.classList.toggle('split', split);
-  main.replaceChildren(
-    ...(split ? [] : [...(layout === 'split' && view.kind !== 'preparing' ? [navRow(view)] : []), ...notices]),
-    viewBody(view, notices),
-  );
-  main.querySelectorAll('.prose, .code').forEach((pane, at) => {
+  const shown = [...(split ? [] : [...(layout === 'split' && view.kind !== 'preparing' ? [navRow(view)] : []), ...notices]), viewBody(view, notices)];
+  // Putting the split step back would lose where its panes were scrolled.
+  if (shown.length !== main.children.length || shown.some((part, at) => main.children[at] !== part)) main.replaceChildren(...shown);
+  side.replaceChildren(...(layout === 'three' ? besideChecklist(view) : []));
+  side.hidden = !side.hasChildNodes();
+  tools.replaceChildren(...(layout === 'panel' ? toolPanel(view) : []));
+  panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });
-  side.replaceChildren(...(layout === 'three' ? besideChecklist(view) : []));
-  tools.replaceChildren(...(layout === 'panel' ? toolPanel(view) : []));
   if (view.kind === 'step') void markRead(view.step);
   // A diff is kept across redraws, so a line number focused in it is still there to focus again; a redrawn control is found by its key.
   const kept = focused instanceof HTMLElement && !focused.isConnected && focused.dataset['key'] !== undefined
@@ -1298,7 +1300,8 @@ window.addEventListener('hashchange', () => {
   taking = null;
   render();
   main.scrollTo(0, 0);
-  for (const pane of main.querySelectorAll('.prose, .code')) pane.scrollTop = 0;
+  prosePane.scrollTop = 0;
+  codePane.scrollTop = 0;
   const view = currentView();
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });

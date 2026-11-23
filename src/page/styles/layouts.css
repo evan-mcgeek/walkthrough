@@ -24,7 +24,7 @@
 
 /* ---------- three columns ---------- */
 
-[data-layout='three'] .side:not(:empty) {
+[data-layout='three'] .side:not([hidden]) {
   display: block;
   flex: none;
   width: 288px;
@@ -237,7 +237,7 @@
     display: flex;
   }
 
-  [data-layout='three'] .side:not(:empty) {
+  [data-layout='three'] .side:not([hidden]) {
     width: auto;
     border-top: 1px solid var(--rule);
     border-left: 0;
