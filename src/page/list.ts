@@ -1,6 +1,7 @@
 import type { Listed } from '../list';
 import { plural } from '../words';
 import { el, type PageName, post as postTo, region, showUnreachable } from './dom';
+import { icon } from './icons';
 
 type ListPage = { repo: string; walkthroughs: Listed[] };
 
@@ -47,7 +48,8 @@ function progress(one: Listed): HTMLElement {
     'span',
     { className: 'list-bar' },
     ...one.segments.map(state => {
-      const segment = el('span', { className: 'segment' });
+      // A decided segment is filled as in the page's header, which draws its fill as a child.
+      const segment = el('span', { className: 'segment' }, ...(state === 'decided' ? [el('span', { className: 'segment-fill' })] : []));
       segment.dataset['state'] = state;
       return segment;
     }),
@@ -75,7 +77,7 @@ function render(page: ListPage): void {
   // A redraw keeps the walkthrough the keyboard was on.
   const focused = document.activeElement instanceof HTMLElement ? document.activeElement.dataset['key'] : undefined;
   header.replaceChildren(
-    el('span', { className: 'logo' }, 'Walkthrough'),
+    el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
     el('span', { className: 'session-label' }, page.repo),
     el('div', { className: 'header-end' }, el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')),
   );

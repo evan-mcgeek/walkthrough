@@ -27,11 +27,18 @@ test('the list shows every walkthrough of the repo with its progress and opens o
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Walkthroughs');
   await expect(page.getByRole('banner')).toContainText('shop');
+  await expect(page.getByRole('banner').locator('.logo svg.icon-mark')).toBeVisible();
+  const icon = await page.request.get(new URL((await page.locator('link[rel="icon"]').getAttribute('href')) ?? '', repo.url()).href);
+  expect(icon.headers()['content-type']).toBe('image/svg+xml');
   await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Last activity']);
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
   await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerange-Login%20change', 'Preparing', /now|ago/]);
   await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', /now|ago/]);
+  // A decided segment is filled in violet, as the mark is.
+  const violet = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);
+  const decided = rows.nth(2).locator('.segment[data-state="decided"]');
+  expect(await decided.evaluate(one => getComputedStyle(one.firstElementChild ?? one).backgroundColor)).toBe(violet);
   // The full time stays at hand behind the relative one.
   await expect(rows.nth(2).locator('time')).toHaveAttribute('datetime', /^\d{4}-\d\d-\d\dT/);
 

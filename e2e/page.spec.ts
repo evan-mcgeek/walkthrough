@@ -13,6 +13,7 @@ test('shows the session preparing until it records steps, then the steps without
   const preparing = page.getByText('Preparing the steps');
   await expect(preparing).toBeVisible();
   await expect(page.getByText('They appear here as the session records them.')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Preparing' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: "What's left" })).toContainText('No steps yet');
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveCount(0);
   let loads = 0;

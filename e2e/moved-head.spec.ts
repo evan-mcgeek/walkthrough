@@ -41,7 +41,7 @@ test.beforeEach(async ({ page, repo, url }) => {
 
 test('a step whose diff changed shows reopened with the decision it had', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened']);
+  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened', 'From the session3 detached']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reopened');
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Reopened', { exact: true })).toBeVisible();
@@ -52,15 +52,20 @@ test('a step whose diff changed shows reopened with the decision it had', async 
   await expect(segments).toHaveAttribute('data-state', 'reopened');
 });
 
-test('notes whose step or lines are gone show detached, still open to a reply', async ({ page }) => {
+test('notes whose step or lines are gone show detached from the session, still open to a reply', async ({ page }) => {
   const detached = page.getByRole('region', { name: /^Detached/ });
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  await expect(detached).toHaveCount(0);
+  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
+  await expect(fromSession).toHaveText('From the session3 detached');
+  await fromSession.click();
   await expect(detached.getByRole('heading')).toHaveText('Detached3');
   await expect(detached.getByRole('article')).toHaveCount(2);
   await expect(detached.getByText('Checklist “Logs in.” linked to a step that no longer exists', { exact: true })).toBeVisible();
   const version = detached.getByRole('article', { name: 'Version note' });
-  await expect(version.getByText('Was on a step no longer in the change', { exact: true })).toBeVisible();
+  await expect(version.getByText('was on a step no longer in the change', { exact: true })).toBeVisible();
   const third = detached.getByRole('article', { name: 'Third line' });
-  await expect(third.getByText('Was on login.ts, line 3', { exact: true })).toBeVisible();
+  await expect(third.getByText('was on login.ts line 3', { exact: true })).toBeVisible();
   await expect(third.getByRole('button', { name: 'Reply' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Login check' }).getByText('Is three needed?')).toHaveCount(0);
 });
@@ -73,9 +78,12 @@ test('changed files in no step yet are named until the session records steps for
   const notice = page.getByRole('region', { name: 'Changed files not in any step yet' });
   const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
 
+  await expect(fromSession).toHaveText('From the session1 file not in a step, 3 detached');
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  await expect(notice).toHaveCount(0);
+  await fromSession.click();
   await expect(notice).toContainText('cart.ts');
   await expect(notice).not.toContainText('login.ts');
-  await expect(fromSession).toHaveText('From the session1 file not in a step');
 
   record(repo, [
     { title: 'Login check', explanation: 'Adds a login function.', files: ['login.ts'] },
@@ -83,7 +91,7 @@ test('changed files in no step yet are named until the session records steps for
   ]);
 
   await expect(notice).toHaveCount(0);
-  await expect(fromSession).toHaveCount(0);
+  await expect(fromSession).toHaveText('From the session3 detached');
 });
 
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {

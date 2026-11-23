@@ -125,7 +125,7 @@
 
 .queue-item[aria-current] > .icon,
 .queue-item[data-state='read'] > .icon {
-  color: var(--indigo);
+  color: var(--violet);
 }
 
 .queue-item[data-state='reopened'] > .icon {
@@ -193,12 +193,13 @@
 /* ---------- main pane ---------- */
 
 .main {
+  --pane-top: var(--s5);
   position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
-  padding: var(--s5) var(--s6) 0;
+  padding: var(--pane-top) var(--s6) 0;
   overflow-y: auto;
 }
 
@@ -230,10 +231,6 @@
 
 .main > .question-box {
   margin-bottom: var(--s4);
-}
-
-.main > .detached-box {
-  margin-bottom: var(--s5);
 }
 
 .title-row {
@@ -387,10 +384,15 @@
 .fold-files li {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s2) var(--s3);
   padding: var(--s3) 0;
   font: var(--text-body-ui);
+}
+
+/* Right-aligned on its own line too, when a long path wraps it. */
+.fold-files li > .btn {
+  margin-left: auto;
 }
 
 .fold-files li + li {
@@ -399,10 +401,34 @@
 
 .fold-path {
   font: var(--text-mono-label);
+  font-variant-ligatures: none;
+}
+
+.reason {
+  display: inline-block;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-tint);
+  color: var(--muted);
+  font: 400 12px/1.5 var(--font-ui);
+  white-space: nowrap;
+}
+
+.fold-reasons {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fold-reasons > .reason {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .fold-reason {
-  color: var(--muted);
+  min-width: 0;
+  white-space: normal;
 }
 
 .problems {
@@ -560,16 +586,41 @@
 
 .preparing-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--s3);
   margin-bottom: var(--s5);
 }
 
-.preparing-head > .icon {
-  width: 18px;
-  height: 18px;
-  margin-top: 3px;
-  color: var(--indigo);
+/* The mark is the loader: its walked strokes and its last stroke pulse in turn. */
+.preparing-head > .icon-mark {
+  width: 20px;
+  height: 20px;
+  color: var(--violet);
+}
+
+.preparing-head > .icon-mark path {
+  animation: walk 1.4s var(--ease-out) infinite;
+}
+
+.preparing-head > .icon-mark path + path {
+  animation-delay: 0.3s;
+}
+
+@keyframes walk {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preparing-head > .icon-mark path {
+    animation: none;
+  }
 }
 
 .preparing-head strong {
@@ -608,6 +659,15 @@
   font: var(--text-label);
 }
 
+.section-head > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.section-head > a:hover {
+  text-decoration: underline;
+}
+
 .checklist > ul {
   margin: 0;
   padding: 0;
@@ -644,19 +704,26 @@
   font-size: 12px;
 }
 
+/* The opened item's status reads as prose. */
+.checklist li.current .item-status {
+  margin-top: var(--s1);
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
 .step-link {
   height: fit-content;
   padding: 0 var(--s1);
-  border: 1px solid var(--indigo-line);
+  border: 1px solid var(--violet-line);
   border-radius: var(--r-xs);
-  color: var(--indigo-text);
+  color: var(--violet-text);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-decoration: none;
 }
 
 .step-link:hover {
-  background: var(--indigo-wash);
+  background: var(--violet-wash);
 }
 
 .checklist .gone {
@@ -702,7 +769,7 @@
 }
 
 .decisions a:hover {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 .decisions .decision {
@@ -735,6 +802,10 @@
 }
 
 /* ---------- from the session ---------- */
+
+.messages > :is(.notice, .detached-box) {
+  margin-bottom: var(--s4);
+}
 
 .messages > .thread {
   padding: var(--s3) 0;
@@ -841,7 +912,8 @@
   }
 
   .main {
-    padding: var(--s4) var(--s4) 0;
+    --pane-top: var(--s4);
+    padding: var(--pane-top) var(--s4) 0;
   }
 
   .main > :last-child {

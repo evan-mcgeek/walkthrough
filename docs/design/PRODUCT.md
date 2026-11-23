@@ -50,6 +50,8 @@ A Claude Code session drives the page: it records the steps, explanations, assum
 
 Name: Walkthrough. Universal: no company, team or bound design system.
 
+Identity: the W-path mark (a W walked in four strokes, the last lighter: still to go), wordmark set in the UI sans at 700, favicon and app icon on violet. Brand colour: Walkthrough violet (#5b3fd6 light, #9b86ff dark), used only for the primary action, progress, selection, focus and the mark. Assets in docs/design/brand/.
+
 Look: the category-standard review layout, chosen by the user over invented visual worlds. Craft bar: JetBrains IDEs. Must not read as a GitHub/GitLab clone or as a terminal costume. Chrome text kept to a minimum.
 
 Layout: four switchable layouts with identical functions; "What's left" (a queue of what still needs the reviewer) opens by default.

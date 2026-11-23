@@ -1,6 +1,6 @@
 ---
 name: Walkthrough
-description: A local, step-by-step code review page driven by a Claude Code session; the category-standard review layout, finished to IDE grade.
+description: A local, step-by-step code review page driven by a Claude Code session; the category-standard review layout, finished to IDE grade, signed with a walked W in Walkthrough violet.
 colors:
   canvas: "#ffffff"
   surface: "#f6f7f9"
@@ -11,12 +11,12 @@ colors:
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
-  indigo: "#3b5bdb"
-  indigo-hover: "#2f4bc4"
-  indigo-text: "#3348b8"
-  indigo-wash: "#eef1fb"
-  indigo-line: "#d4dbf6"
-  on-indigo: "#ffffff"
+  violet: "#5b3fd6"
+  violet-hover: "#4a30c2"
+  violet-text: "#4a2fc0"
+  violet-wash: "#f0edfc"
+  violet-line: "#dad3f8"
+  on-violet: "#ffffff"
   icon-knockout: "#ffffff"
   amber: "#8a5a00"
   amber-wash: "#fbf1dc"
@@ -26,8 +26,8 @@ colors:
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
   diff-del-gutter: "#f6d6d3"
-  line-pick: "#e6eafb"
-  line-pick-gutter: "#d2d9f7"
+  line-pick: "#efebfd"
+  line-pick-gutter: "#ddd5f9"
   canvas-dark: "#15181d"
   surface-dark: "#1b1f25"
   surface-tint-dark: "#232830"
@@ -37,12 +37,12 @@ colors:
   ink-dark: "#e5e8ec"
   ink-secondary-dark: "#c3c8cf"
   muted-dark: "#9aa2ac"
-  indigo-dark: "#6e86f0"
-  indigo-hover-dark: "#8599f4"
-  indigo-text-dark: "#a3b3ff"
-  indigo-wash-dark: "#232b45"
-  indigo-line-dark: "#34406b"
-  on-indigo-dark: "#0f1424"
+  violet-dark: "#9b86ff"
+  violet-hover-dark: "#ad9cff"
+  violet-text-dark: "#bdb0ff"
+  violet-wash-dark: "#272143"
+  violet-line-dark: "#3d3470"
+  on-violet-dark: "#130e2b"
   icon-knockout-dark: "#15181d"
   amber-dark: "#e3b260"
   amber-wash-dark: "#33280f"
@@ -52,8 +52,8 @@ colors:
   diff-add-gutter-dark: "#193423"
   diff-del-dark: "#33191a"
   diff-del-gutter-dark: "#3f1f20"
-  line-pick-dark: "#222a4a"
-  line-pick-gutter-dark: "#2c3664"
+  line-pick-dark: "#241e44"
+  line-pick-gutter-dark: "#342b66"
 typography:
   headline:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
@@ -114,15 +114,15 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.indigo}"
-    textColor: "{colors.on-indigo}"
+    backgroundColor: "{colors.violet}"
+    textColor: "{colors.on-violet}"
     rounded: "{rounded.md}"
     padding: "0 16px"
     height: "34px"
   button-primary-hover:
-    backgroundColor: "{colors.indigo-hover}"
+    backgroundColor: "{colors.violet-hover}"
   button-primary-active:
-    backgroundColor: "{colors.indigo-hover}"
+    backgroundColor: "{colors.violet-hover}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -187,7 +187,7 @@ components:
     rounded: "{rounded.sm}"
     padding: "0 8px"
   step-link:
-    textColor: "{colors.indigo-text}"
+    textColor: "{colors.violet-text}"
     rounded: "{rounded.xs}"
     padding: "0 4px"
   queue:
@@ -207,8 +207,8 @@ components:
   layout-switch-button:
     padding: "4px 8px"
   segmented-pressed:
-    backgroundColor: "{colors.indigo-wash}"
-    textColor: "{colors.indigo-text}"
+    backgroundColor: "{colors.violet-wash}"
+    textColor: "{colors.violet-text}"
   header:
     height: "48px"
     padding: "0 16px"
@@ -222,15 +222,15 @@ components:
     rounded: "{rounded.lg}"
     padding: "{spacing.s3}"
   ask-row:
-    backgroundColor: "{colors.indigo-wash}"
+    backgroundColor: "{colors.violet-wash}"
     padding: "12px 16px 12px 116px"
   swipe-card:
     backgroundColor: "{colors.canvas}"
     rounded: "{rounded.card}"
     padding: "{spacing.s4}"
   decision-chip:
-    backgroundColor: "{colors.indigo-wash}"
-    textColor: "{colors.indigo-text}"
+    backgroundColor: "{colors.violet-wash}"
+    textColor: "{colors.violet-text}"
     rounded: "{rounded.md}"
     padding: "4px 8px"
   decision-chip-flag:
@@ -249,7 +249,7 @@ components:
 
 **Creative North Star: "The Quiet Instrument"**
 
-Walkthrough is the standard review arrangement played straight: a 48px header, a queue of what is left on the left, the open step on the right, the diff and the agent's explanation carrying the screen. It is built to be trusted on sight, at the finish level of a JetBrains IDE: cool white and near-white neutrals, hairline rules instead of boxes, one indigo for whatever is interactive, selected or in progress, and drawn 16px line icons that carry state so the chrome can stay nearly wordless.
+Walkthrough is the standard review arrangement played straight: a 48px header, a queue of what is left on the left, the open step on the right, the diff and the agent's explanation carrying the screen. It is built to be trusted on sight, at the finish level of a JetBrains IDE: cool white and near-white neutrals, hairline rules instead of boxes, one Walkthrough violet for whatever is interactive, selected or in progress, and drawn 16px line icons that carry state so the chrome can stay nearly wordless.
 
 Density is IDE density, not web-app density. Interface text sits at 13 to 13.5px, the step title tops out at 21px, and every number is tabular. Containers are mostly removed: files, forms, comment lists and the folded step are separated by a single top rule, not by cards. Depth exists only for things that float (the actions menu). Every surface ships in light and dark from the same semantic token set, and dark mode follows the system. Motion is functional and short: it shows where a decided item went and what changed, then gets out of the way.
 
@@ -257,7 +257,8 @@ It refuses two looks by name: the code-host pull-request page clone, and the ter
 
 **Key Characteristics:**
 - Category-standard layout; four switchable layouts ("What's left" default, "Explanation beside code", "Three columns", "Tool panel") share one component set.
-- Cool neutral scale with one indigo; amber and rust are state, not decoration.
+- Cool neutral scale with one Walkthrough violet; amber and rust are state, not decoration.
+- A walked-W mark in violet signs the header, export, favicon and the preparing state.
 - Decisions are neutral grey; no decision ever reads as approval by colour.
 - System UI sans for everything human; JetBrains Mono for code, file names and session labels.
 - Rules, not boxes; flat at rest; one floating shadow.
@@ -265,15 +266,26 @@ It refuses two looks by name: the code-host pull-request page clone, and the ter
 - One 4px spacing scale (4, 8, 12, 16, 24, 32px) governs padding, gaps and rhythm.
 - Motion in 120 / 200 / 320ms on one ease-out curve; reduced motion keeps only opacity and colour.
 
+## Brand
+
+**The mark** is a W walked in four round-capped strokes (2.3 stroke on a 16px grid, round joins); the last stroke sits at 40% opacity, the part of the walk still to go. It is drawn in violet on the canvas, or knocked out of a violet rounded square (22% corner radius) for the favicon and app icon, where the strokes take the on-violet colour. The favicon switches to the dark-theme violet under a dark colour scheme. Master files: `brand/mark.svg`, `brand/favicon.svg`, and `app-icon-16/32/180/512.png` rendered from the favicon SVG with provenance embedded.
+
+**The lockup** is the mark plus "Walkthrough" in the UI sans at 700. In the header: 16px mark, 8px gap, -0.01em tracking, ink text. The display lockup (brand sheet): 34px mark, 14px gap, 34px text, -0.02em. The export page uses a quiet lockup: 14px mark, 13px text in muted ink, the mark still violet.
+
+**The loader.** The Preparing state uses the mark as its indicator (20px, violet): its walked strokes and its final stroke pulse in turn between 25% and full opacity over 1.4s on the ease-out curve, offset 0.3s. Under reduced motion the mark is still. The Working status in the header keeps its small spinner.
+
+### Named Rules
+**The One Mark Rule.** The mark appears only in violet on canvas, or knocked out of a violet square. Never recoloured, outlined, rotated, set in a status colour, or used as a decorative bullet.
+
 ## Colors
 
-A cool grey neutral scale with a single indigo accent and three narrowly scoped status hues, defined once per theme and switched by a light/dark class.
+A cool grey neutral scale with a single violet accent and three narrowly scoped status hues, defined once per theme and switched by a light/dark class.
 
 ### Primary
-- **Review Indigo** (light `indigo`, dark `indigo-dark`): the primary button fill, focus rings (2px, 2px offset), the text caret, the active tab underline, the current and read queue icons, and decided segments of the progress bar. It is the colour of "you can act here" and "this is where you are".
-- **Indigo Hover** (`indigo-hover`): the primary button's hover and active fill, one step deeper than indigo in light and one step lighter in dark. A disabled primary stays plain indigo on hover.
-- **Indigo Text** (`indigo-text`): indigo at text contrast, for links, step-number links, the pressed state of segmented controls, the Working status and the selected-line gutter number.
-- **Indigo Wash / Indigo Line** (`indigo-wash`, `indigo-line`): the pressed segment fill, the focused-input halo (3px), the Ask-about-lines row, read and current progress segments, and step-link borders.
+- **Walkthrough Violet** (light `violet`, dark `violet-dark`): the brand colour and the mark's only colour; the primary button fill, focus rings (2px, 2px offset), the text caret, the active tab underline, the current and read queue icons, and decided segments of the progress bar. It is the colour of "you can act here" and "this is where you are".
+- **Violet Hover** (`violet-hover`): the primary button's hover and active fill, one step deeper than violet in light and one step lighter in dark. A disabled primary stays plain violet on hover.
+- **Violet Text** (`violet-text`): violet at text contrast, for links, step-number links, the pressed state of segmented controls, the Working status and the selected-line gutter number.
+- **Violet Wash / Violet Line** (`violet-wash`, `violet-line`): the pressed segment fill, the focused-input halo (3px), the Ask-about-lines row, read and current progress segments, and step-link borders.
 
 ### Status
 - **Reopened Amber** (`amber`, `amber-wash`): reopened steps and tags, "Needs you" status, attention notices and banners (wash fill, no border), folded-file problems, findings on the phone card, the Flag chip during a swipe, and the session's question box (1px amber border). Amber means "this changed or wants you".
@@ -282,7 +294,7 @@ A cool grey neutral scale with a single indigo accent and three narrowly scoped 
 
 ### Diff
 - **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell. Preview-mode insertions use the addition wash full-bleed.
-- **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask about; gutter number turns indigo text, semibold.
+- **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask about; gutter number turns violet text, semibold.
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also input fields and the current queue item, which reads as lifted against the queue.
@@ -292,9 +304,9 @@ A cool grey neutral scale with a single indigo accent and three narrowly scoped 
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text; explanation prose and secondary labels; the single secondary grey per theme, for metadata, counts, status-gone, placeholders, line numbers, hunk headers and resting icons.
 
 ### Named Rules
-**The Grey Verdict Rule.** A recorded decision is shown in neutral greys only: the decided tag is surface tint with secondary ink. Green appears in exactly two places, diff additions and the Listening status, and never next to a decision. (The swipe chip is gesture feedback, not recorded state: indigo for Approve, amber for Flag.)
+**The Grey Verdict Rule.** A recorded decision is shown in neutral greys only: the decided tag is surface tint with secondary ink. Green appears in exactly two places, diff additions and the Listening status, and never next to a decision. (The swipe chip is gesture feedback, not recorded state: violet for Approve, amber for Flag.)
 
-**The One Indigo Rule.** Indigo marks interaction, selection, focus and progress. It is never a heading colour, a section fill or a decorative accent.
+**The One Violet Rule.** Violet marks interaction, selection, focus and progress. It is never a heading colour, a section fill or a decorative accent.
 
 **The Three Greys Rule.** Text and icons use exactly three greys per theme: ink, secondary ink and muted. A fourth, "fainter" grey is not part of the system.
 
@@ -326,13 +338,13 @@ A cool grey neutral scale with a single indigo accent and three narrowly scoped 
 
 ## Layout
 
-The desktop frame is a fixed 48px header over a row of panes. "What's left" (default) puts a 232px queue rail on the surface tone at left and the open step in the main pane (24px top and bottom, 32px sides). The other three layouts rearrange the same parts: "Three columns" adds a 288px side pane; "Explanation beside code" splits a 400px prose pane from a code pane on the surface tone; "Tool panel" stacks a tabbed panel under the step. All four keep identical functions.
+The desktop frame is a fixed 48px header over a row of panes. "What's left" (default) puts a 232px queue rail on the surface tone at left and the open step in the main pane (24px top and bottom, 32px sides). The other three layouts rearrange the same parts: "Three columns" adds a 288px side pane; "Explanation beside code" splits a 400px prose pane from a code pane on the surface tone; "Tool panel" stacks a tabbed panel under the step. All four keep identical functions. Beside a step the checklist is compact (marks, text and step links); its own page, opened from its title or a rail row, holds the statuses and actions.
 
 The main pane is a column: title row, explanation, assumptions toggle, files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files sit 24px apart. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
 
 Spacing runs on one 4px scale (`s1` to `s6`: 4, 8, 12, 16, 24, 32px): 8px between controls in a row and within a title row, 12px inside notices and between list rows, 16px for form and notice spacing, 24px between blocks and files, 32px for pane sides and page padding. Control padding is on the same scale: buttons 0 16px, small, offered and note buttons 0 12px, tags, counters, reasons and file chips 0 8px, step-number links 0 4px, segmented buttons 4px 12px, layout-switch buttons 4px 8px, icon buttons 4px, queue rows 8px, the decision chip 4px 8px. The only off-scale values are deliberate: 2px between queue rows, the 116px code-column indent, and 40px export side padding.
 
-At 390px the header drops the layout switch and Stop into a "More" menu, the progress bar moves to its own full-width strip under the header, the queue becomes a select with a drawn chevron, the diff scrolls horizontally inside the file (620px table) while the note stays pinned left, and primary actions become a sticky bottom bar of 44px touch targets. The phone can also decide by swipe deck (see Components); its buttons stay for anyone who does not swipe.
+At 390px the header drops the layout switch and Stop into a "More" menu, the progress bar moves to its own full-width strip under the header, the queue becomes a select with a drawn chevron, the diff scrolls horizontally inside the file (620px table) while the note stays pinned left, and primary actions become a sticky bottom bar of 44px touch targets. In "Explanation beside code" the panes stack: the step, its code, then the checklist, over the same bottom bar. The phone can also decide by swipe deck (see Components); its buttons stay for anyone who does not swipe.
 
 ## Elevation & Depth
 
@@ -353,12 +365,12 @@ Small, tight radii: 6px on every control (buttons, inputs, segmented switches), 
 ### Buttons
 Restrained and exact; the label carries the meaning.
 - **Shape:** gently squared (6px), 34px tall, 16px horizontal padding, 13.5px at 500.
-- **Primary:** indigo fill, on-indigo text, 600 weight. One per action group (Approve). Hover and active deepen to indigo hover; disabled keeps indigo.
+- **Primary:** violet fill, on-violet text, 600 weight. One per action group (Approve). Hover and active deepen to violet hover; disabled keeps violet.
 - **Secondary:** surface fill, 1px control edge; hover steps to surface tint, except when disabled.
 - **Ghost:** no fill or edge, secondary ink.
 - **Session offer:** a secondary button with a dashed control edge, secondary ink and a muted message icon, for actions the session offers on a step. The dash says "offered, not built in".
 - **Small:** 28px tall, 12px padding, 13px. **Touch:** 44px tall at 390px.
-- **Focus:** 2px indigo outline, 2px offset. **Disabled:** 50% opacity. **Press:** scales to .97 over 120ms; hover fills change linearly over 120ms.
+- **Focus:** 2px violet outline, 2px offset. **Disabled:** 50% opacity. **Press:** scales to .97 over 120ms; hover fills change linearly over 120ms.
 
 ### Tags and Pills
 - **Undecided:** muted text, 1px control-edge outline, pill. **Decided:** surface-tint fill, no edge, secondary ink. **Reopened:** amber text and amber outline.
@@ -367,23 +379,23 @@ Restrained and exact; the label carries the meaning.
 
 ### Inputs / Fields
 - **Style:** canvas fill, 1px control edge, 6px radius, 34px tall (textarea min 84px, resizable).
-- **Focus:** edge turns indigo with a 3px indigo-wash halo; caret is indigo.
+- **Focus:** edge turns violet with a 3px violet-wash halo; caret is violet.
 - **Placeholder:** muted ink.
 - **Select:** native select with its own arrow removed, 30px right padding, and a muted drawn 16px chevron 9px from the edge.
 
 ### Navigation
-- **Header:** logo (700), mono session label, segmented progress bar (180px) with "3/9" tabular count, layout switch, session status, Stop. No other chrome text.
-- **Layout switch / Diff-Preview switch:** joined segmented control, 1px control edge, pressed segment indigo-wash with indigo text.
-- **Tabs (Tool panel):** text tabs; selected is ink 600 with a 2px indigo inset underline.
+- **Header:** the 16px lockup (see Brand), mono session label, segmented progress bar (180px) with "3/9" tabular count, layout switch, session status, Stop. No other chrome text.
+- **Layout switch / Diff-Preview switch:** joined segmented control, 1px control edge, pressed segment violet-wash with violet text.
+- **Tabs (Tool panel):** text tabs; selected is ink 600 with a 2px violet inset underline.
 
 ### Queue ("What's left")
-The signature rail. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. Icon colour carries state: muted for not read and for session messages, indigo for read and current, amber for reopened, rust for not met. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot and render muted when opened.
+The signature rail. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. Icon colour carries state: muted for not read and for session messages, violet for read and current, amber for reopened, rust for not met. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot and render muted when opened.
 
 ### Session Status
-A 7px dot plus 13px 600 label: Listening (green), Working (indigo text with a spinning icon, 1s linear), Needs you (amber dot with a 3px amber-wash ring), Gone (muted hollow dot).
+A 7px dot plus 13px 600 label: Listening (green), Working (violet text with a spinning icon, 1s linear), Needs you (amber dot with a 3px amber-wash ring), Gone (muted hollow dot).
 
 ### Diff and Notes
-diff2html line-by-line, restyled through classes and laid out as described in Layout: 46px number columns in muted ink, 12.5/21px mono code, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink. A note row spans the table in UI sans, top and bottom rules, label in 650, replies indented behind a 2px rule. "N more notes" is an indigo-text link on a row with no fill. The Ask-about-lines composer is a row in the indigo wash with indigo-line rules: a "Ask about <file> lines a–b" label, a focused input, then small Cancel (ghost) and Ask (primary).
+diff2html line-by-line, restyled through classes and laid out as described in Layout: 46px number columns in muted ink, 12.5/21px mono code, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink. A note row spans the table in UI sans, top and bottom rules, label in 650, replies indented behind a 2px rule. "N more notes" is a violet-text link on a row with no fill. The Ask-about-lines composer is a row in the violet wash with violet-line rules: a "Ask about <file> lines a–b" label, a focused input, then small Cancel (ghost) and Ask (primary).
 
 ### Image Diff
 Changed images get the same Diff / Preview switch. Preview shows Before and After side by side, each in a 160 × 120 box with 6px corners on a 16px transparency checker (surface tint against canvas), captioned in 12.5px muted text with the pixel size.
@@ -392,14 +404,14 @@ Changed images get the same Diff / Preview switch. Preview shows Before and Afte
 - **Neutral:** surface fill, 1px rule, 7px radius, muted icon.
 - **Attention:** amber wash, no border, amber icon. Full-width banners use the same pair under the header.
 - **Session question:** canvas fill, 1px amber border, 8px radius, amber 650 heading.
-- **Detached:** 1px dashed control edge, 8px radius.
+- **Detached:** 1px dashed control edge, 8px radius. It and the changed-files-in-no-step notice have no step, so they live in "From the session", whose rail row counts them.
 - **Undo toast:** inverted (ink fill, canvas text and icon), 8px radius, 14px text, with an underlined Undo link in 650. It rises 12px over 200ms after a 120ms delay.
 
 ### Phone Swipe Deck
-At 390px a step can be decided by swiping its card: right approves, left flags (and opens the Flag note). Cards are canvas with a 1px rule, 12px corners and 16px padding, holding the title, explanation, a three-line mini diff and any finding in an amber-wash callout. Mid-drag, a decision chip fades in at the top corner (indigo wash and text for Approve, amber for Flag) and edge labels appear. The next card waits beneath at scale .95, 14px lower and 60% opacity, growing to full as the top card leaves; its text stays hidden until the top card has cleared. A hint line under the deck says how to swipe.
+At 390px a step can be decided by swiping its card: right approves, left flags (and opens the Flag note). Cards are canvas with a 1px rule, 12px corners and 16px padding, holding the title, explanation, a three-line mini diff and any finding in an amber-wash callout. Mid-drag, a decision chip fades in at the top corner (violet wash and text for Approve, amber for Flag) and edge labels appear. The next card waits beneath at scale .95, 14px lower and 60% opacity, growing to full as the top card leaves; its text stays hidden until the top card has cleared. A hint line under the deck says how to swipe.
 
 ### Motion
-One family: `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or settling, `ease-in` cubic-bezier(0.7, 0, 0.84, 0) for things leaving, at 120ms (fast), 200ms (base) and 320ms (slow).
+One family (the Preparing state's pulsing mark and the Working spinner are the only loops): `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or settling, `ease-in` cubic-bezier(0.7, 0, 0.84, 0) for things leaving, at 120ms (fast), 200ms (base) and 320ms (slow).
 - **Decide:** the queue row slides 16px left (160ms ease-out) while fading (160ms linear), then its height collapses (320ms ease-out after 120ms). The progress segment fills left to right (320ms), and counts tick from .55 opacity and 2px low (200ms).
 - **Pane swap:** sequential, never crossfaded: the old pane leaves to -12px (100ms, linear fade), then the new one enters from +12px (200ms ease-out after 100ms).
 - **Reveal:** assumptions open by grid rows (320ms) with the chevron turning 90° (120ms); extra notes rise 4px (200ms, 40ms stagger).
@@ -416,7 +428,7 @@ One family: `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or sett
 - **Do** carry state with the drawn 16px icon set first and a short text label second.
 - **Do** keep the action bar sticky at the foot of the main pane and give touch targets 44px at 390px.
 - **Do** take every padding and gap from the 4px scale (4, 8, 12, 16, 24, 32px), control padding included.
-- **Do** give every interactive control a hover, focus-visible and disabled state; the primary uses indigo hover.
+- **Do** give every interactive control a hover, focus-visible and disabled state; the primary uses violet hover.
 - **Do** use the three duration tokens and two curves for all motion, and ship the reduced-motion version (opacity and colour only) with every animation.
 - **Do** self-host JetBrains Mono for the shipped app; a strict CSP will not load it from a font CDN.
 
@@ -428,5 +440,5 @@ One family: `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or sett
 - **Don't** add shadows beyond the float shadow on menus and the top swipe card.
 - **Don't** crossfade panes or bounce anything; motion leaves before it enters and settles without overshoot.
 - **Don't** add a fourth text grey between muted and the rules.
-- **Don't** use indigo for headings or decoration, or use amber and rust for anything but reopened/attention and not met.
+- **Don't** use violet for headings or decoration, or use amber and rust for anything but reopened/attention and not met.
 - **Don't** use text glyphs or emoji as status icons; use the drawn SVG set.

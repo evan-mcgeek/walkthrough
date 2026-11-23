@@ -30,6 +30,19 @@
   border-bottom: 1px solid var(--rule);
 }
 
+/* The quiet lockup: a 14px mark, still violet, beside muted 13px text. */
+.export-head .logo {
+  align-self: flex-start;
+  margin-bottom: var(--s2);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.export-head .logo > .icon-mark {
+  width: 14px;
+  height: 14px;
+}
+
 .export-head h1 {
   margin: 0;
   font: 650 22px/1.25 var(--font-ui);
