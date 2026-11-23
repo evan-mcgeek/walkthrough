@@ -83,6 +83,14 @@ test('an action after the server stopped says how to reopen the walkthrough', as
     'Could not reach the walkthrough. Run /walkthrough again to reopen it.Retry now',
   );
   await expect(page.locator('body')).toHaveClass(/unreachable/);
+
+  const retry = page.getByRole('alert').getByRole('button', { name: 'Retry now' });
+  await retry.focus();
+  await retry.evaluate(button => Object.assign(button, { shown: true }));
+  for (let polls = 0; polls < 2; polls++) await page.waitForEvent('requestfailed', failed => failed.url().includes('data/session.json'));
+
+  await expect(retry).toBeFocused();
+  expect(await retry.evaluate(button => 'shown' in button)).toBe(true);
 });
 
 test('a walkthrough of a range is headed by its label', async ({ page, repo }) => {
