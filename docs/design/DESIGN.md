@@ -406,7 +406,7 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 ### Named Rules
 **The Grey Verdict Rule.** A recorded decision or verdict is shown in neutral greys only: decided is a filled dot in secondary ink, the chosen verdict is an ink border on surface tint. Green appears in exactly two places, diff additions and the Listening status, and never next to a decision. (The swipe chip is gesture feedback, not recorded state: accent for Approve, amber for Flag.)
 
-**The One Accent Rule.** The accent marks the primary action, focus, the caret, links, decided progress, picked lines and the reviewer's own words. It is never a heading colour, a pressed-control fill, a section fill or a decorative accent; the one surface it fills is the reviewer's own comment.
+**The One Accent Rule.** The accent marks the primary action, focus, the caret, links, decided progress, picked lines, the reviewer's own words and the rule beside a File Note or the current "Files" entry. It is never a heading colour, a pressed-control fill, a section fill or a decorative accent; the one surface it fills is the reviewer's own comment.
 
 **The Your Voice Rule.** The reviewer's own words (their comments, their gutter marker, the "+" that starts one, the picked-range label) wear the accent. The agent's notes stay on the canvas.
 
@@ -427,7 +427,7 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 - **Headline** (650, 19px, 1.25, -0.01em): the open step's title, on desktop, phone and swipe cards. Page titles on the list and export pages sit at 20 to 22px, same weight.
 - **Title** (650, 17px): export section headings.
 - **Body** (400, 15px, 1.6, primary ink): the agent's explanation and any reading prose, held to 68ch.
-- **Body Note** (400, 14px, 1.55, primary ink): note and comment paragraphs. The explanation column and Markdown previews sit at 14.5px; per-file explanations, summary lists and tables at 14px.
+- **Body Note** (400, 14px, 1.55, primary ink): note and comment paragraphs. Markdown previews sit at 14.5px; summary lists and tables at 14px. A file's explanation under its header is a File Note (see Layout): the same size and line height in secondary ink.
 - **Body UI** (400, 13px): buttons (500), queue items (13.5px), notices, checklist items, menus, key-sheet rows.
 - **Label** (500 to 650, 12.5px): state dot labels, note headers, the kind label, verdict status, the facts rail, the Viewed toggle; small buttons.
 - **Meta** (500/600, 12px): counters, facts-rail heading, popover section labels, sub-lines under queue items.
@@ -436,7 +436,8 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 - **Key** (500, 11.5px mono): key caps in the shortcut sheet.
 
 ### Prose
-Inside explanations, notes and comments: 12px between blocks; h2 and h3 at 15px 650 with 24px above and 8px below (no size jump, weight alone); disc lists (decimal for ordered) with muted markers, 22px indent and 4px between items; inline code on surface tint with 4px corners and 1px 5px padding at .86em; links in accent text, underlined 1px at a 3px offset; block quotes as a surface box (6px corners, 12px 16px padding, secondary ink), never a coloured side bar.
+Inside explanations, notes and comments: 12px between blocks; headings at the size of the text around them in 650 with 16px above and 4px below (no size jump, weight alone); disc lists (decimal for ordered) with muted markers, 24px indent and 4px between items; inline code on surface tint with 4px corners and 0 4px padding at 0.9em; links in accent text, underlined at a 2px offset; block quotes in secondary ink behind a 2px rule in the control edge, 12px from the text.
+The File Note takes the same shape with the rule in the accent, as the one coloured side bar on the page.
 
 ### Named Rules
 **The Mono Means Literal Rule.** Monospace appears only on text that is literally code, a path, a key or an identifier the reviewer may copy. Headings, buttons and statuses stay in the UI sans.
@@ -448,7 +449,13 @@ Inside explanations, notes and comments: 12px between blocks; h2 and h3 at 15px 
 ## Layout
 
 The desktop frame is a fixed 44px header over a row of panes arranged as JetBrains-style tool windows around the step. The queue ("To review", open by default) is a 224px rail on the surface tone at left; the open step fills the main pane (16px top and bottom, 24px sides). The explanation column splits a 420px prose column (24px padding, its own action bar at the foot) from the code, which moves to the surface tone. The checklist is a 288px column at the right that ends with a "Whole walkthrough" block above a rule. The tool panel stacks a tabbed panel under the step. Each window has a title bar with a hide button (keys 1 to 4). A hidden queue or explanation column collapses into a 26px edge stripe at the left, a hidden checklist into one at the right, and a hidden tool panel into a 28px strip of its tabs along the bottom, so nothing disappears without leaving a handle. When the queue is hidden, previous and next step navigation sits above the title. Which windows are open is kept for the person with their Appearance, so every walkthrough opens the way they left the last one.
-The step head is a two-column grid: the title, state and explanation up to 68ch, and the "In this step" facts rail (220 to 280px) at the right, 32px apart. Below it come the files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files stack with no gap between them, opened or collapsed, so every header sits on the rule that ends the file before it and opening a file moves nothing above it. A per-file explanation, when present, sits between the header and the diff. Code scrolls horizontally inside its file instead of clipping, with the 10px overview stripe pinned at the right edge. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
+The step head is a two-column grid: the title, state and explanation up to 68ch, and the "In this step" facts rail (220 to 280px) at the right, 32px apart. Below it come the files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files stack with no gap between them, opened or collapsed, so every header sits on the rule that ends the file before it and opening a file moves nothing above it.
+A file's own explanation, when the session gave one, has two places.
+With the explanation column hidden (the default) and at 390px, it is a File Note between the header and the diff: 14px secondary ink at 1.55, held to 68ch, its text starting where the note rows' does (116px in; on a phone the rule sits at the file's left edge) behind a 2px accent rule, 12px above and below.
+With the explanation column open, the code pane holds only code: under the step's overview the column lists the step's explained files, in the step's order, under the heading "Files" (Meta, muted), each as its path in Mono Label ink linking to the file and its explanation below in Body.
+The link opens the file if it is collapsed and scrolls it to the top of the code pane; the entry for the file at the top of the code pane, or the last file once the pane is scrolled to its end, is current, marked by a 2px accent rule in the column's padding.
+The export follows the person's panels the same way: the "Files" list under each overview when the column is on, File Notes otherwise.
+Code scrolls horizontally inside its file instead of clipping, with the 10px overview stripe pinned at the right edge. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
 
 Spacing runs on one 4px scale (`s1` to `s6`: 4, 8, 12, 16, 24, 32px): 4px under the title row, 8px between controls in a row and inside note rows, 12px inside notices and between list rows, 16px between blocks and inside the main pane's top and bottom, 24px for pane sides, 32px for page padding and the head-to-rail gap. Control padding: buttons 0 12px, small buttons 0 8px, counters and file chips 0 8px, step-number links 0 4px, segmented buttons 4px 12px, bottom-strip buttons 2px 8px, icon buttons 4px, the decision chip 4px 8px. Deliberate off-scale values: 2px between queue rows, the 116px code-column indent, and 40px export side padding.
 
@@ -514,6 +521,16 @@ A step the session is still checking keeps its state icon with the muted sub-lin
 
 ### In This Step (facts rail)
 Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons.
+
+### Checklist
+The same item layout in the 288px panel, on the checklist's own page and in the Summary's Checklist section.
+The title carries a counter that says what it counts, "15 of 21 met", in the same words for a screen reader; the edge stripe keeps the short "15/21".
+The session's optional description sits under the title as one 13px muted line, such as "Each acceptance criterion from the tickets, and the steps that deliver it."
+Each item reads down: the state icon and the item's text (Body UI) at the full width, then one 12px muted line with the session's status and the steps it links to, "partly met: V still runs after Stop · Steps 4, 10, 13" ("Step 2" for one, nothing for none).
+The step numbers are plain accent-text links, underlined on hover, each with its step's title as its tooltip; "Steps" and its numbers wrap as one piece.
+A status marked partly or not met is amber text; met and unchecked stay muted.
+Inline code in an item's text never breaks inside the code.
+On the checklist page an item's actions follow under its line.
 
 ### Diff, Markers and Overview Stripe
 diff2html line-by-line, restyled through classes: 46px number columns in muted ink, 12.5/21px mono code with 16px right padding, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink.
@@ -593,7 +610,7 @@ One family (the Preparing state's pulsing mark and the Working spinner are the o
 - **Don't** put panel controls in the header; a window hides from its own title bar and comes back from its stripe.
 - **Don't** add uppercase or tracked-out labels, or small labels above headings.
 - **Don't** wrap files, forms or comment lists in bordered cards; use a top rule.
-- **Don't** give block quotes or callouts a coloured side bar; quotes are a surface box.
+- **Don't** give block quotes or callouts a coloured side bar; quotes sit behind a control-edge rule, and only a File Note and the current "Files" entry carry an accent rule.
 - **Don't** add big-number stat tiles to the summary.
 - **Don't** add shadows beyond the float shadow, the primary shade and the gutter lift.
 - **Don't** crossfade panes or bounce anything; motion leaves before it enters and settles without overshoot.

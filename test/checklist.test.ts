@@ -63,6 +63,17 @@ describe('walkthrough checklist', () => {
     });
   });
 
+  test("records the session's description as given and serves it with the checklist", async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(steps);
+    const description = 'Each criterion from the *tickets*, and the steps that deliver it.';
+
+    expect(recordChecklist({ ...checklist, description }).status).toBe(0);
+
+    expect((await shownAt(repo.url())).checklist?.description).toBe(description);
+  });
+
   test('replaces the checklist recorded before and keeps it when the steps are recorded again', async () => {
     repo = makeRepo();
     repo.run('start');
@@ -128,6 +139,8 @@ describe('walkthrough checklist', () => {
       ['not json', 'the checklist must be a JSON object; see walkthrough guide'],
       [[], 'the checklist must be a JSON object; see walkthrough guide'],
       [{ title: ' ', items: [] }, 'the checklist needs a title'],
+      [{ title: 'T', description: 3, items: [] }, 'the checklist: description must be text'],
+      [{ title: 'T', description: ' ', items: [] }, 'the checklist: description must be text'],
       [{ title: 'T', items: {} }, 'the checklist: items must be a list'],
       [{ title: 'T', items: [{ text: 'A.' }] }, 'item 1 needs a status'],
       [{ title: 'T', items: [{ status: 'met', text: '' }] }, 'item 1 needs a text'],
@@ -195,7 +208,7 @@ describe('walkthrough checklist', () => {
     repo = makeRepo();
     const guide = repo.run('guide').stdout;
     expect(guide).toContain('walkthrough checklist --file <file>');
-    expect(guide).toContain('{"title": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}');
+    expect(guide).toContain('{"title": string, "description": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}');
     const example = /Example checklist:\n(\{[\s\S]*?\n\})\n/.exec(guide)?.[1] ?? '';
     repo.run('start');
     repo.record([

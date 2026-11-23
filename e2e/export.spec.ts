@@ -87,3 +87,22 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(other.getByRole('heading', { level: 2 })).toBeInViewport();
   expect(problems).toEqual([]);
 });
+
+test("with the explanation column on, the export lists each step's explained files under its overview", async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(steps);
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  const stored = new URL('data/viewer.json', url).href;
+  await page.keyboard.press('3');
+  await expect.poll(async () => ((await (await page.request.get(stored)).json()) as { panels: { explanation: boolean } }).panels.explanation).toBe(true);
+  const out = path.join(path.dirname(repo.dir), 'login.html');
+  expect(repo.run('export', '--out', out).status).toBe(0);
+
+  await page.goto(pathToFileURL(out).href);
+  const other = page.getByRole('region', { name: 'App version' });
+  const files = other.getByRole('list', { name: 'Files' });
+  await expect(files.getByRole('link')).toHaveText(['app.ts']);
+  await expect(files.locator('.file-explanation')).toHaveText('The version the app reports.');
+  await expect(other.locator('.d2h-file-wrapper .file-explanation')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Login check' }).getByRole('list', { name: 'Files' })).toHaveCount(0);
+});

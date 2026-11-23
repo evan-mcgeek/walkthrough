@@ -9,11 +9,22 @@ const steps = [
 
 const checklist = {
   title: 'Acceptance criteria',
+  description: 'Each criterion from the tickets, and the steps that deliver it.',
   items: [
-    { status: 'met', mark: 'met', text: 'A person can log in.', steps: ['1'] },
+    { status: 'met', mark: 'met', text: 'A person can log in.', steps: ['1', '2'] },
     { status: 'not yet', mark: 'not-met', text: 'The app shows its version.', steps: ['2'] },
   ],
 };
+
+/** A design token as the browser resolves it for colour, in the page's current theme. */
+const tokenColor = (page: Page, token: string) =>
+  page.evaluate(name => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = `var(${name})`;
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
 
 const record = (repo: Repo, input: unknown, command = 'steps') => {
   const recorded = repo.record(input, command);
@@ -179,15 +190,24 @@ test('with every panel shown the Undo toast sits over the main pane, clear of th
   expect(shown.y + shown.height).toBeLessThanOrEqual(pane.y + pane.height);
 });
 
-test('the checklist panel lists the items compactly beside the step, and the checklist page shows it once', async ({ page, repo }) => {
+test('the checklist panel says what it counts and what it is for, and each item reads down to its status and steps', async ({ page, repo }) => {
   await withChecklist(page, repo);
   await page.keyboard.press('2');
   const list = checklistPanel(page).getByRole('region', { name: 'Acceptance criteria' });
-  await expect(list.getByText('1/2', { exact: true })).toBeVisible();
-  // Beside a step the list is compact: the statuses wait in the checklist's own page, which its title opens.
-  await expect(list.getByText('not yet', { exact: true })).toHaveCount(0);
+  await expect(list.locator('.counter')).toHaveText('1 of 2 met');
+  await expect(list.getByText('Each criterion from the tickets, and the steps that deliver it.', { exact: true })).toBeVisible();
+  const [met, notMet] = [list.getByRole('listitem').nth(0), list.getByRole('listitem').nth(1)];
+  await expect(met.locator('.item-line')).toHaveText('met · Steps 1, 2');
+  await expect(notMet.locator('.item-line')).toHaveText('not yet · Step 2');
+  await expect(met.getByRole('link', { name: 'Step 2' })).toHaveAttribute('title', 'App version');
+  const text = await met.locator('.item-text').boundingBox();
+  const line = await met.locator('.item-line').boundingBox();
+  expect(line?.y).toBeGreaterThanOrEqual((text?.y ?? 0) + (text?.height ?? 0));
+  expect(line?.x).toBe(text?.x);
+  await expect(met.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--muted'));
+  await expect(notMet.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--amber'));
 
-  await list.getByRole('link', { name: 'Step 2' }).click();
+  await notMet.getByRole('link', { name: 'Step 2' }).click();
   await expect(step(page, 'App version')).toBeVisible();
 
   await queue(page).getByRole('link', { name: 'The app shows its version.' }).click();

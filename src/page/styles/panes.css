@@ -351,6 +351,62 @@
   text-wrap: pretty;
 }
 
+/* With the explanation column open, the step's explained files under its overview; the one at the top of the code pane is current. */
+.files-block {
+  margin-top: var(--s4);
+}
+
+.files-head {
+  margin: 0 0 var(--s2);
+  color: var(--muted);
+  font: var(--text-meta);
+  font-weight: 600;
+}
+
+.files-explained {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The rule sits in the pane's padding, so the entry's text lines up with the overview's. */
+.file-entry {
+  margin-left: calc(-1 * var(--s3) - 2px);
+  padding-left: var(--s3);
+  border-left: 2px solid transparent;
+}
+
+.file-entry[aria-current] {
+  border-left-color: var(--accent);
+}
+
+.file-entry-path {
+  display: inline-block;
+  margin-bottom: var(--s1);
+  border-radius: var(--r-xs);
+  color: var(--ink);
+  font: var(--text-mono-label);
+  font-variant-ligatures: none;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.file-entry-path:hover {
+  color: var(--accent-text);
+}
+
+.file-entry > .file-explanation {
+  margin: 0;
+}
+
+/* The entry is a list item itself, so its Markdown lists would otherwise take the nested marker. */
+.file-entry > .file-explanation > ul {
+  list-style-type: disc;
+}
+
 .block {
   margin-top: var(--s4);
 }
@@ -829,41 +885,49 @@
   overflow-wrap: anywhere;
 }
 
-.item-status {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
+.item-text code {
+  white-space: nowrap;
 }
 
-/* The opened item's status reads as prose. */
-.checklist li.current .item-status {
-  margin-top: var(--s1);
-  color: var(--ink-secondary);
+/* Under the text, one muted line: the session's status, then the steps it links to. */
+.item-line {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font: var(--text-meta);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist li:is([data-mark='partly'], [data-mark='not-met']) .item-status {
+  color: var(--amber);
+}
+
+.item-steps {
+  white-space: nowrap;
+}
+
+.checklist-description {
+  margin: 0 0 var(--s2);
+  color: var(--muted);
   font-size: 13px;
 }
 
 .step-link {
-  height: fit-content;
-  padding: 0 var(--s1);
-  border: 1px solid var(--accent-line);
   border-radius: var(--r-xs);
   color: var(--accent-text);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
   text-decoration: none;
 }
 
 .step-link:hover {
-  background: var(--accent-wash);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .checklist .gone {
   display: flex;
-  flex-basis: 100%;
   align-items: center;
   gap: 6px;
-  margin: 0;
-  padding-left: 24px;
+  margin: 2px 0 0;
   color: var(--muted);
   font-size: 12.5px;
 }

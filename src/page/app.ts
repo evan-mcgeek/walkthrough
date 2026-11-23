@@ -48,7 +48,7 @@ const leftEdge = region('left-edge');
 const rightEdge = region('right-edge');
 const bottomStrip = region('bottom-strip');
 
-/** Which tool windows are open; an exported file keeps the default, as it has no controls to change them. */
+/** Which tool windows are open; an exported file keeps the person's, as it has no controls to change them. */
 const panels = { ...DEFAULT_VIEWER.panels };
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
@@ -1324,6 +1324,57 @@ function markLines(view: HTMLElement, rows: Map<string, HTMLTableRowElement>, ma
   }
 }
 
+/** The session's explanation of one of a step's files; a path like `constructor` must not find an inherited member. */
+const fileExplanation = (step: Step, file: string): string | undefined =>
+  step.kind === 'step' && step.fileExplanations && Object.hasOwn(step.fileExplanations, file) ? step.fileExplanations[file] : undefined;
+
+/** A link that opens one of the step's files if it is collapsed and scrolls it to the top of its pane. */
+function fileLink(step: Step, file: string, className: string): HTMLElement {
+  const link = el('a', { href: `#${encodeURIComponent(step.id)}`, className }, file);
+  link.onclick = event => {
+    event.preventDefault();
+    if (!readOnly) {
+      folds.set(file, false);
+      render();
+    }
+    // The export shows every step, so its file is looked for in its own step.
+    const scope = readOnly ? document.getElementById(step.id) : main;
+    scope?.querySelector(`.d2h-file-wrapper[data-file="${CSS.escape(file)}"]`)?.scrollIntoView({ block: 'start' });
+  };
+  return link;
+}
+
+/** Under the overview in the explanation column: each file the session explained, in the step's order, linking to its diff. */
+function filesExplained(step: Step): HTMLElement[] {
+  if (!shows('explanation') || step.kind !== 'step') return [];
+  const entries = step.files.flatMap(file => {
+    const text = fileExplanation(step, file);
+    if (!text) return [];
+    const entry = el('li', { className: 'file-entry' }, fileLink(step, file, 'file-entry-path'), markdown(text, 'file-explanation'));
+    entry.dataset['file'] = file;
+    return [entry];
+  });
+  if (!entries.length) return [];
+  const heading = el('h3', { className: 'files-head', id: `files-${step.id}` }, 'Files');
+  const list = el('ul', { className: 'files-explained' }, ...entries);
+  list.setAttribute('aria-labelledby', heading.id);
+  return [el('div', { className: 'files-block' }, heading, list)];
+}
+
+/** Marks the column's entry for the file at the top of the code pane; at the pane's end, where a short last file cannot reach the top, the last file. */
+function markTopFile(): void {
+  const entries = prosePane.querySelectorAll<HTMLElement>('.file-entry');
+  if (!entries.length) return;
+  const wrappers = [...codePane.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].filter(wrapper => wrapper.offsetParent);
+  const atEnd = codePane.scrollTop > 0 && codePane.scrollTop + codePane.clientHeight >= codePane.scrollHeight - 1;
+  const top = codePane.getBoundingClientRect().top;
+  const current = atEnd ? wrappers.at(-1) : wrappers.find(wrapper => wrapper.getBoundingClientRect().bottom > top + 1);
+  for (const entry of entries) {
+    if (entry.dataset['file'] === current?.dataset['file']) entry.setAttribute('aria-current', 'true');
+    else entry.removeAttribute('aria-current');
+  }
+}
+
 function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll('.pinned-row')) old.remove();
@@ -1333,11 +1384,12 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   };
   for (const old of view.querySelectorAll<HTMLTableRowElement>('tr.selected')) press(old, false);
   for (const old of view.querySelectorAll('.file-explanation')) old.remove();
-  const explained = step.kind === 'step' ? (step.fileExplanations ?? {}) : {};
+  // With the explanation column open, the column holds every explanation and the code pane only code.
+  const beside = shows('explanation');
   for (const wrapper of view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')) {
     const file = wrapper.dataset['file'] ?? '';
-    const text = explained[file];
-    if (text) wrapper.querySelector('.d2h-file-header')?.after(markdown(text, 'file-explanation'));
+    const text = fileExplanation(step, file);
+    if (text && !beside) wrapper.querySelector('.d2h-file-header')?.after(markdown(text, 'file-explanation'));
     if (readOnly) continue;
     const closed = isClosed(wrapper);
     const viewed = walkthrough.viewed.includes(file);
@@ -1582,7 +1634,7 @@ function stepBody(step: Step): { prose: HTMLElement[]; code: HTMLElement[] } {
   switch (step.kind) {
     case 'step':
       return {
-        prose: [...checkingNotice(step), markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes],
+        prose: [...checkingNotice(step), markdown(step.explanation, 'explanation'), ...filesExplained(step), ...said, ...assumedView(step), ...notes],
         code: [el('div', { className: 'block' }, diffView(step, pinned))],
       };
     case 'folded':
@@ -1659,14 +1711,7 @@ function factsRail(step: Step): HTMLElement[] {
   if (step.kind !== 'step') return [];
   const files = [...drawDiff(step).view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].map(wrapper => {
     const file = wrapper.dataset['file'] ?? '';
-    const link = el('a', { href: `#${encodeURIComponent(step.id)}`, className: 'facts-file' }, file);
-    link.onclick = event => {
-      event.preventDefault();
-      folds.set(file, false);
-      render();
-      document.querySelector(`#main .d2h-file-wrapper[data-file="${CSS.escape(file)}"]`)?.scrollIntoView({ block: 'start' });
-    };
-    return el('li', {}, link, el('span', { className: 'facts-count' }, wrapper.querySelector('.file-stats')?.textContent ?? ''));
+    return el('li', {}, fileLink(step, file, 'facts-file'), el('span', { className: 'facts-count' }, wrapper.querySelector('.file-stats')?.textContent ?? ''));
   });
   const notes = stepNotesOf(step);
   const findings = notes.filter(note => note.note.finding).length;
@@ -1889,11 +1934,14 @@ function queueView(view: View): HTMLElement[] {
 
 const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
 
-/** Counted only when the session marks items, since a status alone says nothing the page can count. */
-const metCount = (items: ChecklistItem[]) =>
-  items.some(item => item.mark !== undefined) ? `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}` : null;
+/** Counted only when the session marks items, since a status alone says nothing the page can count; `short` for an edge stripe. */
+function metCount(items: ChecklistItem[], short = false): string | null {
+  if (!items.some(item => item.mark !== undefined)) return null;
+  const met = String(items.filter(item => item.mark === 'met').length);
+  return short ? `${met}/${String(items.length)}` : `${met} of ${String(items.length)} met`;
+}
 
-/** `compact` beside a step: marks, text and links only, with the title opening the checklist's own page for statuses and actions. */
+/** Each item reads down: its mark and text, then its status and linked steps on one line; `compact` leaves its actions to the checklist's own page. */
 function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HTMLElement[] {
   return items.map(item => {
     const links: HTMLElement[] = item.steps.flatMap(id => {
@@ -1906,15 +1954,19 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
     });
     const gone = item.steps.length - links.length;
     const mark = item.mark ?? 'unchecked';
+    const named = [links.length === 1 ? ' · Step ' : ' · Steps ', ...links.flatMap((link, at) => (at ? [', ', link] : [link]))];
+    const steps = links.length ? [el('span', { className: 'item-steps' }, ...named)] : [];
     const row = el(
       'li',
       { className: view.kind === 'checklist' && view.item === item.id ? 'current' : '' },
       icon(mark, STATE_NAMES[mark]),
-      el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), ...(compact ? [] : [el('span', { className: 'item-status' }, item.status)])),
-      ...links,
-      ...(gone
-        ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)]
-        : []),
+      el(
+        'div',
+        { className: 'item-body' },
+        markdown(item.text, 'item-text'),
+        el('p', { className: 'item-line' }, el('span', { className: 'item-status' }, item.status), ...steps),
+        ...(gone ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)] : []),
+      ),
       ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text)),
     );
     row.dataset['mark'] = mark;
@@ -1923,7 +1975,7 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
   });
 }
 
-function checklistView({ title, items }: Checklist, view: View, compact = false): HTMLElement {
+function checklistView({ title, description, items }: Checklist, view: View, compact = false): HTMLElement {
   const heading = el(
     'h2',
     { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' },
@@ -1933,7 +1985,8 @@ function checklistView({ title, items }: Checklist, view: View, compact = false)
   const head = view.kind === 'checklist' ? el('div', { className: 'title-row' }, heading) : heading;
   const met = metCount(items);
   if (met !== null) head.append(el('span', { className: 'counter' }, met));
-  const section = el('section', { className: 'checklist' }, head, el('ul', {}, ...rows));
+  const about = description ? [el('p', { className: 'checklist-description' }, description)] : [];
+  const section = el('section', { className: 'checklist' }, head, ...about, el('ul', {}, ...rows));
   section.setAttribute('aria-labelledby', heading.id);
   return section;
 }
@@ -2797,7 +2850,7 @@ function drawEdges(view: View, side: HTMLElement[], tabs: Tab[]): void {
     ...(hidden('explanation') && view.kind === 'step' ? [showButton('explanation', PANEL.explanation.title, null)] : []),
   );
   const items = walkthrough.checklist?.items ?? [];
-  rightEdge.replaceChildren(...(hidden('checklist') && side.length ? [showButton('checklist', PANEL.checklist.title, metCount(items))] : []));
+  rightEdge.replaceChildren(...(hidden('checklist') && side.length ? [showButton('checklist', PANEL.checklist.title, metCount(items, true))] : []));
   bottomStrip.replaceChildren(
     ...(hidden('tools')
       ? tabs.map(tab => showButton('tools', tab.label, tab.count, () => { tool = tab.id; }))
@@ -2942,6 +2995,7 @@ function render(): void {
     pane.scrollTop = scrolled[at] ?? 0;
   });
   for (const [box, left] of sideways) box.scrollLeft = left;
+  markTopFile();
   for (const part of shown) part.dataset['motion'] = 'pane-enter';
   leaveRows(rows, newly);
   placeGhosts();
@@ -3148,6 +3202,7 @@ PANELS.forEach((panel, at) => {
 });
 
 phone.addEventListener('change', render);
+codePane.addEventListener('scroll', markTopFile, { passive: true });
 
 window.addEventListener('hashchange', () => {
   // The export is one document the browser scrolls to the address itself.
@@ -3171,8 +3226,10 @@ if (exported) {
   document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
 }
 
-if (exported?.viewer) showViewer(exported.viewer);
-else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
+if (exported?.viewer) {
+  showViewer(exported.viewer);
+  Object.assign(panels, exported.viewer.panels);
+} else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
 
 ({ walkthrough, session } = exported
   ? exported

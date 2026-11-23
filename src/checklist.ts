@@ -4,8 +4,9 @@ import { type Checklist, MARKS, type Mark, type Walkthrough } from './walkthroug
 
 // Ids follow the session's id or the item's text, never the place, so a decision cannot land on another item.
 export function parseChecklist(text: string, { steps, checklist, lastChecklistItem = 0 }: Walkthrough): Checklist {
-  const { title, items } = parseObject(text, 'the checklist');
+  const { title, description, items } = parseObject(text, 'the checklist');
   if (!filled(title)) throw new Error('the checklist needs a title');
+  if (description !== undefined && !filled(description)) throw new Error('the checklist: description must be text');
   if (!Array.isArray(items)) throw new Error('the checklist: items must be a list');
   const before = checklist?.items ?? [];
   const known = new Set(steps.map(step => step.id));
@@ -31,6 +32,7 @@ export function parseChecklist(text: string, { steps, checklist, lastChecklistIt
   let next = Math.max(lastChecklistItem, ...before.map(old => Number(old.id)));
   return {
     title,
+    ...(description !== undefined && { description }),
     items: checked.map(({ id, ...item }) => {
       const same = id ?? before.find(old => old.text === item.text && !kept.has(old.id))?.id ?? String(++next);
       kept.add(same);
