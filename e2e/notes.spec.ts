@@ -199,3 +199,16 @@ test('session Markdown shows no raw HTML or images and keeps to the CSP', async 
   await expect(note.getByRole('link', { name: 'docs' })).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(page).not.toHaveTitle('1');
 });
+
+test('a line number is a button that says when its line is picked', async ({ page }) => {
+  const number = (line: number) => page.getByRole('button', { name: `Ask about line ${String(line)} of cart.ts` });
+  await expect(number(2)).toHaveAttribute('aria-pressed', 'false');
+  await number(2).focus();
+
+  await page.keyboard.press('Enter');
+
+  await expect(number(2)).toHaveAttribute('aria-pressed', 'true');
+  await expect(number(3)).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.press('Escape');
+  await expect(number(2)).toHaveAttribute('aria-pressed', 'false');
+});

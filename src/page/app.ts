@@ -938,6 +938,8 @@ function drawDiff(step: Step): Drawn {
     // One line number is in the tab order, and the arrows move from it, so the diff is one stop.
     cells.forEach((cell, at) => {
       cell.tabIndex = at === 0 ? 0 : -1;
+      cell.setAttribute('role', 'button');
+      cell.setAttribute('aria-pressed', 'false');
       cell.setAttribute('aria-label', `Ask about line ${cell.closest('tr')?.dataset['line'] ?? ''} of ${cell.closest('tr')?.dataset['file'] ?? ''}`);
     });
     view.onkeydown = event => {
@@ -952,7 +954,11 @@ function drawDiff(step: Step): Drawn {
 function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll('.pinned-row')) old.remove();
-  for (const old of view.querySelectorAll('tr.selected')) old.classList.remove('selected');
+  const press = (row: HTMLTableRowElement, picked: boolean) => {
+    row.classList.toggle('selected', picked);
+    if (!readOnly) row.querySelector('.d2h-code-linenumber')?.setAttribute('aria-pressed', String(picked));
+  };
+  for (const old of view.querySelectorAll<HTMLTableRowElement>('tr.selected')) press(old, false);
   const at = new Map<string, (Note | Ask)[]>();
   for (const entry of pinned) {
     const { file, lines } = placeOf(entry);
@@ -965,7 +971,7 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   if (pick && pickKey) {
     for (const row of rows.values()) {
       const line = Number(row.dataset['line']);
-      if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) row.classList.add('selected');
+      if (row.dataset['file'] === pick.file && line >= pick.lines[0] && line <= pick.lines[1]) press(row, true);
     }
     if (pick.ended && !at.has(pickKey)) at.set(pickKey, []);
   }
