@@ -1193,7 +1193,26 @@ function viewBody(view: View): HTMLElement {
   }
 }
 
+/** A redraw under a pressed pointer would swap the control out before its click lands, so it waits for the release. */
+let pressed = false;
+let redrawLater = false;
+document.addEventListener('pointerdown', () => {
+  pressed = true;
+}, true);
+for (const [target, released] of [[document, 'pointerup'], [document, 'pointercancel'], [window, 'blur']] as const)
+  target.addEventListener(released, () => {
+    pressed = false;
+    if (!redrawLater) return;
+    redrawLater = false;
+    // After the click this release makes.
+    setTimeout(render, 0);
+  }, true);
+
 function render(): void {
+  if (pressed) {
+    redrawLater = true;
+    return;
+  }
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
