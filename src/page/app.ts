@@ -107,6 +107,7 @@ let taking: { key: string; action: string } | null = null;
 const changing = new Set<string>();
 
 async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
+  readShown();
   const before = moves;
   const from = currentStep()?.id;
   const answer = await post('decide', { item, action, ...fields, on: walkthrough.on[itemKey(item)] });
@@ -227,17 +228,43 @@ async function undo(): Promise<void> {
   if (hadFocus) document.querySelector<HTMLElement>('.action-bar button, #main button')?.focus();
 }
 
-/** Marked before the redraw that shows the step: a redraw or alert change on the server's answer could undo a click made meanwhile. */
-function markRead(step: Step): void {
-  if (readOnly || walkthrough.read.includes(step.id)) return;
-  const read = new Set([...walkthrough.read, step.id]);
+/** How long a step stays on screen before it counts as read, so a step passed on the way to another does not. */
+const READ_MS = 800;
+let reading: { step: string; timer: ReturnType<typeof setTimeout> } | null = null;
+
+/** Marked by the page itself, not on the server's answer, whose redraw or alert change could undo a click made meanwhile. */
+function readNow(id: string): void {
+  if (walkthrough.read.includes(id)) return;
+  const read = new Set([...walkthrough.read, id]);
   // In step order, as the server lists them, so the next poll finds nothing new to draw.
   walkthrough = { ...walkthrough, read: walkthrough.steps.filter(one => read.has(one.id)).map(one => one.id) };
   posted++;
-  void postQuietly('read', { step: step.id, on: walkthrough.on[itemKey({ type: 'step', id: step.id })] });
+  void postQuietly('read', { step: id, on: walkthrough.on[itemKey({ type: 'step', id })] });
+}
+
+function markRead(step: Step): void {
+  if (readOnly || walkthrough.read.includes(step.id) || reading?.step === step.id) return;
+  if (reading) clearTimeout(reading.timer);
+  const timer = setTimeout(() => {
+    reading = null;
+    if (currentStep()?.id !== step.id) return;
+    readNow(step.id);
+    render();
+  }, READ_MS);
+  reading = { step: step.id, timer };
+}
+
+/** Deciding or asking on the step shown says it was read, however soon. */
+function readShown(): void {
+  if (!reading) return;
+  clearTimeout(reading.timer);
+  const { step } = reading;
+  reading = null;
+  if (currentStep()?.id === step) readNow(step);
 }
 
 async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
+  readShown();
   const answer = await post(route, body);
   if (!answer) return false;
   if (draft) drafts.delete(draft);

@@ -199,3 +199,20 @@ test('in Tool panel a line note on a folded step opens its file and takes focus 
   await expect(note).toBeVisible();
   await expect(note).toBeFocused();
 });
+
+test('a step passed on the way to another is not marked read', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const progress = page.getByRole('progressbar', { name: 'Steps decided' });
+  await expect(progress).toHaveAttribute('aria-valuetext', '0 of 3 steps decided, 3 left, 1 read');
+  const select = page.getByRole('combobox', { name: 'Step' });
+
+  // As arrowing through the select does on Windows and Linux, which picks each option on the way.
+  await select.selectOption({ label: 'Regenerated schema' });
+  await select.selectOption({ label: 'App version' });
+
+  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  await expect(progress).toHaveAttribute('aria-valuetext', '0 of 3 steps decided, 3 left, 2 read');
+  // Longer than a step takes to count as read.
+  await page.waitForTimeout(1500);
+  await expect(progress).toHaveAttribute('aria-valuetext', '0 of 3 steps decided, 3 left, 2 read');
+});
