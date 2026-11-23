@@ -50,6 +50,7 @@ When they say now:
 2. Read it with `walkthrough policy show`, and go through its sections in order.
    For each, sum up its defaults in a line and ask one short question about how they actually review that part.
    Before asking the next question, write the whole policy with that answer applied to a file in the inbox `walkthrough policy` printed, and save it with `walkthrough policy save --file <file>`; "keep" leaves the section as it is.
+   The save uses up the file, so for the next answer write the whole policy again, from the version you last saved, to a new file.
 3. The interview is done when every section is asked or they say enough; go on with `walkthrough start`.
 Never read or edit the policy file itself; the `walkthrough policy` commands are how you reach it.
 

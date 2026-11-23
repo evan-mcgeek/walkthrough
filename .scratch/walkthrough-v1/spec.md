@@ -121,8 +121,10 @@ The tool itself knows only git, its own state and the page, so it works for any 
   Every judgement (grouping, order, what is folded and why, reviewers, checklist content, actions offered, what to do with a decision) comes from the policy and instructions, never from the skill's own rules.
   First-run setup offers the policy template and interviews the person to fill it, and offers again on later runs while the policy is unchanged from the template.
 - **CLI**: the deep module and the only writer of state.
-  Commands decided: `start`, `stop`, `listen`, `say`, `guide`, `prune`, `list`, `export`.
-  Recording commands (steps, notes, checklist, actions) are left to the builder, all taking JSON on standard input in the shape `guide` prints.
+  Commands decided: `start`, `stop`, `listen`, `say`, `guide`, `prune`, `list`, `export`, `policy`.
+  Recording commands (steps, notes, checklist, actions) are left to the builder, all taking JSON in the shape `guide` prints, from a file the session writes into the walkthrough's inbox (`--file`) or on standard input.
+  `policy` compares the person's review policy with the template and copies it, byte for byte, and never reads its rules.
+- **Hook**: a plugin PreToolUse hook approves the CLI's own commands and the session's writes to an inbox for the whole session (ADR 0006).
 - **Server**: plain `node:http`, localhost only, private URL token, host and origin check, JSON-only POST bodies, strict CSP.
 - **Page**: plain TypeScript and the DOM, no framework, bundled with esbuild, diffs by diff2html in line-by-line mode; each region is redrawn from state by one render function; it polls for state.
 - **Review policy template**: a Markdown file shipped with the plugin, written for agents, naming no specific agent, plugin, tracker or code host.
