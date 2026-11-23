@@ -11,10 +11,12 @@ var round = { fill: "none", stroke: "currentColor", "stroke-linecap": "round", "
 var line = (d, width = 1.7) => ["path", { d, ...round, "stroke-width": width }];
 var ring = (extra = {}) => ["circle", { cx: 8, cy: 8, r: 6.2, fill: "none", stroke: "currentColor", "stroke-width": 1.6, ...extra }];
 var block = (x, y, width, height, opacity = 1) => ["rect", { x, y, width, height, rx: 1, fill: "currentColor", ...opacity < 1 && { opacity } }];
+var frame = ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }];
 var ICONS = {
   /** Queue and step states. */
   unread: [ring()],
   read: [ring(), ["path", { d: "M8 1.8a6.2 6.2 0 0 1 0 12.4z", fill: "currentColor" }]],
+  current: [ring(), ["circle", { cx: 8, cy: 8, r: 2.8, fill: "currentColor" }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
@@ -23,6 +25,9 @@ var ICONS = {
   reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
   folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],
   message: [line("M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z", 1.5)],
+  summary: [line("M3 3.5h10M3 8h10M3 12.5h6", 1.6)],
+  /** The verdict. */
+  finish: [["path", { d: "M3.5 14V2.5M3.5 3h8.2l-1.6 2.6 1.6 2.6H3.5", ...round, "stroke-width": 1.5 }]],
   /** Checklist statuses. */
   met: [ring(), line("M5 8.2l2 2 4-4.3")],
   "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
@@ -50,18 +55,35 @@ var ICONS = {
   more: [3.5, 8, 12.5].map((cx) => ["circle", { cx, cy: 8, r: 1.4, fill: "currentColor" }]),
   "chevron-right": [line("M6 4l4 4-4 4")],
   "chevron-down": [line("M4 6l4 4 4-4")],
+  eye: [
+    ["path", { d: "M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z", ...round, "stroke-width": 1.4 }],
+    ["circle", { cx: 8, cy: 8, r: 2, fill: "currentColor" }]
+  ],
+  plus: [line("M8 3.5v9M3.5 8h9", 1.8)],
+  /** The person's own words. */
+  own: [
+    ["circle", { cx: 8, cy: 5.6, r: 2.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
+    line("M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6", 1.5)
+  ],
+  edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
+  trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
+  minus: [line("M3.5 8h9", 1.6)],
+  keyboard: [
+    ["rect", { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    line("M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6", 1.4)
+  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ["path", { d: "M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8", ...round, "stroke-width": 2.3 }],
     ["path", { d: "M11.4 12.8L14.4 3.2", ...round, "stroke-width": 2.3, opacity: 0.4 }]
   ],
-  /** Layouts. */
-  "layout-queue": [block(1, 2, 5, 12), block(7.3, 2, 7.7, 12, 0.5)],
-  "layout-three": [block(1, 2, 3.5, 12), block(5.8, 2, 5, 12, 0.5), block(12, 2, 3, 12)],
-  "layout-split": [block(1, 2, 6.3, 12, 0.5), block(8.7, 2, 6.3, 12)],
-  "layout-panel": [block(1, 2, 3.5, 12), block(5.8, 2, 9.2, 7.5, 0.5), block(5.8, 10.7, 9.2, 3.3)]
+  /** Panels, as a window with the panel's part filled. */
+  "panel-queue": [frame, block(2.6, 3.6, 3.4, 8.8)],
+  "panel-checklist": [frame, block(10, 3.6, 3.4, 8.8)],
+  "panel-explanation": [frame, block(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]],
+  "panel-tools": [frame, block(2.6, 9.4, 10.8, 3)]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -87,6 +109,7 @@ function el(tag, props = {}, ...children) {
   node.append(...children);
   return node;
 }
+var kindView = (kind) => kind === void 0 ? [] : [el("span", { className: "kind", title: "The kind of walkthrough" }, kind)];
 function region(id) {
   const found = document.getElementById(id);
   if (!found) throw new Error(`the page has no #${id}`);
@@ -134,6 +157,22 @@ async function post(page, route, body) {
     return null;
   } catch {
     showUnreachable(page);
+    return null;
+  }
+}
+
+// src/page/appearance.ts
+function showViewer({ accent, theme }) {
+  Object.assign(document.documentElement.dataset, { ...accent && { accent }, ...theme && { theme } });
+}
+async function loadViewer() {
+  try {
+    const answer = await fetch("data/viewer.json");
+    if (!answer.ok) return null;
+    const viewer = await answer.json();
+    showViewer(viewer);
+    return viewer;
+  } catch {
     return null;
   }
 }
@@ -188,11 +227,16 @@ function row(one) {
   name.dataset["key"] = `open:${one.id}`;
   return el(
     "tr",
-    {},
+    { role: "row" },
     // The id is what walkthrough prune takes to remove this one.
-    el("td", {}, name, el("code", { className: "list-id" }, one.id)),
-    el("td", {}, progress(one)),
-    el("td", { className: "muted" }, el("time", { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last)))
+    el("td", { role: "cell" }, el("div", { className: "list-name" }, name, ...kindView(one.kind)), el("code", { className: "list-id" }, one.id)),
+    el("td", { role: "cell" }, progress(one)),
+    el(
+      "td",
+      { role: "cell" },
+      one.verdict === void 0 ? el("span", { className: "muted" }, "No verdict yet") : el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), one.verdict)
+    ),
+    el("td", { role: "cell", className: "muted" }, el("time", { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last)))
   );
 }
 var shown = "";
@@ -203,11 +247,20 @@ function render(page) {
     el("span", { className: "session-label" }, page.repo),
     el("div", { className: "header-end" }, el("button", { type: "button", className: "btn small", onclick: () => void stop() }, "Stop"))
   );
-  const head = el("tr", {}, ...["Walkthrough", "Progress", "Last activity"].map((name) => el("th", { scope: "col" }, name)));
+  const head = el(
+    "tr",
+    { role: "row" },
+    ...["Walkthrough", "Progress", "Verdict", "Last activity"].map((name) => el("th", { scope: "col", role: "columnheader" }, name))
+  );
   main.replaceChildren(
     el("h1", { className: "list-title" }, "Walkthroughs"),
     el("p", { className: "muted list-sub" }, "In this repository"),
-    page.walkthroughs.length ? el("table", { className: "walkthroughs" }, el("thead", {}, head), el("tbody", {}, ...page.walkthroughs.map(row))) : el("p", { className: "list-empty" }, "This repo has no walkthroughs; run /walkthrough to start one.")
+    page.walkthroughs.length ? el(
+      "table",
+      { className: "walkthroughs", role: "table" },
+      el("thead", { role: "rowgroup" }, head),
+      el("tbody", { role: "rowgroup" }, ...page.walkthroughs.map(row))
+    ) : el("p", { className: "list-empty" }, "This repo has no walkthroughs; run /walkthrough to start one.")
   );
   if (focused !== void 0) document.querySelector(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }
@@ -216,6 +269,7 @@ var load = async () => {
   if (!answer.ok) throw new Error(String(answer.status));
   return answer.text();
 };
+await loadViewer();
 shown = await load();
 render(JSON.parse(shown));
 var poller = setInterval(() => {

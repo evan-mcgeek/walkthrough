@@ -3766,7 +3766,7 @@ function clojure(hljs2) {
     end: "[\\]\\}]",
     relevance: 0
   };
-  const KEY2 = {
+  const KEY = {
     className: "symbol",
     begin: "[:]{1,2}" + SYMBOL_RE
   };
@@ -3792,7 +3792,7 @@ function clojure(hljs2) {
     REGEX,
     STRING,
     COMMENT,
-    KEY2,
+    KEY,
     COLLECTION,
     NUMBER,
     LITERAL,
@@ -3837,7 +3837,7 @@ function clojure(hljs2) {
       REGEX,
       STRING,
       COMMENT,
-      KEY2,
+      KEY,
       COLLECTION,
       NUMBER,
       LITERAL
@@ -13306,7 +13306,7 @@ function properties(hljs2) {
   const EQUAL_DELIM = WS0 + "[:=]" + WS0;
   const WS_DELIM = WS1;
   const DELIM = "(" + EQUAL_DELIM + "|" + WS_DELIM + ")";
-  const KEY2 = "([^\\\\:= \\t\\f\\n]|\\\\.)+";
+  const KEY = "([^\\\\:= \\t\\f\\n]|\\\\.)+";
   const DELIM_AND_VALUE = {
     // skip DELIM
     end: DELIM,
@@ -13334,13 +13334,13 @@ function properties(hljs2) {
       {
         returnBegin: true,
         variants: [
-          { begin: KEY2 + EQUAL_DELIM },
-          { begin: KEY2 + WS_DELIM }
+          { begin: KEY + EQUAL_DELIM },
+          { begin: KEY + WS_DELIM }
         ],
         contains: [
           {
             className: "attr",
-            begin: KEY2,
+            begin: KEY,
             endsParent: true
           }
         ],
@@ -13349,7 +13349,7 @@ function properties(hljs2) {
       // case of an empty key
       {
         className: "attr",
-        begin: KEY2 + WS0 + "$"
+        begin: KEY + WS0 + "$"
       }
     ]
   };
@@ -16814,7 +16814,7 @@ function swift(hljs2) {
 function yaml(hljs2) {
   const LITERALS3 = "true false yes no null";
   const URI_CHARACTERS = "[\\w#;/?:@&=+$,.~*'()[\\]]+";
-  const KEY2 = {
+  const KEY = {
     className: "attr",
     variants: [
       // added brackets support and special char support
@@ -16919,7 +16919,7 @@ function yaml(hljs2) {
     relevance: 0
   };
   const MODES4 = [
-    KEY2,
+    KEY,
     {
       className: "meta",
       begin: "^---\\s*$",
@@ -20572,6 +20572,22 @@ var Diff2HtmlUI2 = class extends Diff2HtmlUI {
     super(target, diffInput, config2, hljs);
   }
 };
+
+// src/comments.ts
+function commentsOf(conversation) {
+  const comments = /* @__PURE__ */ new Map();
+  for (const entry of conversation) {
+    if (entry.from !== "page") continue;
+    if (entry.kind === "comment" && entry.file !== void 0 && entry.lines) {
+      const { id, step, file, lines, linesHash, text: text2 } = entry;
+      comments.set(id, { id, step, file, lines, ...linesHash !== void 0 && { linesHash }, text: text2 });
+    }
+    const kept = "comment" in entry ? comments.get(entry.comment) : void 0;
+    if (kept && entry.kind === "edit-comment") kept.text = entry.text;
+    if (kept && entry.kind === "delete-comment") comments.delete(kept.id);
+  }
+  return [...comments.values()];
+}
 
 // src/diff.ts
 var encoder = new TextEncoder();
@@ -25932,9 +25948,17 @@ var builtIn = (actions) => actions.length === STEP_ACTIONS.length && actions.eve
   const own = STEP_ACTIONS[at];
   return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit;
 });
-var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
+var itemKey = (item) => "id" in item ? `${item.type}:${item.id}` : item.type;
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
+
+// src/viewer.ts
+var PANELS = ["queue", "checklist", "explanation", "tools"];
+var DEFAULT_VIEWER = {
+  accent: "ultramarine",
+  theme: "system",
+  panels: { queue: true, checklist: false, explanation: false, tools: false }
+};
 
 // src/words.ts
 var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
@@ -25949,10 +25973,12 @@ var round = { fill: "none", stroke: "currentColor", "stroke-linecap": "round", "
 var line = (d, width = 1.7) => ["path", { d, ...round, "stroke-width": width }];
 var ring = (extra = {}) => ["circle", { cx: 8, cy: 8, r: 6.2, fill: "none", stroke: "currentColor", "stroke-width": 1.6, ...extra }];
 var block2 = (x, y, width, height, opacity = 1) => ["rect", { x, y, width, height, rx: 1, fill: "currentColor", ...opacity < 1 && { opacity } }];
+var frame = ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }];
 var ICONS = {
   /** Queue and step states. */
   unread: [ring()],
   read: [ring(), ["path", { d: "M8 1.8a6.2 6.2 0 0 1 0 12.4z", fill: "currentColor" }]],
+  current: [ring(), ["circle", { cx: 8, cy: 8, r: 2.8, fill: "currentColor" }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
@@ -25961,6 +25987,9 @@ var ICONS = {
   reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
   folded: [block2(2, 3, 12, 3), block2(2, 8, 12, 2, 0.55), block2(2, 12, 12, 2, 0.3)],
   message: [line("M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z", 1.5)],
+  summary: [line("M3 3.5h10M3 8h10M3 12.5h6", 1.6)],
+  /** The verdict. */
+  finish: [["path", { d: "M3.5 14V2.5M3.5 3h8.2l-1.6 2.6 1.6 2.6H3.5", ...round, "stroke-width": 1.5 }]],
   /** Checklist statuses. */
   met: [ring(), line("M5 8.2l2 2 4-4.3")],
   "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
@@ -25988,18 +26017,35 @@ var ICONS = {
   more: [3.5, 8, 12.5].map((cx) => ["circle", { cx, cy: 8, r: 1.4, fill: "currentColor" }]),
   "chevron-right": [line("M6 4l4 4-4 4")],
   "chevron-down": [line("M4 6l4 4 4-4")],
+  eye: [
+    ["path", { d: "M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z", ...round, "stroke-width": 1.4 }],
+    ["circle", { cx: 8, cy: 8, r: 2, fill: "currentColor" }]
+  ],
+  plus: [line("M8 3.5v9M3.5 8h9", 1.8)],
+  /** The person's own words. */
+  own: [
+    ["circle", { cx: 8, cy: 5.6, r: 2.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
+    line("M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6", 1.5)
+  ],
+  edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
+  trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
+  minus: [line("M3.5 8h9", 1.6)],
+  keyboard: [
+    ["rect", { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    line("M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6", 1.4)
+  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ["path", { d: "M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8", ...round, "stroke-width": 2.3 }],
     ["path", { d: "M11.4 12.8L14.4 3.2", ...round, "stroke-width": 2.3, opacity: 0.4 }]
   ],
-  /** Layouts. */
-  "layout-queue": [block2(1, 2, 5, 12), block2(7.3, 2, 7.7, 12, 0.5)],
-  "layout-three": [block2(1, 2, 3.5, 12), block2(5.8, 2, 5, 12, 0.5), block2(12, 2, 3, 12)],
-  "layout-split": [block2(1, 2, 6.3, 12, 0.5), block2(8.7, 2, 6.3, 12)],
-  "layout-panel": [block2(1, 2, 3.5, 12), block2(5.8, 2, 9.2, 7.5, 0.5), block2(5.8, 10.7, 9.2, 3.3)]
+  /** Panels, as a window with the panel's part filled. */
+  "panel-queue": [frame, block2(2.6, 3.6, 3.4, 8.8)],
+  "panel-checklist": [frame, block2(10, 3.6, 3.4, 8.8)],
+  "panel-explanation": [frame, block2(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]],
+  "panel-tools": [frame, block2(2.6, 9.4, 10.8, 3)]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -26028,10 +26074,62 @@ function el(tag2, props = {}, ...children) {
 function selectBox(select) {
   return el("div", { className: "select" }, select, icon("chevron-down"));
 }
+var kindView = (kind) => kind === void 0 ? [] : [el("span", { className: "kind", title: "The kind of walkthrough" }, kind)];
 function region(id) {
   const found = document.getElementById(id);
   if (!found) throw new Error(`the page has no #${id}`);
   return found;
+}
+function openDialog(label, returnTo, ...content) {
+  const heading2 = el("h2", { className: "popover-head", id: `dialog-${label.toLowerCase().replace(/\W+/g, "-")}` });
+  heading2.append(label);
+  const dialog = el("dialog", { className: "popover" }, heading2, ...content);
+  dialog.setAttribute("aria-labelledby", heading2.id);
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener("close", () => {
+    dialog.remove();
+    const back = returnTo();
+    if (back instanceof HTMLElement) back.focus();
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+  return dialog;
+}
+function radioGroup(label, options2, chosen, choose2) {
+  const radios = options2.map(([value, name]) => {
+    const radio = el("button", { type: "button", className: "radio", tabIndex: value === chosen ? 0 : -1 }, name);
+    radio.setAttribute("role", "radio");
+    radio.setAttribute("aria-checked", String(value === chosen));
+    radio.dataset["value"] = value;
+    radio.autofocus = value === chosen;
+    radio.onclick = () => {
+      pick2(value);
+    };
+    return radio;
+  });
+  const pick2 = (value) => {
+    for (const radio of radios) {
+      const on = radio.dataset["value"] === value;
+      radio.setAttribute("aria-checked", String(on));
+      radio.tabIndex = on ? 0 : -1;
+      if (on) radio.focus();
+    }
+    choose2(value);
+  };
+  const group = el("div", { className: "radios" }, ...radios);
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", label);
+  group.onkeydown = (event) => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+    if (step === void 0) return;
+    event.preventDefault();
+    const at = radios.findIndex((radio) => radio === document.activeElement);
+    const next = options2[(at + step + options2.length) % options2.length];
+    if (next) pick2(next[0]);
+  };
+  return group;
 }
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
@@ -26080,27 +26178,58 @@ async function post(page, route, body) {
   }
 }
 
-// src/page/layout.ts
-var LAYOUTS = [
-  { id: "queue", label: "What's left", icon: "layout-queue" },
-  { id: "three", label: "Three columns", icon: "layout-three" },
-  { id: "split", label: "Explanation beside code", icon: "layout-split" },
-  { id: "panel", label: "Tool panel", icon: "layout-panel" }
-];
-var KEY = "walkthrough.layout";
-function storedLayout() {
+// src/page/appearance.ts
+function showViewer({ accent, theme }) {
+  Object.assign(document.documentElement.dataset, { ...accent && { accent }, ...theme && { theme } });
+}
+async function loadViewer() {
   try {
-    const stored = localStorage.getItem(KEY);
-    return LAYOUTS.find((layout2) => layout2.id === stored)?.id ?? "queue";
+    const answer = await fetch("data/viewer.json");
+    if (!answer.ok) return null;
+    const viewer = await answer.json();
+    showViewer(viewer);
+    return viewer;
   } catch {
-    return "queue";
+    return null;
   }
 }
-function storeLayout(layout2) {
-  try {
-    localStorage.setItem(KEY, layout2);
-  } catch {
-  }
+var shown = (setting, fallback) => document.documentElement.dataset[setting] ?? fallback;
+function choose(change) {
+  showViewer(change);
+  void postQuietly("viewer", change);
+}
+function appearanceDialog(returnTo) {
+  const label = (text2) => el("p", { className: "popover-label" }, text2);
+  const accents = radioGroup(
+    "Accent",
+    [["ultramarine", "Ultramarine (default)"], ["petrol", "Petrol"], ["berry", "Berry"]],
+    shown("accent", "ultramarine"),
+    (accent) => {
+      choose({ accent });
+    }
+  );
+  accents.classList.add("accents");
+  for (const radio of accents.children) radio.prepend(el("span", { className: `swatch ${radio.dataset["value"] ?? ""}` }));
+  const themes = radioGroup(
+    "Theme",
+    [["system", "System"], ["light", "Light"], ["dark", "Dark"]],
+    shown("theme", "system"),
+    (theme) => {
+      choose({ theme });
+    }
+  );
+  themes.classList.add("options");
+  const dialog = openDialog(
+    "Appearance",
+    returnTo,
+    label("Accent"),
+    accents,
+    label("Theme"),
+    themes,
+    el("p", { className: "hint" }, "Saved for you on this machine.")
+  );
+  dialog.classList.add("appearance");
+  return dialog;
 }
 
 // src/page/markdown.ts
@@ -26145,6 +26274,49 @@ withImages.core.ruler.push("mark_added", (state) => {
 });
 var withoutImages = renderer().disable("image");
 var renderMarkdown = (text2, file, added) => file === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file, added });
+
+// src/page/shortcuts.ts
+var SHORTCUTS = [
+  { caps: "J / K", does: "Next / previous step" },
+  { caps: "A", does: "Approve and go to the next step" },
+  { caps: "F", does: "Flag (asks for a note)" },
+  { caps: "/", does: "Ask about this step" },
+  { caps: "Click, Shift-click", does: "Pick lines from their numbers" },
+  { caps: "C", does: "Comment on picked lines" },
+  { caps: "V", does: "Mark the file as viewed" },
+  { caps: "1 \u2013 4", does: "Show or hide a panel" },
+  { caps: "G then S", does: "Go to the Summary" },
+  { caps: "?", does: "This sheet" }
+];
+var bound = /* @__PURE__ */ new Map();
+function bind(key2, run) {
+  bound.set(key2, run);
+}
+var isTyping = (target) => target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+var started = null;
+var SEQUENCE_MS = 1500;
+function runShortcut(event) {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || isTyping(event.target)) return false;
+  if (document.querySelector("dialog[open]") || event.target instanceof Element && event.target.closest('[role="menu"]')) return false;
+  const first = started && Date.now() - started.at < SEQUENCE_MS ? started.key : null;
+  started = null;
+  const run = (first !== null ? bound.get(`${first} ${event.key}`) : void 0) ?? bound.get(event.key);
+  if (!run) {
+    if ([...bound.keys()].some((key2) => key2.startsWith(`${event.key} `))) started = { key: event.key, at: Date.now() };
+    return false;
+  }
+  event.preventDefault();
+  run(event);
+  return true;
+}
+var withKey = (label, key2) => `${label} (${key2})`;
+function shortcutSheet(returnTo) {
+  const rows = SHORTCUTS.map(({ caps, does }) => el("tr", {}, el("td", {}, el("kbd", {}, caps)), el("td", {}, does)));
+  const dialog = openDialog("Keyboard shortcuts", returnTo, el("table", { className: "keys" }, el("tbody", {}, ...rows)));
+  dialog.classList.add("sheet");
+  dialog.querySelector(".popover-head")?.prepend(icon("keyboard"));
+  return dialog;
+}
 
 // src/page/motion.ts
 var root = getComputedStyle(document.documentElement);
@@ -26203,7 +26375,10 @@ var queue = region("queue");
 var main = region("main");
 var side = region("side");
 var tools = region("tools");
-var layout = readOnly ? "queue" : storedLayout();
+var leftEdge = region("left-edge");
+var rightEdge = region("right-edge");
+var bottomStrip = region("bottom-strip");
+var panels = { ...DEFAULT_VIEWER.panels };
 var posted = 0;
 var PAGE = { name: "walkthrough", reopen: "Run /walkthrough again to reopen it.", retry: () => {
   poll();
@@ -26227,11 +26402,11 @@ function currentView() {
   if (named === "checklist" && walkthrough.checklist) return { kind: "checklist" };
   const item = CHECKLIST_ITEM.exec(named)?.[1];
   if (item !== void 0 && walkthrough.checklist) return { kind: "checklist", item };
-  if (named === "end" && steps.length) return { kind: "end" };
+  if (named === "summary" && steps.length) return { kind: "summary" };
   if (named === "deck" && !readOnly) return { kind: "deck" };
   const step = steps.find((one) => one.id === named) ?? steps.find((one) => !stepDecided(one));
   if (step) return { kind: "step", step };
-  return steps.length ? { kind: "end" } : { kind: "preparing" };
+  return steps.length ? { kind: "summary" } : { kind: "preparing" };
 }
 var currentStep = () => {
   const view = currentView();
@@ -26262,7 +26437,7 @@ async function decide(item, action, fields = {}) {
     const { steps } = walkthrough;
     const at = steps.findIndex((one) => one.id === item.id);
     const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find((one) => !stepDecided(one));
-    go2(next ? next.id : "end");
+    go2(next ? next.id : "summary");
   }
   render();
   offerUndo(item, action, moving);
@@ -26309,8 +26484,9 @@ function itemName(item) {
       const noted = session.conversation.find((entry) => entry.id === item.id);
       return noted && isNote(noted) ? `the ${noted.note.label} note` : "the note";
     }
+    case "verdict":
     case "walkthrough":
-      return "the walkthrough";
+      return `the ${item.type}`;
   }
 }
 function offerUndo(item, action, moved) {
@@ -26409,6 +26585,7 @@ async function stop() {
   const panes = region("panes");
   panes.classList.add("stopped");
   panes.inert = true;
+  bottomStrip.inert = true;
 }
 var SESSION = {
   listening: ["Listening", "The session is listening: what you ask reaches it right away."],
@@ -26467,26 +26644,62 @@ function progressView() {
   count.dataset["motion"] = "count:progress";
   return [bar, count];
 }
-function chooseLayout(id) {
-  layout = id;
-  storeLayout(id);
+var PANEL = {
+  queue: { title: "To review", menu: "What's left", key: "1" },
+  checklist: { title: "Checklist", menu: "Checklist", key: "2" },
+  explanation: { title: "Explanation", menu: "Explanation column", key: "3" },
+  tools: { title: "tool panel", menu: "Tool panel", key: "4" }
+};
+var shows = (panel) => panels[panel] && (panel !== "explanation" || !phone.matches);
+function togglePanel(panel, refocus = false) {
+  panels[panel] = !panels[panel];
+  void postQuietly("viewer", { panels: { [panel]: panels[panel] } });
   render();
+  if (refocus) document.querySelector(`[data-key="${panels[panel] ? "hide" : "show"}:${panel}"]`)?.focus();
 }
-function layoutSwitch() {
-  const choices = LAYOUTS.map(({ id, label, icon: shape }) => {
-    const button = el("button", { type: "button", title: label }, icon(shape));
-    button.setAttribute("aria-label", label);
-    button.setAttribute("aria-pressed", String(id === layout));
-    button.dataset["key"] = `layout:${id}`;
-    button.onclick = () => {
-      chooseLayout(id);
-    };
-    return button;
+function panelHead(panel, ...title) {
+  const name = `Hide ${PANEL[panel].title}`;
+  const hide = el("button", { type: "button", className: "icon-button panel-hide", title: withKey(name, PANEL[panel].key) }, icon("minus"));
+  hide.setAttribute("aria-label", name);
+  hide.dataset["key"] = `hide:${panel}`;
+  hide.onclick = () => {
+    togglePanel(panel, true);
+  };
+  return el("div", { className: "panel-head" }, ...title, hide);
+}
+function showButton(panel, label, count, onShow = () => {
+}) {
+  const tip = panel === "tools" ? "Show the tool panel" : `Show ${PANEL[panel].title}`;
+  const button = el(
+    "button",
+    { type: "button", className: "edge-button", title: withKey(tip, PANEL[panel].key) },
+    el("span", {}, label),
+    ...count === null ? [] : [el("span", { className: "edge-count" }, count)]
+  );
+  button.setAttribute("aria-expanded", "false");
+  button.dataset["key"] = panel === "tools" ? `show:tools:${label}` : `show:${panel}`;
+  button.onclick = () => {
+    onShow();
+    togglePanel(panel);
+    document.querySelector(panel === "tools" ? '.tab[aria-selected="true"]' : `[data-key="hide:${panel}"]`)?.focus();
+  };
+  return button;
+}
+function panelItems(item) {
+  return PANELS.map((panel) => {
+    const { menu, key: key2 } = PANEL[panel];
+    const narrow = panel === "explanation";
+    const made = item(`${menu} (${key2})`, () => {
+      if (!narrow) togglePanel(panel);
+    }, "menuitemcheckbox");
+    made.prepend(icon(`panel-${panel}`));
+    made.setAttribute("aria-checked", String(shows(panel)));
+    if (narrow) {
+      made.setAttribute("aria-disabled", "true");
+      made.append(el("span", { className: "menu-note" }, "Wider screens"));
+    }
+    return made;
   });
-  const group = el("div", { className: "segmented icons layout-switch" }, ...choices);
-  group.setAttribute("role", "group");
-  group.setAttribute("aria-label", "Layout");
-  return group;
 }
 var menuOpen = null;
 function closeMenu(refocus = false) {
@@ -26498,11 +26711,12 @@ function closeMenu(refocus = false) {
 document.addEventListener("click", (event) => {
   if (menuOpen !== null && !(event.target instanceof Element && event.target.closest(".menu, .more-menu, .menu-button"))) closeMenu();
 });
+var moreButton = () => document.querySelector('[data-key="more"]');
 function moreMenu() {
   const button = el("button", { type: "button", className: "icon-button", onclick: () => {
     menuOpen = menuOpen === "more" ? null : "more";
     render();
-    document.querySelector(".menu [role=menuitem]")?.focus();
+    document.querySelector(".menu [role^=menuitem]")?.focus();
   } }, icon("more"));
   button.setAttribute("aria-label", "More");
   button.setAttribute("aria-haspopup", "menu");
@@ -26510,33 +26724,31 @@ function moreMenu() {
   button.dataset["key"] = "more";
   const box = el("div", { className: "more-menu" }, button);
   if (menuOpen !== "more") return box;
-  const choices = stopped ? [] : [
-    ...walkthrough.steps.length && currentView().kind !== "deck" ? [["Swipe to decide", () => {
-      go2("deck");
-    }]] : [],
-    ["Stop", () => void stop()]
-  ];
-  const item = (label, choose, role = "menuitem") => {
+  const item = (label, choose2, role = "menuitem") => {
     const made = el("button", { type: "button", tabIndex: -1, onclick: () => {
       closeMenu();
-      choose();
+      choose2();
     } }, label);
     made.setAttribute("role", role);
     made.dataset["key"] = `menu:${label}`;
     return made;
   };
-  const actions = choices.map(([label, choose]) => item(label, choose));
-  const layouts = LAYOUTS.map(({ id, label }) => {
-    const radio = item(label, () => {
-      chooseLayout(id);
-    }, "menuitemradio");
-    radio.setAttribute("aria-checked", String(id === layout));
-    return radio;
-  });
-  const items = [...actions, ...layouts];
+  const swipe = phone.matches && !stopped && walkthrough.steps.length && currentView().kind !== "deck" ? [item("Swipe to decide", () => {
+    go2("deck");
+  })] : [];
+  const toggles = phone.matches ? panelItems(item) : [];
+  const after = [
+    item("Appearance", () => {
+      appearanceDialog(moreButton);
+    }),
+    ...!phone.matches ? [item("Keyboard shortcuts", () => {
+      shortcutSheet(moreButton);
+    })] : stopped ? [] : [item("Stop", () => void stop())]
+  ];
+  const items = [...swipe, ...toggles, ...after];
   const separator2 = el("div", { className: "menu-separator" });
   separator2.setAttribute("role", "separator");
-  const menu = el("div", { className: "menu" }, ...actions, ...actions.length ? [separator2] : [], ...layouts);
+  const menu = el("div", { className: "menu" }, ...swipe, ...toggles, ...toggles.length ? [separator2] : [], ...after);
   menu.setAttribute("role", "menu");
   menu.setAttribute("aria-label", "More");
   menu.onkeydown = (event) => {
@@ -26559,18 +26771,24 @@ function around(parent, kept, before, after) {
   kept.before(...before);
   kept.after(...after);
 }
+var finishReview = () => walkthrough.steps.length ? [keyed(el("a", { href: "#summary", className: "btn small ghost finish-review", title: "Finish review: go to the Summary (G S)" }, "Finish review"), "finish-review")] : [];
 function drawHeader() {
   const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   around(
     headerEnd,
     statusView(),
-    [layoutSwitch()],
+    [...verdictStatus(), ...finishReview()],
     [...stopped ? [] : [el("button", { type: "button", className: "btn small stop", onclick: () => void stop() }, "Stop")], moreMenu()]
   );
   around(
     header,
     headerEnd,
-    [el("span", { className: "logo" }, icon("mark"), "Walkthrough"), el("h1", { className: "session-label", title: range }, nameOf(walkthrough)), ...progressView()],
+    [
+      el("span", { className: "logo" }, icon("mark"), "Walkthrough"),
+      ...kindView(walkthrough.kindLabel),
+      el("h1", { className: "session-label", title: range }, nameOf(walkthrough)),
+      ...progressView()
+    ],
     []
   );
 }
@@ -26652,11 +26870,17 @@ function actionButton(item, action, look, small) {
   const button = el("button", { type: "button", className: classes.join(" ") }, ...look === "offer" ? [icon("message")] : [], action.label);
   button.setAttribute("aria-pressed", String(decisionOf(item)?.action === action.id));
   button.dataset["key"] = `action:${key2}:${action.id}`;
+  const shortcut = item.type === "step" && STEP_KEYS[action.id];
+  if (shortcut) button.title = withKey(shortcut.tip(action.label), shortcut.key);
   button.onclick = () => {
     take(item, action);
   };
   return button;
 }
+var STEP_KEYS = {
+  approve: { key: "A", tip: (label) => `${label} and go to the next step` },
+  flag: { key: "F", tip: (label) => label }
+};
 function take(item, action) {
   if (action.note || action.edit) {
     taking = { key: itemKey(item), action: action.id };
@@ -26741,7 +26965,7 @@ function decideView(item, text2 = "", small = true) {
   const key2 = itemKey(item);
   const actions = walkthrough.actions[key2] ?? [];
   if (!actions.length) return [];
-  const shown = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
+  const shown2 = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
   const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
   return [
     el(
@@ -26750,10 +26974,10 @@ function decideView(item, text2 = "", small = true) {
       el(
         "div",
         { className: "decide-row" },
-        ...shown || readOnly ? [stateTag(item, true)] : [],
+        ...shown2 || readOnly ? [stateTag(item, true)] : [],
         ...readOnly ? [] : [actionGroup(item, firstLeads, small)]
       ),
-      ...shown ? decisionSaid(shown) : [],
+      ...shown2 ? decisionSaid(shown2) : [],
       ...taken ? [takingForm(item, taken, text2)] : []
     )
   ];
@@ -26799,8 +27023,7 @@ function takingForm(item, action, text2) {
   };
   return form;
 }
-function placeWas(entry) {
-  const { file, lines } = placeOf(entry);
+function placeWas({ file, lines }) {
   return file !== void 0 && lines ? `${file} ${linesLabel(lines).toLowerCase()}` : "a step no longer in the change";
 }
 var replying = /* @__PURE__ */ new Set();
@@ -26841,7 +27064,7 @@ function noteView(note, asked) {
   const item = { type: "note", id: note.id };
   const key2 = itemKey(item);
   const detached2 = anchorOf(note) === null;
-  const shown = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
+  const shown2 = walkthrough.decided[key2] ?? walkthrough.reopened[key2];
   const taken = taking?.key === key2 ? walkthrough.actions[key2]?.find((action) => action.id === taking?.action) : void 0;
   const view = el(
     "article",
@@ -26850,14 +27073,14 @@ function noteView(note, asked) {
       "div",
       { className: "note-head" },
       ...detached2 ? [icon("message")] : [],
-      el("span", { className: "label" }, label),
-      ...detached2 ? [el("span", { className: "was" }, `was on ${placeWas(note)}`)] : linesOf(lines),
-      ...shown ? [stateTag(item, false)] : [],
+      el("span", { className: note.note.finding ? "label finding" : "label" }, ...note.note.finding ? [icon("warn")] : [], label),
+      ...detached2 ? [el("span", { className: "was" }, `was on ${placeWas(placeOf(note))}`)] : linesOf(lines),
+      ...shown2 ? [stateTag(item, false)] : [],
       el("span", { className: "spacer" }),
       ...actionsMenu(item, label)
     ),
     ...asked ? [el("p", { className: "you-asked" }, el("span", { className: "muted" }, "You asked:"), ` ${asked.text}`), ...replies([note, ...followUps(note)])] : [...taken?.edit ? [] : [markdown2(note.text, "note-text")], ...replies(followUps(note))],
-    ...shown ? decisionSaid(shown) : [],
+    ...shown2 ? decisionSaid(shown2) : [],
     ...taken ? [takingForm(item, taken, note.text)] : [],
     ...taken ? [] : replyView(note)
   );
@@ -26900,9 +27123,23 @@ function lineAt(event) {
 }
 function pick(step, file, line2, extend, ended) {
   const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line2;
-  picked = { step: step.id, file, from, lines: [Math.min(from, line2), Math.max(from, line2)], ended };
+  picked = { step: step.id, file, from, lines: [Math.min(from, line2), Math.max(from, line2)], ended, mode: "choose" };
   render();
-  if (ended) document.querySelector(".picked-ask input")?.focus();
+  if (ended) document.querySelector(".picked-choose .btn")?.focus();
+}
+var focusDraft = (draft) => document.querySelector(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
+var newCommentDraft = ({ step, file, lines }) => `comment:${step}:${file}:${lines.join("-")}`;
+function choosePicked(mode) {
+  if (!picked?.ended) return;
+  picked = { ...picked, mode };
+  render();
+  if (mode === "ask") document.querySelector(".picked-ask input")?.focus();
+  else focusDraft(newCommentDraft(picked));
+}
+function startComment(step, file, line2) {
+  picked = { step: step.id, file, from: line2, lines: [line2, line2], ended: true, mode: "comment" };
+  render();
+  focusDraft(newCommentDraft(picked));
 }
 function pickLine(step, event) {
   const at = lineAt(event);
@@ -26923,12 +27160,128 @@ function pickByKey(step, event) {
   }
   if (event.key !== "Enter") return;
   event.preventDefault();
-  const started = picked?.step === step.id && picked.file === at.file && !picked.ended;
-  pick(step, at.file, at.line, started, event.shiftKey || started);
+  const started2 = picked?.step === step.id && picked.file === at.file && !picked.ended;
+  pick(step, at.file, at.line, started2, event.shiftKey || started2);
 }
 function unpick() {
   picked = null;
   render();
+}
+function cancelPick() {
+  if (!picked) return;
+  const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
+  unpick();
+  end?.querySelector(".d2h-code-linenumber")?.focus();
+}
+function pickedChoice(step, lines) {
+  const ask = keyed(el("button", { type: "button", className: "btn small" }, icon("ask"), "Ask about lines"), `pick-ask:${step.id}`);
+  ask.onclick = () => {
+    choosePicked("ask");
+  };
+  const comment = keyed(el("button", { type: "button", className: "btn small" }, icon("own"), "Comment"), `pick-comment:${step.id}`);
+  comment.onclick = () => {
+    choosePicked("comment");
+  };
+  comment.title = "Comment on these lines (C)";
+  return el("div", { className: "picked-choose" }, el("span", { className: "picked-lines" }, linesLabel(lines)), el("span", { className: "spacer" }), ask, comment);
+}
+var commentHint = () => walkthrough.commentHint ? [el("span", { className: "hint" }, walkthrough.commentHint)] : [];
+function commentBox(draft, start, where, onSave, onCancel) {
+  const box = draftArea(draft, "Your comment", start, 3);
+  box.required = true;
+  const cancel = () => {
+    drafts.delete(draft);
+    onCancel();
+  };
+  const form = el(
+    "form",
+    { className: "mine composing" },
+    el("div", { className: "note-head" }, el("span", { className: "mine-who" }, icon("own"), "Your comment"), ...where),
+    box,
+    el(
+      "div",
+      { className: "mine-row" },
+      ...commentHint(),
+      el("span", { className: "spacer" }),
+      keyed(el("button", { type: "button", className: "btn ghost small", onclick: cancel }, "Cancel"), `cancel:${draft}`),
+      keyed(el("button", { type: "submit", className: "btn primary small" }, "Save comment"), `save:${draft}`)
+    )
+  );
+  form.onsubmit = (event) => {
+    event.preventDefault();
+    if (filledIn(form)) onSave(drafts.get(draft) ?? start);
+  };
+  form.onkeydown = (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    cancel();
+  };
+  return form;
+}
+function newComment(step, file, lines) {
+  const draft = newCommentDraft({ step: step.id, file, lines });
+  return commentBox(draft, "", linesOf(lines), (text2) => {
+    void send2("comment", { step: step.id, file, lines, text: text2 }, draft).then((sent) => {
+      if (sent) unpick();
+    });
+  }, cancelPick);
+}
+var commentAnchor = (comment) => {
+  const at = walkthrough.anchored[comment.id];
+  return at === void 0 ? comment.step : at;
+};
+var editingComments = /* @__PURE__ */ new Set();
+function commentView(comment) {
+  const { id, lines } = comment;
+  const posted2 = walkthrough.posted.includes(id);
+  const where = commentAnchor(comment) === null ? [el("span", { className: "was" }, `was on ${placeWas(comment)}`)] : linesOf(lines);
+  const view = el("article", { className: "mine" });
+  view.setAttribute("aria-label", "Your comment");
+  view.dataset["motion"] = `comment:${id}`;
+  if (editingComments.has(id) && !posted2 && !readOnly) {
+    const draft = `edit-comment:${id}`;
+    const done = () => {
+      editingComments.delete(id);
+      render();
+      document.querySelector(`[data-key="${CSS.escape(`edit:${id}`)}"]`)?.focus();
+    };
+    view.append(commentBox(draft, comment.text, where, (text2) => {
+      void send2("comment", { comment: id, text: text2 }, draft).then((sent2) => {
+        if (sent2) done();
+      });
+    }, done));
+    return view;
+  }
+  const edit = keyed(el("button", { type: "button", className: "icon-button" }, icon("edit")), `edit:${id}`);
+  edit.setAttribute("aria-label", "Edit comment");
+  edit.title = "Edit comment";
+  edit.onclick = () => {
+    editingComments.add(id);
+    render();
+    focusDraft(`edit-comment:${id}`);
+  };
+  const remove = keyed(el("button", { type: "button", className: "icon-button" }, icon("trash")), `delete:${id}`);
+  remove.setAttribute("aria-label", "Delete comment");
+  remove.title = "Delete comment";
+  remove.onclick = () => {
+    void send2("comment", { comment: id, delete: true });
+  };
+  const sent = new Set(session.conversation.flatMap((entry) => entry.from === "page" && (entry.id === id || "comment" in entry && entry.comment === id) ? [entry.id] : []));
+  const answers = session.conversation.filter((entry) => entry.from === "session" && entry.answer !== void 0 && sent.has(entry.answer));
+  view.append(
+    el(
+      "div",
+      { className: "note-head" },
+      el("span", { className: "mine-who" }, icon("own"), "Your comment"),
+      ...where,
+      el("span", { className: "spacer" }),
+      ...posted2 || readOnly ? [] : [edit, remove]
+    ),
+    markdown2(comment.text, "comment-text"),
+    ...posted2 ? [el("span", { className: "hint" }, "Posted")] : commentHint(),
+    ...replies(answers)
+  );
+  return view;
 }
 function pickedAsk(step, file, lines) {
   const draft = `ask:${step.id}:${file}:${lines.join("-")}`;
@@ -26968,9 +27321,15 @@ function drawDiff(step) {
     const parsed = files[at];
     const file = parsed?.newName ?? "";
     wrapper.dataset["file"] = parsed?.isDeleted ? parsed.oldName : file;
-    if (parsed) {
+    const fileDiff = wrapper.querySelector(".d2h-file-diff");
+    if (parsed && fileDiff) {
       wrapper.querySelector(".d2h-file-name-wrapper")?.after(fileStats(parsed));
+      wrapper.dataset["changed"] = String(parsed.addedLines + parsed.deletedLines);
+      const body = el("div", { className: "diff-body" });
+      fileDiff.replaceWith(body);
+      body.append(fileDiff, overviewStripe(fileDiff));
       addPreview(wrapper, step.id, parsed);
+      if (!readOnly) fileControls(wrapper, step);
     }
     for (const number of wrapper.querySelectorAll(".line-num2")) {
       const line2 = number.textContent.trim();
@@ -26982,9 +27341,22 @@ function drawDiff(step) {
     }
   });
   view.onclick = (event) => {
-    pickLine(step, event);
+    const at = lineAt(event);
+    if (at && event.target instanceof Element && event.target.closest(".add-comment")) startComment(step, at.file, at.line);
+    else pickLine(step, event);
   };
   if (!readOnly) {
+    const plus = el("button", { type: "button", className: "add-comment", tabIndex: -1 }, icon("plus"));
+    const place = (event) => {
+      const at = lineAt(event);
+      if (!at || plus.parentElement === at.cell) return;
+      const name = `Comment on line ${String(at.line)}`;
+      plus.setAttribute("aria-label", name);
+      plus.title = `${name} (C)`;
+      at.cell.append(plus);
+    };
+    view.addEventListener("pointerover", place);
+    view.addEventListener("focusin", place);
     const cells = [...view.querySelectorAll("tr[data-line] .d2h-code-linenumber")];
     cells.forEach((cell, at) => {
       cell.tabIndex = at === 0 ? 0 : -1;
@@ -27000,6 +27372,92 @@ function drawDiff(step) {
   drawn.set(step.id, made);
   return made;
 }
+var SVG2 = "http://www.w3.org/2000/svg";
+function stripeMark(className, from, size, total) {
+  const mark = document.createElementNS(SVG2, "rect");
+  mark.classList.add(className);
+  mark.setAttribute("y", `${String(from / total * 100)}%`);
+  mark.setAttribute("height", size === null ? "3" : `${String(size / total * 100)}%`);
+  mark.setAttribute("x", size === null ? "0" : "2");
+  mark.setAttribute("width", size === null ? "100%" : "6");
+  return mark;
+}
+function overviewStripe(fileDiff) {
+  const stripe = document.createElementNS(SVG2, "svg");
+  stripe.classList.add("overview-stripe");
+  stripe.setAttribute("aria-hidden", "true");
+  const rows = [...fileDiff.querySelectorAll("tbody > tr")];
+  const types = rows.map((row) => row.querySelector(".d2h-ins") ? "add" : row.querySelector(".d2h-del") ? "del" : null);
+  rows.forEach((row, at) => {
+    row.dataset["at"] = String(at);
+    const type = types[at];
+    if (!type || types[at - 1] === type) return;
+    let end = at;
+    while (types[end + 1] === type) end++;
+    stripe.append(stripeMark(`run-${type}`, at, end - at + 1, rows.length));
+  });
+  stripe.dataset["rows"] = String(rows.length);
+  return stripe;
+}
+var LARGE_FILE = 400;
+var folds = /* @__PURE__ */ new Map();
+var isClosed = (wrapper) => {
+  const file = wrapper.dataset["file"] ?? "";
+  return folds.get(file) ?? (walkthrough.viewed.includes(file) || Number(wrapper.dataset["changed"]) > LARGE_FILE);
+};
+async function markViewed(step, file) {
+  const viewed = !walkthrough.viewed.includes(file);
+  walkthrough = { ...walkthrough, viewed: viewed ? [...walkthrough.viewed, file] : walkthrough.viewed.filter((one) => one !== file) };
+  folds.set(file, viewed);
+  render();
+  const answer = await post2("viewed", { step: step.id, file, viewed, on: walkthrough.on[itemKey({ type: "step", id: step.id })] });
+  if (answer) {
+    walkthrough = await answer.json();
+    render();
+    return;
+  }
+  walkthroughTag = "";
+  poll();
+}
+function fileControls(wrapper, step) {
+  const file = wrapper.dataset["file"] ?? "";
+  const header2 = wrapper.querySelector(".d2h-file-header");
+  const toggle2 = el("button", { type: "button", className: "icon-button file-toggle" }, icon("chevron-right"));
+  toggle2.onclick = () => {
+    folds.set(file, !isClosed(wrapper));
+    render();
+  };
+  const viewed = el("button", { type: "button", className: "viewed-toggle" }, icon("eye"), el("span", {}, "Viewed"));
+  viewed.setAttribute("aria-label", `Mark ${file} as viewed`);
+  viewed.onclick = () => {
+    void markViewed(step, file);
+  };
+  header2?.prepend(toggle2);
+  header2?.append(viewed);
+}
+var MARKED = ["finding", "own", "note"];
+var MARK_ICONS = { finding: "warn", own: "own", note: "message" };
+function jumpTo(row) {
+  const next = row.nextElementSibling;
+  (next?.classList.contains("pinned-row") ? next : row).scrollIntoView({ block: "center" });
+}
+function markLines(view, rows, marks) {
+  for (const old of view.querySelectorAll(".gutter-mark, .overview-stripe .tick")) old.remove();
+  for (const [key2, kind] of marks) {
+    const row = rows.get(key2);
+    const stripe = row?.closest(".diff-body")?.querySelector(".overview-stripe");
+    if (!row || !stripe) continue;
+    const mark = el("span", { className: `gutter-mark ${kind}` }, icon(MARK_ICONS[kind]));
+    mark.setAttribute("aria-hidden", "true");
+    row.querySelector(".d2h-code-linenumber")?.append(mark);
+    const tick = stripeMark(`tick-${kind}`, Number(row.dataset["at"]), null, Number(stripe.dataset["rows"]));
+    tick.classList.add("tick");
+    tick.addEventListener("click", () => {
+      jumpTo(row);
+    });
+    stripe.append(tick);
+  }
+}
 function diffView(step, pinned) {
   const { view, rows } = drawDiff(step);
   for (const old of view.querySelectorAll(".pinned-row")) old.remove();
@@ -27008,13 +27466,43 @@ function diffView(step, pinned) {
     if (!readOnly) row.querySelector(".d2h-code-linenumber")?.setAttribute("aria-pressed", String(picked2));
   };
   for (const old of view.querySelectorAll("tr.selected")) press(old, false);
+  for (const old of view.querySelectorAll(".file-explanation")) old.remove();
+  const explained = step.kind === "step" ? step.fileExplanations ?? {} : {};
+  for (const wrapper of view.querySelectorAll(".d2h-file-wrapper")) {
+    const file = wrapper.dataset["file"] ?? "";
+    const text2 = explained[file];
+    if (text2) wrapper.querySelector(".d2h-file-header")?.after(markdown2(text2, "file-explanation"));
+    if (readOnly) continue;
+    const closed2 = isClosed(wrapper);
+    const viewed = walkthrough.viewed.includes(file);
+    wrapper.classList.toggle("closed", closed2);
+    wrapper.classList.toggle("viewed", viewed);
+    const toggle2 = wrapper.querySelector(".file-toggle");
+    toggle2?.setAttribute("aria-expanded", String(!closed2));
+    toggle2?.setAttribute("aria-label", `${closed2 ? "Expand" : "Collapse"} ${file}`);
+    const mark = wrapper.querySelector(".viewed-toggle");
+    mark?.setAttribute("aria-pressed", String(viewed));
+    if (mark) mark.title = viewed ? "Viewed (V)" : "Mark as viewed (V)";
+  }
+  const mine = commentsOf(session.conversation).filter((comment) => commentAnchor(comment) === step.id);
   const at = /* @__PURE__ */ new Map();
+  const marks = /* @__PURE__ */ new Map();
+  const add = (file, lines, mark, entry) => {
+    if (file === void 0 || !lines) return;
+    const key2 = lineKey(file, lines[1]);
+    const here = at.get(key2) ?? { entries: [], comments: [] };
+    if ("from" in entry) here.entries.push(entry);
+    else here.comments.push(entry);
+    at.set(key2, here);
+    const was = marks.get(key2);
+    if (!was || MARKED.indexOf(mark) < MARKED.indexOf(was)) marks.set(key2, mark);
+  };
   for (const entry of pinned) {
     const { file, lines } = placeOf(entry);
-    if (file === void 0 || !lines) continue;
-    const key2 = lineKey(file, lines[1]);
-    at.set(key2, [...at.get(key2) ?? [], entry]);
+    add(file, lines, isNote(entry) && entry.note.finding ? "finding" : "note", entry);
   }
+  for (const comment of mine) add(comment.file, comment.lines, "own", comment);
+  markLines(view, rows, marks);
   const pick2 = picked?.step === step.id ? picked : null;
   const pickKey = pick2 && lineKey(pick2.file, pick2.lines[1]);
   if (pick2 && pickKey) {
@@ -27022,17 +27510,19 @@ function diffView(step, pinned) {
       const line2 = Number(row.dataset["line"]);
       if (row.dataset["file"] === pick2.file && line2 >= pick2.lines[0] && line2 <= pick2.lines[1]) press(row, true);
     }
-    if (pick2.ended && !at.has(pickKey)) at.set(pickKey, []);
+    if (pick2.ended && !at.has(pickKey)) at.set(pickKey, { entries: [], comments: [] });
   }
-  for (const [key2, entries] of at) {
-    const shown = el(
+  const composer = (shown2) => shown2.mode === "ask" ? pickedAsk(step, shown2.file, shown2.lines) : shown2.mode === "comment" ? newComment(step, shown2.file, shown2.lines) : pickedChoice(step, shown2.lines);
+  for (const [key2, { entries, comments }] of at) {
+    const shown2 = el(
       "div",
       { className: "pinned" },
       ...notesView(entries.filter(isNote), `more:${step.id}:${key2}`),
       ...entries.filter(isAsk).map(askThread),
-      ...pick2?.ended && key2 === pickKey ? [pickedAsk(step, pick2.file, pick2.lines)] : []
+      ...comments.map(commentView),
+      ...pick2?.ended && key2 === pickKey ? [composer(pick2)] : []
     );
-    rows.get(key2)?.after(el("tr", { className: "pinned-row" }, el("td", { colSpan: 2 }, shown)));
+    rows.get(key2)?.after(el("tr", { className: "pinned-row" }, el("td", { colSpan: 2 }, shown2)));
   }
   return view;
 }
@@ -27055,7 +27545,7 @@ function addPreview(wrapper, stepId, parsed) {
   const file = head ?? base2 ?? "";
   const type = previewType(file);
   const image3 = type?.startsWith("image/") ?? false;
-  const diff2 = wrapper.querySelector(".d2h-file-diff");
+  const diff2 = wrapper.querySelector(".diff-body");
   if (!type || !diff2 || readOnly || head === null && !image3) return;
   const at = (path) => `file?path=${encodeURIComponent(path)}`;
   const preview = el("div", { className: "preview", hidden: true });
@@ -27089,10 +27579,10 @@ function addPreview(wrapper, stepId, parsed) {
     }
   };
   const choices = ["Diff", "Preview"].map(
-    (label) => el("button", { type: "button", onclick: () => void choose(label === "Preview") }, label)
+    (label) => el("button", { type: "button", onclick: () => void choose2(label === "Preview") }, label)
   );
   const key2 = JSON.stringify([stepId, file]);
-  const choose = async (previewing) => {
+  const choose2 = async (previewing) => {
     if (previewing) previewed.add(key2);
     else previewed.delete(key2);
     for (const [at2, button] of choices.entries()) button.setAttribute("aria-pressed", String(previewing === (at2 === 1)));
@@ -27103,7 +27593,7 @@ function addPreview(wrapper, stepId, parsed) {
   const toggle2 = el("div", { className: "segmented" }, ...choices);
   toggle2.setAttribute("role", "group");
   toggle2.setAttribute("aria-label", `Show ${file} as`);
-  void choose(previewed.has(key2));
+  void choose2(previewed.has(key2));
   wrapper.querySelector(".d2h-file-header")?.append(toggle2);
   diff2.after(preview);
 }
@@ -27148,9 +27638,9 @@ function assumedView(step) {
   const list2 = el("ul", { className: "assumed" }, ...step.assumptions.map((assumption) => el("li", {}, assumption)));
   list2.setAttribute("aria-labelledby", button.id);
   button.setAttribute("aria-controls", list2.id = `assumed-list-${step.id}`);
-  const shown = el("div", { className: "assumed-wrap", hidden: !open }, list2);
-  shown.dataset["motion"] = motion;
-  return [el("div", { className: "assumptions" }, button, shown)];
+  const shown2 = el("div", { className: "assumed-wrap", hidden: !open }, list2);
+  shown2.dataset["motion"] = motion;
+  return [el("div", { className: "assumptions" }, button, shown2)];
 }
 function foldedView(step, pinned) {
   const key2 = `fold:${step.id}`;
@@ -27170,11 +27660,11 @@ function foldedView(step, pinned) {
     "ul",
     { className: "fold-files" },
     ...step.files.map((file) => {
-      const shown = opened.has(diffKey(file.path));
+      const shown2 = opened.has(diffKey(file.path));
       const button = el("button", { type: "button", className: "btn small", onclick: () => {
         toggle(opened, diffKey(file.path));
-      } }, shown ? "Hide diff" : "Show diff");
-      button.setAttribute("aria-expanded", String(shown));
+      } }, shown2 ? "Hide diff" : "Show diff");
+      button.setAttribute("aria-expanded", String(shown2));
       button.dataset["key"] = diffKey(file.path);
       return el(
         "li",
@@ -27223,12 +27713,12 @@ function stepDecisionView(step) {
     ];
   }
   if (!decision) return [];
-  const shown = [
+  const shown2 = [
     ...decision.note ? [el("span", { className: "muted" }, readOnly ? "Note" : "Your note"), el("p", { className: "said person" }, decision.note)] : [],
     ...decision.text ? [markdown2(decision.text, "said person")] : [],
     ...followUps(decision).map(said)
   ];
-  return shown.length ? [el("div", { className: "decision-said" }, ...shown)] : [];
+  return shown2.length ? [el("div", { className: "decision-said" }, ...shown2)] : [];
 }
 function actionBar(step, asks = true) {
   if (readOnly) return [];
@@ -27238,7 +27728,7 @@ function actionBar(step, asks = true) {
   const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
   if (taken) return [el("div", { className: "action-bar" }, takingForm(item, taken, ""))];
   const draft = `ask:${step.id}`;
-  const ask = lineBox(draft, "Ask about this step", "Ask about this step\u2026", () => {
+  const ask = lineBox(draft, "Ask about this step", "Ask about this step\u2026 ( / )", () => {
     void send2("ask", { step: step.id, text: drafts.get(draft) ?? "" }, draft);
   });
   const decided = stepDecided(step) && !changing.has(key2);
@@ -27247,15 +27737,53 @@ function actionBar(step, asks = true) {
     render();
   } }, "Change decision");
   change.dataset["key"] = `change:${key2}`;
-  const choices = decided ? change : actionGroup(item, stepLook);
+  const open = openFindings(step);
+  const choices = decided ? change : actionGroup(item, (action) => open && action.id === "approve" ? "secondary" : stepLook(action));
   const asking = asks ? [ask] : [];
-  if (!phone.matches) return [el("div", { className: "action-bar" }, el("div", { className: "action-row" }, choices, ...asking))];
+  const count = open ? [el("span", { className: "open-findings" }, icon("warn"), plural(open, "open finding"))] : [];
+  if (!phone.matches) return [el("div", { className: "action-bar" }, el("div", { className: "action-row" }, choices, ...asking, ...count))];
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
-  return [...asking.map((box) => el("div", { className: "step-ask" }, box)), el("div", { className: "action-bar" }, choices)];
+  return [...asking.map((box) => el("div", { className: "step-ask" }, box)), el("div", { className: "action-bar" }, ...count, choices)];
 }
 function stepAsks(step) {
   const asks = session.conversation.filter(isAsk).filter((asked) => anchorOf(asked) === step.id && !asked.lines);
   return asks.length ? [el("div", { className: "conversation" }, ...asks.map(askThread))] : [];
+}
+function factsRail(step) {
+  if (step.kind !== "step") return [];
+  const files = [...drawDiff(step).view.querySelectorAll(".d2h-file-wrapper")].map((wrapper) => {
+    const file = wrapper.dataset["file"] ?? "";
+    const link2 = el("a", { href: `#${encodeURIComponent(step.id)}`, className: "facts-file" }, file);
+    link2.onclick = (event) => {
+      event.preventDefault();
+      folds.set(file, false);
+      render();
+      document.querySelector(`#main .d2h-file-wrapper[data-file="${CSS.escape(file)}"]`)?.scrollIntoView({ block: "start" });
+    };
+    return el("li", {}, link2, el("span", { className: "facts-count" }, wrapper.querySelector(".file-stats")?.textContent ?? ""));
+  });
+  const notes = stepNotesOf(step);
+  const findings = notes.filter((note) => note.note.finding).length;
+  const yours = commentsOf(session.conversation).filter((comment) => commentAnchor(comment) === step.id).length;
+  const counts = [
+    ...findings ? [el("li", { className: "finding" }, icon("warn"), plural(findings, "finding"))] : [],
+    ...notes.length > findings ? [el("li", {}, icon("message"), plural(notes.length - findings, "note"))] : [],
+    ...yours ? [el("li", { className: "own" }, icon("own"), `${String(yours)} yours`)] : []
+  ];
+  const criteria = (walkthrough.checklist?.items ?? []).filter((item) => item.steps.includes(step.id)).map((item) => {
+    const mark = item.mark ?? "unchecked";
+    const row = el("li", {}, icon(mark, STATE_NAMES[mark]), el("span", {}, plain(item.text)));
+    row.dataset["mark"] = mark;
+    return row;
+  });
+  const rail = el(
+    "aside",
+    { className: "facts" },
+    el("h3", { className: "facts-head" }, "In this step"),
+    ...[files, counts, criteria].filter((group) => group.length).map((group) => el("ul", {}, ...group))
+  );
+  rail.setAttribute("aria-label", "In this step");
+  return [rail];
 }
 var prosePane = el("div", { className: "prose" });
 var codePane = el("div", { className: "code" });
@@ -27263,25 +27791,23 @@ var splitStep = el("section", { className: "step split" }, prosePane, codePane);
 function stepView(step, notices, view) {
   const title = el("h2", { className: "step-title", id: `step-${step.id}` }, step.title);
   const { prose, code: code2 } = stepBody(step);
-  const bar = actionBar(step);
-  const stacked = layout === "split" && phone.matches;
+  const explaining = shows("explanation");
+  const lead = [el("div", { className: "title-row" }, title, stateTag({ type: "step", id: step.id }, false)), ...prose];
   const parts = [
-    el("div", { className: "title-row" }, title, stateTag({ type: "step", id: step.id }, false)),
-    ...prose,
-    ...layout === "split" ? [] : code2,
+    ...explaining ? lead : [el("div", { className: "step-head" }, el("div", { className: "step-lead" }, ...lead), ...factsRail(step))],
+    ...explaining ? [] : code2,
     ...stepAsks(step),
-    ...stacked ? [] : bar
+    ...actionBar(step)
   ];
-  let section = splitStep;
-  if (layout === "split") {
-    const beside = [...besideChecklist(view), ...sessionRow(view)];
-    prosePane.replaceChildren(...notices, ...stacked ? [] : [navRow(view)], ...parts, ...stacked ? [] : beside);
-    codePane.replaceChildren(...code2);
-    while (codePane.nextSibling) codePane.nextSibling.remove();
-    if (stacked) splitStep.append(...beside.length ? [el("div", { className: "beside" }, ...beside)] : [], ...bar);
-  } else section = el("section", { className: "step" }, ...parts);
-  section.setAttribute("aria-labelledby", title.id);
-  return section;
+  if (!explaining) {
+    const section = el("section", { className: "step" }, ...parts);
+    section.setAttribute("aria-labelledby", title.id);
+    return section;
+  }
+  prosePane.replaceChildren(panelHead("explanation", el("span", {}, PANEL.explanation.title)), ...notices, ...navRow(view), ...parts);
+  codePane.replaceChildren(...code2);
+  splitStep.setAttribute("aria-labelledby", title.id);
+  return splitStep;
 }
 var STATE_NAMES = {
   unread: "Unread",
@@ -27296,7 +27822,7 @@ function queueRow(address, state, mark, title, sub, current) {
   const row = el(
     "a",
     { href: `#${encodeURIComponent(address)}`, className: "queue-item" },
-    icon(mark, STATE_NAMES[mark]),
+    icon(mark, STATE_NAMES[mark === "current" ? state : mark]),
     el("span", { className: "queue-title" }, title, ...sub ? [el("span", { className: sub.attention ? "queue-sub attention" : "queue-sub" }, sub.text)] : [])
   );
   row.dataset["state"] = state;
@@ -27317,7 +27843,7 @@ function stepRow(step, isCurrent) {
     return queueRow(step.id, "folded", "folded", step.title, problems, current);
   }
   const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? "read" : "unread", read ? "read" : "unread", step.title, null, current);
+  return queueRow(step.id, read ? "read" : "unread", isCurrent ? "current" : read ? "read" : "unread", step.title, null, current);
 }
 function leftItems() {
   return (walkthrough.checklist?.items ?? []).filter((item) => {
@@ -27347,8 +27873,8 @@ function viewAddress(view) {
       const item = walkthrough.checklist?.items.find((one) => one.id === view.item);
       return item ? [`checklist-${item.id}`, plain(item.text)] : ["checklist", walkthrough.checklist?.title ?? ""];
     }
-    case "end":
-      return ["end", "End of the walkthrough"];
+    case "summary":
+      return ["summary", "Summary"];
     case "deck":
       return ["deck", "Swipe to decide"];
     case "preparing":
@@ -27356,19 +27882,19 @@ function viewAddress(view) {
   }
 }
 function queueSelect(view, left, decided) {
-  const shown = viewAddress(view);
-  const option = ([address, title]) => el("option", { value: address, selected: address === shown?.[0] }, address === shown?.[0] ? `Left ${String(left.length)} \xB7 ${title}` : title);
-  const known = [...left, ...decided.map((step) => [step.id, step.title]), ["end", ""]].some(([address]) => address === shown?.[0]);
+  const shown2 = viewAddress(view);
+  const option = ([address, title]) => el("option", { value: address, selected: address === shown2?.[0] }, address === shown2?.[0] ? `Left ${String(left.length)} \xB7 ${title}` : title);
+  const known = [...left, ...decided.map((step) => [step.id, step.title]), ["summary", ""]].some(([address]) => address === shown2?.[0]);
   const select = el(
     "select",
     { onchange: () => {
       go2(select.value);
     } },
-    ...shown && !known ? [option(shown)] : [],
+    ...shown2 && !known ? [option(shown2)] : [],
     ...walkthrough.steps.length || left.length ? [] : [el("option", { disabled: true, selected: true }, "No steps yet")],
     ...left.map(option),
     ...decided.length ? [el("optgroup", { label: `${String(decided.length)} decided` }, ...decided.map((step) => option([step.id, step.title])))] : [],
-    ...walkthrough.steps.length ? [option(["end", "End of the walkthrough"])] : []
+    ...walkthrough.steps.length ? [option(["summary", "Summary"])] : []
   );
   select.setAttribute("aria-label", "Step");
   select.dataset["key"] = "queue-select";
@@ -27392,7 +27918,7 @@ function queueView(view) {
   const counted = steps.length > 0 || rows.length > 0;
   const leftCount = el("span", { className: "counter" }, String(rows.length));
   leftCount.dataset["motion"] = "count:left";
-  const head = el("h2", { className: "queue-head", id: "queue-head" }, "Left", ...counted ? [leftCount] : []);
+  const head = panelHead("queue", el("h2", { className: "queue-head", id: "queue-head" }, PANEL.queue.title, ...counted ? [leftCount] : []));
   const empty = rows.length ? [] : [el("p", { className: "queue-empty" }, steps.length ? "Everything is decided." : "No steps yet")];
   const decided = steps.filter(stepDecided);
   const open = opened.has("decided") || current !== void 0 && decided.includes(current);
@@ -27417,17 +27943,13 @@ function queueView(view) {
       ...open ? [el("div", { className: "queue-decided" }, ...decided.map((step) => stepRow(step, step === current)))] : []
     )
   ] : [];
-  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot];
+  const summary = steps.length ? [queueRow("summary", "summary", "summary", "Summary", null, view.kind === "summary" && "page")] : [];
+  return [queueSelect(view, left, decided), head, ...rows, ...empty, ...foot, ...summary];
 }
 var stepNumber = (id) => walkthrough.steps.findIndex((step) => step.id === id) + 1;
 var metCount = (items) => items.some((item) => item.mark !== void 0) ? `${String(items.filter((item) => item.mark === "met").length)}/${String(items.length)}` : null;
-function checklistView({ title, items }, view, compact = false) {
-  const heading2 = el(
-    "h2",
-    { className: view.kind === "checklist" ? "step-title" : "section-head", id: "checklist" },
-    compact ? el("a", { href: "#checklist" }, title) : title
-  );
-  const rows = items.map((item) => {
+function checklistRows(items, view, compact) {
+  return items.map((item) => {
     const links = item.steps.flatMap((id) => {
       const at = stepNumber(id);
       const step = walkthrough.steps[at - 1];
@@ -27444,13 +27966,21 @@ function checklistView({ title, items }, view, compact = false) {
       icon(mark, STATE_NAMES[mark]),
       el("div", { className: "item-body" }, markdown2(item.text, "item-text"), ...compact ? [] : [el("span", { className: "item-status" }, item.status)]),
       ...links,
-      ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} ${gone === 1 ? "is" : "are"} no longer in the change`)] : [],
+      ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} no longer in the change`)] : [],
       ...compact ? [] : decideView({ type: "checklist", id: item.id }, item.text)
     );
     row.dataset["mark"] = mark;
     row.id = `checklist-item-${item.id}`;
     return row;
   });
+}
+function checklistView({ title, items }, view, compact = false) {
+  const heading2 = el(
+    "h2",
+    { className: view.kind === "checklist" ? "step-title" : "section-head", id: "checklist" },
+    compact ? el("a", { href: "#checklist" }, title) : title
+  );
+  const rows = checklistRows(items, view, compact);
   const head = view.kind === "checklist" ? el("div", { className: "title-row" }, heading2) : heading2;
   const met = metCount(items);
   if (met !== null) head.append(el("span", { className: "counter" }, met));
@@ -27462,59 +27992,245 @@ function wholeView() {
   const item = { type: "walkthrough" };
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   if (!actions.length) return [];
-  const shown = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
-  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", ...shown || readOnly ? [stateTag(item, true)] : []);
+  const shown2 = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
+  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", ...shown2 || readOnly ? [stateTag(item, true)] : []);
   const taken = taking?.key === itemKey(item) ? actions.find((action) => action.id === taking?.action) : void 0;
   const section = el(
     "section",
     { className: "whole" },
     heading2,
-    ...shown ? decisionSaid(shown) : [],
-    ...readOnly ? [] : [taken ? takingForm(item, taken, "") : el("div", { className: "action-row" }, actionGroup(item, firstLeads))]
+    ...shown2 ? decisionSaid(shown2) : [],
+    ...readOnly ? [] : [taken ? takingForm(item, taken, "") : el("div", { className: "action-row" }, finishGroup())]
   );
   section.setAttribute("aria-labelledby", heading2.id);
   return [section];
 }
-function endView() {
-  const { steps } = walkthrough;
-  const decided = steps.filter(stepDecided).length;
-  const title = el(
-    "h2",
-    { className: "step-title", id: "end" },
-    decided === steps.length ? `All ${plural(steps.length, "step")} decided` : `${String(decided)} of ${plural(steps.length, "step")} decided`
+var VERDICT = { type: "verdict" };
+var WHOLE = { type: "walkthrough" };
+function verdictLabel() {
+  const chosen = decisionOf(VERDICT);
+  return chosen ? labelOf(VERDICT, chosen.action) : null;
+}
+var verdictStatus = () => {
+  const label = verdictLabel();
+  return label === null ? [] : [el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), label)];
+};
+var finishWaits = () => (walkthrough.actions[itemKey(VERDICT)] ?? []).length > 0 && !decisionOf(VERDICT);
+var linesShort = ([first, last]) => first === last ? String(first) : `${String(first)}\u2013${String(last)}`;
+var stepName = (step) => `${String(stepNumber(step.id))} ${step.title}`;
+function summarySection(name, count, ...body) {
+  const id = `summary-${name.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+  const heading2 = el("h2", { className: "section-head", id }, name, ...count === null ? [] : [el("span", { className: "counter" }, count)]);
+  const section = el("section", { className: "summary-section" }, heading2, ...body);
+  section.setAttribute("aria-labelledby", id);
+  return section;
+}
+function stillOpen() {
+  const steps = walkthrough.steps.map((step) => ({ item: { type: "step", id: step.id }, address: step.id, title: stepName(step) }));
+  const notes = session.conversation.filter(isNote).map((note) => ({
+    item: { type: "note", id: note.id },
+    address: anchorOf(note) ?? "session",
+    title: `${note.note.label}: ${plain(note.text)}`
+  }));
+  const items = (walkthrough.checklist?.items ?? []).map((one) => ({
+    item: { type: "checklist", id: one.id },
+    address: `checklist-${one.id}`,
+    title: plain(one.text)
+  }));
+  return [...steps, ...notes, ...items].filter((one) => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0);
+}
+function openView() {
+  const rows = stillOpen().map(({ item, address, title }) => {
+    const reopened = walkthrough.reopened[itemKey(item)];
+    const state = reopened ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : "Undecided";
+    const link2 = keyed(el("a", { href: `#${encodeURIComponent(address)}` }, title), `summary-open:${itemKey(item)}`);
+    return el("li", { className: reopened ? "reopened" : "" }, icon(reopened ? "reopened" : "unread"), el("span", {}, link2, el("span", { className: "muted" }, state)));
+  });
+  const body = rows.length ? el("ul", { className: "summary-list open-list" }, ...rows) : el("p", { className: "muted" }, "Nothing; everything is decided.");
+  return summarySection("Still open", null, body);
+}
+function verdictView() {
+  const actions = walkthrough.actions[itemKey(VERDICT)] ?? [];
+  const chosen = decisionOf(VERDICT);
+  const reopened = walkthrough.reopened[itemKey(VERDICT)];
+  const options2 = actions.map((action, at) => {
+    const checked = chosen?.action === action.id;
+    const option = keyed(
+      el(
+        "button",
+        { type: "button", className: "verdict-option", tabIndex: checked || !chosen && at === 0 ? 0 : -1 },
+        icon(checked ? "decided" : "unread"),
+        action.label
+      ),
+      `verdict:${action.id}`
+    );
+    option.setAttribute("role", "radio");
+    option.setAttribute("aria-checked", String(checked));
+    option.onclick = () => {
+      take(VERDICT, action);
+    };
+    return option;
+  });
+  const change = el("button", { type: "button", className: "link" }, "Change");
+  change.dataset["key"] = "verdict-change";
+  change.onclick = () => {
+    (options2.find((option) => option.getAttribute("aria-checked") === "true") ?? options2[0])?.focus();
+  };
+  const now2 = chosen ? el("p", { className: "verdict-now" }, icon("finish"), "Your verdict: ", el("strong", {}, labelOf(VERDICT, chosen.action)), ...readOnly ? [] : [" ", change]) : reopened ? el("p", { className: "verdict-now reopened" }, icon("reopened"), `Reopened: changed since you chose ${labelOf(VERDICT, reopened.action)}`) : el("p", { className: "verdict-now muted" }, actions.length && !readOnly ? "No verdict yet. Check what is still open, then choose." : "No verdict yet.");
+  const group = el("div", { className: "verdict-options" }, ...options2);
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", "Verdict");
+  group.onkeydown = (event) => {
+    const by = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+    const at = options2.indexOf(event.target);
+    if (by === void 0 || at < 0) return;
+    event.preventDefault();
+    options2[(at + by + options2.length) % options2.length]?.focus();
+  };
+  const taken = taking?.key === itemKey(VERDICT) ? actions.find((action) => action.id === taking?.action) : void 0;
+  const hint = walkthrough.hints?.[itemKey(VERDICT)];
+  return summarySection(
+    "Verdict",
+    null,
+    now2,
+    ...options2.length && !readOnly ? [group] : [],
+    ...taken ? [takingForm(VERDICT, taken, "")] : [],
+    ...chosen ? decisionSaid(chosen) : [],
+    ...hint ? [el("p", { className: "hint" }, hint)] : []
   );
-  const rows = steps.map((step, at) => {
+}
+function decidedView() {
+  const byLabel = /* @__PURE__ */ new Map();
+  for (const step of walkthrough.steps) {
     const item = { type: "step", id: step.id };
     const decision = decisionOf(item);
+    if (!decision) continue;
+    const label = labelOf(item, decision.action);
+    byLabel.set(label, [...byLabel.get(label) ?? [], step]);
+  }
+  if (!byLabel.size) return [];
+  const rows = [...byLabel].map(
+    ([label, steps]) => el("tr", {}, el("th", { scope: "row" }, label), el("td", {}, ...steps.flatMap((step, at) => [...at ? [", "] : [], el("a", { href: `#${encodeURIComponent(step.id)}` }, stepName(step))])), el("td", { className: "count" }, String(steps.length)))
+  );
+  return [summarySection("Decided", null, el("table", { className: "decided-table" }, el("tbody", {}, ...rows)))];
+}
+var flaggedSteps = () => walkthrough.steps.flatMap((step) => {
+  const note = decisionOf({ type: "step", id: step.id })?.note;
+  return note ? [{ step, note }] : [];
+});
+function flaggedView() {
+  const rows = flaggedSteps().map(
+    ({ step, note }) => el("li", {}, el("a", { href: `#${encodeURIComponent(step.id)}` }, stepName(step)), el("span", { className: "muted" }, note))
+  );
+  return rows.length ? [summarySection("Flagged", null, el("ul", { className: "summary-list" }, ...rows))] : [];
+}
+function yourCommentsView() {
+  const comments = commentsOf(session.conversation);
+  const rows = comments.map(
+    (comment) => el("li", {}, el("span", { className: "where" }, `${comment.file} \xB7 ${linesShort(comment.lines)}`), markdown2(comment.text, "summary-text"))
+  );
+  return rows.length ? [summarySection("Your comments", String(rows.length), el("ul", { className: "summary-list" }, ...rows))] : [];
+}
+var DRAFT_STATES = ["Accepted", "Edited", "Dropped", "Undecided"];
+function draftsView() {
+  const drafts2 = session.conversation.filter(isNote).flatMap((note) => {
+    const actions = walkthrough.actions[itemKey({ type: "note", id: note.id })] ?? [];
+    if (!actions.some((action) => action.edit)) return [];
+    const decision = decisionOf({ type: "note", id: note.id });
+    const sent = decision && actions.find((action) => action.id === decision.action)?.edit;
+    const edited = sent && decision.text !== void 0 && decision.text !== note.text ? decision.text : void 0;
+    const state = !decision ? "Undecided" : !sent ? "Dropped" : edited === void 0 ? "Accepted" : "Edited";
+    return [{ note, state, text: edited ?? note.text }];
+  });
+  if (!drafts2.length) return [];
+  const counts = DRAFT_STATES.flatMap((state) => {
+    const count = drafts2.filter((one) => one.state === state).length;
+    return count ? [`${String(count)} ${state.toLowerCase()}`] : [];
+  });
+  const rows = drafts2.map(({ note, state, text: text2 }) => {
+    const { file, lines } = note.note;
+    const step = walkthrough.steps.find((one) => one.id === anchorOf(note));
+    const where = file !== void 0 && lines ? `${file} \xB7 ${linesShort(lines)}` : step ? `Step ${String(stepNumber(step.id))}` : "Detached";
+    const said2 = markdown2(text2, "summary-text");
+    if (state === "Dropped") said2.replaceChildren(el("s", {}, ...said2.childNodes));
     return el(
-      "tr",
-      {},
-      el("td", { className: "number" }, String(at + 1)),
-      el("td", {}, keyed(el("a", { href: `#${encodeURIComponent(step.id)}` }, step.title), `end-link:${step.id}`), ...decision?.note ? [el("span", { className: "decision-note" }, decision.note)] : []),
-      el("td", { className: "decision" }, decision ? el("span", { className: "tag decided" }, labelOf(item, decision.action)) : stateTag(item, false))
+      "li",
+      { className: state === "Dropped" ? "dropped" : "" },
+      el("span", { className: "where" }, where),
+      el("span", { className: "draft-text" }, el("span", { className: "draft-state" }, state), said2)
     );
   });
+  return [summarySection("[AI] drafts", counts.join(" \xB7 "), el("ul", { className: "summary-list" }, ...rows))];
+}
+function checklistSummary() {
+  const { checklist } = walkthrough;
+  if (!checklist) return [];
+  const rows = checklistRows(checklist.items, { kind: "summary" }, true);
+  return [summarySection("Checklist", metCount(checklist.items), el("ul", { className: "checklist compact" }, ...rows))];
+}
+function finishGroup() {
+  const group = actionGroup(WHOLE, firstLeads);
+  const first = group.querySelector("button");
+  if (first) first.disabled = finishWaits();
+  return group;
+}
+function finishView() {
+  const actions = walkthrough.actions[itemKey(WHOLE)] ?? [];
+  if (!actions.length || readOnly) return [];
+  const shown2 = decisionOf(WHOLE) ?? walkthrough.reopened[itemKey(WHOLE)];
+  const taken = taking?.key === itemKey(WHOLE) ? actions.find((action) => action.id === taking?.action) : void 0;
+  const waits = finishWaits();
+  const group = finishGroup();
+  const hint = [walkthrough.hints?.[itemKey(WHOLE)], ...waits ? ["Choose a verdict first."] : []].filter(Boolean).join(" ");
+  return [
+    el(
+      "div",
+      { className: "finish" },
+      ...shown2 ? [stateTag(WHOLE, true)] : [],
+      taken ? takingForm(WHOLE, taken, "") : group,
+      ...hint ? [el("p", { className: "hint" }, hint)] : [],
+      ...shown2 ? decisionSaid(shown2) : []
+    )
+  ];
+}
+function summaryView() {
+  const { steps } = walkthrough;
+  const open = stillOpen().length;
+  const title = el("h2", { className: "step-title", id: "summary" }, "Summary");
+  const comments = commentsOf(session.conversation).length;
+  const flagged = flaggedSteps().length;
+  const items = walkthrough.checklist?.items ?? [];
+  const counts = [
+    `${String(steps.filter(stepDecided).length)} of ${plural(steps.length, "step")} decided`,
+    ...flagged ? [`${String(flagged)} flagged`] : [],
+    ...comments ? [`${String(comments)} of your comments`] : [],
+    ...items.some((item) => item.mark !== void 0) ? [`checklist ${String(items.filter((item) => item.mark === "met").length)} of ${String(items.length)} met`] : []
+  ];
   const section = el(
     "section",
-    { className: "end" },
-    el("div", { className: "title-row" }, title),
-    el("p", { className: "explanation" }, "Decisions stay changeable until you finish."),
-    el("table", { className: "decisions" }, el("tbody", {}, ...rows)),
-    ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "end" })] : [],
-    ...wholeView()
+    { className: "summary" },
+    el("div", { className: "title-row" }, title, el("span", { className: "tag" }, open ? `${String(open)} still open` : "Nothing still open")),
+    el("p", { className: "summary-line" }, counts.join(" \xB7 ")),
+    openView(),
+    verdictView(),
+    ...decidedView(),
+    ...flaggedView(),
+    ...yourCommentsView(),
+    ...checklistSummary(),
+    ...draftsView(),
+    ...finishView()
   );
   section.setAttribute("aria-labelledby", title.id);
   return section;
 }
-function sessionThreads(stepless = true) {
+function sessionThreads(notices) {
   const waiting = new Set(waitingQuestions().map((message) => message.id));
   const threads = sessionMessages().filter((message) => !waiting.has(message.id)).map((message) => el("div", { className: "thread" }, said(message), ...followUps(message).map(said)));
-  const notices = stepless ? [...unplacedNotice(), ...detachedView()] : [];
   return threads.length || notices.length ? [...notices, ...threads] : [el("p", { className: "muted" }, "Nothing from the session yet.")];
 }
 function sessionView(stepless = true) {
   const title = el("h2", { className: "step-title", id: "from-session" }, "From the session");
-  const section = el("section", { className: "messages" }, el("div", { className: "title-row" }, title), ...sessionThreads(stepless));
+  const section = el("section", { className: "messages" }, el("div", { className: "title-row" }, title), ...sessionThreads(stepless ? [...unplacedNotice(), ...detachedView()] : []));
   section.setAttribute("aria-labelledby", title.id);
   return section;
 }
@@ -27640,14 +28356,14 @@ function miniDiff(step, note) {
   const rows = file.blocks.flatMap((block3) => [block3.header, ...block3.lines]);
   const last = note?.note.lines?.[1];
   const end = last === void 0 ? -1 : rows.findIndex((row) => typeof row !== "string" && row.newNumber === last);
-  const shown = end < 0 ? rows.slice(0, 3) : rows.slice(Math.max(0, end - 2), end + 1);
+  const shown2 = end < 0 ? rows.slice(0, 3) : rows.slice(Math.max(0, end - 2), end + 1);
   const table2 = el(
     "table",
     { className: "mini-diff" },
     el(
       "tbody",
       {},
-      ...shown.map(
+      ...shown2.map(
         (row) => typeof row === "string" ? el("tr", { className: "hunk" }, el("td"), el("td"), el("td", {}, row)) : el(
           "tr",
           { className: row.type },
@@ -27662,7 +28378,7 @@ function miniDiff(step, note) {
 }
 function cardView(step, top, swipes) {
   const notes = session.conversation.filter((entry) => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
-  const first = notes.find((note) => !note.note.low);
+  const first = notes.find((note) => note.note.finding);
   const explanation = step.kind === "step" ? markdown2(step.explanation, "explanation") : el("p", { className: "explanation" }, "Folded by the session, not shown line by line.");
   for (const link2 of explanation.querySelectorAll("a")) link2.replaceWith(...link2.childNodes);
   const title = el("div", { className: "title-row" }, el("span", { className: "step-title" }, step.title), stateTag({ type: "step", id: step.id }, false));
@@ -27672,9 +28388,9 @@ function cardView(step, top, swipes) {
     return beneath;
   }
   const chip = (kind, mark, label) => {
-    const shown = el("span", { className: `decision-chip ${kind}` }, icon(mark), label);
-    shown.setAttribute("aria-hidden", "true");
-    return shown;
+    const shown2 = el("span", { className: `decision-chip ${kind}` }, icon(mark), label);
+    shown2.setAttribute("aria-hidden", "true");
+    return shown2;
   };
   const where = (lines) => lines ? ` \xB7 ${linesLabel(lines).toLowerCase()}` : "";
   const card = el(
@@ -27697,7 +28413,7 @@ function deckView() {
   section.setAttribute("aria-label", "Swipe to decide");
   const top = deckTop();
   if (!top) {
-    section.append(el("p", { className: "deck-empty" }, "Everything is decided."), el("a", { href: "#end" }, "See the end of the walkthrough"));
+    section.append(el("p", { className: "deck-empty" }, "Everything is decided."), el("a", { href: "#summary" }, "See the summary"));
     return section;
   }
   const next = walkthrough.steps.find((step) => step !== top && !stepDecided(step));
@@ -27705,9 +28421,9 @@ function deckView() {
   const swipes = builtIn(walkthrough.actions[itemKey(item)] ?? []);
   const card = cardView(top, true, swipes);
   const edge = (side2, mark, label) => {
-    const shown = el("span", { className: `edge ${side2}` }, ...side2 === "left" ? [icon(mark), label] : [label, icon(mark)]);
-    shown.setAttribute("aria-hidden", "true");
-    return shown;
+    const shown2 = el("span", { className: `edge ${side2}` }, ...side2 === "left" ? [icon(mark), label] : [label, icon(mark)]);
+    shown2.setAttribute("aria-hidden", "true");
+    return shown2;
   };
   const deck = el(
     "div",
@@ -27779,24 +28495,26 @@ function detached() {
   const gone = session.conversation.filter(
     (entry) => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null
   );
+  const comments = commentsOf(session.conversation).filter((comment) => commentAnchor(comment) === null);
   const known = new Set(walkthrough.steps.map((step) => step.id));
   const links = (walkthrough.checklist?.items ?? []).filter((item) => item.steps.some((id) => !known.has(id)));
-  return { gone, links };
+  return { gone, comments, links };
 }
 var detachedCount = () => {
-  const { gone, links } = detached();
-  return gone.length + links.length;
+  const { gone, comments, links } = detached();
+  return gone.length + comments.length + links.length;
 };
 function detachedView() {
-  const { gone, links } = detached();
-  const count = gone.length + links.length;
+  const { gone, comments, links } = detached();
+  const count = gone.length + comments.length + links.length;
   if (!count) return [];
   const title = el("h2", { className: "detached-head", id: "detached" }, icon("unlink"), "Detached", el("span", { className: "counter" }, String(count)));
   const section = el(
     "section",
     { className: "detached-box" },
     title,
-    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, el("p", { className: "was" }, `Was on ${placeWas(entry)}`), askThread(entry))),
+    ...gone.map((entry) => isNote(entry) ? noteView(entry) : el("div", {}, el("p", { className: "was" }, `Was on ${placeWas(placeOf(entry))}`), askThread(entry))),
+    ...comments.map(commentView),
     ...links.map((item) => el("p", { className: "detached-item" }, icon("unlink"), el("span", {}, `Checklist \u201C${plain(item.text)}\u201D linked to a step that no longer exists`)))
   );
   section.setAttribute("aria-labelledby", title.id);
@@ -27809,33 +28527,34 @@ function viewBody(view, notices) {
     case "session":
       return sessionView();
     case "checklist":
-      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : endView();
-    case "end":
-      return endView();
+      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : summaryView();
+    case "summary":
+      return summaryView();
     case "deck":
       return deckView();
     case "preparing":
       return preparingView();
   }
 }
-function besideChecklist(view) {
+function checklistPanel(view) {
+  if (view.kind === "checklist" || view.kind === "summary") return [];
   const { checklist } = walkthrough;
-  if (layout === "queue" || !checklist || view.kind === "checklist" || view.kind === "end") return [];
-  return [checklistView(checklist, view, true)];
+  return [...checklist ? [checklistView(checklist, view, true)] : [], ...wholeView()];
 }
 function neighbours(view) {
   const { steps } = walkthrough;
   if (view.kind === "step") {
     const at = steps.indexOf(view.step);
-    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? "end"];
+    return [steps[at - 1]?.id ?? null, steps[at + 1]?.id ?? "summary"];
   }
-  if (view.kind === "end") return [steps.at(-1)?.id ?? null, null];
-  return [null, steps.find((step) => !stepDecided(step))?.id ?? (steps.length ? "end" : null)];
+  if (view.kind === "summary") return [steps.at(-1)?.id ?? null, null];
+  return [null, steps.find((step) => !stepDecided(step))?.id ?? (steps.length ? "summary" : null)];
 }
 function navRow(view) {
+  if (shows("queue") || view.kind === "preparing" || view.kind === "deck") return [];
   const [previous, next] = neighbours(view);
-  const button = (label, shape, to) => {
-    const made = el("button", { type: "button", className: "icon-button", title: label, disabled: to === null }, icon(shape));
+  const button = (label, key2, shape, to) => {
+    const made = el("button", { type: "button", className: "icon-button", title: withKey(label, key2), disabled: to === null }, icon(shape));
     made.setAttribute("aria-label", label);
     made.dataset["key"] = `nav:${shape}`;
     made.onclick = () => {
@@ -27843,23 +28562,25 @@ function navRow(view) {
     };
     return made;
   };
-  const nav = el("nav", { className: "step-nav" }, button("Previous step", "previous", previous), button("Next step", "next", next));
+  const at = view.kind === "step" ? [el("span", { className: "step-number" }, `Step ${String(stepNumber(view.step.id))}`)] : [];
+  const nav = el("nav", { className: "step-nav" }, button("Previous step", "K", "previous", previous), ...at, button("Next step", "J", "next", next));
   nav.setAttribute("aria-label", "Steps");
-  return nav;
+  return [nav];
 }
 var tool = null;
 var stepNotesOf = (step) => session.conversation.filter((entry) => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
+var openFindings = (step) => stepNotesOf(step).filter((note) => note.note.finding && !decisionOf({ type: "note", id: note.id })).length;
 function showNote(step, note) {
   if (step.kind === "folded") {
     opened.add(`fold:${step.id}`);
     if (note.note.file !== void 0) opened.add(`fold-diff:${step.id}:${note.note.file}`);
   }
   render();
-  const shown = document.getElementById(`note-${note.id}`);
-  if (!shown) return;
-  for (let hidden = shown.closest("details"); hidden; hidden = hidden.parentElement?.closest("details") ?? null) hidden.open = true;
-  shown.tabIndex = -1;
-  shown.focus();
+  const shown2 = document.getElementById(`note-${note.id}`);
+  if (!shown2) return;
+  for (let hidden = shown2.closest("details"); hidden; hidden = hidden.parentElement?.closest("details") ?? null) hidden.open = true;
+  shown2.tabIndex = -1;
+  shown2.focus();
 }
 function noteIndex(step, notes) {
   if (!notes.length) return [el("p", { className: "muted" }, "No notes on this step.")];
@@ -27869,7 +28590,7 @@ function noteIndex(step, notes) {
       "button",
       { type: "button", className: "note-link" },
       el("span", { className: "label" }, label),
-      ...lines ? [el("span", { className: "lines" }, linesLabel(lines))] : [],
+      ...linesOf(lines),
       el("span", { className: "gist" }, plain(note.text))
     );
     button.dataset["key"] = `note-link:${note.id}`;
@@ -27880,33 +28601,30 @@ function noteIndex(step, notes) {
   });
   return [el("ul", { className: "note-index" }, ...rows)];
 }
-function toolPanel(view) {
-  const step = view.kind === "step" ? view.step : void 0;
-  const checklist = besideChecklist(view);
+function toolTabs(view) {
   const tabs = [];
-  if (step) {
+  if (view.kind === "step") {
+    const { step } = view;
     const notes = stepNotesOf(step);
     tabs.push({ id: "notes", label: "Notes", count: String(notes.length), body: () => noteIndex(step, notes) });
   }
-  const items = walkthrough.checklist?.items ?? [];
-  if (checklist.length) tabs.push({ id: "checklist", label: "Checklist", count: metCount(items) ?? String(items.length), body: () => checklist });
-  if (view.kind !== "session")
-    tabs.push({
-      id: "session",
-      label: "From the session",
-      count: String(sessionMessages().length + (walkthrough.unplaced?.length ?? 0) + detachedCount()),
-      body: () => sessionThreads()
-    });
-  const chosen = tool ?? (walkthrough.checklist ? "checklist" : "notes");
-  const shown = tabs.find((tab) => tab.id === chosen) ?? tabs[0];
-  if (!shown) return [];
+  if (view.kind === "session") return tabs;
+  const said2 = sessionMessages().length + (walkthrough.unplaced?.length ?? 0);
+  if (said2) tabs.push({ id: "session", label: "From the session", count: String(said2), body: () => sessionThreads(unplacedNotice()) });
+  const gone = detachedCount();
+  if (gone) tabs.push({ id: "detached", label: "Detached", count: String(gone), body: detachedView });
+  return tabs;
+}
+function toolPanel(tabs) {
+  const shown2 = tabs.find((tab) => tab.id === tool) ?? tabs[0];
+  if (!shown2) return [];
   const select = (id) => {
     tool = id;
     render();
     document.querySelector(`[data-key="tab:${id}"]`)?.focus();
   };
   const buttons = tabs.map((tab) => {
-    const selected = tab === shown;
+    const selected = tab === shown2;
     const button = el("button", { type: "button", className: "tab", id: `tab-${tab.id}`, tabIndex: selected ? 0 : -1 }, tab.label, el("span", { className: "counter" }, tab.count));
     button.setAttribute("role", "tab");
     button.setAttribute("aria-selected", String(selected));
@@ -27917,21 +28635,36 @@ function toolPanel(view) {
     };
     return button;
   });
-  const list2 = el("div", { className: "tabs" }, ...buttons);
+  const list2 = el("div", { className: "tab-list" }, ...buttons);
   list2.setAttribute("role", "tablist");
   list2.setAttribute("aria-label", "Tool panel");
   list2.onkeydown = (event) => {
-    const at = tabs.indexOf(shown);
+    const at = tabs.indexOf(shown2);
     const to = { ArrowRight: at + 1, ArrowLeft: at - 1 + tabs.length, Home: 0, End: tabs.length - 1 }[event.key];
     if (to === void 0) return;
     event.preventDefault();
     const tab = tabs[to % tabs.length];
     if (tab) select(tab.id);
   };
-  const body = el("div", { className: `tool-body ${shown.id}`, id: "tool-body" }, ...shown.body());
+  const body = el("div", { className: `tool-body ${shown2.id}`, id: "tool-body" }, ...shown2.body());
   body.setAttribute("role", "tabpanel");
-  body.setAttribute("aria-labelledby", `tab-${shown.id}`);
-  return [list2, body];
+  body.setAttribute("aria-labelledby", `tab-${shown2.id}`);
+  return [panelHead("tools", list2), body];
+}
+function drawEdges(view, side2, tabs) {
+  const hidden = (panel) => !shows(panel) && !phone.matches;
+  leftEdge.replaceChildren(
+    ...hidden("queue") ? [showButton("queue", PANEL.queue.title, queue.querySelector(".queue-head .counter")?.textContent ?? null)] : [],
+    ...hidden("explanation") && view.kind === "step" ? [showButton("explanation", PANEL.explanation.title, null)] : []
+  );
+  const items = walkthrough.checklist?.items ?? [];
+  rightEdge.replaceChildren(...hidden("checklist") && side2.length ? [showButton("checklist", PANEL.checklist.title, metCount(items))] : []);
+  bottomStrip.replaceChildren(
+    ...hidden("tools") ? tabs.map((tab) => showButton("tools", tab.label, tab.count, () => {
+      tool = tab.id;
+    })) : []
+  );
+  for (const edge of [leftEdge, rightEdge, bottomStrip]) edge.hidden = !edge.hasChildNodes();
 }
 var pressed = false;
 var redrawLater = false;
@@ -27979,12 +28712,13 @@ function exportView(at) {
       { className: "export-head" },
       el("span", { className: "logo" }, icon("mark"), "Walkthrough"),
       el("h1", {}, nameOf(walkthrough)),
-      el("p", { className: "muted" }, `Walkthrough export \xB7 ${when} \xB7 ${plural(steps.length, "step")}, ${String(decided)} decided`)
+      el("p", { className: "muted" }, `Walkthrough export \xB7 ${when} \xB7 ${plural(steps.length, "step")}, ${String(decided)} decided`),
+      ...verdictLabel() === null ? [el("p", { className: "muted" }, "No verdict yet")] : verdictStatus()
     ),
     ...unplacedNotice(),
     ...detachedView(),
     ...steps.map((step, index) => exportStep(step, index + 1)),
-    ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "end" })] : [],
+    ...walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: "summary" })] : [],
     ...sessionMessages().length ? [sessionView(false)] : [],
     ...wholeView()
   ];
@@ -28007,7 +28741,6 @@ function render() {
   const typing = focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement ? focused : null;
   const draft = typing?.dataset["draft"];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0];
-  document.body.dataset["layout"] = layout;
   document.body.dataset["view"] = view.kind;
   const panes = [queue, main, prosePane, codePane, side, tools];
   const scrolled = panes.map((pane) => pane.scrollTop);
@@ -28026,21 +28759,25 @@ function render() {
   const oldPane = !swapped ? [] : wasSplit ? [el("section", { className: "step split" }, el("div", { className: "prose" }, ...prosePane.childNodes), el("div", { className: "code" }, ...codePane.childNodes))] : [...main.childNodes].filter((node) => node !== leavingPane);
   drawHeader();
   queue.replaceChildren(...queueView(view));
+  queue.hidden = !shows("queue");
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
-  const split = layout === "split" && view.kind === "step";
-  main.classList.toggle("split", split);
-  const shown = [...split ? [] : [...layout === "split" && view.kind !== "preparing" ? [navRow(view)] : [], ...notices], viewBody(view, notices)];
+  const explaining = shows("explanation") && view.kind === "step";
+  main.classList.toggle("split", explaining);
+  const shown2 = [...explaining ? [] : [...navRow(view), ...notices], viewBody(view, notices)];
   const present = [...main.children].filter((child) => child !== leavingPane);
-  if (shown.length !== present.length || shown.some((part, at) => present[at] !== part)) main.replaceChildren(...shown);
-  side.replaceChildren(...layout === "three" ? besideChecklist(view) : []);
+  if (shown2.length !== present.length || shown2.some((part, at) => present[at] !== part)) main.replaceChildren(...shown2);
+  const beside = checklistPanel(view);
+  side.replaceChildren(...shows("checklist") && beside.length ? [panelHead("checklist", el("span", {}, PANEL.checklist.title)), ...beside] : []);
   side.hidden = !side.hasChildNodes();
-  tools.replaceChildren(...layout === "panel" ? toolPanel(view) : []);
+  const tabs = toolTabs(view);
+  tools.replaceChildren(...shows("tools") ? toolPanel(tabs) : []);
   tools.hidden = !tools.hasChildNodes();
+  drawEdges(view, beside, tabs);
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
   });
   for (const [box2, left] of sideways) box2.scrollLeft = left;
-  for (const part of shown) part.dataset["motion"] = "pane-enter";
+  for (const part of shown2) part.dataset["motion"] = "pane-enter";
   leaveRows(rows, newly);
   placeGhosts();
   if (swapped) swapPanes(oldPane, wasSplit, scrolled.slice(1, 4));
@@ -28118,14 +28855,14 @@ function placeGhosts() {
 var leavingPane = null;
 function swapPanes(old, split, scrolled) {
   leavingPane?.remove();
-  const shown = el("div", { className: split ? "main split" : "main" }, ...old);
-  const pane = el("div", { className: "pane-leaving" }, shown);
+  const shown2 = el("div", { className: split ? "main split" : "main" }, ...old);
+  const pane = el("div", { className: "pane-leaving" }, shown2);
   pane.inert = true;
   pane.setAttribute("aria-hidden", "true");
   pane.dataset["motion"] = "pane-leave";
   main.scrollTo(0, 0);
   main.prepend(pane);
-  [shown, ...shown.querySelectorAll(":scope > .step > .prose, :scope > .step > .code")].forEach((scroller, at) => {
+  [shown2, ...shown2.querySelectorAll(":scope > .step > .prose, :scope > .step > .code")].forEach((scroller, at) => {
     scroller.scrollTop = scrolled[at] ?? 0;
   });
   leavingPane = pane;
@@ -28149,25 +28886,78 @@ function moveDecided(newly, counts, before = /* @__PURE__ */ new Map()) {
     if (before.get(key2) !== text2)
       play(key2, "tick", reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: "base", curve: reduced() ? "linear" : "ease-out" });
 }
-var isTyping = (target) => target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+function viewedByKey(step, target) {
+  const files = [...main.querySelectorAll(".d2h-file-wrapper")].filter((file2) => !file2.hidden && !leavingPane?.contains(file2));
+  const within = target instanceof Element ? target.closest(".d2h-file-wrapper") : null;
+  const file = within && files.includes(within) ? within : files.find((one) => !walkthrough.viewed.includes(one.dataset["file"] ?? ""));
+  if (file) void markViewed(step, file.dataset["file"] ?? "");
+}
 function stepBy(delta) {
   const view = currentView();
-  if (view.kind !== "step" && view.kind !== "end") return;
+  if (view.kind !== "step" && view.kind !== "summary") return;
   const to = neighbours(view)[delta > 0 ? 1 : 0];
   if (to) go2(to);
 }
 document.addEventListener("keydown", (event) => {
   if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === "Escape" && picked) {
-    const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
-    unpick();
-    end?.querySelector(".d2h-code-linenumber")?.focus();
+    cancelPick();
     return;
   }
-  if (isTyping(event.target)) return;
-  const sideways = event.target instanceof Element && event.target.closest(".d2h-file-diff, pre, .preview, .menu") !== null;
-  if (event.key === "j" || event.key === "ArrowRight" && !sideways) stepBy(1);
-  else if (event.key === "k" || event.key === "ArrowLeft" && !sideways) stepBy(-1);
+  if (runShortcut(event) || isTyping(event.target) || document.querySelector("dialog[open]")) return;
+  const sideways = event.target instanceof Element && event.target.closest(".d2h-file-diff, pre, .preview, .menu, dialog") !== null;
+  if (event.key === "ArrowRight" && !sideways) stepBy(1);
+  else if (event.key === "ArrowLeft" && !sideways) stepBy(-1);
+});
+function takeStepAction(id) {
+  const step = currentStep();
+  if (!step || readOnly || stopped) return;
+  const item = { type: "step", id: step.id };
+  const key2 = itemKey(item);
+  const action = walkthrough.actions[key2]?.find((one) => one.id === id);
+  if (action && (!stepDecided(step) || changing.has(key2))) take(item, action);
+}
+function focusNow() {
+  const had = document.activeElement;
+  const key2 = had instanceof HTMLElement ? had.dataset["key"] : void 0;
+  return () => had?.isConnected ? had : key2 === void 0 ? null : document.querySelector(`[data-key="${CSS.escape(key2)}"]`);
+}
+bind("j", () => {
+  stepBy(1);
+});
+bind("k", () => {
+  stepBy(-1);
+});
+bind("a", () => {
+  takeStepAction("approve");
+});
+bind("f", () => {
+  takeStepAction("flag");
+});
+bind("/", () => {
+  const step = currentStep();
+  if (step) document.querySelector(`[data-draft="${CSS.escape(`ask:${step.id}`)}"]`)?.focus();
+});
+bind("v", (event) => {
+  const step = currentStep();
+  if (step) viewedByKey(step, event.target);
+});
+bind("c", (event) => {
+  const step = currentStep();
+  const at = lineAt(event);
+  if (picked?.ended && picked.mode === "choose") choosePicked("comment");
+  else if (step && at) startComment(step, at.file, at.line);
+});
+bind("g s", () => {
+  if (walkthrough.steps.length) go2("summary");
+});
+bind("?", () => {
+  shortcutSheet(focusNow());
+});
+PANELS.forEach((panel, at) => {
+  bind(String(at + 1), () => {
+    togglePanel(panel);
+  });
 });
 phone.addEventListener("change", render);
 window.addEventListener("hashchange", () => {
@@ -28189,6 +28979,8 @@ if (exported) {
   main.className = "export";
   document.title = `${nameOf(exported.walkthrough)} \xB7 Walkthrough`;
 }
+if (exported?.viewer) showViewer(exported.viewer);
+else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
 ({ walkthrough, session } = exported ? exported : await Promise.all(
   ["data/walkthrough.json", "data/session.json"].map(async (data) => (await fetch(data)).json())
 ).then(([shownWalkthrough, shownSession]) => ({

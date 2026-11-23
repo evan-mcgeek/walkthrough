@@ -1935,12 +1935,12 @@ async function changeOf(cwd, source) {
   };
 }
 async function changedFiles(cwd, base, head) {
-  const fields = (await gitAsync(cwd, "", "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
+  const fields2 = (await gitAsync(cwd, "", "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
   const files3 = [];
-  for (let at = 0; at < fields.length - 1; ) {
-    const status2 = fields[at++] ?? "";
-    const first = fields[at++] ?? "";
-    if (status2.startsWith("R")) files3.push({ path: fields[at++] ?? "", from: first });
+  for (let at = 0; at < fields2.length - 1; ) {
+    const status2 = fields2[at++] ?? "";
+    const first = fields2[at++] ?? "";
+    if (status2.startsWith("R")) files3.push({ path: fields2[at++] ?? "", from: first });
     else files3.push({ path: first });
   }
   return files3;
@@ -2049,7 +2049,7 @@ var STEP_ACTIONS = [
   { id: "approve", label: "Approve" },
   { id: "flag", label: "Flag", note: true }
 ];
-var itemKey = (item) => item.type === "walkthrough" ? item.type : `${item.type}:${item.id}`;
+var itemKey = (item) => "id" in item ? `${item.type}:${item.id}` : item.type;
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
 
@@ -2106,12 +2106,18 @@ function walkthroughDir(repo, source) {
 }
 var readWalkthrough = (dir) => readJson(file(dir), null);
 var savedWalkthrough = (dir) => readSavedJson(file(dir)) ?? null;
-function openWalkthrough(dir, source, change, carry) {
+function openWalkthrough(dir, source, change, labelled, carry) {
   return locked(file(dir), async () => {
     const saved = savedWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base) return { walkthrough: saved, opened: "resumed" };
+    if (saved?.head === change.head && saved.base === change.base) {
+      if (Object.entries(labelled).every(([key, value]) => saved[key] === value))
+        return { walkthrough: saved, opened: "resumed" };
+      const relabelled = { ...saved, ...labelled };
+      writeJson(file(dir), relabelled);
+      return { walkthrough: relabelled, opened: "resumed" };
+    }
     if (saved) {
-      const moved = { ...saved, target: change.target, base: change.base, head: change.head };
+      const moved = { ...saved, ...labelled, target: change.target, base: change.base, head: change.head };
       const { steps: steps2, unplaced } = await carry(moved);
       setSteps(moved, steps2);
       if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
@@ -2121,6 +2127,7 @@ function openWalkthrough(dir, source, change, carry) {
     const walkthrough = {
       ...source.kind === "branch" ? { kind: "branch", branch: source.branch } : { kind: "range", label: source.label },
       target: change.target,
+      ...labelled,
       base: change.base,
       head: change.head,
       steps: []
@@ -2173,6 +2180,9 @@ function recordActions(dir, build) {
       ...keepActions(walkthrough, (key) => !named.has(key)),
       ...Object.fromEntries([...named].filter(([, actions2]) => actions2.length))
     };
+    const kept = Object.entries(walkthrough.hints ?? {}).filter(([key]) => !named.has(key));
+    const given = recorded.flatMap(({ item, hint }) => hint ? [[itemKey(item), hint]] : []);
+    walkthrough.hints = Object.fromEntries([...kept, ...given]);
     return recorded;
   });
 }
@@ -7702,6 +7712,7 @@ function pathOf(name2) {
 var parseDiff = (diff) => parse(diff).map((file2) => ({ ...file2, oldName: pathOf(file2.oldName), newName: pathOf(file2.newName) }));
 
 // src/steps.ts
+var isStepFile = (file2) => filled(file2) || typeof file2 === "object" && file2 !== null && filled(file2.path) && filled(file2.explanation);
 var isFoldedFile = (file2) => typeof file2 === "object" && file2 !== null && filled(file2.path) && filled(file2.reason);
 function parseSteps(text2) {
   return parseList(text2, "the steps", (step, number) => {
@@ -7722,10 +7733,15 @@ function parseSteps(text2) {
       };
     }
     if (!filled(explanation)) throw new Error(`${name2} needs an explanation`);
-    if (!files3.every(filled)) throw new Error(`${name2}: files must be a list of paths`);
+    if (!files3.every(isStepFile)) throw new Error(`${name2}: each file must be a path, or a path with its explanation`);
     if (!Array.isArray(assumptions) || !assumptions.every(filled))
       throw new Error(`${name2}: assumptions must be a list of text`);
-    return { title, explanation, assumptions, files: files3 };
+    return {
+      title,
+      explanation,
+      assumptions,
+      files: files3.map((file2) => typeof file2 === "string" ? file2 : { path: file2.path, explanation: file2.explanation })
+    };
   });
 }
 var pathOf2 = (file2) => typeof file2 === "string" ? file2 : file2.path;
@@ -7745,6 +7761,10 @@ function stepIds({ steps: steps2, lastStep = 0 }, inputs) {
       taken2.add(id);
     }
   return ids.map((id) => id ?? String(++next));
+}
+function fileExplanations(files3) {
+  const explained = files3.filter((file2) => typeof file2 !== "string");
+  return explained.length ? { fileExplanations: Object.fromEntries(explained.map((file2) => [file2.path, file2.explanation])) } : {};
 }
 async function buildSteps(cwd, walkthrough, inputs) {
   const { base, head } = walkthrough;
@@ -7767,7 +7787,7 @@ async function buildSteps(cwd, walkthrough, inputs) {
       title: input.title,
       diff: await diffOf(cwd, base, head, pathsOf(input).flatMap((one) => changed.get(one) ?? []))
     };
-    return "folded" in input ? { ...common, kind: "folded", files: input.files, problems: input.problems } : { ...common, kind: "step", explanation: input.explanation, assumptions: input.assumptions, files: input.files };
+    return "folded" in input ? { ...common, kind: "folded", files: input.files, problems: input.problems } : { ...common, kind: "step", explanation: input.explanation, assumptions: input.assumptions, files: input.files.map(pathOf2), ...fileExplanations(input.files) };
   }));
 }
 async function carrySteps(cwd, { base, head, steps: steps2 }) {
@@ -7833,18 +7853,35 @@ function placeIn(walkthrough, { step, file: file2, lines }) {
 function parseNotes(text2, walkthrough) {
   return parseList(text2, "the notes", (note2, number) => {
     const name2 = `note ${String(number)}`;
-    const { label, text: said, low = false } = note2;
+    const { label, text: said, low = false, finding = false } = note2;
     if (!filled(label)) throw new Error(`${name2} needs a label`);
     if (!filled(said)) throw new Error(`${name2} needs text`);
     if (typeof low !== "boolean") throw new Error(`${name2}: low must be true or false`);
+    if (typeof finding !== "boolean") throw new Error(`${name2}: finding must be true or false`);
     let place;
     try {
       place = placeIn(walkthrough, note2);
     } catch (error) {
       throw new Error(`${name2}: ${error.message}`);
     }
-    return { ...place, label, text: said, ...low && { low: true } };
+    return { ...place, label, text: said, ...low && { low: true }, ...finding && { finding: true } };
   });
+}
+
+// src/comments.ts
+function commentsOf(conversation) {
+  const comments2 = /* @__PURE__ */ new Map();
+  for (const entry of conversation) {
+    if (entry.from !== "page") continue;
+    if (entry.kind === "comment" && entry.file !== void 0 && entry.lines) {
+      const { id, step, file: file2, lines, linesHash, text: text2 } = entry;
+      comments2.set(id, { id, step, file: file2, lines, ...linesHash !== void 0 && { linesHash }, text: text2 });
+    }
+    const kept = "comment" in entry ? comments2.get(entry.comment) : void 0;
+    if (kept && entry.kind === "edit-comment") kept.text = entry.text;
+    if (kept && entry.kind === "delete-comment") comments2.delete(kept.id);
+  }
+  return [...comments2.values()];
 }
 
 // src/session.ts
@@ -7852,6 +7889,7 @@ var BACK_WITHIN_MS = 60 * 1e3;
 var LISTEN_EVERY_MS = 500;
 var files = (dir) => ({
   conversation: path5.join(dir, "conversation.jsonl"),
+  posted: path5.join(dir, "posted.json"),
   inbox: path5.join(dir, "inbox.jsonl"),
   listener: path5.join(dir, "listener.json")
 });
@@ -7914,8 +7952,8 @@ async function starting(dir) {
     if (now?.state !== "listening" || !alive(now)) writeJson(listener, { state: "starting" });
   });
 }
-function request(dir, fields) {
-  const entry = { id: newId(), from: "page", at: stamp(), ...fields };
+function request(dir, fields2) {
+  const entry = { id: newId(), from: "page", at: stamp(), ...fields2 };
   return hold(dir, () => {
     append(files(dir).conversation, entry);
     append(files(dir).inbox, entry);
@@ -7939,6 +7977,31 @@ async function reply(dir, to, text2) {
   const open2 = openQuestions(conversation).some((question) => question.id === to) || conversation.some((entry) => entry.from === "session" && entry.note && entry.id === to);
   if (!said || !open2 || typeof to !== "string") return null;
   return request(dir, { kind: "reply", to, text: said });
+}
+var postedOf = (dir) => readJson(files(dir).posted, []);
+async function markPosted(dir, ids) {
+  await hold(dir, () => {
+    const known = new Set(commentsOf(conversationOf(dir)).map((one) => one.id));
+    const unknown = ids.find((id) => !known.has(id));
+    if (unknown !== void 0) throw new Error(`the page sent no comment ${unknown}`);
+    const posted2 = postedOf(dir);
+    writeJson(files(dir).posted, [...posted2, ...ids.filter((id) => !posted2.includes(id))]);
+  });
+}
+async function comment(dir, { comment: id, text: text2, delete: deleting, ...where }) {
+  const said = cleanText(text2);
+  if (id === void 0) {
+    let place;
+    try {
+      place = placeIn(readWalkthrough(dir), where);
+    } catch {
+      return null;
+    }
+    return said && place.lines ? request(dir, { kind: "comment", ...place, text: said }) : null;
+  }
+  if (typeof id !== "string" || postedOf(dir).includes(id) || !commentsOf(conversationOf(dir)).some((one) => one.id === id)) return null;
+  if (deleting === true && text2 === void 0) return request(dir, { kind: "delete-comment", comment: id });
+  return said && deleting === void 0 ? request(dir, { kind: "edit-comment", comment: id, text: said }) : null;
 }
 async function say(dir, text2, { answer, question, choice = [], label }) {
   const choices = choice.map((one) => one.trim());
@@ -8013,6 +8076,7 @@ async function listen(dir, pageRunning) {
 
 // src/decisions.ts
 var readFile = (dir) => path6.join(dir, "read.json");
+var viewedFile = (dir) => path6.join(dir, "viewed.json");
 var fingerprint = (content) => crypto4.createHash("sha256").update(content).digest("hex").slice(0, 16);
 var isChoice = (entry) => entry.from === "page" && entry.kind === "decision";
 var taken = (choice) => choice && !("clear" in choice) ? choice : null;
@@ -8024,6 +8088,7 @@ function itemsOf({ steps: steps2, checklist: checklist2, base, head }, conversat
       (entry) => entry.from === "session" && entry.note ? [{ item: { type: "note", id: entry.id }, content: entry.text }] : []
     ),
     ...(checklist2?.items ?? []).map((one) => ({ item: { type: "checklist", id: one.id }, content: one.text })),
+    { item: { type: "verdict" }, content: `${base}..${head}` },
     { item: { type: "walkthrough" }, content: `${base}..${head}` }
   ];
   return items.map((one) => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
@@ -8038,7 +8103,7 @@ function decisionsOf(walkthrough, conversation) {
   });
 }
 function walkthroughVersion(dir) {
-  const stats = ["walkthrough.json", "conversation.jsonl", "read.json"].map((name2) => {
+  const stats = ["walkthrough.json", "conversation.jsonl", "read.json", "viewed.json", "posted.json"].map((name2) => {
     const stat = fs6.statSync(path6.join(dir, name2), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
   });
@@ -8050,6 +8115,7 @@ function walkthroughView(dir) {
   const conversation = conversationOf(dir);
   const items = decisionsOf(walkthrough, conversation);
   const read2 = readJson(readFile(dir), []);
+  const viewed = readJson(viewedFile(dir), []);
   return {
     ...walkthrough,
     actions: Object.fromEntries(items.filter((one) => one.actions.length).map((one) => [one.key, one.actions])),
@@ -8057,32 +8123,36 @@ function walkthroughView(dir) {
     reopened: Object.fromEntries(items.flatMap((one) => one.reopened ? [[one.key, one.reopened]] : [])),
     on: Object.fromEntries(items.map((one) => [one.key, one.on])),
     read: walkthrough.steps.filter((step) => read2.includes(`${step.id}:${fingerprint(step.diff)}`)).map((step) => step.id),
+    posted: postedOf(dir),
+    viewed: Object.entries(fileMarks(walkthrough)).flatMap(([file2, mark]) => viewed.includes(mark) ? [file2] : []),
     anchored: Object.fromEntries(
       conversation.flatMap((entry) => {
-        const place = entry.from === "session" ? entry.note : entry.kind === "ask" ? entry : void 0;
+        const place = entry.from === "session" ? entry.note : entry.kind === "ask" || entry.kind === "comment" ? entry : void 0;
         return place ? [[entry.id, anchorOf(walkthrough, place)]] : [];
       })
     )
   };
 }
-var ITEM_TYPES = /* @__PURE__ */ new Set(["step", "note", "checklist", "walkthrough"]);
-var nameOfItem = (item) => item.type === "walkthrough" ? "the walkthrough" : `${item.type === "checklist" ? "checklist item" : item.type} ${item.id}`;
+var ITEM_TYPES = /* @__PURE__ */ new Set(["step", "note", "checklist", "verdict", "walkthrough"]);
+var nameOfItem = (item) => "id" in item ? `${item.type === "checklist" ? "checklist item" : item.type} ${item.id}` : `the ${item.type}`;
 function parseActions(text2, walkthrough, conversation) {
   const known = new Map(itemsOf(walkthrough, conversation).map((one) => [one.key, one.item]));
-  return parseList(text2, "the actions", ({ item, actions: actions2 }, number) => {
+  return parseList(text2, "the actions", ({ item, actions: actions2, hint }, number) => {
     const fail = (problem) => new Error(`entry ${String(number)}: ${problem}`);
     const { type } = fieldsOf(item);
     if (typeof type !== "string" || !ITEM_TYPES.has(type))
-      throw fail("the item must be a step, a note, a checklist item or the walkthrough");
+      throw fail("the item must be a step, a note, a checklist item, the verdict or the walkthrough");
     const found = known.get(keyOf(item));
     if (!found) throw fail(`the walkthrough has no ${nameOfItem(item)}`);
     if (!Array.isArray(actions2)) throw fail("actions must be a list");
+    if (hint !== void 0 && !filled(hint)) throw fail("a hint needs words");
+    if (hint !== void 0 && "id" in found) throw fail("only the verdict and the walkthrough take a hint");
     const ids = /* @__PURE__ */ new Set();
     return {
       item: found,
-      actions: actions2.map((fields, number2) => {
+      actions: actions2.map((fields2, number2) => {
         const name2 = `action ${String(number2 + 1)}`;
-        const { id, label, note: note2 = false, edit = false } = fieldsOf(fields);
+        const { id, label, note: note2 = false, edit = false } = fieldsOf(fields2);
         if (!filled(id)) throw fail(`${name2} needs an id`);
         if (!filled(label)) throw fail(`${name2} needs a label`);
         if (typeof note2 !== "boolean") throw fail(`${name2}: note must be true or false`);
@@ -8092,9 +8162,14 @@ function parseActions(text2, walkthrough, conversation) {
         if (ids.has(id)) throw fail(`two actions have the id ${id}`);
         ids.add(id);
         return { id, label, ...note2 && { note: true }, ...edit && { edit: true } };
-      })
+      }),
+      ...hint !== void 0 && { hint: hint.trim() }
     };
   });
+}
+function waitsForVerdict(walkthrough, conversation, item) {
+  if (item.type !== "walkthrough" || !actionsOf(walkthrough, { type: "verdict" }).length) return false;
+  return !decisionsOf(walkthrough, conversation).find((one) => one.item.type === "verdict")?.decision;
 }
 var CHANGED = "changed";
 async function decide(dir, { item, action, note: note2, text: text2, clear, on }) {
@@ -8111,6 +8186,7 @@ async function decide(dir, { item, action, note: note2, text: text2, clear, on }
   }
   const offered = actionsOf(walkthrough, found.item).find((one) => one.id === action);
   if (!offered) return null;
+  if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
   if (offered.note ? !filled(note2) : note2 !== void 0) return null;
   if (offered.edit ? !filled(text2) : text2 !== void 0) return null;
   const session = await request(dir, {
@@ -8122,6 +8198,30 @@ async function decide(dir, { item, action, note: note2, text: text2, clear, on }
     on: found.on
   });
   return { walkthrough: walkthroughView(dir), session };
+}
+function fileMarks({ steps: steps2 }) {
+  return Object.fromEntries(
+    steps2.flatMap(
+      (step) => parseDiff(step.diff).map((file2) => {
+        const name2 = file2.isDeleted ? file2.oldName : file2.newName;
+        return [name2, `${name2}:${fingerprint(JSON.stringify(file2))}`];
+      })
+    )
+  );
+}
+async function markViewed(dir, { step: stepId, file: file2, viewed, on }) {
+  const walkthrough = readWalkthrough(dir);
+  const step = walkthrough?.steps.find((one) => one.id === stepId);
+  if (!walkthrough || !step || typeof viewed !== "boolean" || typeof file2 !== "string") return null;
+  if (on !== void 0 && on !== fingerprint(step.diff)) return CHANGED;
+  const mark = fileMarks({ ...walkthrough, steps: [step] })[file2];
+  if (!mark) return null;
+  const marks = viewedFile(dir);
+  await locked(marks, () => {
+    const kept = readJson(marks, []).filter((one) => one !== mark);
+    writeJson(marks, viewed ? [...kept, mark] : kept);
+  });
+  return walkthroughView(dir);
 }
 async function markRead(dir, stepId, on) {
   const step = readWalkthrough(dir)?.steps.find((one) => one.id === stepId);
@@ -8152,11 +8252,14 @@ function listView(repoDir2) {
       if (view.reopened[key]) return "reopened";
       return view.read.includes(step.id) ? "read" : "unread";
     });
+    const verdict = view.decided["verdict"];
     const changed = ACTIVITY.map((file2) => fs7.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
         name: nameOf(view),
+        ...view.kindLabel !== void 0 && { kind: view.kindLabel },
+        ...verdict && { verdict: view.actions["verdict"]?.find((one) => one.id === verdict.action)?.label ?? verdict.action },
         target: view.target,
         steps: view.steps.length,
         decided: segments.filter((segment) => segment === "decided").length,
@@ -8173,11 +8276,35 @@ var listPage = (repoDir2) => ({
   walkthroughs: listView(repoDir2)
 });
 
+// src/viewer.ts
+var CHOICES = {
+  accent: ["ultramarine", "petrol", "berry"],
+  theme: ["system", "light", "dark"]
+};
+var PANELS = ["queue", "checklist", "explanation", "tools"];
+var DEFAULT_VIEWER = {
+  accent: "ultramarine",
+  theme: "system",
+  panels: { queue: true, checklist: false, explanation: false, tools: false }
+};
+var fields = (value) => typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+function mergeViewer(base, change) {
+  const given = fields(change);
+  const result = { ...base, panels: { ...base.panels } };
+  for (const setting of Object.keys(CHOICES)) {
+    const value = given[setting];
+    if (CHOICES[setting].includes(value)) Object.assign(result, { [setting]: value });
+  }
+  const panels = fields(given["panels"]);
+  for (const panel of PANELS) if (typeof panels[panel] === "boolean") result.panels[panel] = panels[panel];
+  return result;
+}
+
 // src/words.ts
 var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
 var MAX_TEXT = 4e3;
-function tooLong(fields) {
-  const long = Object.values(fields).find((value) => typeof value === "string" && value.length > MAX_TEXT);
+function tooLong(fields2) {
+  const long = Object.values(fields2).find((value) => typeof value === "string" && value.length > MAX_TEXT);
   return long === void 0 ? null : `That text is ${String(long.length)} characters long; the most it can be is ${String(MAX_TEXT)}.`;
 }
 
@@ -8208,6 +8335,13 @@ var SECURITY_HEADERS = {
   "x-frame-options": "DENY",
   "cross-origin-resource-policy": "same-origin"
 };
+var viewerFile = () => path8.join(stateDir(), "viewer.json");
+var readViewer = (file2 = viewerFile()) => mergeViewer(DEFAULT_VIEWER, readJson(file2, {}));
+function saveViewer(change, file2 = viewerFile()) {
+  const saved = mergeViewer(readViewer(file2), change);
+  writeJson(file2, saved);
+  return saved;
+}
 var recordFile = (dir) => path8.join(dir, "server.json");
 var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
@@ -8267,11 +8401,15 @@ function serve(dir, list3 = false) {
     throw new Error(`serve serves only a walkthrough folder under ${stateDir()}`);
   const token = pageToken(dir);
   const stop = () => ({ status: 200, body: { stopped: true }, after: shutDown });
-  const routes = list3 ? { "/open": ({ id }) => open(dir, id), "/stop": stop } : {
-    "/decide": async (fields) => answered(await decide(dir, fields)),
+  const viewer = (change) => ({ status: 200, body: saveViewer(change) });
+  const routes = list3 ? { "/open": ({ id }) => open(dir, id), "/stop": stop, "/viewer": viewer } : {
+    "/viewer": viewer,
+    "/decide": async (fields2) => answered(await decide(dir, fields2)),
     "/read": async ({ step, on }) => answered(await markRead(dir, step, on)),
-    "/ask": async (fields) => answered(await ask(dir, fields)),
+    "/viewed": async (fields2) => answered(await markViewed(dir, fields2)),
+    "/ask": async (fields2) => answered(await ask(dir, fields2)),
     "/reply": async ({ to, text: text2 }) => answered(await reply(dir, to, text2)),
+    "/comment": async (fields2) => answered(await comment(dir, fields2)),
     "/stop": stop
   };
   let seen = Date.now();
@@ -8353,7 +8491,10 @@ function serveFile(dir, list3, what, req, res) {
     });
     return;
   }
-  const data = list3 ? { "data/list.json": () => listPage(dir) } : { "data/session.json": () => sessionView(dir) };
+  const data = {
+    "data/viewer.json": () => readViewer(),
+    ...list3 ? { "data/list.json": () => listPage(dir) } : { "data/session.json": () => sessionView(dir) }
+  };
   const view = Object.hasOwn(data, what) ? data[what] : void 0;
   if (view) {
     res.writeHead(200, JSON_HEADERS).end(JSON.stringify(view()));
@@ -8422,13 +8563,13 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
     return;
   }
   readBody(req, res, (body) => {
-    const fields = body && typeof body === "object" && !Array.isArray(body) ? body : {};
-    const problem = tooLong(fields);
+    const fields2 = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+    const problem = tooLong(fields2);
     if (problem) {
       res.writeHead(400, JSON_HEADERS).end(JSON.stringify({ error: problem }));
       return;
     }
-    Promise.resolve().then(() => route(fields)).then(({ status: status2, body: said, after }) => {
+    Promise.resolve().then(() => route(fields2)).then(({ status: status2, body: said, after }) => {
       if (after) res.once("finish", after);
       if (said === void 0) res.writeHead(status2).end();
       else res.writeHead(status2, JSON_HEADERS).end(JSON.stringify(said));
@@ -8493,7 +8634,7 @@ function exportPage(dir) {
   const read2 = (file2) => fs10.readFileSync(path10.join(PAGE, file2), "utf8");
   const script = read2("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
   const style = read2("style.css");
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString() };
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString(), viewer: readViewer() };
   const data = JSON.stringify(state).replaceAll("<", "\\u003c");
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read2("index.html");
@@ -8524,7 +8665,7 @@ var example = [
     title: "Session store",
     explanation: "Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.",
     assumptions: ["Sessions are only read by the login handler."],
-    files: ["src/session-store.ts", "test/session-store.test.ts"]
+    files: [{ path: "src/session-store.ts", explanation: "Keeps sessions in memory, keyed by their id." }, "test/session-store.test.ts"]
   },
   {
     title: "Regenerated API description",
@@ -8534,7 +8675,7 @@ var example = [
   }
 ];
 var notesExample = [
-  { step: "1", label: "Risk", text: "Sessions never expire, so a stolen one works **forever**." },
+  { step: "1", label: "Risk", text: "Sessions never expire, so a stolen one works **forever**.", finding: true },
   {
     step: "1",
     file: "src/session-store.ts",
@@ -8561,10 +8702,24 @@ var actionsExample = [
     ]
   },
   { item: { type: "step", id: "1" }, actions: [{ id: "approve", label: "Approve" }, { id: "fix", label: "Needs a fix", note: true }] },
-  { item: { type: "walkthrough" }, actions: [{ id: "post", label: "Post my comments" }] }
+  {
+    item: { type: "verdict" },
+    hint: "Sent with the review.",
+    actions: [
+      { id: "approve", label: "Approve" },
+      { id: "changes", label: "Request changes" },
+      { id: "comment", label: "Comment" }
+    ]
+  },
+  { item: { type: "walkthrough" }, hint: "Posts your comments as one review.", actions: [{ id: "post", label: "Post my review" }] }
 ];
-var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>]
+var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>] [--comments <text>]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  --kind gives the walkthrough the session's own label for what kind it is, such as "own" or "requested";
+  the page header and the list show it as given, nothing else reads it, and a later start keeps it unless it gives another.
+  --comments gives the session's own words for what becomes of the person's line comments, such as "Joins the fix list";
+  the page shows them under each comment, and a later start keeps them unless it gives others.
+  Both are start's alone: the other commands find the walkthrough without them.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
   Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
@@ -8591,6 +8746,8 @@ walkthrough steps --file <file>
   Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A step, with what the session assumed rather than read ("assumptions" may be left out):
     {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
+  A path in a step's files may be given with a short explanation of that file, shown just above its diff, under the step's explanation:
+    {"path": path, "explanation": string}
   A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
     {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
   Example:
@@ -8604,6 +8761,8 @@ walkthrough note --file <file>
     {"step": string, "label": string, "text": string, "low": boolean}
     {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
   "low": true puts the note behind a count of low-priority notes; it may be left out.
+  "finding": true flags the note as a finding, whatever its label; it may be left out.
+  The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
@@ -8627,12 +8786,17 @@ ${JSON.stringify(checklistExample, null, 2)}
 walkthrough actions --file <file>
   Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
   The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed) or the whole walkthrough:
-    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "walkthrough"}
+  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
+    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
   An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
   A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
-  Other items offer nothing until actions are recorded on them; the walkthrough's actions show at its end, after the last step.
+  Other items offer nothing until actions are recorded on them.
+  The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
+  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status.
+  The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
+  "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
+  A note offering an action with "edit": true is a draft: the Summary lists it as accepted or edited when the person took that action, and dropped when they took another.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
@@ -8644,7 +8808,8 @@ walkthrough decisions
   Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
     {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
   A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
-  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the walkthrough's base and head.
+  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the verdict's and the walkthrough's base and head.
+  The verdict is the line with {"type": "verdict"}: its decision's action is the verdict the person chose, or null before they choose one.
   A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
 
 walkthrough listen
@@ -8655,10 +8820,25 @@ walkthrough listen
     {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
+    {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
+    {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
+    {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
+    {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Act on a clear as the review policy says, and answer it with say --answer like any decision.
+  A comment is the person's own words, never yours: act on it, its edits and its deletion as the review policy says, and answer each with say --answer.
+  Files the person collapses or marks viewed are their own reading marks and never reach the session.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
+
+walkthrough comments
+  Prints each of the person's comments as it is now, edits applied and deleted ones left out, one JSON line each:
+    {"id": string, "step": string, "file": path, "lines": [first, last], "text": string, "posted": true}   "posted" only once marked posted
+
+walkthrough posted <comment id>...
+  Marks the person's comments posted, once they have gone out as the review policy says;
+  the page then shows them as posted and no longer lets the person edit or delete them.
+  An id that names no comment is refused, and nothing is marked.
 
 walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
   Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
@@ -8668,7 +8848,7 @@ walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]..
   Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
 
 walkthrough export [--out <file>]
-  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist and decisions.
+  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist, decisions and the verdict.
   The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
   With --out the person approves the command, since it writes where it names.
 
@@ -8683,7 +8863,7 @@ walkthrough policy [show | init | save --file <file>]
   save --file <file> replaces the policy with the file, which you write in that inbox.
 
 walkthrough list
-  Opens a page of the repo's walkthroughs with their progress and last activity; opening one starts its page when it is not running.
+  Opens a page of the repo's walkthroughs with their progress, verdict and last activity; opening one starts its page when it is not running.
   It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
 `;
 
@@ -8698,8 +8878,12 @@ var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join
 var read = (file2) => fs11.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
   "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
+  "26442e1d66028540ef4b778ed9edec79a2bab15ba84c543fa584a4d7d611d6fc",
   "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
+  "407a443dbc1b85beedb76b2c9d910b508486f37bbb04c9d77804d35ec4d516e0",
   "92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359",
+  "9af98052435443bb10e4fca9dabe52f60de24564bf55ba7909423b37cd663303",
+  "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
   "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b"
 ]);
 function stateOf(policy) {
@@ -8767,10 +8951,15 @@ function located(args, {
   return { ...parsed3, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
 }
 async function start(args) {
-  const { cwd, source, dir } = located(args);
+  const { cwd, source, dir, values } = located(args, { options: { kind: { type: "string" }, comments: { type: "string" } } });
+  const kind = values.kind?.trim();
+  if (kind === "") throw new Error("--kind needs a label that names the kind of walkthrough");
+  const hint = values.comments?.trim();
+  if (hint === "") throw new Error("--comments needs words that say what becomes of the person's comments");
+  const labelled = { ...kind !== void 0 && { kindLabel: kind }, ...hint !== void 0 && { commentHint: hint } };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = await openWalkthrough(dir, source, change, (moved) => carrySteps(cwd, moved));
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, labelled, (moved) => carrySteps(cwd, moved));
   await starting(dir);
   const inbox = makeInbox(dir);
   const { steps: steps2 } = walkthrough;
@@ -8849,6 +9038,18 @@ function decisions(args) {
   for (const { item, decision, reopened } of decisionsOf(walkthrough, conversationOf(dir)))
     console.log(JSON.stringify({ item, decision: decision && shown(decision), ...reopened && { reopened: shown(reopened) } }));
 }
+function comments(args) {
+  const { dir } = current(args);
+  const posted2 = postedOf(dir);
+  for (const { id, step, file: file2, lines, text: text2 } of commentsOf(conversationOf(dir)))
+    console.log(JSON.stringify({ id, step, file: file2, lines, text: text2, ...posted2.includes(id) && { posted: true } }));
+}
+async function posted(args) {
+  const { dir, positionals } = current(args, { allowPositionals: true });
+  if (!positionals.length) throw new Error("usage: walkthrough posted <comment id>...");
+  await markPosted(dir, positionals);
+  console.log(`Marked ${plural(positionals.length, "comment")} posted.`);
+}
 function exportCommand(args) {
   const { values, dir, walkthrough } = current(args, { options: { out: { type: "string" } } });
   const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
@@ -8907,6 +9108,8 @@ var COMMANDS = {
   checklist,
   actions,
   decisions,
+  comments,
+  posted,
   list: list2,
   export: exportCommand,
   guide: () => {
@@ -8947,7 +9150,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n    | actions --file <file> | decisions | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n    | actions --file <file> | decisions | comments | posted <comment id>... | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {
