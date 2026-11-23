@@ -7,15 +7,21 @@ import path from 'node:path';
 import { alive } from '../src/processes';
 import { shareHistory } from './helpers';
 
-function serverRecords(sandbox: string): string[] {
+const folders = (dir: string): string[] => {
   try {
-    return fs
-      .readdirSync(sandbox, { recursive: true, encoding: 'utf8' })
-      .filter(found => path.basename(found) === 'server.json')
-      .map(found => path.join(sandbox, found));
+    return fs.readdirSync(dir).map(name => path.join(dir, name));
   } catch {
     return [];
   }
+};
+
+/** The servers recorded in the sandbox's state and each test repo's, for a repo's list and for each of its walkthroughs. */
+export function serverRecords(sandbox: string): string[] {
+  return [sandbox, ...folders(sandbox)]
+    .flatMap(dir => folders(path.join(dir, 'state')))
+    .flatMap(repo => [repo, ...folders(repo)])
+    .map(dir => path.join(dir, 'server.json'))
+    .filter(found => fs.existsSync(found));
 }
 
 if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
