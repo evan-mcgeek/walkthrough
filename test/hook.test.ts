@@ -83,6 +83,10 @@ describe('the plugin hook', () => {
     expect(decide('Write', { file_path: path.join(elsewhere, 'inbox', 'x.json'), content: '' })).toBe('none');
     expect(decide('Write', { file_path: path.join(state, 'shop-12345678', 'linked', 'inbox', 'x.json'), content: '' })).toBe('none');
     expect(decide('Write', { file_path: 'inbox/x.json', content: '' })).toBe('none');
+    fs.writeFileSync(path.join(elsewhere, 'target.json'), '[]');
+    fs.symlinkSync(path.join(elsewhere, 'target.json'), path.join(inbox, 'link.json'));
+    expect(decide('Write', { file_path: path.join(inbox, 'link.json'), content: '' })).toBe('none');
+    expect(bash(`walkthrough steps --file ${inbox}/link.json`)).toBe('none');
     expect(decide('Read', { file_path: path.join(inbox, 'steps.json') })).toBe('none');
   });
 });
