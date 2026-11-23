@@ -1529,12 +1529,22 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
   // An export has no one to open it for, so it shows the files at once.
   const open = readOnly || opened.has(key);
   const problems = step.problems.length ? [el('span', { className: 'tag reopened' }, plural(step.problems.length, 'problem'))] : [];
-  const reasons = el('span', { className: 'fold-reasons' }, ...step.files.map(file => el('span', { className: 'reason' }, plain(file.reason))));
-  const label = [el('span', {}, plural(step.files.length, 'file')), ...(open ? [] : [reasons]), el('span', { className: 'spacer' }), ...problems];
+  const reasons = [...new Set(step.files.map(file => plain(file.reason)))];
+  const label = [
+    el('span', { className: 'fold-count' }, plural(step.files.length, 'file')),
+    open ? el('span', { className: 'spacer' }) : el('span', { className: 'fold-reasons' }, reasons.join(' · ')),
+    ...problems,
+  ];
   const summary = readOnly
     ? el('p', { className: 'fold-summary' }, icon('folded'), ...label)
     : disclosure(label, open, () => { toggle(opened, key); }, 'fold-summary', key);
-  if (!open) return [el('div', { className: 'block' }, summary)];
+  summary.title = reasons.join('\n');
+  // A problem wants the person, so it shows whether the files are open or not.
+  const found = step.problems.length
+    ? [el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', { className: 'problem' }, icon('warn'), markdown(problem, 'problem-text'))))]
+    : [];
+  found[0]?.setAttribute('aria-label', 'Problems the session found');
+  if (!open) return [el('div', { className: 'block' }, summary, ...found)];
   const diff = step.diff ? diffView(step, pinned) : null;
   const wrappers = new Map([...(diff?.querySelectorAll<HTMLElement>('.d2h-file-wrapper') ?? [])].map(wrapper => [wrapper.dataset['file'], wrapper]));
   const diffKey = (path: string) => `fold-diff:${step.id}:${path}`;
@@ -1551,18 +1561,14 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
         'li',
         {},
         el('code', { className: 'fold-path' }, file.path),
-        markdown(file.reason, 'fold-reason reason'),
+        markdown(file.reason, 'fold-reason'),
         ...(wrappers.has(file.path) && !readOnly ? [button] : []),
       );
     }),
   );
   files.setAttribute('aria-label', 'Folded files');
-  const found = step.problems.length
-    ? [el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', { className: 'problem' }, icon('warn'), markdown(problem, 'problem-text'))))]
-    : [];
-  found[0]?.setAttribute('aria-label', 'Problems the session found');
   const anyShown = [...wrappers.values()].some(wrapper => !wrapper.hidden);
-  return [el('div', { className: 'block' }, summary, files, ...found, ...(diff && anyShown ? [el('div', { className: 'fold-diff' }, diff)] : []))];
+  return [el('div', { className: 'block' }, summary, ...found, files, ...(diff && anyShown ? [el('div', { className: 'fold-diff' }, diff)] : []))];
 }
 
 /** A step's explanation, what was said about its decision, its assumptions and notes as prose; its files as code. */

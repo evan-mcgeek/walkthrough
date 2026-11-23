@@ -476,7 +476,30 @@
   flex: 1;
 }
 
+.fold-count {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Each distinct reason once, on the summary's one line, cut at its end. */
+.fold-reasons {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fold-summary > .tag {
+  flex: none;
+}
+
+/* One row per file: its path, its reason as text, Show diff; the columns line up from row to row. */
 .fold-files {
+  display: grid;
+  grid-template-columns: fit-content(45%) minmax(0, 1fr) auto;
+  column-gap: var(--s4);
   margin: var(--s4) 0 0;
   padding: 0;
   border-top: 1px solid var(--rule);
@@ -484,17 +507,13 @@
 }
 
 .fold-files li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s2) var(--s3);
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  grid-template-areas: 'path reason diff';
+  align-items: baseline;
   padding: var(--s3) 0;
   font: var(--text-body-ui);
-}
-
-/* Right-aligned on its own line too, when a long path wraps it. */
-.fold-files li > .btn {
-  margin-left: auto;
 }
 
 .fold-files li + li {
@@ -502,35 +521,39 @@
 }
 
 .fold-path {
+  grid-area: path;
   font: var(--text-mono-label);
   font-variant-ligatures: none;
-}
-
-.reason {
-  display: inline-block;
-  padding: 0 var(--s2);
-  border-radius: var(--r-pill);
-  background: var(--surface-tint);
-  color: var(--muted);
-  font: 400 12px/1.5 var(--font-ui);
-  white-space: nowrap;
-}
-
-.fold-reasons {
-  display: flex;
-  gap: 6px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.fold-reasons > .reason {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .fold-reason {
-  min-width: 0;
-  white-space: normal;
+  grid-area: reason;
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}
+
+.fold-reason > p {
+  margin: 0;
+}
+
+.fold-files li > .btn {
+  grid-area: diff;
+}
+
+@media (max-width: 760px) {
+  .fold-files {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fold-files li {
+    grid-template-areas: 'path diff' 'reason reason';
+    row-gap: var(--s1);
+  }
+}
+
+.block > .problems {
+  margin-top: var(--s2);
 }
 
 .problems {
