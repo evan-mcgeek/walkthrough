@@ -1,6 +1,6 @@
 import { Diff2HtmlUI } from 'diff2html/lib-esm/ui/js/diff2html-ui-slim';
 import { parse } from 'diff2html/lib-esm/diff-parser';
-import { ColorSchemeType } from 'diff2html/lib-esm/types';
+import { ColorSchemeType, type DiffFile, LineType } from 'diff2html/lib-esm/types';
 import type { Lines, NoteMark, Place } from '../notes';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
@@ -348,26 +348,33 @@ function layoutSwitch(): HTMLElement {
   return group;
 }
 
-/** The header's More menu, which holds what the header has no room for at phone width. */
-let menuOpen = false;
+/** The data-key of the button whose menu is open, the header's More or a note's actions; one at a time, kept across redraws. */
+let menuOpen: string | null = null;
 
-function closeMenu(): void {
-  menuOpen = false;
+function closeMenu(refocus = false): void {
+  const key = menuOpen;
+  menuOpen = null;
   render();
+  if (refocus && key !== null) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.focus();
 }
 
+document.addEventListener('click', event => {
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
+});
+
+/** The header's More menu, which holds what the header has no room for at phone width. */
 function moreMenu(): HTMLElement {
   const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
-    menuOpen = !menuOpen;
+    menuOpen = menuOpen === 'more' ? null : 'more';
     render();
     document.querySelector<HTMLElement>('.menu [role=menuitem]')?.focus();
   } }, icon('more'));
   button.setAttribute('aria-label', 'More');
   button.setAttribute('aria-haspopup', 'menu');
-  button.setAttribute('aria-expanded', String(menuOpen));
+  button.setAttribute('aria-expanded', String(menuOpen === 'more'));
   button.dataset['key'] = 'more';
   const box = el('div', { className: 'more-menu' }, button);
-  if (!menuOpen) return box;
+  if (menuOpen !== 'more') return box;
   const choices: [string, () => void][] = stopped
     ? []
     : [
@@ -407,10 +414,6 @@ function moreMenu(): HTMLElement {
   return box;
 }
 
-document.addEventListener('click', event => {
-  if (menuOpen && !(event.target instanceof Element && event.target.closest('.more-menu'))) closeMenu();
-});
-
 function headerView(): HTMLElement[] {
   const range = `against ${walkthrough.target}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   return [
@@ -428,9 +431,6 @@ function headerView(): HTMLElement[] {
   ];
 }
 
-/** Nothing in an exported file is sent anywhere, so it has no boxes to type into. */
-const writable = (form: HTMLFormElement) => (readOnly ? [] : [form]);
-
 function draftArea(draft: string, label: string, start = '', rows = 2): HTMLTextAreaElement {
   const box = el('textarea', { rows, value: drafts.get(draft) ?? start, placeholder: label });
   box.dataset['draft'] = draft;
@@ -438,18 +438,6 @@ function draftArea(draft: string, label: string, start = '', rows = 2): HTMLText
   box.oninput = () => drafts.set(draft, box.value);
   return box;
 }
-
-function draftForm(boxes: HTMLTextAreaElement[], action: string, onSend: () => void): HTMLFormElement {
-  const form = el('form', { className: 'draft' }, ...boxes, el('button', { type: 'submit', className: 'btn primary' }, action));
-  form.onsubmit = event => {
-    event.preventDefault();
-    onSend();
-  };
-  return form;
-}
-
-const draftBox = (draft: string, label: string, action: string, onSend: () => void) =>
-  draftForm([draftArea(draft, label)], action, onSend);
 
 /** A one-line box that sends on Enter, as the board's Ask and Reply boxes do. */
 function lineBox(draft: string, label: string, placeholder: string, onSend: () => void): HTMLFormElement {
@@ -503,21 +491,36 @@ const answered = (message: SessionMessage) =>
 /** A question waits in its box until the person replies to it. */
 const waitingQuestions = () => (readOnly ? [] : sessionMessages().filter(message => message.question && !answered(message)));
 
+const turn = (entry: Entry) =>
+  el('div', { className: 'turn' }, el('span', { className: 'who' }, entry.from === 'session' ? 'Session' : 'You'), said(entry));
+
+/** Replies hang behind a rule under what they answer. */
+const replies = (entries: Entry[]) => (entries.length ? [el('div', { className: 'replies' }, ...entries.map(turn))] : []);
+
+/** An ask and its answers: a note that answers it carries the question; anything else answers under the question itself. */
 function askThread(asked: Ask): HTMLElement {
   const answers = followUps(asked);
-  const inNotes = new Set(answers.filter(isNote).flatMap(note => followUps(note).map(entry => entry.id)));
-  return el(
-    'div',
-    { className: 'thread' },
-    said(asked),
-    ...(answers.length
-      ? answers.filter(entry => !inNotes.has(entry.id)).map(entry => (isNote(entry) ? noteView(entry) : said(entry)))
-      : [el('p', { className: 'muted' }, 'Waiting for the session to answer.')]),
-  );
+  const notes = answers.filter(isNote);
+  const inNotes = new Set(notes.flatMap(note => followUps(note).map(entry => entry.id)));
+  const rest = answers.filter(entry => !isNote(entry) && !inNotes.has(entry.id));
+  const own =
+    notes.length && !rest.length
+      ? []
+      : [
+          el(
+            'div',
+            { className: 'note asked' },
+            el('div', { className: 'note-head' }, el('span', { className: 'label' }, 'You asked'), ...linesOf(asked.lines)),
+            said(asked),
+            ...(answers.length ? replies(rest) : [el('p', { className: 'muted' }, 'Waiting for the session to answer.')]),
+          ),
+        ];
+  return el('div', { className: 'ask-thread' }, ...own, ...notes.map(note => noteView(note, asked)));
 }
 
 const linesLabel = ([first, last]: Lines) =>
-  first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
+  first === last ? `Line ${String(first)}` : `Lines ${String(first)}–${String(last)}`;
+const linesOf = (lines: Lines | undefined) => (lines ? [el('span', { className: 'lines' }, linesLabel(lines).toLowerCase())] : []);
 
 /** How an action shows: the built-in Approve leads, Flag follows, and what the session offers on a step is marked as offered. */
 type Look = 'primary' | 'secondary' | 'offer';
@@ -529,13 +532,77 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
   button.dataset['key'] = `action:${key}:${action.id}`;
   button.onclick = () => {
-    if (action.note || action.edit) {
-      taking = { key, action: action.id };
-      render();
-      document.querySelector<HTMLTextAreaElement>('.taking textarea')?.focus();
-    } else void decide(item, action.id);
+    take(item, action);
   };
   return button;
+}
+
+/** An action that asks for words opens its form; any other decides at once. */
+function take(item: Item, action: Action): void {
+  if (action.note || action.edit) {
+    taking = { key: itemKey(item), action: action.id };
+    render();
+    document.querySelector<HTMLTextAreaElement>('.taking textarea')?.focus();
+  } else void decide(item, action.id);
+}
+
+/** A note's actions, behind its button. */
+function actionsMenu(item: Item, label: string): HTMLElement[] {
+  const key = itemKey(item);
+  const actions = walkthrough.actions[key] ?? [];
+  if (readOnly || !actions.length) return [];
+  const opener = `menu:${key}`;
+  const open = menuOpen === opener;
+  const button = el('button', { type: 'button', className: 'icon-button menu-button' }, icon('more'));
+  button.setAttribute('aria-label', 'Note actions');
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', String(open));
+  button.dataset['key'] = opener;
+  button.onclick = () => {
+    if (open) {
+      closeMenu();
+      return;
+    }
+    menuOpen = opener;
+    render();
+    document.querySelector<HTMLElement>('.menu [role="menuitem"]')?.focus();
+  };
+  if (!open) return [button];
+  const choices = actions.map(action => {
+    const choice = el('button', { type: 'button', tabIndex: -1 }, action.label);
+    choice.setAttribute('role', 'menuitem');
+    choice.dataset['key'] = `menu-item:${key}:${action.id}`;
+    choice.onclick = () => {
+      menuOpen = null;
+      render();
+      take(item, action);
+    };
+    return choice;
+  });
+  const menu = el('div', { className: 'menu', popover: 'manual' }, ...choices);
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', `${label} actions`);
+  menu.onkeydown = event => {
+    const at = choices.findIndex(choice => choice === document.activeElement);
+    const moves: Record<string, number> = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: choices.length - 1 };
+    const to = moves[event.key];
+    if (to !== undefined) {
+      event.preventDefault();
+      choices[(to + choices.length) % choices.length]?.focus();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMenu(true);
+    } else if (event.key === 'Tab') {
+      menuOpen = null;
+      // After focus has moved on.
+      setTimeout(render, 0);
+    }
+  };
+  // In the top layer the diff's scroll box cannot clip it.
+  queueMicrotask(() => {
+    if (menu.isConnected && !menu.matches(':popover-open')) menu.showPopover();
+  });
+  return [button, menu];
 }
 
 function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false): HTMLElement {
@@ -621,26 +688,70 @@ function wasView(entry: Note | Ask): HTMLElement {
   return el('p', { className: 'was' }, `Was on ${where}`);
 }
 
-function noteView(note: Note): HTMLElement {
-  const { label, lines } = note.note;
+/** Notes whose Reply box the person opened. */
+const replying = new Set<string>();
+
+function replyView(note: Note): HTMLElement[] {
+  if (readOnly) return [];
   const draft = `reply:${note.id}`;
+  if (!replying.has(note.id) && !drafts.get(draft)) {
+    const open = el('button', { type: 'button', className: 'link' }, 'Reply');
+    open.dataset['key'] = `reply:${note.id}`;
+    open.onclick = () => {
+      replying.add(note.id);
+      render();
+      document.querySelector<HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
+    };
+    return [el('div', { className: 'note-foot' }, open)];
+  }
+  const form = lineBox(draft, 'Reply', 'Reply…', () => {
+    void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft).then(sent => {
+      if (!sent) return;
+      replying.delete(note.id);
+      render();
+    });
+  });
+  form.className = 'reply';
+  form.append(el('button', { type: 'submit', className: 'btn small' }, 'Send'));
+  form.onkeydown = event => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    replying.delete(note.id);
+    drafts.delete(draft);
+    render();
+    document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`reply:${note.id}`)}"]`)?.focus();
+  };
+  return [form];
+}
+
+/** `asked` is the ask the note answers: it shows the question, with the note as the session's reply. */
+function noteView(note: Note, asked?: Ask): HTMLElement {
+  const { label, lines } = note.note;
+  const item: Item = { type: 'note', id: note.id };
+  const key = itemKey(item);
   const detached = anchorOf(note) === null;
+  const shown = walkthrough.decided[key] ?? walkthrough.reopened[key];
+  const taken = taking?.key === key ? walkthrough.actions[key]?.find(action => action.id === taking?.action) : undefined;
   const view = el(
     'article',
     { className: 'note' },
     el(
-      'p',
+      'div',
       { className: 'note-head' },
       el('span', { className: 'label' }, label),
-      ...(lines && !detached ? [el('span', { className: 'lines' }, linesLabel(lines))] : []),
+      ...(detached ? [] : linesOf(lines)),
+      ...(shown ? [stateTag(item, false)] : []),
+      el('span', { className: 'spacer' }),
+      ...actionsMenu(item, label),
     ),
     ...(detached ? [wasView(note)] : []),
-    markdown(note.text, 'note-text'),
-    ...decideView({ type: 'note', id: note.id }, note.text),
-    ...followUps(note).map(said),
-    ...writable(draftBox(draft, 'Reply', 'Reply', () => {
-      void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft);
-    })),
+    ...(asked
+      ? [el('p', { className: 'you-asked' }, el('span', { className: 'muted' }, 'You asked:'), ` ${asked.text}`), ...replies([note, ...followUps(note)])]
+      : [markdown(note.text, 'note-text'), ...replies(followUps(note))]),
+    // A reopened note keeps what the person and the session said about the decision it had.
+    ...(shown ? decisionSaid(shown) : []),
+    ...(taken ? [takingForm(item, taken, note.text)] : []),
+    ...replyView(note),
   );
   view.setAttribute('aria-label', label);
   view.id = `note-${note.id}`;
@@ -649,11 +760,16 @@ function noteView(note: Note): HTMLElement {
 }
 
 function notesView(notes: Note[], place: string): HTMLElement[] {
-  const views = notes.filter(note => !note.note.low).map(noteView);
+  const views = notes.filter(note => !note.note.low).map(note => noteView(note));
   const low = notes.filter(note => note.note.low);
   if (!low.length) return views;
-  const more = el('details', { className: 'more', open: opened.has(place) }, el('summary', {}, `${String(low.length)} more`));
-  more.append(...low.map(noteView));
+  const labels = [...new Set(low.map(note => note.note.label))].join(', ');
+  const more = el(
+    'details',
+    { className: 'more', open: opened.has(place) },
+    el('summary', {}, el('span', { className: 'more-link' }, plural(low.length, 'more note')), el('span', { className: 'muted' }, ` · ${labels}`)),
+  );
+  more.append(...low.map(note => noteView(note)));
   more.ontoggle = () => {
     // A redraw opens it again on its own, which reveals nothing.
     if (more.open && !opened.has(place)) {
@@ -684,7 +800,7 @@ function pick(step: Step, file: string, line: number, extend: boolean, ended: bo
   const from = extend && picked?.step === step.id && picked.file === file ? picked.from : line;
   picked = { step: step.id, file, from, lines: [Math.min(from, line), Math.max(from, line)], ended };
   render();
-  if (ended) document.querySelector<HTMLTextAreaElement>('.picked-ask textarea')?.focus();
+  if (ended) document.querySelector<HTMLInputElement>('.picked-ask input')?.focus();
 }
 
 function pickLine(step: Step, event: MouseEvent): void {
@@ -718,13 +834,20 @@ function unpick(): void {
 
 function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
   const draft = `ask:${step.id}:${file}:${lines.join('-')}`;
-  const form = draftBox(draft, `Ask about ${file} ${linesLabel(lines).toLowerCase()}`, 'Ask', () => {
+  const label = `Ask about ${file} ${linesLabel(lines).toLowerCase()}`;
+  const form = lineBox(draft, label, '', () => {
     void send('ask', { step: step.id, file, lines, text: drafts.get(draft) ?? '' }, draft).then(sent => {
       if (sent) unpick();
     });
   });
-  form.append(el('button', { type: 'button', className: 'btn ghost', onclick: unpick }, 'Cancel'));
-  form.classList.add('picked-ask');
+  const box = form.querySelector('input');
+  if (box) box.id = `picked-${step.id}`;
+  form.className = 'picked-ask';
+  form.prepend(el('label', { htmlFor: `picked-${step.id}` }, label));
+  form.append(
+    el('button', { type: 'button', className: 'btn ghost small', onclick: unpick }, 'Cancel'),
+    el('button', { type: 'submit', className: 'btn primary small' }, 'Ask'),
+  );
   return form;
 }
 
@@ -742,7 +865,8 @@ function drawDiff(step: Step): Drawn {
     outputFormat: 'line-by-line',
     drawFileList: false,
     matching: 'lines',
-    colorScheme: ColorSchemeType.AUTO,
+    // The page's own tokens recolour it, in both themes.
+    colorScheme: ColorSchemeType.LIGHT,
     fileContentToggle: false,
   }).draw();
   const rows = new Map<string, HTMLTableRowElement>();
@@ -750,7 +874,10 @@ function drawDiff(step: Step): Drawn {
   view.querySelectorAll('.d2h-file-wrapper').forEach((wrapper, at) => {
     const parsed = files[at];
     const file = parsed?.newName ?? '';
-    if (parsed && !parsed.isDeleted) addPreview(wrapper, step.id, file);
+    if (parsed) {
+      wrapper.querySelector('.d2h-file-name-wrapper')?.after(fileStats(parsed));
+      addPreview(wrapper, step.id, parsed);
+    }
     for (const number of wrapper.querySelectorAll('.line-num2')) {
       const line = number.textContent.trim();
       const row = number.closest('tr');
@@ -815,24 +942,61 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
 /** Files the person switched to their preview, by step id and path, so a redraw keeps them so. */
 const previewed = new Set<string>();
 
-function addPreview(wrapper: Element, stepId: string, file: string): void {
+const fileStats = (parsed: DiffFile) =>
+  el('span', { className: 'file-stats' }, parsed.isBinary ? 'binary' : `+${String(parsed.addedLines)} \u2212${String(parsed.deletedLines)}`);
+
+function imageFigure(side: 'Before' | 'After', source: string, file: string): HTMLElement {
+  const caption = el('figcaption', {}, side);
+  const image = el('img', { src: source, alt: `${file}, ${side.toLowerCase()}` });
+  image.onload = () => {
+    caption.textContent = `${side} · ${String(image.naturalWidth)}×${String(image.naturalHeight)}`;
+  };
+  image.onerror = () => {
+    caption.textContent = `${side} · could not load`;
+  };
+  return el('figure', {}, el('div', { className: 'image-box' }, image), caption);
+}
+
+function addPreview(wrapper: Element, stepId: string, parsed: DiffFile): void {
+  const head = parsed.isDeleted ? null : parsed.newName;
+  const base = parsed.isNew ? null : parsed.oldName;
+  const file = head ?? base ?? '';
   const type = previewType(file);
+  const image = type?.startsWith('image/') ?? false;
   const diff = wrapper.querySelector<HTMLElement>('.d2h-file-diff');
-  // A preview is read from the server, which an exported file does not have.
-  if (!type || !diff || readOnly) return;
-  const source = `file?path=${encodeURIComponent(file)}`;
+  // A preview is read from the server, which an exported file does not have; a deleted Markdown file has nothing to show.
+  if (!type || !diff || readOnly || (head === null && !image)) return;
+  const at = (path: string) => `file?path=${encodeURIComponent(path)}`;
   const preview = el('div', { className: 'preview', hidden: true });
   preview.setAttribute('role', 'region');
   preview.setAttribute('aria-label', `Preview of ${file}`);
   const fill = async () => {
-    if (type.startsWith('image/')) {
-      preview.replaceChildren(el('img', { src: source, alt: file }));
+    if (image) {
+      preview.replaceChildren(
+        el(
+          'div',
+          { className: 'image-compare' },
+          ...(base === null ? [] : [imageFigure('Before', `${at(base)}&at=base`, file)]),
+          ...(head === null ? [] : [imageFigure('After', at(head), file)]),
+        ),
+      );
       return;
     }
     preview.replaceChildren(el('p', { className: 'muted' }, 'Loading the preview.'));
-    const answer = await fetch(source).catch(() => null);
-    if (answer?.ok) preview.innerHTML = renderMarkdown(await answer.text(), file);
-    else preview.replaceChildren(el('p', { className: 'muted' }, 'Could not load the preview.'));
+    const answer = await fetch(at(file)).catch(() => null);
+    const added = new Set(parsed.blocks.flatMap(block => block.lines).flatMap(line => (line.type === LineType.INSERT ? [line.newNumber] : [])));
+    if (!answer?.ok) {
+      preview.replaceChildren(el('p', { className: 'muted' }, 'Could not load the preview.'));
+      return;
+    }
+    preview.innerHTML = renderMarkdown(await answer.text(), file, added);
+    // A table keeps its own width, so its wash comes from a row around it.
+    for (const table of preview.querySelectorAll('table.inserted')) {
+      const row = el('div', { className: 'inserted' });
+      table.classList.remove('inserted');
+      table.replaceWith(row);
+      row.append(table);
+    }
   };
   const choices = (['Diff', 'Preview'] as const).map(label =>
     el('button', { type: 'button', onclick: () => void choose(label === 'Preview') }, label),

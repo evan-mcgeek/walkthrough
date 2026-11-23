@@ -34,9 +34,23 @@ withImages.renderer.rules['image'] = (tokens, at, options, env, self) => {
   if (repoPath) token.attrSet('src', `file?path=${encodeURIComponent(repoPath)}`);
   return image ? image(tokens, at, options, env, self) : '';
 };
+// A top-level block holding a line the change adds gets the addition wash.
+withImages.core.ruler.push('mark_added', state => {
+  const added = (state.env as { added?: Set<number> } | undefined)?.added;
+  if (!added?.size) return;
+  for (const token of state.tokens) {
+    if (token.level !== 0 || token.nesting === -1 || !token.map) continue;
+    const [first, end] = token.map;
+    for (let line = first + 1; line <= end; line++)
+      if (added.has(line)) {
+        token.attrJoin('class', 'inserted');
+        break;
+      }
+  }
+});
 // What the session writes shows no pictures, which could pass for part of the page.
 const withoutImages = renderer().disable('image');
 
-/** `file` is the changed Markdown file being previewed, whose images are part of what is reviewed. */
-export const renderMarkdown = (text: string, file?: string) =>
-  file === undefined ? withoutImages.render(text) : withImages.render(text, { file });
+/** `file` is the changed Markdown file being previewed, whose images are part of what is reviewed; `added` its head lines the change adds. */
+export const renderMarkdown = (text: string, file?: string, added?: Set<number>) =>
+  file === undefined ? withoutImages.render(text) : withImages.render(text, { file, added });

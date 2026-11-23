@@ -36,14 +36,14 @@ test('notes show at their step and beside their lines, low-priority ones behind 
   await expect(risk.locator('strong', { hasText: 'everyone' })).toBeVisible();
   const pinned = rowAfter(row(page, 'cart.ts', 3));
   await expect(pinned.getByRole('article', { name: 'Finding' })).toContainText('These could be one.');
-  await expect(pinned.getByRole('article', { name: 'Finding' })).toContainText('Lines 2-3');
+  await expect(pinned.getByRole('article', { name: 'Finding' })).toContainText('lines 2–3');
   await expect(pinned.getByRole('article', { name: 'Nit' })).toBeHidden();
   await expect(pinned.getByRole('article', { name: 'Style' })).toBeHidden();
 
-  await pinned.getByText('2 more', { exact: true }).click();
+  await pinned.getByText('2 more notes', { exact: true }).click();
 
   await expect(pinned.getByRole('article', { name: 'Nit' })).toContainText('Name them.');
-  await expect(pinned.getByRole('article', { name: 'Style' })).toContainText('Line 3');
+  await expect(pinned.getByRole('article', { name: 'Style' })).toContainText('line 3');
 });
 
 test('a reply to a note reaches the session and its answer shows in the thread', async ({ page, repo }) => {
@@ -51,15 +51,18 @@ test('a reply to a note reaches the session and its answer shows in the thread',
   const listener = repo.background('listen');
   const note = page.getByRole('article', { name: 'Risk' });
 
-  await note.getByRole('textbox', { name: 'Reply' }).fill('On purpose.');
   await note.getByRole('button', { name: 'Reply' }).click();
+  await expect(note.getByRole('textbox', { name: 'Reply' })).toBeFocused();
+  await note.getByRole('textbox', { name: 'Reply' }).fill('On purpose.');
+  await note.getByRole('button', { name: 'Send' }).click();
 
   const replied = JSON.parse((await listener.ended).stdout) as { id: string; kind: string; text: string };
   expect(replied).toMatchObject({ kind: 'reply', text: 'On purpose.' });
   await expect(note.getByText('On purpose.')).toBeVisible();
   repo.run('say', '--answer', replied.id, 'Then it *stays*.');
   await expect(note.locator('em', { hasText: 'stays' })).toBeVisible();
-  await expect(note.getByRole('textbox', { name: 'Reply' })).toHaveValue('');
+  await expect(note.getByRole('textbox', { name: 'Reply' })).toHaveCount(0);
+  await expect(note.locator('.who')).toHaveText(['You', 'Session']);
 });
 
 test('asking about selected lines sends the range, and the answer lands on those lines', async ({ page, repo }) => {
@@ -71,7 +74,7 @@ test('asking about selected lines sends the range, and the answer lands on those
 
   await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
   await expect(row(page, 'cart.ts', 5)).not.toHaveClass(/selected/);
-  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2-4' });
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
   await expect(box).toBeFocused();
   await box.fill('Why three constants?');
   await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask' }).click();
@@ -87,13 +90,15 @@ test('asking about selected lines sends the range, and the answer lands on those
 
   const answer = pinned.getByRole('article', { name: 'Finding' });
   await expect(answer.locator('em', { hasText: 'once' })).toBeVisible();
-  await expect(answer).toContainText('Lines 2-4');
+  await expect(answer).toContainText('lines 2–4');
+  await expect(answer).toContainText('You asked: Why three constants?');
   await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
   await expect(pinned.getByRole('article')).toHaveCount(1);
 
   const replying = repo.background('listen');
-  await answer.getByRole('textbox', { name: 'Reply' }).fill('Then merge them.');
   await answer.getByRole('button', { name: 'Reply' }).click();
+  await answer.getByRole('textbox', { name: 'Reply' }).fill('Then merge them.');
+  await answer.getByRole('textbox', { name: 'Reply' }).press('Enter');
 
   expect(JSON.parse((await replying.ended).stdout)).toMatchObject({ kind: 'reply', text: 'Then merge them.' });
   await expect(answer.getByText('Then merge them.')).toBeVisible();
@@ -112,7 +117,7 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
   await expect(number(4)).toBeFocused();
   await page.keyboard.press('Enter');
 
-  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2-4' });
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
   await expect(box).toBeFocused();
   await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
 
@@ -124,6 +129,36 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('Shift+Enter');
   await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
+});
+
+test('a note keeps its actions in a menu, opened by its button and left with Escape', async ({ page, repo }) => {
+  const id = /([0-9a-f]{8})/.exec(repo.record([{ step: '1', file: 'cart.ts', lines: [2, 2], label: 'Risk', text: 'B is two.' }], 'note').stdout)?.[1];
+  pin(repo, [{ step: '1', file: 'cart.ts', lines: [4, 4], label: 'Plain', text: 'No actions here.' }]);
+  repo.record([{ item: { type: 'note', id }, actions: [{ id: 'post', label: 'Post' }, { id: 'dismiss', label: 'Dismiss' }] }], 'actions');
+  const note = page.getByRole('article', { name: 'Risk' });
+  const button = note.getByRole('button', { name: 'Note actions' });
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(note.getByRole('button', { name: 'Post' })).toHaveCount(0);
+  await expect(page.getByRole('article', { name: 'Plain' }).getByRole('button', { name: 'Note actions' })).toHaveCount(0);
+
+  await button.click();
+
+  const menu = note.getByRole('menu', { name: 'Risk actions' });
+  await expect(menu.getByRole('menuitem')).toHaveText(['Post', 'Dismiss']);
+  await expect(menu.getByRole('menuitem', { name: 'Post' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(menu.getByRole('menuitem', { name: 'Dismiss' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(button).toBeFocused();
+
+  const listener = repo.background('listen');
+  await button.click();
+  await menu.getByRole('menuitem', { name: 'Dismiss' }).click();
+
+  expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'decision', item: { type: 'note', id }, action: 'dismiss' });
+  await expect(menu).toHaveCount(0);
+  await expect(note.getByText('Decided: Dismiss', { exact: true })).toBeVisible();
 });
 
 test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {

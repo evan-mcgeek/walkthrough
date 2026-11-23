@@ -100,7 +100,7 @@ test('Needs you pulses twice, assumptions and more notes reveal, and a redraw fr
     ],
     'note',
   );
-  await step.getByText('2 more', { exact: true }).click();
+  await step.getByText('2 more notes', { exact: true }).click();
   await expect(step.getByRole('article', { name: 'Style' })).toBeVisible();
   repo.run('say', '--question', 'Is that right?');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Needs you');

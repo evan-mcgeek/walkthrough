@@ -84,3 +84,30 @@ test('serves an unchanged image a changed Markdown file shows, and no other unch
   expect((await fileAt('other.svg')).status).toBe(404);
   expect((await fileAt('docs/notes.md')).status).toBe(404);
 });
+
+test('serves a changed image as it was at the base, under its base path when renamed, and no other base file', async () => {
+  const svg = (width: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${String(width)}" height="4"/>\n`;
+  repo = makeRepo({
+    start: { 'icons/cart.svg': svg(1), 'icons/old.svg': svg(2), 'docs/flow.svg': svg(3) },
+    feature: { 'icons/cart.svg': svg(10), 'icons/added.svg': svg(4), 'docs/guide.md': '![Flow](flow.svg)\n' },
+  });
+  git(repo.dir, 'mv', 'icons/old.svg', 'icons/new.svg');
+  git(repo.dir, 'commit', '-m', 'Rename the icon');
+  repo.run('start');
+  const baseOf = (file: string) => fetch(`${repo.url()}file?path=${encodeURIComponent(file)}&at=base`);
+
+  const cart = await baseOf('icons/cart.svg');
+  const renamed = await baseOf('icons/old.svg');
+
+  expect(cart.status).toBe(200);
+  expect(await cart.text()).toBe(svg(1));
+  expect(cart.headers.get('content-type')).toBe('image/svg+xml');
+  expect(cart.headers.get('content-security-policy')).toContain('sandbox');
+  expect(renamed.status).toBe(200);
+  expect(await renamed.text()).toBe(svg(2));
+  expect(await (await fileAt('icons/cart.svg')).text()).toBe(svg(10));
+  expect((await baseOf('icons/new.svg')).status).toBe(404);
+  expect((await baseOf('icons/added.svg')).status).toBe(404);
+  expect((await baseOf('docs/flow.svg')).status).toBe(404);
+  expect((await baseOf('app.ts')).status).toBe(404);
+});

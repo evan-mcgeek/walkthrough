@@ -10,6 +10,7 @@
 @import './styles/controls.css';
 @import './styles/header.css';
 @import './styles/panes.css';
+@import './styles/diff.css';
 @import './styles/layouts.css';
 @import './styles/deck.css';
 @import './styles/list.css';
@@ -21,10 +22,6 @@
 
 #alert[hidden] {
   display: none;
-}
-
-.d2h-diff-table {
-  font-family: var(--font-mono);
 }
 
 .decide {
@@ -46,11 +43,6 @@
 
 .decide-row .tag {
   margin-right: auto;
-}
-
-.note .decide {
-  margin-bottom: 8px;
-  padding-top: 0;
 }
 
 .muted {
@@ -86,55 +78,10 @@
   margin-bottom: 8px;
 }
 
-.draft {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.draft textarea {
-  flex: 1;
-  min-width: 0;
-}
-
 details summary {
   padding: 8px 16px;
   cursor: pointer;
   color: var(--muted);
-}
-
-.d2h-file-header .segmented {
-  margin-left: 12px;
-}
-
-.preview {
-  padding: 8px 16px;
-  overflow-x: auto;
-}
-
-.preview img {
-  max-width: 100%;
-}
-
-.preview table {
-  border-collapse: collapse;
-}
-
-.preview th,
-.preview td {
-  padding: 4px 12px;
-  border: 1px solid var(--rule);
-}
-
-.preview pre,
-.preview code {
-  background: var(--surface);
-  border-radius: 4px;
-}
-
-.preview pre {
-  padding: 8px 12px;
-  overflow-x: auto;
 }
 
 .align-left {
@@ -209,84 +156,4 @@ details summary {
 
 .markdown a {
   color: var(--indigo-text);
-}
-
-
-.note {
-  margin-bottom: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  background: var(--canvas);
-}
-
-.note-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0 0 6px;
-}
-
-.note .label {
-  padding: 0 8px;
-  border: 1px solid var(--control-edge);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.note .lines {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.note .note-text,
-.note .said {
-  margin-bottom: 8px;
-}
-
-.more summary {
-  padding: 0 0 8px;
-}
-
-.diff .pinned-row > td {
-  padding: 8px 12px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  background: var(--surface);
-}
-
-/* diff2html places line numbers absolutely; anchored here they scroll with the pane and the file. */
-.d2h-file-diff {
-  position: relative;
-  container-type: inline-size;
-}
-
-/* The diff table sets its own monospace font and may scroll sideways; a note keeps the page's font and the visible width. */
-.pinned {
-  position: sticky;
-  left: 12px;
-  width: calc(100cqw - 24px);
-  font: var(--text-body-ui);
-  white-space: normal;
-}
-
-.pinned .thread {
-  margin-bottom: 8px;
-}
-
-.diff tr.selected > td {
-  background-color: var(--line-pick);
-}
-
-.diff tr.selected > td.d2h-code-linenumber {
-  background-color: var(--line-pick-gutter);
-  color: var(--indigo-text);
-  font-weight: 600;
-}
-
-.was {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 13px;
 }

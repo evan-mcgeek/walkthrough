@@ -180,12 +180,17 @@ async function inChange(base: string, head: string, file: string, type: string):
   );
 }
 
-/** A file the page can preview, as it is at the head commit; the server runs in the repo the CLI started it in. */
-async function serveFileAtHead(dir: string, file: string, res: http.ServerResponse): Promise<void> {
+/** A file the page can preview, as it is at the head commit, or at the base for a changed file under its base path. */
+async function serveFileAt(dir: string, file: string, atBase: boolean, res: http.ServerResponse): Promise<void> {
   const walkthrough = readWalkthrough(dir);
   const type = previewType(file);
-  const shown = walkthrough && type && (await inChange(walkthrough.base, walkthrough.head, file, type));
-  const content = shown ? fileAt(process.cwd(), walkthrough.head, file) : null;
+  const shown =
+    walkthrough &&
+    type &&
+    (atBase
+      ? (await changedFiles(process.cwd(), walkthrough.base, walkthrough.head)).some(one => (one.from ?? one.path) === file)
+      : await inChange(walkthrough.base, walkthrough.head, file, type));
+  const content = shown ? fileAt(process.cwd(), atBase ? walkthrough.base : walkthrough.head, file) : null;
   if (!type || !content) {
     res.writeHead(404).end();
     return;
@@ -202,7 +207,7 @@ async function serveFileAtHead(dir: string, file: string, res: http.ServerRespon
 
 function serveFile(dir: string, list: boolean, what: string, query: URLSearchParams, res: http.ServerResponse): void {
   if (!list && what === 'file') {
-    serveFileAtHead(dir, query.get('path') ?? '', res).catch((error: unknown) => {
+    serveFileAt(dir, query.get('path') ?? '', query.get('at') === 'base', res).catch((error: unknown) => {
       failRequest(res, error);
     });
     return;
