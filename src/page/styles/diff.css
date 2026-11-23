@@ -42,9 +42,10 @@
   margin-top: var(--s5);
 }
 
+/* Stuck to the scroll box's own edge, past its top padding, so no scrolled line shows above it. */
 .diff .d2h-file-header {
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--pane-top, 0px));
   z-index: 1;
   align-items: center;
   gap: var(--s3);
@@ -59,6 +60,7 @@
   width: auto;
   min-width: 0;
   font: var(--text-mono-label);
+  font-variant-ligatures: none;
 }
 
 .diff .d2h-icon,
@@ -81,6 +83,7 @@
 
 .diff .d2h-diff-table {
   font: var(--text-code);
+  font-variant-ligatures: none;
 }
 
 .diff .d2h-code-linenumber {
@@ -111,7 +114,19 @@
   width: calc(100% - 14px);
 }
 
+/* The browser's 1px cell padding and diff2html's baseline-aligned inline blocks would stretch each row past the 21px line. */
+.diff .d2h-diff-tbody > tr > td {
+  padding: 0;
+}
+
+.diff .d2h-code-line,
+.diff .d2h-code-line-ctn,
 .diff .d2h-code-line :is(ins, del) {
+  vertical-align: top;
+}
+
+.diff .d2h-code-line :is(ins, del) {
+  margin-top: 0;
   border-radius: var(--r-hairline);
 }
 
@@ -140,7 +155,7 @@
 
 .diff .d2h-file-diff tr.selected > td.d2h-code-linenumber {
   background-color: var(--line-pick-gutter);
-  color: var(--indigo-text);
+  color: var(--violet-text);
   font-weight: 600;
 }
 
@@ -190,9 +205,9 @@
   gap: var(--s2);
   margin-top: -1px;
   padding: var(--s3) var(--s4) var(--s3) var(--code-column);
-  border-top: 1px solid var(--indigo-line);
-  border-bottom: 1px solid var(--indigo-line);
-  background: var(--indigo-wash);
+  border-top: 1px solid var(--violet-line);
+  border-bottom: 1px solid var(--violet-line);
+  background: var(--violet-wash);
   font: var(--text-body-ui);
 }
 
@@ -305,7 +320,7 @@
 }
 
 .more-link {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 .more > summary:hover .more-link {
@@ -316,6 +331,10 @@
   margin: 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+.note-head > .icon {
+  color: var(--muted);
 }
 
 /* Outside the diff, notes are rows under a top rule. */
@@ -406,7 +425,7 @@
 }
 
 .preview a {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 .image-compare {
@@ -444,4 +463,31 @@
   color: var(--muted);
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- syntax colours ---------- */
+
+/* The highlight.js theme's colours, deepened where they fall under 4.5:1 on the diff's washes and the code pane. */
+@media (prefers-color-scheme: light) {
+  :is(.hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
+    color: #b31d28;
+  }
+
+  :is(.hljs-built_in, .hljs-symbol) {
+    color: #953800;
+  }
+
+  :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo, .hljs-addition) {
+    color: #116329;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .hljs-section {
+    color: #79c0ff;
+  }
+}
+
+:is(.hljs-comment, .hljs-code, .hljs-formula) {
+  color: var(--muted);
 }

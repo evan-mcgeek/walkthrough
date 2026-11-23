@@ -143,6 +143,9 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await note.getByRole('menuitem', { name: 'Edit first' }).click();
   const text = note.getByRole('textbox', { name: 'Text' });
   await expect(text).toHaveValue('Please **rename** this.');
+  // The box holds the text being edited, so the note shows it once and offers no Reply meanwhile.
+  await expect(note.getByText('Please rename this.', { exact: true })).toHaveCount(0);
+  await expect(note.getByRole('button', { name: 'Reply' })).toHaveCount(0);
   await text.fill('Please rename this to cart.');
   await note.getByRole('button', { name: 'Send' }).click();
 
@@ -157,6 +160,8 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   const rail = page.getByRole('navigation', { name: "What's left" });
   await rail.getByRole('link', { name: 'A person can log in.' }).click();
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
+  await expect(item.getByRole('button', { name: 'Checked' })).toBeVisible();
+  await expect(item.getByText('Undecided', { exact: true })).toHaveCount(0);
   await item.getByRole('button', { name: 'Checked' }).click();
   await item.getByRole('textbox', { name: 'Note' }).fill('Tried it.');
   await item.getByRole('button', { name: 'Send' }).click();
@@ -166,6 +171,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await rail.getByRole('link', { name: 'App version' }).click();
   await page.keyboard.press('j');
   const whole = page.getByRole('region', { name: 'Whole walkthrough' });
+  await expect(whole.getByText('Undecided', { exact: true })).toHaveCount(0);
   await whole.getByRole('button', { name: 'Post my comments' }).click();
   await expect(whole.getByText('Decided: Post my comments', { exact: true })).toBeVisible();
 });

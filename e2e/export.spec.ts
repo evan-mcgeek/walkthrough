@@ -44,6 +44,8 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await exported.goto(pathToFileURL(out).href);
 
   await expect(exported.getByRole('heading', { level: 1 })).toHaveText('feature/login');
+  await expect(exported.locator('.export-head .logo')).toHaveText('Walkthrough');
+  expect(await exported.locator('link[rel="icon"]').getAttribute('href')).toMatch(/^data:image\/svg\+xml;base64,/);
   await expect(exported.getByText(/^Walkthrough export · .+ · 3 steps, 1 decided$/)).toBeVisible();
   expect((await exported.getByRole('main').boundingBox())?.width).toBe(900);
   const shown = exported.getByRole('region', { name: 'Login check' });

@@ -144,6 +144,8 @@ test('Three columns keeps the rail and puts the checklist in a side pane beside 
   const list = side.getByRole('region', { name: 'Acceptance criteria' });
   await expect(list.getByRole('listitem')).toHaveCount(2);
   await expect(list.getByText('1/2', { exact: true })).toBeVisible();
+  // Beside a step the list is compact: the statuses wait in the checklist's own page, which its title opens.
+  await expect(list.getByText('not yet', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: "What's left" })).toBeVisible();
 
   await list.getByRole('link', { name: 'Step 2' }).click();
@@ -153,7 +155,12 @@ test('Three columns keeps the rail and puts the checklist in a side pane beside 
   await page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'The app shows its version.' }).click();
   await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Acceptance criteria' })).toHaveCount(1);
+  await expect(page.getByRole('main').getByText('not yet', { exact: true })).toBeVisible();
   await expect(side).toBeHidden();
+
+  await page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'App version' }).click();
+  await side.getByRole('link', { name: 'Acceptance criteria' }).click();
+  await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
 });
 
 test('Explanation beside code has no rail: Previous and Next walk the steps, and the prose pane holds the checklist and the session', async ({

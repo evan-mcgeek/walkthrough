@@ -111,7 +111,7 @@
   transition-delay: 150ms;
 }
 
-/* Gesture feedback, not recorded state: indigo toward Approve, amber toward Flag. */
+/* Gesture feedback, not recorded state: violet toward Approve, amber toward Flag. */
 .decision-chip {
   position: absolute;
   top: var(--s4);
@@ -126,8 +126,8 @@
 
 .decision-chip.approve {
   left: var(--s4);
-  background: var(--indigo-wash);
-  color: var(--indigo-text);
+  background: var(--violet-wash);
+  color: var(--violet-text);
   opacity: var(--pa, 0);
 }
 
@@ -151,6 +151,7 @@
   border-collapse: collapse;
   table-layout: fixed;
   font: 400 12px/21px var(--font-mono);
+  font-variant-ligatures: none;
 }
 
 .mini-diff td {
@@ -259,7 +260,7 @@
 }
 
 .deck.past[data-toward='approve'] .edge.right {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 .deck.past[data-toward='flag'] .edge.left {
@@ -284,7 +285,7 @@
 }
 
 .deck-view > a {
-  color: var(--indigo-text);
+  color: var(--violet-text);
   font: var(--text-body-ui);
 }
 

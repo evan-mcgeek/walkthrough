@@ -14,17 +14,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Mono only for what is literally code, a path or an identifier. */
+/* Mono only for what is literally code, a path or an identifier, and as typed: no ligature turns => into an arrow. */
 code,
 pre,
 kbd,
 samp,
 .mono {
   font-family: var(--font-mono);
+  font-variant-ligatures: none;
 }
 
 :focus-visible {
-  outline: 2px solid var(--indigo);
+  outline: 2px solid var(--violet);
   outline-offset: 2px;
 }
 
@@ -89,16 +90,16 @@ samp,
 }
 
 .btn.primary {
-  border-color: var(--indigo);
-  background: var(--indigo);
-  color: var(--on-indigo);
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--on-violet);
   font-weight: 600;
 }
 
 .btn.primary:hover,
 .btn.primary:active {
-  border-color: var(--indigo-hover);
-  background: var(--indigo-hover);
+  border-color: var(--violet-hover);
+  background: var(--violet-hover);
 }
 
 .btn.ghost {
@@ -143,8 +144,8 @@ samp,
 }
 
 .btn.primary:disabled:hover {
-  border-color: var(--indigo);
-  background: var(--indigo);
+  border-color: var(--violet);
+  background: var(--violet);
 }
 
 .icon-button {
@@ -173,7 +174,7 @@ samp,
   border: 0;
   border-radius: var(--r-xs);
   background: none;
-  color: var(--indigo-text);
+  color: var(--violet-text);
   font: 400 13px/1.4 var(--font-ui);
   cursor: pointer;
 }
@@ -211,8 +212,8 @@ samp,
 }
 
 .segmented button[aria-pressed='true'] {
-  background: var(--indigo-wash);
-  color: var(--indigo-text);
+  background: var(--violet-wash);
+  color: var(--violet-text);
   font-weight: 600;
 }
 
@@ -229,7 +230,7 @@ samp,
 }
 
 .segmented.icons button[aria-pressed='true'] {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 /* ---------- fields ---------- */
@@ -244,7 +245,7 @@ select {
   background: var(--canvas);
   color: var(--ink);
   font: var(--text-body-ui);
-  caret-color: var(--indigo);
+  caret-color: var(--violet);
   transition:
     border-color var(--fast) linear,
     box-shadow var(--fast) linear;
@@ -269,9 +270,9 @@ textarea::placeholder {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--indigo);
+  border-color: var(--violet);
   outline: none;
-  box-shadow: 0 0 0 3px var(--indigo-wash);
+  box-shadow: 0 0 0 3px var(--violet-wash);
 }
 
 input:disabled,
@@ -341,6 +342,7 @@ select:disabled {
   border-radius: var(--r-sm);
   background: var(--surface-tint);
   font: 500 12px/1.5 var(--font-mono);
+  font-variant-ligatures: none;
 }
 
 /* ---------- boxes ---------- */
@@ -437,8 +439,9 @@ select:disabled {
   cursor: pointer;
 }
 
+/* Focus moves into a menu as it opens, so the focused item shows whatever opened it. */
 .menu :is([role='menuitem'], [role='menuitemradio']):hover,
-.menu :is([role='menuitem'], [role='menuitemradio']):focus-visible {
+.menu :is([role='menuitem'], [role='menuitemradio']):focus {
   background: var(--surface-tint);
 }
 
@@ -447,7 +450,7 @@ select:disabled {
 }
 
 .menu [aria-checked='true'] {
-  color: var(--indigo-text);
+  color: var(--violet-text);
   font-weight: 600;
 }
 

@@ -47,6 +47,7 @@
 }
 
 .main.split {
+  --pane-top: 0px;
   padding: 0;
   overflow: hidden;
 }
@@ -70,9 +71,10 @@
 }
 
 .split > .code {
+  --pane-top: var(--s5);
   flex: 1;
   min-width: 0;
-  padding: var(--s5) var(--s6);
+  padding: var(--pane-top) var(--s6);
   overflow: auto;
   background: var(--surface);
 }
@@ -108,10 +110,6 @@
 .split > .prose > .notice,
 .split > .prose > .question-box {
   margin-bottom: var(--s4);
-}
-
-.split > .prose > .detached-box {
-  margin-bottom: var(--s5);
 }
 
 /* ---------- tool panel ---------- */
@@ -159,7 +157,7 @@
 .tab[aria-selected='true'] {
   color: var(--ink);
   font-weight: 600;
-  box-shadow: inset 0 -2px 0 var(--indigo);
+  box-shadow: inset 0 -2px 0 var(--violet);
 }
 
 .tab:focus-visible {
@@ -185,7 +183,7 @@
   break-inside: avoid;
 }
 
-.tool-body > .muted {
+.tool-body > :is(.muted, .notice, .detached-box) {
   margin: var(--s2) 0;
 }
 
@@ -273,7 +271,25 @@
     border-right: 0;
   }
 
+  /* The split pane scrolls as one here, from its own edge. */
   .split > .code {
+    --pane-top: 0px;
     padding: var(--s4);
+  }
+
+  .split > .beside {
+    padding: var(--s4);
+  }
+
+  .split > .beside > .queue-item {
+    margin: var(--s4) calc(-1 * var(--s2)) 0;
+  }
+
+  .split > .step-ask {
+    margin: 0 var(--s4) var(--s4);
+  }
+
+  .split > .action-bar {
+    margin: auto 0 0;
   }
 }

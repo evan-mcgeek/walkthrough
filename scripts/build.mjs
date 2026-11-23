@@ -35,3 +35,5 @@ await build({
   outdir: path.join(out, 'page'),
 });
 for (const page of ['index.html', 'list.html']) fs.copyFileSync(path.join(root, 'src', 'page', page), path.join(out, 'page', page));
+// The design's master brand files ship as they are, for the favicon and the app icon.
+for (const asset of ['favicon.svg', 'app-icon-180.png']) fs.copyFileSync(path.join(root, 'docs', 'design', 'brand', asset), path.join(out, 'page', asset));

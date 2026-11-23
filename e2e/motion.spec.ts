@@ -73,7 +73,7 @@ test('deciding slides the rail row out, fills the progress, ticks the counts and
 test('reduced motion keeps opacity only', async ({ page, repo }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Assumed, not read' }).click();
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Assumed, not read' }).click();
+  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: '1 assumption' }).click();
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   repo.run('say', '--question', 'Is that right?');
@@ -91,7 +91,7 @@ test('reduced motion keeps opacity only', async ({ page, repo }) => {
 test('Needs you pulses twice, assumptions and more notes reveal, and a redraw from polling starts nothing', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
   await step.getByRole('button', { name: 'Assumed, not read' }).click();
-  await step.getByRole('button', { name: 'Assumed, not read' }).click();
+  await step.getByRole('button', { name: '1 assumption' }).click();
   record(
     repo,
     [

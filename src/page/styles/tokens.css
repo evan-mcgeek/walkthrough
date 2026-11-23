@@ -17,13 +17,13 @@
   --ink-secondary: #3a4048;
   --muted: #5b636d;
 
-  /* Interaction, selection, focus and progress */
-  --indigo: #3b5bdb;
-  --indigo-hover: #2f4bc4;
-  --indigo-text: #3348b8;
-  --indigo-wash: #eef1fb;
-  --indigo-line: #d4dbf6;
-  --on-indigo: #ffffff;
+  /* Walkthrough violet: the mark, the primary action, progress, selection and focus */
+  --violet: #5b3fd6;
+  --violet-hover: #4a30c2;
+  --violet-text: #4a2fc0;
+  --violet-wash: #f0edfc;
+  --violet-line: #dad3f8;
+  --on-violet: #ffffff;
   --icon-knockout: #ffffff;
 
   /* Status: amber is reopened or attention, rust is not met, live is the Listening session */
@@ -37,8 +37,8 @@
   --diff-add-gutter: #d3eedc;
   --diff-del: #fcebea;
   --diff-del-gutter: #f6d6d3;
-  --line-pick: #e6eafb;
-  --line-pick-gutter: #d2d9f7;
+  --line-pick: #efebfd;
+  --line-pick-gutter: #ddd5f9;
 
   --shadow-float: 0 1px 2px rgb(20 24 30 / 6%), 0 8px 24px rgb(20 24 30 / 10%);
 
@@ -92,12 +92,12 @@
     --ink-secondary: #c3c8cf;
     --muted: #9aa2ac;
 
-    --indigo: #6e86f0;
-    --indigo-hover: #8599f4;
-    --indigo-text: #a3b3ff;
-    --indigo-wash: #232b45;
-    --indigo-line: #34406b;
-    --on-indigo: #0f1424;
+    --violet: #9b86ff;
+    --violet-hover: #ad9cff;
+    --violet-text: #bdb0ff;
+    --violet-wash: #272143;
+    --violet-line: #3d3470;
+    --on-violet: #130e2b;
     --icon-knockout: #15181d;
 
     --amber: #e3b260;
@@ -109,8 +109,8 @@
     --diff-add-gutter: #193423;
     --diff-del: #33191a;
     --diff-del-gutter: #3f1f20;
-    --line-pick: #222a4a;
-    --line-pick-gutter: #2c3664;
+    --line-pick: #241e44;
+    --line-pick-gutter: #342b66;
 
     --shadow-float: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 35%);
   }

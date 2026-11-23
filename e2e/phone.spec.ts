@@ -84,6 +84,21 @@ test('the header keeps Stop in a More menu, which Escape closes', async ({ page 
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
 });
 
+test('the header keeps one row over the progress strip, shortening the label to fit', async ({ page, repo }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  repo.background('listen');
+  const header = page.getByRole('banner');
+  await expect(header.getByRole('status', { name: 'Session' })).toHaveText('Listening');
+  const middle = async (part: Locator) => {
+    const box = await part.boundingBox();
+    return box ? Math.round(box.y + box.height / 2) : -1;
+  };
+  const row = await middle(header.getByText('Walkthrough', { exact: true }));
+  expect(await middle(header.getByRole('status', { name: 'Session' }))).toBe(row);
+  expect(await middle(header.getByRole('button', { name: 'More' }))).toBe(row);
+  expect((await header.boundingBox())?.height).toBeLessThan(72);
+});
+
 test('the layouts move into the More menu too', async ({ page }) => {
   await expect(page.getByRole('group', { name: 'Layout' })).toBeHidden();
   await page.getByRole('button', { name: 'More' }).click();
@@ -111,6 +126,32 @@ test('the step decides from a bottom bar of touch-sized buttons, with Ask above 
 
   await choices.getByText('Flag').click();
   await expect(step.getByRole('textbox', { name: 'Note' })).toBeFocused();
+});
+
+test('Explanation beside code stacks the step over its code, with the same bottom bar and the toast above it', async ({ page }) => {
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitemradio', { name: 'Explanation beside code' }).click();
+  const step = page.getByRole('region', { name: 'Login check' });
+  const bar = step.getByRole('group', { name: 'Decide' });
+  await expect(bar.getByRole('button')).toHaveText(['Flag', 'Approve']);
+  for (const choice of await bar.getByRole('button').all()) expect((await choice.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  const code = await step.locator('.d2h-file-wrapper').last().boundingBox();
+  const ask = await step.getByRole('textbox', { name: 'Ask about this step' }).boundingBox();
+  const docked = await bar.boundingBox();
+  expect(code && ask && code.y + code.height <= ask.y).toBe(true);
+  expect(ask && docked && ask.y + ask.height <= docked.y).toBe(true);
+  expect(docked && Math.round(docked.y + docked.height)).toBeGreaterThan(844 - 24);
+
+  await bar.getByRole('button', { name: 'Approve' }).click();
+  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  const next = await page.getByRole('region', { name: 'App version' }).getByRole('group', { name: 'Decide' }).boundingBox();
+  // The toast rises into place, so its box settles a moment after it shows.
+  await expect
+    .poll(async () => {
+      const toast = await page.getByText('Decided step 1: Approve').boundingBox();
+      return toast && next ? Math.round(next.y - (toast.y + toast.height)) : -1;
+    })
+    .toBeGreaterThanOrEqual(0);
 });
 
 test('the rail becomes a select of what is left, with decided steps and the end after it', async ({ page }) => {

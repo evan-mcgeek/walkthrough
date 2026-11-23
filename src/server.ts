@@ -24,16 +24,20 @@ const MAX_BODY_BYTES = 256 * 1024;
 // A server no page has polled for this long was forgotten, so it stops itself.
 const IDLE_MS = 30 * 60 * 1000;
 export const PAGE = path.join(import.meta.dirname, 'page');
-const STYLE = { file: 'style.css', type: 'text/css; charset=utf-8' };
+const SHARED_FILES: Record<string, { file: string; type: string }> = {
+  'style.css': { file: 'style.css', type: 'text/css; charset=utf-8' },
+  'favicon.svg': { file: 'favicon.svg', type: 'image/svg+xml' },
+  'apple-touch-icon.png': { file: 'app-icon-180.png', type: 'image/png' },
+};
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
   '': { file: 'index.html', type: 'text/html; charset=utf-8' },
   'app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },
-  'style.css': STYLE,
+  ...SHARED_FILES,
 };
 const LIST_FILES: Record<string, { file: string; type: string }> = {
   '': { file: 'list.html', type: 'text/html; charset=utf-8' },
   'list.js': { file: 'list.js', type: 'text/javascript; charset=utf-8' },
-  'style.css': STYLE,
+  ...SHARED_FILES,
 };
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 // The page loads and calls nothing but this server, and no other page can frame it or learn its address.

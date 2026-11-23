@@ -73,3 +73,19 @@ test('the header names the walkthrough and its range, and Stop stays at hand', a
   await expect(label).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
   await expect(page.getByRole('banner').getByRole('button', { name: 'Stop' })).toBeVisible();
 });
+
+test('the header signs the page with the mark, and the server serves its favicon and app icon', async ({ page, url }) => {
+  await expect(page).toHaveURL(url);
+  const logo = page.getByRole('banner').locator('.logo');
+  await expect(logo).toHaveText('Walkthrough');
+  await expect(logo.locator('svg.icon-mark')).toBeVisible();
+  for (const [rel, type] of [
+    ['icon', 'image/svg+xml'],
+    ['apple-touch-icon', 'image/png'],
+  ] as const) {
+    const href = await page.locator(`link[rel="${rel}"]`).getAttribute('href');
+    const answer = await page.request.get(new URL(href ?? '', url).href);
+    expect(answer.status()).toBe(200);
+    expect(answer.headers()['content-type']).toBe(type);
+  }
+});

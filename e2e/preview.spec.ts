@@ -38,6 +38,13 @@ test.beforeEach(async ({ page, repo, url }) => {
 const fileIn = (page: import('@playwright/test').Page, name: string) =>
   page.locator('.d2h-file-wrapper').filter({ has: page.locator('.d2h-file-name', { hasText: name }) });
 
+test('a long Markdown line keeps to one row in its diff, scrolling rather than wrapping', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const line = fileIn(page, 'docs/guide.md').locator('tr', { hasText: '![Dot](data:image/png' });
+  await expect(line).toBeVisible();
+  expect((await line.boundingBox())?.height).toBe(21);
+});
+
 test('a changed Markdown file previews rendered and safe, and switches back to its diff', async ({ page }) => {
   const file = fileIn(page, 'docs/guide.md');
   const toggle = file.getByRole('group', { name: 'Show docs/guide.md as' });

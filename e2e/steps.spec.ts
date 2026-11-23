@@ -42,8 +42,8 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(assumed.getByRole('listitem')).toHaveText(['Nothing else calls login yet.', 'Tests run without a network.']);
   await first.getByRole('button', { name: 'Assumed, not read' }).click();
   await expect(assumed).toBeHidden();
-  await expect(first.getByRole('button', { name: 'Assumed, not read' })).toHaveAttribute('aria-expanded', 'false');
-  await first.getByRole('button', { name: 'Assumed, not read' }).click();
+  await expect(first.getByRole('button', { name: '2 assumptions' })).toHaveAttribute('aria-expanded', 'false');
+  await first.getByRole('button', { name: '2 assumptions' }).click();
   await expect(assumed).toBeVisible();
   await expect(first.locator('.d2h-ins')).toContainText(['export const login = () => true;', "test('login', () => {});"]);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toHaveCount(0);
@@ -54,13 +54,14 @@ test('shows one step at a time with its explanation and files, folded steps coll
   const files = folded.getByRole('list', { name: 'Folded files' });
   await expect(files).toHaveCount(0);
   await folded.getByRole('button', { name: /^1 file/ }).click();
-  await expect(files.getByRole('listitem')).toHaveText('schema.jsonRegenerated from the schema source.');
+  await expect(files.getByRole('listitem')).toHaveText(/^schema\.json\s*Regenerated from the schema source\.\s*Show diff$/);
   await expect(folded.getByRole('list', { name: 'Problems the session found' }).getByRole('listitem')).toHaveText(
     'schema.json still lists the removed field.',
   );
   const added = folded.locator('.d2h-code-line-ctn').filter({ hasText: '{"field": 1}' });
   await expect(added).toBeHidden();
-  await folded.getByText('Show the diff').click();
+  await files.getByRole('button', { name: 'Show diff' }).click();
+  await expect(files.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
   await expect(added).toBeVisible();
   await expect(page.getByRole('region', { name: 'Login check' })).toHaveCount(0);
 
@@ -165,8 +166,8 @@ test('a redraw from the session or from steps recorded again keeps the step bein
   await page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'Regenerated schema' }).click();
   const folded = page.getByRole('region', { name: 'Regenerated schema' });
   await folded.getByRole('button', { name: /^1 file/ }).click();
-  await folded.getByText('Show the diff').click();
-  await expect(folded.locator('details')).toHaveAttribute('open', '');
+  await folded.getByRole('button', { name: 'Show diff' }).click();
+  await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
   const address = page.url();
 
   repo.background('listen');
@@ -174,12 +175,12 @@ test('a redraw from the session or from steps recorded again keeps the step bein
 
   expect(page.url()).toBe(address);
   await expect(folded).toBeVisible();
-  await expect(folded.locator('details')).toHaveAttribute('open', '');
+  await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 
   repo.record(steps.map(step => (step.title === 'App version' ? { ...step, title: 'App version bump' } : step)));
   await expect(page.getByRole('link', { name: 'App version bump' })).toBeVisible();
 
   expect(page.url()).toBe(address);
   await expect(folded).toBeVisible();
-  await expect(folded.locator('details')).toHaveAttribute('open', '');
+  await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 });

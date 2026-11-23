@@ -49,19 +49,21 @@
   background: none;
   color: var(--ink);
   font: 500 13.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
   text-align: left;
   overflow-wrap: anywhere;
   cursor: pointer;
 }
 
 .list-open:hover {
-  color: var(--indigo-text);
+  color: var(--violet-text);
 }
 
 .list-id {
   display: block;
   color: var(--muted);
   font: 400 12px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
   overflow-wrap: anywhere;
 }
 

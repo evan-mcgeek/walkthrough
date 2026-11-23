@@ -50,6 +50,11 @@ const ICONS = {
   'chevron-down': [line('M4 6l4 4 4-4')],
   previous: [line('M10 3.5L5.5 8l4.5 4.5')],
   next: [line('M6 3.5L10.5 8 6 12.5')],
+  /** The brand's walked W: the last stroke, still to go, is lighter. */
+  mark: [
+    ['path', { d: 'M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8', ...round, 'stroke-width': 2.3 }],
+    ['path', { d: 'M11.4 12.8L14.4 3.2', ...round, 'stroke-width': 2.3, opacity: 0.4 }],
+  ],
   /** Layouts. */
   'layout-queue': [block(1, 2, 5, 12), block(7.3, 2, 7.7, 12, 0.5)],
   'layout-three': [block(1, 2, 3.5, 12), block(5.8, 2, 5, 12, 0.5), block(12, 2, 3, 12)],

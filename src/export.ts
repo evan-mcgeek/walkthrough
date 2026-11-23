@@ -23,6 +23,13 @@ export function exportPage(dir: string): string {
   const data = JSON.stringify(state).replaceAll('<', '\\u003c');
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read('index.html');
+  // A file opened on its own has no server for the icons, so the favicon travels inside it.
+  const favicon = fs.readFileSync(path.join(PAGE, 'favicon.svg')).toString('base64');
+  html = inline(
+    html,
+    '<link rel="icon" href="favicon.svg" type="image/svg+xml" />\n    <link rel="apple-touch-icon" href="apple-touch-icon.png" />',
+    `<link rel="icon" href="data:image/svg+xml;base64,${favicon}" type="image/svg+xml" />`,
+  );
   html = inline(
     html,
     '<link rel="stylesheet" href="style.css" />',
