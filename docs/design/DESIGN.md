@@ -351,7 +351,7 @@ Density is IDE density, not web-app density. Controls are 30px tall with 4px cor
 It refuses two looks by name: the code-host pull-request page clone, and the terminal costume. Monospace is a tool for code, file names, keys and labels, never an atmosphere.
 
 **Key Characteristics:**
-- Category-standard layout as IDE tool windows: queue, explanation column, checklist and tool panel each have a title bar with a hide button and collapse to an edge stripe or bottom strip; the queue is open by default.
+- Category-standard layout as IDE tool windows: queue, explanation column and checklist each have a title bar with a hide button and collapse to an edge stripe; the queue is open by default. No tool panel.
 - One accent, Ultramarine by default (Petrol and Berry by choice), for the primary action, focus, links, decided progress and the reviewer's own words; pressed and selected controls are neutral.
 - Findings outrank conversation: amber labels, amber gutter markers, and an Approve that steps down while findings are open.
 - Reading prose is set for reading: primary ink, 15px/1.6, 68ch; notes 14px/1.55.
@@ -360,7 +360,7 @@ It refuses two looks by name: the code-host pull-request page clone, and the ter
 - System UI sans for everything human; JetBrains Mono for code, file names, keys and session labels.
 - Rules, not boxes; flat at rest; one floating shadow.
 - One 4px spacing scale (4, 8, 12, 16, 24, 32px) governs padding, gaps and rhythm.
-- Motion in 120 / 200 / 320ms on one ease-out curve; reduced motion keeps only opacity and colour.
+- Motion in 120 / 200 / 320ms on one ease-out curve, plus one 440ms authored moment (the verdict docking into the header); reduced motion keeps only opacity and colour.
 
 ## Brand
 
@@ -448,7 +448,7 @@ The File Note takes the same shape with the rule in the accent, as the one colou
 
 ## Layout
 
-The desktop frame is a fixed 44px header over a row of panes arranged as JetBrains-style tool windows around the step. The queue ("To review", open by default) is a 224px rail on the surface tone at left; the open step fills the main pane (16px top and bottom, 24px sides). The explanation column splits a 420px prose column (24px padding, its own action bar at the foot) from the code, which moves to the surface tone. The checklist is a 288px column at the right that ends with a "Whole walkthrough" block above a rule. The tool panel stacks a tabbed panel under the step. Each window has a title bar with a hide button (keys 1 to 4). A hidden queue or explanation column collapses into a 26px edge stripe at the left, a hidden checklist into one at the right, and a hidden tool panel into a 28px strip of its tabs along the bottom, so nothing disappears without leaving a handle. When the queue is hidden, previous and next step navigation sits above the title. Which windows are open is kept for the person with their Appearance, so every walkthrough opens the way they left the last one.
+The desktop frame is a fixed 44px header over a row of panes arranged as JetBrains-style tool windows around the step. The queue ("To review", open by default) is a 224px rail on the surface tone at left; the open step fills the main pane (16px top and bottom, 24px sides). The explanation column splits a 420px prose column (24px padding, its own action bar at the foot) from the code, which moves to the surface tone. The checklist is a 288px column at the right that ends with a "Whole walkthrough" block above a rule. Each window has a title bar with a hide button (keys 1 to 3). A hidden queue or explanation column collapses into a 26px edge stripe at the left, and a hidden checklist into one at the right, so nothing disappears without leaving a handle. When the queue is hidden, previous and next step navigation sits above the title. Which windows are open is kept for the person with their Appearance, so every walkthrough opens the way they left the last one.
 The step head is a two-column grid: the title, state and explanation up to 68ch, and the "In this step" facts rail (220 to 280px) at the right, 32px apart. Below it come the files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files stack with no gap between them, opened or collapsed, so every header sits on the rule that ends the file before it and opening a file moves nothing above it.
 A file's own explanation, when the session gave one, has two places.
 With the explanation column hidden (the default) and at 390px, it is a File Note between the header and the diff: 14px secondary ink at 1.55, held to 68ch, its text starting where the note rows' does (116px in; on a phone the rule sits at the file's left edge) behind a 2px accent rule, 12px above and below.
@@ -500,23 +500,23 @@ Step state is an 8px dot plus a 12.5px 500 word, with no outline or fill around 
 - **Select:** native select with its own arrow removed, 30px right padding, and a muted drawn 16px chevron.
 
 ### Navigation
-- **Header (44px):** the 16px lockup, the kind label, the mono branch or pull-request label, segmented progress bar (180px) with "3/9", then at the right: verdict status (once chosen), Finish review, session status, Stop, and a More (…) icon button for Appearance and shortcuts. No panel controls live in the header.
+- **Header (44px):** the 16px lockup, the kind label, the mono branch or pull-request label, segmented progress bar (180px) with "Step 4 of 9 · 3 decided" beside it ("Summary · 7 decided" on the Summary), then at the right: verdict status (once chosen), Finish review, session status, End session, and a More (…) icon button for Appearance and Help. No panel controls live in the header.
 - **Kind label:** the session's own words for the kind (for example "Your change" or "Review request") in 12.5px muted text, set off by a 1px rule on its left with 12px padding; no icon, since the tool knows only the session's free text (ADR 0005). At 390px the kind takes the label's place next to the logo, the label stays for screen readers only, the count is dropped, and the progress bar runs full width under the header.
-- **Progress bar:** decided segments in the accent, read and current in progress-read grey, reopened in amber, unread in the rule tone.
+- **Progress bar:** decided segments in the accent, read in progress-read grey, changed-since-decided in amber, unread in the rule tone. The current step's segment is solid ink and taller (9px against 5px, 2px corners), whatever its state, so it reads at a glance in light and dark on any accent; it walks to the new segment on navigation. At 390px the bar runs full width under the header and "N decided" sits beside the step picker. Every segment has a tooltip naming the step and its state in words ("6 Overdue styling: not read yet").
 - **Diff-Preview switch:** joined segmented control, 1px control edge, 6px group corners; pressed is surface tint with ink, never the accent.
 - **Verdict status:** a muted flag icon plus the chosen verdict in 12.5px 500 secondary ink. Neutral, whatever the verdict.
-- **Session status:** a 7px dot plus 13px 600 label: Listening (green), Working (accent text with a spinning icon), Needs you (amber dot with a 3px amber-wash ring), Offline · retrying (amber, with an offline icon, when the server is unreachable), Gone and Stopped (muted hollow dot).
+- **Session status:** a muted "Session" prefix (dropped at 390px), then a 7px dot plus 13px 600 label: Listening (green), Working (accent text with a spinning icon), Needs you (amber dot with a 3px amber-wash ring), Offline · retrying (amber, with an offline icon, when the server is unreachable), Gone and Stopped (muted hollow dot).
 - **Step nav:** previous and next icon buttons plus "Step 4" in 13px, shown above the title only when the queue is hidden.
-- **More menu:** on desktop, Appearance and Keyboard shortcuts; at 390px, Swipe to decide, the panels as menu-item checkboxes, then a rule separator above Appearance and Stop.
+- **More menu:** on desktop, Appearance and Help; at 390px, Swipe to decide, the panels as menu-item checkboxes, then a rule separator above Appearance, Help and End session.
 
 ### Tool Windows
 The IDE pattern, played straight.
-- **Title bar:** each window names itself in 12px 600 muted text ("To review 8" with its counter, "Explanation", "Checklist"; the tool panel's own tab row serves as its bar), with a 14px minus icon button at the right to hide it; its tooltip names the key ("Hide Checklist (2)").
+- **Title bar:** each window names itself in 12px 600 muted text ("To review 8" with its counter, "Explanation", "Checklist"), with a 14px minus icon button at the right to hide it; its tooltip names the key ("Hide Checklist (2)").
 - **Edge stripe:** a hidden side window leaves a 26px column on the surface tone behind a hairline, holding vertical buttons in 12px secondary ink with an 11.5px muted tabular count ("To review 8", "Explanation" on the left; "Checklist 2/5" on the right). Left-stripe labels read bottom-up, right-stripe labels top-down. Buttons have 4px corners and hover to surface tint with ink; tooltips name the key ("Show Checklist (2)"). An empty stripe is not drawn.
-- **Bottom strip:** a hidden tool panel leaves a 28px row on the surface tone above a hairline, with one button per tab ("Notes 4", "From the session 1", "Detached 2"), styled as the stripe buttons.
+- **No tool panel:** there is no bottom panel or strip. Notes live on their lines (counted in "In this step"); session messages and notes on removed code live on the Session messages page, whose row in To review counts both ("1 file not in a step · 2 on removed code"). Keys 1 to 3 toggle To review, Checklist and Explanation.
 
 ### Queue ("To review")
-The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; reopened amber; not met rust; session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
+The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; changed-since-decided amber (sub-line "Changed since you decided"); not met rust; session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
 A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding", which fits the rail on one line; its decision stays.
 
 ### In This Step (facts rail)
@@ -538,12 +538,12 @@ diff2html line-by-line, restyled through classes: 46px number columns in muted i
 - **Overview stripe:** a 10px column at the right edge of each file's diff, on the surface tone behind a soft rule: added and removed runs as 6px-wide stripe-add and stripe-del bars, and each note as a 3px full-width tick in its marker colour. It maps the whole file at a glance and never scrolls with the code.
 - **Notes:** a note row spans the table in UI sans, label in 12.5px (a finding's label in amber with its icon), body 14/1.55 in primary ink, replies indented behind a 2px rule. The note's head is as wide as its 66ch text column, so its "…" actions menu sits at the end of the text, never at the far edge of the pane; the same holds for notes on a step and on a folded step. "N more notes" is an accent-text link on a row with no fill. The Ask-about-lines composer is a row in the accent wash with accent-line rules.
 
-### Folded Step
-The board shows one-word reasons; a session writes a sentence per file, so the built step reads them as text.
+### Files to Skim (the folded step)
+The step is titled "Files to skim" on the page. A session writes a sentence per file, so the step reads reasons as text.
 - **Summary (collapsed):** one 40px line in a 1px rule box with 7px corners: the chevron, "18 files" (never wrapping), then each distinct reason once, joined by " · " in muted 13px text and cut with one ellipsis at the end of the line, then the problem count as a reopened tag. The summary's tooltip lists every distinct reason. Opened, the reasons leave the line.
 - **Problems:** the session's problems sit right under the summary, 8px below it, whether the files are open or not: amber-wash rows with 6px corners, a warning icon and the problem in ink.
 - **Files (opened):** a list under a rule, one row per file on soft rules with 12px padding: the mono path, the reason as 13px secondary-ink text that wraps, and a small Show diff button at the right; the three columns line up from row to row, the path column taking at most 45%. At 390px the reason moves under the path, full width, and Show diff stays beside the path.
-- **Export:** the files are listed open with their diffs, no Show diff buttons.
+- **Export:** the files are listed open with their diffs, each headed by its path and reason in the same two columns, the problem above the list; no Show diff buttons. An image shows as "Binary image · W × H · replaced".
 
 ### File Header
 A 36px sticky row on the canvas: a chevron toggle (collapse/expand), the mono file name, tabular +/- counts, and a Viewed toggle at the right. Viewed is an eye icon button (4px corners, 4px 6px, muted); once pressed it shows the eye plus "Viewed" in secondary ink on surface tint. Viewed is a reading mark, not a decision, and never takes the accent.
@@ -556,9 +556,14 @@ Docked at the foot of the step: Approve, Flag, any session offers, the Ask box. 
 While the session is still checking the step, its actions are held: drawn disabled, followed by the muted 12.5px hint "Decide once the session has checked this step.", and the A and F keys and the swipe deck decide nothing. The Ask box stays live.
 
 ### Summary Step
-The title with an "N still open" state (a step still being checked counts, listed as "Being checked" with the dashed not-checked icon), one plain 14.5px count line in secondary ink (no big-number tiles), then sections separated by rules (16px padding, 860px max): Still open, **Verdict**, Decided (a table by decision label with right-aligned counts), Flagged, Your comments, Checklist (compact), and [AI] drafts (status pill Accepted, Edited or Dropped on surface tint; a dropped draft is struck through and muted). The Verdict section reads "No verdict yet. Check what is still open, then choose." until chosen, then "Your verdict: <label>" with a Change link; its options are radio buttons offered by the session (canvas, 1px control edge, 4px corners, 5px 12px, muted icon), the chosen one with a secondary-ink border, surface tint, ink text at 600 and a filled icon; a 12.5px hint names where the verdict goes. A finish row closes the page: the primary action, disabled until a verdict is chosen, then a 13px hint on its own line.
+The title with an "N still open" state and one plain 14.5px count line in secondary ink (no big-number tiles). Below, two columns, 32px apart, up to 1080px:
+- **The walk (ledger):** every step in one table, grouped "Still open N" first, then "Decided N", each group under a 12px 600 muted heading on a rule. A row is the step number (12.5px tabular, muted), its state icon, the title (13.5px 500 ink, a link to the step) and, at the right, the decision in words (Approve, Flag in secondary ink; Undecided and Being checked muted; Changed in amber). Under the title, at 13px: a flag's note in quotes (secondary ink), the person's own comments in accent text with the person icon and a muted mono "file:line", or why the step is open ("Changed since you chose Approve.", "Findings may still arrive."). Rows sit on soft rules with 8px padding. No separate Decided, Flagged or Your comments sections: the ledger carries them. A review request adds "Comments the session drafted" under the ledger (status word Accepted, Edited or Dropped on surface tint; a dropped draft is struck through and muted).
+- **Finish rail (288px):** sticky, behind a 1px rule with 24px left padding, like the "In this step" rail. Verdict heading, "No verdict yet." or "Your verdict: <label>", the session's verdict options stacked full width (radio buttons: canvas, 1px control edge, 4px corners; chosen = secondary-ink border, surface tint, 600, filled icon), then the finishing action full width (primary, disabled until a verdict is chosen) and any secondary action, a 12.5px hint naming what goes where ("Fix list: 2 flags and 2 of your comments."), then the checklist, compact. At 390px the rail drops under the ledger behind a top rule.
 
-### Popovers: Appearance and Shortcuts
+### Help: what things mean
+Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), and the session statuses: then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
+
+### Popovers: Appearance and Help
 Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Keyboard shortcuts** (420px, opened with ?): a two-column table, rows on soft rules, key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
 
 ### Notices
@@ -566,8 +571,9 @@ Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px
 - **Attention:** amber wash, no border, amber icon. Full-width banners use the same pair under the header.
 - **Being checked:** a neutral notice under the step title, with the dashed not-checked icon: "The session is still checking this step. Findings may still arrive."
 - **New finding banner:** the attention banner under the header names a finding that lands on a step the person read or decided ("New finding on step 8, Ultramarine, accents and Appearance, which you approved."; several read as one, "3 new findings on steps 8 and 10."), with a small "Go to step" button and a close icon button to dismiss it. It is for the open page only; after a reload the queue sub-line carries it.
+- **Late finding on the step:** opening a decided step that got a finding after the decision shows an amber-wash line under the title ("A finding arrived after you approved. Your decision stays; change it if the finding matters."), the note labelled "line N · new since you approved", and an action bar of Change decision, the Ask box and "1 new finding" in amber.
 - **Session question:** canvas fill, 1px amber border, 8px radius, amber 650 heading.
-- **Detached:** 1px dashed control edge, 8px radius.
+- **Notes on removed code:** 1px dashed control edge, 8px radius.
 - **Undo toast:** inverted (ink fill, canvas text and icon), 8px radius, 14px text, with an underlined Undo link in 650. It rises 12px over 200ms after a 120ms delay.
 
 ### Image Diff
@@ -583,7 +589,15 @@ One family (the Preparing state's pulsing mark and the Working spinner are the o
 - **Reveal:** assumptions open by grid rows (320ms) with the chevron turning 90° (120ms); extra notes rise 4px (200ms, 40ms stagger).
 - **Attention:** "Needs you" pulses its amber ring twice (1.2s) and then holds still.
 - **Swipe:** the card follows the finger, rotating 0.025° per pixel of travel; on release it flies out (200ms ease-in) with its fade held back until late (80ms after 120ms).
-- **Reduced motion:** no translate, rotate or scale anywhere: opacity and colour only. Queue rows fade then snap shut, segments fill by opacity, and the swipe card only fades.
+- **Verdict (the one authored moment):** choosing a verdict lifts the chosen label off its option as a chip and docks it into the header verdict slot: transform 440ms ease-out, opacity held to 62% then out (linear) while the slot fades in over the same window, so the label never drops out. The slot opens by width (320ms); on a change the old label fades under the arriving chip and the slot width eases to the new label.
+- **Tool windows:** hiding a panel fades its contents (100ms), then its width collapses (200ms ease-out, after 60ms) while the edge stripe grows and its vertical button fades in (after 200ms). Showing reverses with width leading (320ms) and contents fading in after 120ms.
+- **Files:** collapse and expand by grid rows (open 320ms, close 200ms after an 80ms content fade), headers staying flush so nothing jumps, chevron turning 90° (120ms). Viewed folds the file, dims its name and reveals the "Viewed" label in the toggle.
+- **Summary:** Finish review uses the pane swap; the step action bar steps aside (100ms fade, 8px down, ease-in).
+- **Popovers:** open from the control that opened them, 120ms fade with a 200ms settle from 4px up at 98% scale; close in 80ms ease-in.
+- **Accent:** changing the accent cross-fades the accent family over 320ms (registered colour properties); theme switches snap.
+- **Stepper:** the ink "you are here" segment walks to the new segment (320ms ease-out); a segment fills left to right in grey when first read and in the accent when decided (320ms); after a decision the marker waits 180ms so the fill reads first, and it fades out on the Summary.
+- **Decided row:** the row lifts as a chip (float shadow) and travels into "N decided" at the rail's foot (320ms ease-out, fading over its last quarter); the rows below close up (320ms after 120ms); "N decided" flashes surface tint (200ms after 240ms) and its count arrives as the chip lands.
+- **Reduced motion:** no translate, rotate or scale anywhere: opacity and colour only. Queue rows fade then snap shut (no chip), the step marker snaps, segments fill by opacity, and the swipe card only fades. Tool windows and files fade their contents, then snap; the verdict chip is skipped and the header slot fades in, with an old label fading out before the new one fades in; popovers only fade.
 
 ## Do's and Don'ts
 
