@@ -1258,6 +1258,17 @@ function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
   return section;
 }
 
+/** What a state icon says to a screen reader where no text beside it says so already. */
+const STATE_NAMES: Partial<Record<IconName, string>> = {
+  unread: 'Unread',
+  read: 'Read',
+  folded: 'Folded',
+  met: 'Met',
+  'not-met': 'Not met',
+  partly: 'Partly met',
+  unchecked: 'Not checked',
+};
+
 /** A row of the rail: a state icon, a title and an optional sub-line, linking to what it names. */
 function queueRow(
   address: string,
@@ -1271,7 +1282,7 @@ function queueRow(
   const row = el(
     'a',
     { href: `#${encodeURIComponent(address)}`, className: 'queue-item' },
-    icon(mark),
+    icon(mark, STATE_NAMES[mark]),
     el('span', { className: 'queue-title' }, title, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
   );
   row.dataset['state'] = state;
@@ -1431,7 +1442,7 @@ function checklistView({ title, items }: Checklist, view: View, compact = false)
     const row = el(
       'li',
       { className: view.kind === 'checklist' && view.item === item.id ? 'current' : '' },
-      icon(mark),
+      icon(mark, STATE_NAMES[mark]),
       el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), ...(compact ? [] : [el('span', { className: 'item-status' }, item.status)])),
       ...links,
       ...(gone

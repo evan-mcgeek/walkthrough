@@ -85,3 +85,18 @@ test('the checklist shows at the end of the walkthrough, and is absent when none
 
   await expect(page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem')).toHaveCount(3);
 });
+
+test('checklist marks and rail states are named for screen readers, not only drawn', async ({ page, repo }) => {
+  const recorded = repo.record(checklist, 'checklist');
+  if (recorded.status !== 0) throw new Error(recorded.stderr);
+  await page.reload();
+  const rail = page.getByRole('navigation', { name: "What's left" });
+
+  await expect(rail.getByRole('link', { name: 'App version' }).getByRole('img')).toHaveAccessibleName('Unread');
+  await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('Read');
+  await expect(rail.getByRole('link', { name: 'The app shows its version.' }).getByRole('img')).toHaveAccessibleName('Not met');
+  await rail.getByRole('link', { name: 'The app shows its version.' }).click();
+  const items = page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
+  for (const [at, mark] of ['Not checked', 'Not met', 'Not checked'].entries())
+    await expect(items.nth(at).getByRole('img').first()).toHaveAccessibleName(mark);
+});
