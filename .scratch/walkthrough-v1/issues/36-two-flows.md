@@ -33,6 +33,8 @@ Checked on 2026-11-23 against Claude Code 2.1.330.
 
 Verified in a headless run (`claude -p --setting-sources project`) of a throwaway plugin shaped like this one: the bare name and `/<plugin>:<name>` both ran the first skill, `/<plugin>:pr 123` ran the second with `123` as `$ARGUMENTS`, a bare `/pr` did not reach it, and a Read of a file in the plugin, even in the skill's own folder, was refused without approval.
 
+With the built plugin, in the same kind of run, `/walkthrough` went from `walkthrough policy` to `walkthrough start --kind own`, and `/walkthrough:pr 123` began with `walkthrough policy` and the project's instructions.
+
 So the shared procedure cannot live in one file both skills read without a permission prompt each walkthrough; both skills carry the shared sections word for word, and a test keeps them identical.
 
 ## Seams under test
