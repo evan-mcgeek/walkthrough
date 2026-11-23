@@ -722,7 +722,8 @@
     overflow: visible;
   }
 
-  .queue > :not(.queue-select) {
+  .queue > :not(.queue-select),
+  .walkthrough[data-view='deck'] .queue {
     display: none;
   }
 
