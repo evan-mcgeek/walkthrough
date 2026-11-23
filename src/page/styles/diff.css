@@ -84,10 +84,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Under the file's name, above its diff and preview; left edge with the name. */
+/* A short note on the file under its header: its text starts where the code's does, behind a 2px accent rule, with even space above and below. */
 .diff .file-explanation {
-  margin: 0;
-  padding: var(--s3) 0 var(--s3) 2px;
+  max-width: 68ch;
+  margin: var(--s3) var(--s4) var(--s3) max(0px, calc(var(--code-column) - var(--s3) - 2px));
+  padding-left: var(--s3);
+  border-left: 2px solid var(--accent);
+  color: var(--ink-secondary);
+  font: 400 14px/1.55 var(--font-ui);
 }
 
 .diff .d2h-file-header .segmented,

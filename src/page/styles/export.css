@@ -67,6 +67,10 @@
   margin-top: 0;
 }
 
+.export-step > .files-block {
+  margin: 0 0 var(--s2);
+}
+
 .export-title {
   display: flex;
   flex-wrap: wrap;
