@@ -9,7 +9,7 @@ Replaces the four fixed layouts (ticket 31) with panels the person shows or hide
 5. At 390px the toggles live in the More menu, as the layout switch does today; panels stack.
 6. Update DESIGN.md (Layout and Navigation sections), the README's Layouts section and its screenshots; remove the four-layout switch and its tests in favour of panel tests.
 
-Design: follow the round 2 boards on the design canvas (BRIEF-round-2.md) once they land; until then, extend DESIGN.md's existing tokens and components.
+Design: the round 2 boards have landed: follow docs/design/DESIGN.md and docs/design/screens.html exactly (for 42: panels are tool windows with title bars that hide to labelled buttons on the window edges; keys 1-4).
 
 **Blocked by:** 36 Two flows, two commands
 

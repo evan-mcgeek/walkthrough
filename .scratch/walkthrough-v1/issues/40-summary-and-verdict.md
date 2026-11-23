@@ -8,7 +8,7 @@
 5. The verdict is chosen only on the Summary, right under what is still undecided; a "Finish review" control in the header jumps to the Summary from anywhere.
 6. Once chosen, the verdict shows in the header and on the list page as a status, not a control; before that the walkthrough reads "No verdict yet".
 
-Design: follow the round 2 boards on the design canvas (BRIEF-round-2.md) once they land; until then, extend DESIGN.md's existing tokens and components.
+Design: the round 2 boards have landed: follow docs/design/DESIGN.md and docs/design/screens.html exactly (for 42: panels are tool windows with title bars that hide to labelled buttons on the window edges; keys 1-4).
 
 **Blocked by:** 36 Two flows, two commands
 

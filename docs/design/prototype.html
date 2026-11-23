@@ -453,6 +453,280 @@ code{font:500 .86em 'JetBrains Mono',ui-monospace,monospace}
 .sw{grid-row:span 2;width:40px;height:40px;border-radius:8px;border:1px solid var(--line)}
 .sw-acc{background:var(--acc)}.sw-acc-tx{background:var(--acc-tx)}.sw-acc-bg{background:var(--acc-bg)}
 @media (prefers-reduced-motion: reduce){.st-working .ic,.prep .ic{animation:none}}
+
+/* reading type (also upgrades .ex) */
+.prose,.ex{font-size:15px;line-height:1.6;color:var(--tx);max-width:68ch;text-wrap:pretty}
+.prose>*+*{margin-top:var(--s3,12px)}
+.prose p{margin-bottom:0}
+.prose h2,.prose h3{font-size:15px;font-weight:650;margin-top:var(--s5,24px);color:var(--tx)}
+.prose h2+*,.prose h3+*{margin-top:var(--s2,8px)}
+.prose ul,.prose ol,.nlist{list-style:disc;padding-left:22px;display:flex;flex-direction:column;gap:var(--s1,4px)}
+.prose ol{list-style:decimal}
+.prose li::marker,.nlist li::marker{color:var(--mut)}
+.prose code,.note code,.mine code{font-size:.86em;background:var(--bg3);border-radius:4px;padding:1px 5px}
+.prose a,.note a{color:var(--acc-tx);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.prose blockquote{margin:var(--s4,16px) 0 0;padding:var(--s3,12px) var(--s4,16px);background:var(--bg2);border-radius:6px;color:var(--tx2)}
+.prose blockquote p{margin:0}
+.prose.sm{font-size:14px;line-height:1.55}
+.note p,.mine p{font-size:14.5px;line-height:1.6;color:var(--tx)}
+.nlist{margin:var(--s2,8px) 0;font-size:14.5px;line-height:1.55;color:var(--tx)}
+.note p.dn:empty{display:none}
+.ex{margin-bottom:var(--s3,12px)}
+.tr+.prose{margin-bottom:var(--s3,12px)}
+
+/* ================= round 2 ================= */
+.w14{width:1440px}.w10{width:1040px}
+.bt{font-size:13.5px;font-weight:600;color:#3d424a;margin:10px 0 -4px}
+.state>.bt:first-of-type{margin-top:0}
+
+/* header: kind + panel toggles + chips */
+.kind{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mut);padding-left:var(--s3,12px);border-left:1px solid var(--line);height:20px}
+.kind .ic{color:var(--mut)}
+.ptgs{display:flex;border:1px solid var(--ctl);border-radius:6px;overflow:hidden}
+.ptg{background:var(--bg);border:0;padding:var(--s1,4px) var(--s2,8px);color:var(--mut);display:grid;place-items:center;transition:background-color var(--t-fast,120ms) linear,color var(--t-fast,120ms) linear}
+.ptg+.ptg{border-left:1px solid var(--ctl)}
+.ptg:hover{background:var(--bg3);color:var(--tx2)}
+.ptg[aria-pressed=true]{background:var(--acc-bg);color:var(--acc-tx)}
+.ptg .ic{--on-ic:var(--bg)}
+.ptg[aria-pressed=true] .ic{--on-ic:var(--acc-bg)}
+.hchip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--ctl);border-radius:999px;padding:2px var(--s3,12px) 2px var(--s2,8px);font-size:12.5px;color:var(--tx2)}
+.hchip .ic{color:var(--mut)}
+.hchip:hover{background:var(--bg3)}
+.pop{position:absolute;right:220px;top:52px;z-index:4;width:320px;background:var(--bg);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:var(--s4,16px);display:flex;flex-direction:column;gap:var(--s2,8px)}
+.frame{position:relative}
+.snav{display:flex;align-items:center;gap:var(--s1,4px);margin:-6px 0 var(--s2,8px) -6px;font-size:13px}
+
+/* explanation column + tool panel */
+.ecol{width:420px;flex:none;border-right:1px solid var(--line);padding:var(--s5,24px) var(--s5,24px);display:flex;flex-direction:column}
+.ecol .prose{font-size:14.5px}
+.ecfiles{display:flex;flex-direction:column;gap:var(--s2,8px);margin-top:var(--s5,24px);padding-top:var(--s4,16px);border-top:1px solid var(--line2)}
+.ech{font:500 12.5px 'JetBrains Mono',monospace;color:var(--tx2);margin-top:var(--s2,8px)}
+.ech:first-child{margin-top:0}
+.ecol .acts{margin-top:auto;padding-top:var(--s4,16px)}
+.codecol{background:var(--bg2)}
+.codecol .fh2{background:var(--bg2)}
+.toolp .tpl{display:flex;flex-direction:column;gap:var(--s2,8px);padding:var(--s2,8px) 0;font-size:13.5px;color:var(--tx2)}
+.side .wholep{margin-top:var(--s5,24px);padding-top:var(--s4,16px);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s2,8px);align-items:flex-start}
+
+/* file headers: collapse + Viewed */
+.file2{border-top:1px solid var(--line)}
+.file2+.file2{margin-top:var(--s4,16px)}
+.file2.closed+.file2.closed{margin-top:0}
+.fh2{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:var(--s2,8px);min-height:40px;background:var(--bg);font-size:13px}
+.fh2 .ftog{margin-left:-4px}
+.file2>.d,.file2>.fexp{border-top:1px solid var(--line2)}
+.file2>.fexp{padding:var(--s3,12px) 0 var(--s3,12px) 2px}
+.file2>.fexp+.d{border-top:1px solid var(--line2)}
+.viewed{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tx2);cursor:pointer;padding:var(--s1,4px) var(--s2,8px);border:1px solid var(--ctl);border-radius:6px}
+.viewed input{margin:0;accent-color:var(--mut);width:14px;height:14px}
+.isviewed .ff{color:var(--mut)}
+.isviewed .viewed{background:var(--bg3);border-color:transparent}
+.cap{font-size:13px;margin-top:var(--s4,16px)}
+
+/* own comments */
+.d td.n.hov{position:relative}
+.hovrow td{background:var(--bg3)!important}
+.addc{position:absolute;left:-14px;top:1px;width:20px;height:20px;border-radius:5px;border:0;background:var(--acc);color:var(--on-acc);display:grid;place-items:center;padding:0;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.addc .ic{width:12px;height:12px}
+.pickl{font-size:13px;font-weight:600;color:var(--acc-tx)}
+.askbar .btn .ic{width:14px;height:14px}
+.mine{background:var(--acc-bg);border:1px solid var(--acc-line);border-radius:8px;padding:var(--s3,12px) var(--s4,16px);display:flex;flex-direction:column;gap:var(--s1,4px);max-width:70ch}
+.mine .who{display:inline-flex;align-items:center;gap:6px;font-weight:650;color:var(--acc-tx)}
+.mine .who .ic{color:var(--acc-tx)}
+.mine .ib{color:var(--acc-tx)}
+.mine .hint{font-size:12.5px}
+.mine .ta{background:var(--bg);margin-top:var(--s1,4px);min-height:64px}
+.mrow{display:flex;gap:var(--s2,8px);align-items:center;margin-top:var(--s2,8px)}
+.gap12{height:var(--s3,12px)}
+
+/* summary */
+.sumpane{max-width:none}
+.sumline{font-size:14.5px;color:var(--tx2);margin:0 0 var(--s5,24px)}
+.sumsec{padding:var(--s4,16px) 0;border-top:1px solid var(--line);max-width:860px}
+.sumsec .sech{margin-bottom:var(--s3,12px)}
+.openl,.flags,.drafts{display:flex;flex-direction:column;gap:var(--s2,8px);font-size:14px}
+.openl li{display:flex;gap:var(--s2,8px);align-items:flex-start}
+.openl li>span,.flags li{display:flex;flex-direction:column;gap:2px}
+.openl .ic{margin-top:3px;color:var(--mut)}
+.openl .reo .ic{color:var(--amb)}
+.flags .mut,.openl .mut{font-size:13px}
+.dtab{border-collapse:collapse;font-size:14px;width:100%}
+.dtab th{text-align:left;padding:var(--s2,8px) var(--s3,12px) var(--s2,8px) 0;width:90px;font-weight:400;vertical-align:top}
+.dtab td{padding:var(--s2,8px) 0;color:var(--tx2);vertical-align:top}
+.dtab tr+tr th,.dtab tr+tr td{border-top:1px solid var(--line2)}
+.dtab .r{text-align:right;color:var(--tx);width:40px}
+.drafts li{display:flex;flex-direction:column;gap:2px}
+.drafts .where{font:12px 'JetBrains Mono',monospace;color:var(--mut)}
+.dst{font-size:12px;font-weight:600;color:var(--tx2);background:var(--bg3);border-radius:999px;padding:0 var(--s2,8px);flex:none}
+.dtxt{display:flex;gap:var(--s2,8px);align-items:baseline}
+.drafts .dropped{color:var(--mut)}
+.drafts .dropped s{color:var(--mut)}
+.chk.compact li{padding:var(--s1,4px) 0}
+.finish{display:flex;flex-wrap:wrap;gap:var(--s3,12px);align-items:center;padding-top:var(--s5,24px);border-top:1px solid var(--line);max-width:860px}
+.finish .hint{flex-basis:100%;font-size:13px}
+.qi.sumrow{margin-top:var(--s2,8px);border-top:1px solid var(--line);border-radius:0;padding-top:var(--s3,12px)}
+.qi.sumrow .ic{color:var(--tx2)}
+.qi.sumrow.cur{background:var(--bg);box-shadow:0 0 0 1px var(--line);border-radius:6px;border-top-color:transparent}
+
+/* phone menu */
+.pmenu{position:absolute;right:8px;top:44px;left:auto;min-width:250px}
+.pmenu button{display:flex;align-items:center;gap:var(--s2,8px)}
+.pmenu button[aria-checked=true]{color:var(--acc-tx);font-weight:600}
+.pmenu button[aria-checked=true] .ic{color:var(--acc-tx)}
+.pmenu button[aria-disabled=true]{color:var(--mut);cursor:not-allowed}
+.pmenu button .mut{margin-left:auto;font-size:12px}
+.msep{height:1px;background:var(--line);margin:var(--s1,4px) 0}
+.m .sumpane{padding:var(--s4,16px)}
+.m .dtab th{width:70px}
+.file2>.fexp{max-width:none}
+.file2>.fexp>p{max-width:68ch}
+
+/* ================= v3: voice, density, clarity ================= */
+/* ultramarine (default accent) */
+.light{--acc:#2433b8;--acc-tx:#2433b8;--acc-bg:#eceefc;--acc-line:#d3d7f7;--acc-hover:#1b2896;--on-acc:#fff;--sel:#eef0fd;--sel-n:#d9ddf8;--seg-read:#a3aab4;--add-s:#3c9a5f;--del-s:#c8473b;--gm-msg:#6b737d}
+.dark{--acc:#8c97ff;--acc-tx:#a9b1ff;--acc-bg:#1e2346;--acc-line:#333b70;--acc-hover:#a3abff;--on-acc:#0b0f2e;--sel:#1d2242;--sel-n:#2a3263;--seg-read:#5a626d;--add-s:#4fbf7a;--del-s:#ef7e6f;--gm-msg:#9aa2ac}
+/* configurable accents */
+.light .acc-petrol,.light.acc-petrol{--acc:#0e6577;--acc-tx:#0e6577;--acc-bg:#e3f1f3;--acc-line:#c4e1e6;--acc-hover:#0a4f5d;--sel:#e7f3f5;--sel-n:#cbe4e9}
+.dark .acc-petrol,.dark.acc-petrol{--acc:#5cc2d4;--acc-tx:#7fd2e0;--acc-bg:#14323a;--acc-line:#1f4a55;--acc-hover:#7fd2e0;--on-acc:#061a1f;--sel:#132e35;--sel-n:#1c4550}
+.light .acc-berry,.light.acc-berry{--acc:#9c1f62;--acc-tx:#9c1f62;--acc-bg:#f8e7f0;--acc-line:#efc9dc;--acc-hover:#7f174f;--sel:#faecf3;--sel-n:#f1d2e1}
+.dark .acc-berry,.dark.acc-berry{--acc:#f07ab4;--acc-tx:#f59cc7;--acc-bg:#3a1a2b;--acc-line:#5a2843;--acc-hover:#f59cc7;--on-acc:#2a0717;--sel:#341827;--sel-n:#4f2239}
+.acc-petrol,.acc-berry{display:contents}
+
+/* accent narrowed: pressed toggles and layout chips go neutral */
+.ptg[aria-pressed=true],.lb[aria-pressed=true],.seg2 button[aria-pressed=true]{background:var(--bg3);color:var(--tx)}
+.ptg[aria-pressed=true] .ic{--on-ic:var(--bg3)}
+/* progress: decided = accent, read = neutral grey, reopened = amber */
+.seg.read,.seg.cur{background:var(--seg-read)}
+.seg::after{background:var(--acc)}
+
+/* controls: IDE-grade, less component-library */
+.btn{border-radius:4px;min-height:30px;font-size:13px;padding:0 var(--s3,12px)}
+.btn.sm{min-height:26px;font-size:12.5px;padding:0 var(--s2,8px)}
+.btn.pri{box-shadow:inset 0 -1px 0 rgba(0,0,0,.18)}
+.in{border-radius:4px;min-height:30px}
+.acts .in{min-height:30px}
+.ib{border-radius:4px}
+.menu,.pop{border-radius:6px}
+.mbar .btn{min-height:44px}
+/* state, not pills */
+.tag{border:0;background:none;padding:0;font-weight:500;font-size:12.5px;color:var(--mut);display:inline-flex;align-items:center;gap:6px}
+.tag::before{content:"";width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
+.tag.dec{color:var(--tx2);background:none}
+.tag.dec::before{background:currentColor}
+.tag.reo{color:var(--amb)}
+.tag.reo::before{border-style:dashed}
+.dtab .tag::before,.dtab .tag.dec::before{display:none}
+.dtab .tag{font-weight:600;color:var(--tx)}
+
+/* density */
+.main{padding:var(--s4,16px) var(--s5,24px) var(--s4,16px)}
+.h1{font-size:19px}
+.tr{margin-bottom:var(--s1,4px)}
+.blk{margin-top:var(--s4,16px)}
+.d .nr>td,.d .askr>td{padding:var(--s2,8px) var(--s3,12px) var(--s2,8px) 116px}
+.note p,.mine p{font-size:14px;line-height:1.55}
+.nh{font-size:12.5px}
+.queue{width:224px}
+.qi{padding:6px var(--s2,8px)}
+.sh{height:44px}
+
+/* step head with the facts rail */
+.stephead{display:grid;grid-template-columns:minmax(0,68ch) minmax(220px,280px);gap:var(--s6,32px);justify-content:space-between;align-items:start}
+.facts{border-left:1px solid var(--line);padding:2px 0 2px var(--s4,16px);display:flex;flex-direction:column;gap:var(--s2,8px);font-size:12.5px;color:var(--tx2)}
+.fxh{font-size:12px;font-weight:600;color:var(--mut)}
+.fxl{display:flex;flex-direction:column;gap:3px}
+.fxl+.fxl{padding-top:var(--s2,8px);border-top:1px solid var(--line2)}
+.fxl li{display:flex;gap:6px;align-items:center;min-width:0}
+.fxl li .ff{color:var(--tx);text-decoration:none;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxl li .ic{width:14px;height:14px;color:var(--mut)}
+.fxl .fx-find,.fxl .fx-find .ic{color:var(--amb);font-weight:600}
+.fxl .fx-own .ic{color:var(--acc-tx)}
+.fxl .notmet .ic{color:var(--rust)}
+.fxl li .mut{margin-left:auto}
+
+/* signature: gutter markers + overview stripe + scrolling code */
+.dwrap{position:relative;padding-right:14px}
+.dscroll{overflow-x:auto;scrollbar-width:thin}
+.dscroll .d{width:max-content;min-width:100%;table-layout:auto}
+.d .c{overflow:visible;padding-right:var(--s4,16px)}
+.d td.n:nth-child(2){position:relative}
+.gm{position:absolute;left:-2px;top:2px;width:16px;height:16px;display:grid;place-items:center}
+.gm .ic{width:13px;height:13px}
+.gm-find{color:var(--amb)}.gm-own{color:var(--acc-tx)}.gm-msg{color:var(--gm-msg)}
+.stripe{position:absolute;right:0;top:0;width:10px;height:100%;border-left:1px solid var(--line2);background:var(--bg2)}
+.stripe rect{shape-rendering:crispEdges}
+.stripe .tk-add{fill:var(--add-s);opacity:.55}.stripe .tk-del{fill:var(--del-s);opacity:.6}
+.stripe .tm-find{fill:var(--amb)}.stripe .tm-own{fill:var(--acc)}.stripe .tm-msg{fill:var(--gm-msg)}
+.file2>.dwrap,.file>.dwrap{border-top:1px solid var(--line2)}
+.file2>.fexp+.dwrap{border-top:1px solid var(--line2)}
+/* file header viewed toggle (not GitHub's checkbox) */
+.vtog{display:inline-flex;align-items:center;gap:6px;background:none;border:0;border-radius:4px;padding:var(--s1,4px) 6px;color:var(--mut);font-size:12px}
+.vtog:hover{background:var(--bg3);color:var(--tx2)}
+.vtog[aria-pressed=true]{color:var(--tx2);background:var(--bg3)}
+.vtog .ic{width:15px;height:15px}
+.fh2{min-height:36px}
+
+/* findings outrank chat */
+.nl-finding{display:inline-flex;align-items:center;gap:5px;color:var(--amb)}
+.nl-finding .nfi{width:13px;height:13px}
+.openf{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--amb);white-space:nowrap}
+.openf .ic{width:14px;height:14px}
+
+/* status: offline, verdict, finish */
+.st-off{color:var(--amb)}
+.st-off .ic{width:14px;height:14px}
+.vstat{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tx2);font-weight:500}
+.vstat .ic{width:14px;height:14px;color:var(--mut)}
+.fin{text-decoration:none;color:var(--tx2)}
+.verdict .vnow{display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:var(--s3,12px)}
+.verdict .vnow .ic{color:var(--mut)}
+.vopts{display:flex;flex-wrap:wrap;gap:var(--s2,8px);margin-bottom:var(--s2,8px)}
+.vopt{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--ctl);border-radius:4px;padding:5px var(--s3,12px);font-size:13px;color:var(--tx2)}
+.vopt .ic{width:14px;height:14px;color:var(--mut)}
+.vopt[aria-checked=true]{border-color:var(--tx2);color:var(--tx);font-weight:600;background:var(--bg3)}
+.vopt[aria-checked=true] .ic{color:var(--tx2);--on-ic:var(--bg3)}
+.verdict .hint{font-size:12.5px}
+
+/* appearance + shortcuts */
+.pop.appear{width:300px;right:60px;top:48px;gap:var(--s2,8px)}
+.pop .lab{font-size:12px;font-weight:600;color:var(--mut);margin-top:var(--s1,4px)}
+.accs{display:flex;flex-direction:column;gap:2px}
+.accopt{display:flex;align-items:center;gap:var(--s2,8px);background:none;border:0;border-radius:4px;padding:6px var(--s2,8px);font-size:13px;color:var(--tx);text-align:left}
+.accopt[aria-checked=true]{background:var(--bg3);font-weight:600}
+.accsw{width:16px;height:16px;border-radius:4px;background:#2433b8}
+.dark .accsw{background:#8c97ff}
+.accopt.acc-petrol .accsw{background:#0e6577}.dark .accopt.acc-petrol .accsw{background:#5cc2d4}
+.accopt.acc-berry .accsw{background:#9c1f62}.dark .accopt.acc-berry .accsw{background:#f07ab4}
+.accopt.acc-petrol,.accopt.acc-berry{display:flex}
+.pop.sheet{width:420px;left:50%;right:auto;top:90px;margin-left:-210px}
+.kt{border-collapse:collapse;font-size:13px;width:100%}
+.kt td{padding:5px 0;border-top:1px solid var(--line2);color:var(--tx2)}
+.kt tr:first-child td{border-top:0}
+.kt td:first-child{width:150px}
+kbd.k{font:500 11.5px 'JetBrains Mono',monospace;color:var(--tx);background:var(--bg2);border:1px solid var(--ctl);border-bottom-width:2px;border-radius:4px;padding:1px 6px;opacity:1;margin:0}
+.sech .ic{width:15px;height:15px;color:var(--mut)}
+/* polish: back on the 4px scale */
+.qi{padding:var(--s2,8px)}
+.vopt{padding:var(--s1,4px) var(--s3,12px)}
+.vtog{padding:var(--s1,4px) var(--s2,8px)}
+.fxl{gap:var(--s1,4px)}
+.ptgs,.seg2,.lsw,.ta{border-radius:4px}
+/* ---- tool windows (JetBrains-style) ---- */
+.estripe{flex:none;width:26px;display:flex;flex-direction:column;align-items:center;gap:var(--s1,4px);padding:var(--s2,8px) 0;background:var(--bg2)}
+.estripe:empty{display:none}
+.estripe.l{border-right:1px solid var(--line)}
+.estripe.r{border-left:1px solid var(--line)}
+.ebtn{writing-mode:vertical-rl;display:flex;align-items:center;gap:6px;background:none;border:0;border-radius:4px;padding:var(--s2,8px) 3px;font-size:12px;color:var(--tx2)}
+.estripe.l .ebtn{transform:rotate(180deg)}
+.ebtn:hover,.sbtn:hover{background:var(--bg3);color:var(--tx)}
+.ecnt{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.bstrip{flex:none;display:flex;align-items:center;gap:2px;height:28px;padding:0 var(--s2,8px);border-top:1px solid var(--line);background:var(--bg2)}
+.sbtn{display:inline-flex;align-items:center;gap:6px;background:none;border:0;border-radius:4px;padding:2px var(--s2,8px);font-size:12px;color:var(--tx2)}
+.phead{display:flex;align-items:center;gap:var(--s2,8px);font-size:12px;font-weight:600;color:var(--mut);margin:-4px 0 var(--s3,12px)}
+.qh .phide,.phead .phide{margin-right:-4px}
+.phide .ic{width:14px;height:14px}
+.tabs{display:flex;align-items:center}
+.tabl{display:flex;gap:2px}
 /* ---- motion ---- */
 .frame{--ease-out:cubic-bezier(0.16,1,0.3,1);--ease-in:cubic-bezier(0.7,0,0.84,0);--t-fast:120ms;--t-base:200ms;--t-slow:320ms}
 .proto .pstage{display:flex;gap:40px;align-items:flex-start;padding:24px 56px 64px}
@@ -551,9 +825,9 @@ code{font:500 .86em 'JetBrains Mono',ui-monospace,monospace}
 </style></head>
 <body class="proto"><div class="ch"><h1>Motion prototype</h1><p>Click a queue item, Approve or Flag, the assumption toggle and “2 more notes”. On the phone, drag the card or use the buttons. Follows your system theme.</p></div>
 <div class="pstage"><div class="frame app" id="app">
-<header class="sh"><span class="logo"><svg class="ic ic-mark mk" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.4 12.8L14.4 3.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".4"/></svg><span>Walkthrough</span></span><span class="lbl">feature/due-dates</span><span class="bar" aria-hidden="true"><span class="seg dec" data-seg="0"></span><span class="seg dec" data-seg="1"></span><span class="seg dec" data-seg="2"></span><span class="seg " data-seg="3"></span><span class="seg " data-seg="4"></span><span class="seg " data-seg="5"></span><span class="seg " data-seg="6"></span><span class="seg " data-seg="7"></span><span class="seg " data-seg="8"></span></span><span class="prog num" id="prog">3/9</span><span class="sp"></span><span class="st st-needs" id="st"><span class="dot"></span>Needs you</span><button type="button" class="btn sm">Stop</button></header>
+<header class="sh"><span class="logo"><svg class="ic ic-mark mk" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.4 12.8L14.4 3.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".4"/></svg><span>Walkthrough</span></span><span class="kind"><svg class="ic ic-branch " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="4.5" cy="3.8" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="4.5" cy="12.2" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="11.5" cy="5.5" r="1.7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 5.5v5M11.5 7.2c0 2.4-2 3.4-5.4 3.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>Your change</span></span><span class="lbl">feature/due-dates</span><span class="bar" aria-hidden="true"><span class="seg dec" data-seg="0"></span><span class="seg dec" data-seg="1"></span><span class="seg dec" data-seg="2"></span><span class="seg " data-seg="3"></span><span class="seg " data-seg="4"></span><span class="seg " data-seg="5"></span><span class="seg " data-seg="6"></span><span class="seg " data-seg="7"></span><span class="seg " data-seg="8"></span></span><span class="prog num" id="prog">3/9</span><span class="sp"></span><a href="#" class="btn sm ghost fin" title="Finish review: go to the Summary (G S)">Finish review</a><span class="st st-needs" id="st"><span class="dot"></span>Needs you</span><button type="button" class="btn sm">Stop</button></header>
 <div class="row"><nav class="queue" aria-label="What’s left"><div class="qh">Left <span class="cnt num" id="left">5</span></div><div class="qrow" data-q="4"><div class="xin"><a href="#" class="qi cur" data-step="4"><svg class="ic ic-read " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4z" fill="currentColor"/></svg><span class="qt">Parse due dates in the API</span></a></div></div><div class="qrow" data-q="5"><div class="xin"><a href="#" class="qi read" data-step="5"><svg class="ic ic-read " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 1.8a6.2 6.2 0 0 1 0 12.4z" fill="currentColor"/></svg><span class="qt">Date picker</span></a></div></div><div class="qrow" data-q="6"><div class="xin"><a href="#" class="qi " data-step="6"><svg class="ic ic-un " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="qt">Overdue styling</span></a></div></div><div class="qrow" data-q="7"><div class="xin"><a href="#" class="qi " data-step="7"><svg class="ic ic-un " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="qt">Sort by due date</span></a></div></div><div class="qrow" data-q="8"><div class="xin"><a href="#" class="qi " data-step="8"><svg class="ic ic-un " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span class="qt">Tests and docs</span></a></div></div><div class="qfoot"><button type="button" class="decg"><svg class="ic ic-dec " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="currentColor"/><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="var(--on-ic)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="num" id="dec">3</span>&nbsp;decided<svg class="ic ic-chev chv" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></nav>
-<main class="main"><div class="panes"><section class="pane on" data-pane="4"><div class="tr"><h1 class="h1">Parse due dates in the API</h1><span class="tag">Undecided</span></div><p class="ex">Both handlers accept an optional <code>dueDate</code>; <code>parseDueDate</code> turns it into a <code>Date</code> or <code>null</code>.</p><div><button type="button" class="asm" aria-expanded="false" data-asm><svg class="ic ic-chev chv" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>1 assumption</button><div class="asmw"><div class="xin"><p class="asmh">Assumed, not read</p><ul class="asml"><li>The client always sends ISO 8601 strings; the date picker was not read.</li></ul></div></div></div><div class="blk"><div class="file"><div class="fh"><span class="ff">src/api/tasks.ts</span><span class="mut">+10 −2</span></div><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -12,11 +12,19 @@ router setup</td></tr><tr class="ctx"><td class="n">18</td><td class="n">19</td><td class="c"><span class="p"> </span>router.patch(&quot;/tasks/:id&quot;, async (req, res) =&gt; {</td></tr><tr class="ctx"><td class="n">19</td><td class="n">20</td><td class="c"><span class="p"> </span>  const { title, done } = req.body;</td></tr><tr class="del"><td class="n">20</td><td class="n"></td><td class="c"><span class="p">-</span>  const task = await db.tasks.update(req.params.id, { title, done });</td></tr><tr class="add"><td class="n"></td><td class="n">21</td><td class="c"><span class="p">+</span>  const dueDate = parseDueDate(req.body.dueDate);</td></tr><tr class="add"><td class="n"></td><td class="n">22</td><td class="c"><span class="p">+</span>  const task = await db.tasks.update(req.params.id, { title, done, dueDate });</td></tr><tr class="nr"><td colspan="3"><div class="note"><div class="nh"><span class="nl">Thread</span><span class="mut">line 22</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>Does a PATCH without <code>dueDate</code> wipe the date?</p><div class="thread"><div><span class="who">Session</span><p>Yes. Sending only <code>{ done: true }</code> clears an existing due date.</p></div></div><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></td></tr><tr class="ctx"><td class="n">21</td><td class="n">23</td><td class="c"><span class="p"> </span>  res.json(task);</td></tr><tr class="ctx"><td class="n">22</td><td class="n">24</td><td class="c"><span class="p"> </span>});</td></tr><tr class="add"><td class="n"></td><td class="n">25</td><td class="c"><span class="p">+</span>&#8203;</td></tr><tr class="add"><td class="n"></td><td class="n">26</td><td class="c"><span class="p">+</span>function parseDueDate(value?: string): Date | null {</td></tr><tr class="add"><td class="n"></td><td class="n">27</td><td class="c"><span class="p">+</span>  if (!value) return null;</td></tr><tr class="add"><td class="n"></td><td class="n">28</td><td class="c"><span class="p">+</span>  const date = new Date(value);</td></tr><tr class="add"><td class="n"></td><td class="n">29</td><td class="c"><span class="p">+</span>  return isNaN(date.getTime()) ? null : date;</td></tr><tr class="nr"><td colspan="3"><div class="note"><div class="nh"><span class="nl">Finding</span><span class="mut">line 29</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>A typo in the date becomes <code>null</code> and clears it, instead of a 400.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></td></tr><tr class="add"><td class="n"></td><td class="n">30</td><td class="c"><span class="p">+</span>}</td></tr><tr class="mr"><td colspan="3"><button type="button" class="lnk" data-more>2 more notes</button> <span class="mut">· naming, a missing doc comment</span></td></tr><tr class="nr extra"><td colspan="3"><div class="xin"><div class="note"><div class="nh"><span class="nl">Note</span><span class="mut">line 26</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p><code>parseDueDate</code> could live in <code>src/lib/dates.ts</code>.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div><div class="note"><div class="nh"><span class="nl">Note</span><span class="mut">line 26</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>Add a doc comment explaining the null case.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></div></td></tr></table></div></div></section><section class="pane" data-pane="5"><div class="tr"><h1 class="h1">Date picker</h1><span class="tag">Undecided</span></div><p class="ex">Adds a native date input to the task form and sends ISO 8601.</p><div class="blk"><div class="file"><div class="fh"><span class="ff">src/ui/TaskForm.html</span><span class="mut">+1 −0</span></div><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div></div></section><section class="pane" data-pane="6"><div class="tr"><h1 class="h1">Overdue styling</h1><span class="tag">Undecided</span></div><p class="ex">Tasks past their due date show an amber “Overdue” label.</p><div class="blk"><div class="file"><div class="fh"><span class="ff">src/ui/TaskForm.html</span><span class="mut">+1 −0</span></div><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div></div></section><section class="pane" data-pane="7"><div class="tr"><h1 class="h1">Sort by due date</h1><span class="tag">Undecided</span></div><p class="ex">The list sorts by due date, then by creation time.</p><div class="blk"><div class="file"><div class="fh"><span class="ff">src/ui/TaskForm.html</span><span class="mut">+1 −0</span></div><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div></div></section><section class="pane" data-pane="8"><div class="tr"><h1 class="h1">Tests and docs</h1><span class="tag">Undecided</span></div><p class="ex">Adds tests for parsing and documents the new field.</p><div class="blk"><div class="file"><div class="fh"><span class="ff">src/ui/TaskForm.html</span><span class="mut">+1 −0</span></div><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div></div></section></div><div class="acts"><button type="button" class="btn pri" id="approve">Approve</button><button type="button" class="btn" id="flag">Flag</button><input class="in" aria-label="Ask about this step" placeholder="Ask about this step…"></div></main></div></div><div class="frame m wp" id="mob"><header class="sh"><span class="logo"><svg class="ic ic-mark mk" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.4 12.8L14.4 3.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".4"/></svg><span>Walkthrough</span></span><span class="sp"></span><span class="st st-listening"><span class="dot"></span>Listening</span></header>
+<main class="main"><div class="panes"><section class="pane on" data-pane="4"><div class="tr"><h1 class="h1">Parse due dates in the API</h1><span class="tag">Undecided</span></div><p class="ex">Both handlers accept an optional <code>dueDate</code>; <code>parseDueDate</code> turns it into a <code>Date</code> or <code>null</code>.</p><div><button type="button" class="asm" aria-expanded="false" data-asm><svg class="ic ic-chev chv" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>1 assumption</button><div class="asmw"><div class="xin"><p class="asmh">Assumed, not read</p><ul class="asml"><li>The client always sends ISO 8601 strings; the date picker was not read.</li></ul></div></div></div><div class="blk"><div class="file2"><div class="fh2"><button type="button" class="ib ftog" aria-expanded="true" aria-label="Collapse src/api/tasks.ts"><svg class="ic ic-chevd " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="ff">src/api/tasks.ts</span><span class="mut num">+10 −2</span><span class="sp"></span><button type="button" class="vtog" aria-pressed="false" aria-label="Mark as viewed" title="Mark as viewed (V)"><svg class="ic ic-eye " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button></div><div class="dwrap"><div class="dscroll"><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -12,11 +12,19 @@ router setup</td></tr><tr class="ctx"><td class="n">18</td><td class="n">19</td><td class="c"><span class="p"> </span>router.patch(&quot;/tasks/:id&quot;, async (req, res) =&gt; {</td></tr><tr class="ctx"><td class="n">19</td><td class="n">20</td><td class="c"><span class="p"> </span>  const { title, done } = req.body;</td></tr><tr class="del"><td class="n">20</td><td class="n"></td><td class="c"><span class="p">-</span>  const task = await db.tasks.update(req.params.id, { title, done });</td></tr><tr class="add"><td class="n"></td><td class="n">21</td><td class="c"><span class="p">+</span>  const dueDate = parseDueDate(req.body.dueDate);</td></tr><tr class="add"><td class="n"></td><td class="n"><span class="gm gm-msg" aria-hidden="true"><svg class="ic ic-msg " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>22</td><td class="c"><span class="p">+</span>  const task = await db.tasks.update(req.params.id, { title, done, dueDate });</td></tr><tr class="nr"><td colspan="3"><div class="note"><div class="nh"><span class="nl nl-thread">Thread</span><span class="mut">line 22</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>Does a PATCH without <code>dueDate</code> wipe the date?</p><div class="thread"><div><span class="who">Session</span><p>Yes. Sending only <code>{ done: true }</code> clears an existing due date.</p></div></div><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></td></tr><tr class="ctx"><td class="n">21</td><td class="n">23</td><td class="c"><span class="p"> </span>  res.json(task);</td></tr><tr class="ctx"><td class="n">22</td><td class="n">24</td><td class="c"><span class="p"> </span>});</td></tr><tr class="add"><td class="n"></td><td class="n">25</td><td class="c"><span class="p">+</span>&#8203;</td></tr><tr class="add"><td class="n"></td><td class="n">26</td><td class="c"><span class="p">+</span>function parseDueDate(value?: string): Date | null {</td></tr><tr class="add"><td class="n"></td><td class="n">27</td><td class="c"><span class="p">+</span>  if (!value) return null;</td></tr><tr class="add"><td class="n"></td><td class="n">28</td><td class="c"><span class="p">+</span>  const date = new Date(value);</td></tr><tr class="add"><td class="n"></td><td class="n"><span class="gm gm-find" aria-hidden="true"><svg class="ic ic-warn " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M8 2l6.5 11.5h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.5v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg></span>29</td><td class="c"><span class="p">+</span>  return isNaN(date.getTime()) ? null : date;</td></tr><tr class="nr"><td colspan="3"><div class="note"><div class="nh"><span class="nl nl-finding"><svg class="ic ic-warn nfi" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M8 2l6.5 11.5h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.5v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg>Finding</span><span class="mut">line 29</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>A typo in the date becomes <code>null</code> and clears it, instead of a 400.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></td></tr><tr class="add"><td class="n"></td><td class="n">30</td><td class="c"><span class="p">+</span>}</td></tr><tr class="mr"><td colspan="3"><button type="button" class="lnk" data-more>2 more notes</button> <span class="mut">· naming, a missing doc comment</span></td></tr><tr class="nr extra"><td colspan="3"><div class="xin"><div class="note"><div class="nh"><span class="nl nl-note">Note</span><span class="mut">line 26</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p><code>parseDueDate</code> could live in <code>src/lib/dates.ts</code>.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div><div class="note"><div class="nh"><span class="nl nl-note">Note</span><span class="mut">line 26</span><span class="sp"></span><button type="button" class="ib" aria-label="Note actions" aria-haspopup="menu"><svg class="ic ic-more " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg></button></div><p>Add a doc comment explaining the null case.</p><div class="nfoot"><button type="button" class="lnk">Reply</button></div></div></div></td></tr></table></div><svg class="stripe" viewBox="0 0 8 100" preserveAspectRatio="none" aria-hidden="true"><rect class="tk-del" x="1" y="21.43" width="6" height="7.14"/><rect class="tk-add" x="1" y="28.57" width="6" height="14.29"/><rect class="tk-add" x="1" y="57.14" width="6" height="42.86"/><rect class="tm-msg" x="0" y="35.71" width="8" height="3"/><rect class="tm-find" x="0" y="85.71" width="8" height="3"/></svg></div></div></div></section><section class="pane" data-pane="5"><div class="tr"><h1 class="h1">Date picker</h1><span class="tag">Undecided</span></div><p class="ex">Adds a native date input to the task form and sends ISO 8601.</p><div class="blk"><div class="file2"><div class="fh2"><button type="button" class="ib ftog" aria-expanded="true" aria-label="Collapse src/ui/TaskForm.html"><svg class="ic ic-chevd " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="ff">src/ui/TaskForm.html</span><span class="mut num">+1 −0</span><span class="sp"></span><button type="button" class="vtog" aria-pressed="false" aria-label="Mark as viewed" title="Mark as viewed (V)"><svg class="ic ic-eye " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button></div><div class="dwrap"><div class="dscroll"><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div><svg class="stripe" viewBox="0 0 8 100" preserveAspectRatio="none" aria-hidden="true"><rect class="tk-add" x="1" y="66.67" width="6" height="33.33"/></svg></div></div></div></section><section class="pane" data-pane="6"><div class="tr"><h1 class="h1">Overdue styling</h1><span class="tag">Undecided</span></div><p class="ex">Tasks past their due date show an amber “Overdue” label.</p><div class="blk"><div class="file2"><div class="fh2"><button type="button" class="ib ftog" aria-expanded="true" aria-label="Collapse src/ui/TaskForm.html"><svg class="ic ic-chevd " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="ff">src/ui/TaskForm.html</span><span class="mut num">+1 −0</span><span class="sp"></span><button type="button" class="vtog" aria-pressed="false" aria-label="Mark as viewed" title="Mark as viewed (V)"><svg class="ic ic-eye " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button></div><div class="dwrap"><div class="dscroll"><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div><svg class="stripe" viewBox="0 0 8 100" preserveAspectRatio="none" aria-hidden="true"><rect class="tk-add" x="1" y="66.67" width="6" height="33.33"/></svg></div></div></div></section><section class="pane" data-pane="7"><div class="tr"><h1 class="h1">Sort by due date</h1><span class="tag">Undecided</span></div><p class="ex">The list sorts by due date, then by creation time.</p><div class="blk"><div class="file2"><div class="fh2"><button type="button" class="ib ftog" aria-expanded="true" aria-label="Collapse src/ui/TaskForm.html"><svg class="ic ic-chevd " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="ff">src/ui/TaskForm.html</span><span class="mut num">+1 −0</span><span class="sp"></span><button type="button" class="vtog" aria-pressed="false" aria-label="Mark as viewed" title="Mark as viewed (V)"><svg class="ic ic-eye " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button></div><div class="dwrap"><div class="dscroll"><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div><svg class="stripe" viewBox="0 0 8 100" preserveAspectRatio="none" aria-hidden="true"><rect class="tk-add" x="1" y="66.67" width="6" height="33.33"/></svg></div></div></div></section><section class="pane" data-pane="8"><div class="tr"><h1 class="h1">Tests and docs</h1><span class="tag">Undecided</span></div><p class="ex">Adds tests for parsing and documents the new field.</p><div class="blk"><div class="file2"><div class="fh2"><button type="button" class="ib ftog" aria-expanded="true" aria-label="Collapse src/ui/TaskForm.html"><svg class="ic ic-chevd " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="ff">src/ui/TaskForm.html</span><span class="mut num">+1 −0</span><span class="sp"></span><button type="button" class="vtog" aria-pressed="false" aria-label="Mark as viewed" title="Mark as viewed (V)"><svg class="ic ic-eye " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg></button></div><div class="dwrap"><div class="dscroll"><table class="d"><colgroup><col class="cn"><col class="cn"><col></colgroup><tr class="i"><td></td><td></td><td class="c">@@ -14,3 +14,4 @@</td></tr><tr class="ctx"><td class="n">14</td><td class="n">14</td><td class="c"><span class="p"> </span>  &lt;label&gt;Title &lt;input name=&quot;title&quot;&gt;&lt;/label&gt;</td></tr><tr class="add"><td class="n"></td><td class="n">15</td><td class="c"><span class="p">+</span>  &lt;label&gt;Due &lt;input type=&quot;date&quot; name=&quot;dueDate&quot;&gt;&lt;/label&gt;</td></tr></table></div><svg class="stripe" viewBox="0 0 8 100" preserveAspectRatio="none" aria-hidden="true"><rect class="tk-add" x="1" y="66.67" width="6" height="33.33"/></svg></div></div></div></section></div><div class="acts"><button type="button" class="btn pri" id="approve">Approve</button><button type="button" class="btn" id="flag">Flag</button><input class="in" aria-label="Ask about this step" placeholder="Ask about this step…"></div></main></div></div><div class="frame m wp" id="mob"><header class="sh"><span class="logo"><svg class="ic ic-mark mk" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.4 12.8L14.4 3.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" opacity=".4"/></svg><span>Walkthrough</span></span><span class="sp"></span><span class="st st-listening"><span class="dot"></span>Listening</span></header>
 <div class="deck" id="deck"><span class="edge l" aria-hidden="true"><svg class="ic ic-left " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Flag</span>
 <article class="sc nextc" aria-hidden="true"><div class="tr"><span class="h1">Date picker</span><span class="tag">Undecided</span></div><p class="ex">Adds a native date input to the task form.</p></article>
 <article class="sc topc" id="card" tabindex="0" aria-label="Step 4, swipe right to approve, left to flag"><span class="dchip a" aria-hidden="true"><svg class="ic ic-met " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 8.2l2 2 4-4.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Approve</span><span class="dchip f" aria-hidden="true"><svg class="ic ic-warn " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M8 2l6.5 11.5h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.5v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg>Flag</span><div class="tr"><h2 class="h1">Parse due dates in the API</h2><span class="tag">Undecided</span></div><p class="ex">Both handlers accept an optional <code>dueDate</code>; <code>parseDueDate</code> turns it into a <code>Date</code> or <code>null</code>.</p><div class="cfind"><svg class="ic ic-warn " viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true"><path d="M8 2l6.5 11.5h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.5v3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.6" r=".9" fill="currentColor"/></svg><span><b>Finding</b> · line 29: a typo in the date clears it.</span></div><span class="mut">2 files · 2 notes</span></article></div>
