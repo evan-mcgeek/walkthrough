@@ -494,7 +494,7 @@ Step state is an 8px dot plus a 12.5px 500 word, with no outline or fill around 
 
 ### Navigation
 - **Header (44px):** the 16px lockup, the kind label, the mono branch or pull-request label, segmented progress bar (180px) with "3/9", then at the right: verdict status (once chosen), Finish review, session status, Stop, and a More (…) icon button for Appearance and shortcuts. No panel controls live in the header.
-- **Kind label:** a 16px icon plus "Your change" or "Review request" in 12.5px muted text, set off by a 1px rule on its left with 12px padding.
+- **Kind label:** the session's own words for the kind (for example "Your change" or "Review request") in 12.5px muted text, set off by a 1px rule on its left with 12px padding; no icon, since the tool knows only the session's free text (ADR 0005). At 390px the kind takes the label's place next to the logo, the label stays for screen readers only, the count is dropped, and the progress bar runs full width under the header.
 - **Progress bar:** decided segments in the accent, read and current in progress-read grey, reopened in amber, unread in the rule tone.
 - **Diff-Preview switch:** joined segmented control, 1px control edge, 6px group corners; pressed is surface tint with ink, never the accent.
 - **Verdict status:** a muted flag icon plus the chosen verdict in 12.5px 500 secondary ink. Neutral, whatever the verdict.
