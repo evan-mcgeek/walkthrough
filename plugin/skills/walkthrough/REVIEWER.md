@@ -51,6 +51,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
 - Pin the unconfirmed ones, and anything that is a matter of taste, with the low-priority flag.
 - A finding that goes against a convention in the project's instructions is settled; leave it out.
+- Check the steps in reading order: run the reviewers over the whole change, then confirm and pin each step's findings before the next, and keep every step marked as being checked until its findings are pinned with their actions.
 
 ### My own comments
 

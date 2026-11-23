@@ -32,6 +32,11 @@ _Avoid_: Hunk, chunk
 A step the agent marked as not worth reading line by line, shown collapsed with the agent's reason for each file.
 _Avoid_: Mechanical step, generated step
 
+**Being checked**:
+A step the session is still checking, such as with the review policy's reviewers, so its findings may still arrive; the page holds its actions until the session records it as checked.
+A finding that arrives on a step after the person decided it puts the step back in what is left, with their decision kept.
+_Avoid_: Pending, in review
+
 ### What the agent puts on the page
 
 **Note**:

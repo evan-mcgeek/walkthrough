@@ -510,6 +510,7 @@ The IDE pattern, played straight.
 
 ### Queue ("To review")
 The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; reopened amber; not met rust; session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
+A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding since you decided"; its decision stays.
 
 ### In This Step (facts rail)
 Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons.
@@ -528,9 +529,10 @@ The reviewer's own comment is an accent-wash box with a 1px accent-line border, 
 
 ### Action Bar
 Docked at the foot of the step: Approve, Flag, any session offers, the Ask box. While the step has open findings, Approve is a secondary button and an amber "N open finding(s)" with a warning icon closes the row.
+While the session is still checking the step, its actions are held: drawn disabled, followed by the muted 12.5px hint "Decide once the session has checked this step.", and the A and F keys and the swipe deck decide nothing. The Ask box stays live.
 
 ### Summary Step
-The title with an "N still open" state, one plain 14.5px count line in secondary ink (no big-number tiles), then sections separated by rules (16px padding, 860px max): Still open, **Verdict**, Decided (a table by decision label with right-aligned counts), Flagged, Your comments, Checklist (compact), and [AI] drafts (status pill Accepted, Edited or Dropped on surface tint; a dropped draft is struck through and muted). The Verdict section reads "No verdict yet. Check what is still open, then choose." until chosen, then "Your verdict: <label>" with a Change link; its options are radio buttons offered by the session (canvas, 1px control edge, 4px corners, 5px 12px, muted icon), the chosen one with a secondary-ink border, surface tint, ink text at 600 and a filled icon; a 12.5px hint names where the verdict goes. A finish row closes the page: the primary action, disabled until a verdict is chosen, then a 13px hint on its own line.
+The title with an "N still open" state (a step still being checked counts, listed as "Being checked" with the dashed not-checked icon), one plain 14.5px count line in secondary ink (no big-number tiles), then sections separated by rules (16px padding, 860px max): Still open, **Verdict**, Decided (a table by decision label with right-aligned counts), Flagged, Your comments, Checklist (compact), and [AI] drafts (status pill Accepted, Edited or Dropped on surface tint; a dropped draft is struck through and muted). The Verdict section reads "No verdict yet. Check what is still open, then choose." until chosen, then "Your verdict: <label>" with a Change link; its options are radio buttons offered by the session (canvas, 1px control edge, 4px corners, 5px 12px, muted icon), the chosen one with a secondary-ink border, surface tint, ink text at 600 and a filled icon; a 12.5px hint names where the verdict goes. A finish row closes the page: the primary action, disabled until a verdict is chosen, then a 13px hint on its own line.
 
 ### Popovers: Appearance and Shortcuts
 Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Keyboard shortcuts** (420px, opened with ?): a two-column table, rows on soft rules, key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
@@ -538,6 +540,8 @@ Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px
 ### Notices
 - **Neutral:** surface fill, 1px rule, 7px radius, muted icon.
 - **Attention:** amber wash, no border, amber icon. Full-width banners use the same pair under the header.
+- **Being checked:** a neutral notice under the step title, with the dashed not-checked icon: "The session is still checking this step. Findings may still arrive."
+- **New finding banner:** the attention banner under the header names a finding that lands on a step the person read or decided ("New finding on step 8, Ultramarine, accents and Appearance, which you approved."; several read as one, "3 new findings on steps 8 and 10."), with a small "Go to step" button and a close icon button to dismiss it. It is for the open page only; after a reload the queue sub-line carries it.
 - **Session question:** canvas fill, 1px amber border, 8px radius, amber 650 heading.
 - **Detached:** 1px dashed control edge, 8px radius.
 - **Undo toast:** inverted (ink fill, canvas text and icon), 8px radius, 14px text, with an underlined Undo link in 650. It rises 12px over 200ms after a 120ms delay.

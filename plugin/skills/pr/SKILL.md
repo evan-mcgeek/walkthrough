@@ -103,6 +103,13 @@ Offer the verdict's choices on the verdict and the finishing action first on the
 A step or checklist item that is gone takes its actions with it, so record actions on new ones.
 `walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
 
+## Checking steps
+
+When the review policy has you check the steps after recording them, such as with its reviewers, mark every step you will check with `walkthrough checking <step id>...` right after `walkthrough steps`.
+The page then holds those steps' actions, so the person cannot decide a step before its findings are on it.
+As you finish each step, in reading order, pin that step's notes and record their actions, then run `walkthrough checking` again with the steps still left, and with no ids once the last one is done.
+A note pinned on a step after it was cleared is still allowed; the page warns the person.
+
 ## Listening for the page
 
 The page reaches you only while `walkthrough listen` runs, and the chat stays free while it does.

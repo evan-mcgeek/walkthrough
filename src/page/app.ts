@@ -68,6 +68,9 @@ const drafts = new Map<string, string>();
 const decisionOf = (item: Item) => walkthrough.decided[itemKey(item)] ?? null;
 const stepDecided = (step: Step) => decisionOf({ type: 'step', id: step.id }) !== null;
 const stepReopened = (step: Step) => walkthrough.reopened[itemKey({ type: 'step', id: step.id })];
+/** The session is still checking the step, so its actions wait. */
+const beingChecked = (step: Step) => (walkthrough.checking ?? []).includes(step.id);
+const HELD = 'Decide once the session has checked this step.';
 /** The label of the item's action `id`, or the id when the session no longer offers it. */
 const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
 
@@ -1573,15 +1576,20 @@ function stepBody(step: Step): { prose: HTMLElement[]; code: HTMLElement[] } {
   switch (step.kind) {
     case 'step':
       return {
-        prose: [markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes],
+        prose: [...checkingNotice(step), markdown(step.explanation, 'explanation'), ...said, ...assumedView(step), ...notes],
         code: [el('div', { className: 'block' }, diffView(step, pinned))],
       };
     case 'folded':
       return {
-        prose: [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...said, ...notes],
+        prose: [...checkingNotice(step), el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...said, ...notes],
         code: foldedView(step, pinned),
       };
   }
+}
+
+function checkingNotice(step: Step): HTMLElement[] {
+  if (!beingChecked(step)) return [];
+  return [el('div', { className: 'notice checking' }, icon('unchecked'), el('span', {}, 'The session is still checking this step. Findings may still arrive.'))];
 }
 
 /** What the person and the session said about the step's decision, or the decision it had before it reopened. */
@@ -1623,12 +1631,15 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   // While findings are open, Approve weighs no more than Flag.
   const open = openFindings(step);
   const choices = decided ? change : actionGroup(item, action => (open && action.id === 'approve' ? 'secondary' : stepLook(action)));
+  const held = beingChecked(step) ? [el('span', { className: 'held' }, HELD)] : [];
+  if (held.length)
+    for (const button of [choices, ...choices.querySelectorAll('button')]) if (button instanceof HTMLButtonElement) button.disabled = true;
   const asking = asks ? [ask] : [];
   const count = open ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))] : [];
-  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...asking, ...count))];
+  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...held, ...asking, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
-  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, ...count, choices)];
+  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, ...held, ...count, choices)];
 }
 
 /** Asks about the whole step, as threads under it. */
@@ -1740,19 +1751,26 @@ function queueRow(
 
 function stepRow(step: Step, isCurrent: boolean): HTMLElement {
   const current = isCurrent && 'step';
-  if (stepDecided(step)) {
-    const decision = decisionOf({ type: 'step', id: step.id });
-    const label = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : '';
-    return queueRow(step.id, 'decided', 'decided', step.title, { text: `Decided: ${label}` }, current);
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  if (decision) {
+    const sub = lateFindings(step).length
+      ? { text: 'New finding since you decided', attention: true }
+      : { text: `Decided: ${labelOf(item, decision.action)}` };
+    return queueRow(step.id, 'decided', 'decided', step.title, sub, current);
   }
-  if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, { text: 'Reopened' }, current);
+  const checking = beingChecked(step) ? { text: 'Being checked' } : null;
+  if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, checking ?? { text: 'Reopened' }, current);
   if (step.kind === 'folded') {
     const problems = step.problems.length ? { text: plural(step.problems.length, 'problem'), attention: true } : null;
-    return queueRow(step.id, 'folded', 'folded', step.title, problems, current);
+    return queueRow(step.id, 'folded', 'folded', step.title, checking ?? problems, current);
   }
   const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, null, current);
+  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, checking, current);
 }
+
+/** A step is left while it is undecided, or a finding was pinned on it after the person decided it. */
+const stepLeft = (step: Step) => !stepDecided(step) || lateFindings(step).length > 0;
 
 /** Checklist items that still need the person: marked not met by the session, or offering actions not yet decided. */
 function leftItems(): ChecklistItem[] {
@@ -1821,7 +1839,7 @@ function queueSelect(view: View, left: [string, string][], decided: Step[]): HTM
 function queueView(view: View): HTMLElement[] {
   const { steps } = walkthrough;
   const current = view.kind === 'step' ? view.step : undefined;
-  const undecided = steps.filter(step => !stepDecided(step));
+  const undecided = steps.filter(stepLeft);
   const fromSession = sessionRow(view);
   const rows = [...undecided.map(step => stepRow(step, step === current)), ...fromSession];
   const left: [string, string][] = undecided.map(step => [step.id, step.title]);
@@ -1836,7 +1854,7 @@ function queueView(view: View): HTMLElement[] {
   leftCount.dataset['motion'] = 'count:left';
   const head = panelHead('queue', el('h2', { className: 'queue-head', id: 'queue-head' }, PANEL.queue.title, ...(counted ? [leftCount] : [])));
   const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
-  const decided = steps.filter(stepDecided);
+  const decided = steps.filter(step => !stepLeft(step));
   const open = opened.has('decided') || (current !== undefined && decided.includes(current));
   const decidedCount = el('span', {}, `${String(decided.length)} decided`);
   decidedCount.dataset['motion'] = 'count:decided';
@@ -1974,15 +1992,22 @@ function stillOpen(): { item: Item; address: string; title: string }[] {
     address: `checklist-${one.id}`,
     title: plain(one.text),
   }));
-  return [...steps, ...notes, ...items].filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0);
+  const checking = walkthrough.checking ?? [];
+  return [...steps, ...notes, ...items].filter(
+    one =>
+      (one.item.type === 'step' && checking.includes(one.item.id)) ||
+      (!decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0),
+  );
 }
 
 function openView(): HTMLElement {
   const rows = stillOpen().map(({ item, address, title }) => {
-    const reopened = walkthrough.reopened[itemKey(item)];
-    const state = reopened ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : 'Undecided';
+    const checking = item.type === 'step' && (walkthrough.checking ?? []).includes(item.id);
+    const reopened = !checking && walkthrough.reopened[itemKey(item)];
+    const state = checking ? 'Being checked' : reopened ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : 'Undecided';
     const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `summary-open:${itemKey(item)}`);
-    return el('li', { className: reopened ? 'reopened' : '' }, icon(reopened ? 'reopened' : 'unread'), el('span', {}, link, el('span', { className: 'muted' }, state)));
+    const mark = checking ? 'unchecked' : reopened ? 'reopened' : 'unread';
+    return el('li', { className: reopened ? 'reopened' : '' }, icon(mark), el('span', {}, link, el('span', { className: 'muted' }, state)));
   });
   const body = rows.length ? el('ul', { className: 'summary-list open-list' }, ...rows) : el('p', { className: 'muted' }, 'Nothing; everything is decided.');
   return summarySection('Still open', null, body);
@@ -2416,8 +2441,8 @@ function deckView(): HTMLElement {
   }
   const next = walkthrough.steps.find(step => step !== top && !stepDecided(step));
   const item: Item = { type: 'step', id: top.id };
-  // Swiping right means Approve only while the step offers the built-in actions.
-  const swipes = builtIn(walkthrough.actions[itemKey(item)] ?? []);
+  // Swiping right means Approve only while the step offers the built-in actions, and decides nothing while it is being checked.
+  const swipes = builtIn(walkthrough.actions[itemKey(item)] ?? []) && !beingChecked(top);
   const card = cardView(top, true, swipes);
   const edge = (side: 'left' | 'right', mark: IconName, label: string) => {
     const shown = el('span', { className: `edge ${side}` }, ...(side === 'left' ? [icon(mark), label] : [label, icon(mark)]));
@@ -2441,9 +2466,11 @@ function deckView(): HTMLElement {
         fling(deck, top, to);
       };
   }
-  const hint = swipes
-    ? 'Swipe right to approve, left to flag. Tap to open the step.'
-    : "The session chose this step's actions; use the buttons. Tap to open the step.";
+  const hint = beingChecked(top)
+    ? 'Tap to open the step.'
+    : swipes
+      ? 'Swipe right to approve, left to flag. Tap to open the step.'
+      : "The session chose this step's actions; use the buttons. Tap to open the step.";
   section.append(deck, el('p', { className: 'swipe-hint' }, hint), ...bar);
   return section;
 }
@@ -2593,6 +2620,81 @@ const stepNotesOf = (step: Step) =>
 
 /** The step's findings the person has not decided yet; which notes are findings is the session's flag. */
 const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id })).length;
+
+/** The step's open findings pinned after the person decided it; the step's own decision stays. */
+function lateFindings(step: Step): Note[] {
+  const decided = decisionOf({ type: 'step', id: step.id });
+  if (!decided) return [];
+  return stepNotesOf(step).filter(note => note.note.finding && note.at > decided.at && !decisionOf({ type: 'note', id: note.id }));
+}
+
+/** The findings the page has drawn, none before its first drawing. */
+let seenFindings: Set<string> | null = null;
+/** Findings that arrived on a step the person read or decided, named in the banner until they go to it or dismiss it. */
+let arrived: string[] = [];
+
+/** What the person did with the step, for the banner: Approve and Flag in their past tense, the session's own actions by label. */
+function doneWith(step: Step): string {
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  if (!decision) return 'read';
+  const label = labelOf(item, decision.action).toLowerCase();
+  const past: Record<string, string> = { approve: 'approved', flag: 'flagged' };
+  return builtIn(walkthrough.actions[itemKey(item)] ?? []) ? (past[decision.action] ?? label) : `chose ${label}`;
+}
+
+const listed = (words: string[]) => (words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1) ?? ''}` : (words[0] ?? ''));
+
+function dismissArrived(): void {
+  arrived = [];
+  const box = region('alert');
+  if (box.dataset['kind'] !== 'own') return;
+  box.hidden = true;
+  box.replaceChildren();
+  delete box.dataset['kind'];
+  delete box.dataset['text'];
+}
+
+/** Raises the banner when a finding lands on a step the person read or decided; an error or offline banner goes first. */
+function arrivedBanner(): void {
+  if (readOnly || stopped) return;
+  const findings = session.conversation.filter((entry): entry is Note => isNote(entry) && entry.note.finding === true && !answersAsk(entry));
+  const seen = seenFindings;
+  if (seen)
+    for (const note of findings) {
+      const step = walkthrough.steps.find(one => one.id === anchorOf(note));
+      if (!seen.has(note.id) && step && (stepDecided(step) || walkthrough.read.includes(step.id))) arrived.push(note.id);
+    }
+  seenFindings = new Set(findings.map(note => note.id));
+  const notes = findings.filter(note => arrived.includes(note.id));
+  const steps = walkthrough.steps.filter(step => notes.some(note => anchorOf(note) === step.id));
+  const box = region('alert');
+  const own = box.dataset['kind'] === 'own';
+  const [first] = steps;
+  if (!first) {
+    if (own) dismissArrived();
+    return;
+  }
+  if (!box.hidden && !own) return;
+  const text =
+    notes.length === 1
+      ? `New finding on step ${String(stepNumber(first.id))}, ${first.title}, which you ${doneWith(first)}.`
+      : `${String(notes.length)} new findings on ${steps.length === 1 ? 'step' : 'steps'} ${listed(steps.map(step => String(stepNumber(step.id))))}.`;
+  if (own && box.dataset['text'] === text) return;
+  const goTo = el('button', { type: 'button', className: 'btn small' }, 'Go to step');
+  goTo.onclick = () => {
+    dismissArrived();
+    go(first.id);
+  };
+  const dismiss = el('button', { type: 'button', className: 'icon-button', title: 'Dismiss' }, icon('close'));
+  dismiss.setAttribute('aria-label', 'Dismiss');
+  dismiss.onclick = dismissArrived;
+  box.dataset['kind'] = 'own';
+  box.dataset['text'] = text;
+  box.className = 'banner attention';
+  box.replaceChildren(icon('warn'), el('span', { className: 'banner-text' }, text), goTo, dismiss);
+  box.hidden = false;
+}
 
 /** Opens whatever hides a note in the step and brings it into view. */
 function showNote(step: Step, note: Note): void {
@@ -2812,6 +2914,7 @@ function render(): void {
       ? [el('section', { className: 'step split' }, el('div', { className: 'prose' }, ...prosePane.childNodes), el('div', { className: 'code' }, ...codePane.childNodes))]
       : [...main.childNodes].filter(node => node !== leavingPane);
   drawHeader();
+  arrivedBanner();
   // Drawn while hidden too, as its edge button counts what it holds.
   queue.replaceChildren(...queueView(view));
   queue.hidden = !shows('queue');
@@ -2998,7 +3101,7 @@ function takeStepAction(id: string): void {
   const item: Item = { type: 'step', id: step.id };
   const key = itemKey(item);
   const action = walkthrough.actions[key]?.find(one => one.id === id);
-  if (action && (!stepDecided(step) || changing.has(key))) take(item, action);
+  if (action && !beingChecked(step) && (!stepDecided(step) || changing.has(key))) take(item, action);
 }
 
 /** Where the focus goes back to once a popover closes: the control that had it, or the one a redraw put in its place. */

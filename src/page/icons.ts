@@ -69,6 +69,7 @@ const ICONS = {
   previous: [line('M10 3.5L5.5 8l4.5 4.5')],
   next: [line('M6 3.5L10.5 8 6 12.5')],
   minus: [line('M3.5 8h9', 1.6)],
+  close: [line('M4.5 4.5l7 7M11.5 4.5l-7 7', 1.6)],
   keyboard: [
     ['rect', { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
     line('M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6', 1.4),

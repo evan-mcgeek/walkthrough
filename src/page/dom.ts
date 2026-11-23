@@ -90,6 +90,12 @@ const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {
   const box = region('alert');
+  // A banner the page raised on its own stays until the person dismisses it.
+  if (message === null && box.dataset['kind'] === 'own') {
+    document.body.classList.remove('unreachable');
+    return;
+  }
+  box.dataset['kind'] = 'error';
   box.className = 'banner attention';
   box.replaceChildren(...(message === null ? [] : [icon('warn'), el('span', {}, message)]));
   box.hidden = message === null;
@@ -104,6 +110,7 @@ export function showUnreachable({ name, reopen, retry }: PageName): void {
   // Drawn once: a banner redrawn on every failed poll is announced again and takes the focus off Retry.
   if (document.body.classList.contains('unreachable')) return;
   const box = region('alert');
+  box.dataset['kind'] = 'error';
   box.className = 'banner attention';
   box.replaceChildren(
     icon('offline'),
