@@ -863,6 +863,11 @@
   cursor: pointer;
 }
 
+/* Violet is too close to the ink fill; the toast's own text colour inverts with it. */
+.toast-undo:focus-visible {
+  outline-color: var(--canvas);
+}
+
 /* The rail's phone form, shown only at phone width. */
 .queue-select {
   display: none;

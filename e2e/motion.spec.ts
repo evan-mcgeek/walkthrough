@@ -156,3 +156,17 @@ test('the Undo toast leaves by itself after a short time, and stays while the po
 
   await expect(toast).toBeHidden();
 });
+
+test("Undo's focus ring takes the toast's text colour, which stands out on its fill in both themes", async ({ page }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.getByRole('group', { name: 'Decide' }).getByRole('button', { name: 'Approve' }).click();
+    const toast = page.locator('.toast');
+    await expect(toast).toBeVisible();
+    const [ring, text] = await toast.getByRole('button', { name: 'Undo' }).evaluate((undo: HTMLButtonElement) => {
+      undo.focus({ focusVisible: true });
+      return [getComputedStyle(undo).outlineColor, getComputedStyle(undo.closest('.toast') ?? undo).color];
+    });
+    expect(ring).toBe(text);
+  }
+});
