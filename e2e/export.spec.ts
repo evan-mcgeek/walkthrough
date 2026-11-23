@@ -40,6 +40,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
 
   await expect(exported.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   await expect(exported.getByText(/^Walkthrough export · .+ · 3 steps, 1 decided$/)).toBeVisible();
+  expect((await exported.getByRole('main').boundingBox())?.width).toBe(900);
   const shown = exported.getByRole('region', { name: 'Login check' });
   await expect(shown.getByRole('heading', { level: 2 })).toHaveText('1Login checkDecided: Flag');
   await expect(shown.getByRole('strong')).toHaveText('login');

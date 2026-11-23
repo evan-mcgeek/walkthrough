@@ -8,7 +8,7 @@
   height: auto;
 }
 
-.exported .panes {
+.exported :is(.panes, .center) {
   display: block;
 }
 
