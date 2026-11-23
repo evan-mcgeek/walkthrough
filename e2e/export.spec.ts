@@ -19,6 +19,10 @@ test('the export shows the walkthrough read-only, offline, from its one file', a
   await expect(note.getByText('Is that on purpose?')).toBeVisible();
   await step.getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  // The page shows a step read before the server has stored it, and the export reads what is stored.
+  const stored = new URL('data/walkthrough.json', url).href;
+  const read = async () => ((await (await page.request.get(stored)).json()) as { read: string[] }).read;
+  await expect.poll(read).toEqual(['1', '2']);
   const out = path.join(path.dirname(repo.dir), 'login.html');
   expect(repo.run('export', '--out', out).status).toBe(0);
   await page.close();

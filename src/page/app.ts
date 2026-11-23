@@ -8,7 +8,7 @@ import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } fr
 import { type Action, type Item, itemKey, nameOf } from '../items';
 import type { Checklist, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
+import { el, type PageName, post as postTo, postQuietly, region, showAlert, unreachable } from './dom';
 import { renderMarkdown } from './markdown';
 
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
@@ -69,17 +69,14 @@ async function decide(item: Item, action: string, fields: { note?: string; text?
   show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !stepDecided(one)));
 }
 
-const reading = new Set<string>();
-
-async function markRead(step: Step): Promise<void> {
-  if (readOnly || walkthrough.read.includes(step.id) || reading.has(step.id)) return;
-  reading.add(step.id);
-  const answer = await post('read', { step: step.id });
-  reading.delete(step.id);
-  if (!answer) return;
-  // Only what was read: a decision sent meanwhile may have answered with newer decisions.
-  walkthrough = { ...walkthrough, read: ((await answer.json()) as WalkthroughView).read };
-  render();
+/** Marked before the redraw that shows the step: a redraw or alert change on the server's answer could undo a click made meanwhile. */
+function markRead(step: Step): void {
+  if (readOnly || walkthrough.read.includes(step.id)) return;
+  const read = new Set([...walkthrough.read, step.id]);
+  // In step order, as the server lists them, so the next poll finds nothing new to draw.
+  walkthrough = { ...walkthrough, read: walkthrough.steps.filter(one => read.has(one.id)).map(one => one.id) };
+  posted++;
+  void postQuietly('read', { step: step.id });
 }
 
 async function send(route: 'ask' | 'reply', body: Record<string, unknown>, draft?: string): Promise<boolean> {
@@ -714,6 +711,8 @@ function detachedView(): HTMLElement[] {
 }
 
 function render(): void {
+  const current = currentStep(walkthrough);
+  if (current) markRead(current);
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
@@ -742,7 +741,6 @@ function render(): void {
           el('button', { type: 'button', className: 'quiet', onclick: () => void stop() }, 'Stop'),
         ),
   );
-  const current = currentStep(walkthrough);
   const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
   main.replaceChildren(
     ...sessionMessages(),
@@ -756,7 +754,6 @@ function render(): void {
           ...wholeView(),
         ]),
   );
-  if (current) void markRead(current);
   // A diff is kept across redraws, so a line number focused in it is still there to focus again.
   if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
   if (draft === undefined) return;
