@@ -1761,7 +1761,7 @@ function stepRow(step: Step, isCurrent: boolean): HTMLElement {
   const decision = decisionOf(item);
   if (decision) {
     const sub = lateFindings(step).length
-      ? { text: 'New finding since you decided', attention: true }
+      ? { text: 'New finding', attention: true }
       : { text: `Decided: ${labelOf(item, decision.action)}` };
     return queueRow(step.id, 'decided', 'decided', step.title, sub, current);
   }

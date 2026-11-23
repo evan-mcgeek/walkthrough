@@ -114,7 +114,7 @@ walkthrough note --file <file>
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   "finding": true flags the note as a finding, whatever its label; it may be left out.
   The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
-  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding since you decided"; the step's decision stays as it was.
+  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding"; the step's decision stays as it was.
   When a finding lands on a step the person has read or decided, the open page also raises a banner naming it.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.

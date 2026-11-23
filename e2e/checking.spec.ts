@@ -65,7 +65,7 @@ test('a finding pinned after the person decided the step brings it back with a b
   record(repo, [finding('1', 'Everyone gets in.')], 'note');
 
   await expect(banner).toHaveText('New finding on step 1, Login, which you approved.Go to step');
-  await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding since you decided');
+  await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding');
   await banner.getByRole('button', { name: 'Go to step' }).click();
   const step = page.getByRole('region', { name: 'Login' });
   await expect(step).toBeVisible();
@@ -75,7 +75,7 @@ test('a finding pinned after the person decided the step brings it back with a b
   await page.reload();
   await expect(step).toBeVisible();
   await expect(banner).toBeHidden();
-  await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding since you decided');
+  await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding');
 });
 
 test('several new findings read as one banner, a finding on an unread step raises none, and dismiss hides it', async ({ page, repo }) => {

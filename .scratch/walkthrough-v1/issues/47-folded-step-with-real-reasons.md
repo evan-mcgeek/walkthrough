@@ -16,14 +16,14 @@ Seen in a real walkthrough of this repo (eb1765a..bea7b81, step 17), dark theme,
 
 **Blocked by:** none
 
-**Status:** in progress
+**Status:** done
 
-- [ ] Collapsed: one line, distinct reasons once each, one ellipsis, title with all reasons, "N files" never wraps.
-- [ ] Problems show while collapsed.
-- [ ] Opened: each file's reason reads as text, long ones wrap.
-- [ ] A note's menu sits at the end of its text column.
-- [ ] File headers keep the same spacing whether the file is opened or collapsed.
-- [ ] Checked in light, dark, 1280px, 390px and the export; DESIGN.md matches.
+- [x] Collapsed: one line, distinct reasons once each, one ellipsis, title with all reasons, "N files" never wraps.
+- [x] Problems show while collapsed.
+- [x] Opened: each file's reason reads as text, long ones wrap.
+- [x] A note's menu sits at the end of its text column.
+- [x] File headers keep the same spacing whether the file is opened or collapsed.
+- [x] Checked in light, dark, 1280px, 390px and the export; DESIGN.md matches.
 
 ## Seams under test
 

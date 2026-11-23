@@ -16,7 +16,7 @@ The session should check the steps in reading order, and the page should say pla
    - holds the step's actions: they are drawn disabled with the hint "Decide once the session has checked this step.", the keys A and F do nothing, and the server refuses a decision on that step;
    - still lets the person read it, ask about it and comment on its lines.
    The Summary lists steps still being checked under what is still open, as "Being checked".
-3. A finding (a note with `"finding": true`) pinned on a step after the person decided that step, and not yet decided itself, puts the step back in What's left with the sub-line "New finding since you decided", in attention ink; the step's own decision stays as it was.
+3. A finding (a note with `"finding": true`) pinned on a step after the person decided that step, and not yet decided itself, puts the step back in What's left with the sub-line "New finding", in attention ink; the step's own decision stays as it was.
    Pinned after means the note's `at` is later than the step decision's `at`.
 4. When a poll brings a new finding on a step the person has read or decided, the page shows an attention banner naming it, such as "New finding on step 8, Ultramarine, accents and Appearance, which you approved." with a "Go to step" button and a dismiss button.
    Several at once read as one banner: "3 new findings on steps 8 and 10."
@@ -29,15 +29,15 @@ The session should check the steps in reading order, and the page should say pla
 
 **Blocked by:** none
 
-**Status:** in progress
+**Status:** done
 
-- [ ] `walkthrough checking` replaces the set, refuses unknown ids, prints the set, and re-recorded steps drop gone ids.
-- [ ] A step being checked shows its notice and queue sub-line, its actions are held on the page, by A and F, and by the server; ask and comment still work.
-- [ ] The Summary lists steps still being checked as open.
-- [ ] A finding pinned after the step's decision puts the step back in What's left with "New finding since you decided".
-- [ ] A new finding on a read or decided step raises the banner, with Go to step and dismiss; several read as one.
-- [ ] Both skills say how to use `checking`, word for word in the shared part; the template has the reading-order rule and its hash is shipped.
-- [ ] Guide, GLOSSARY.md and DESIGN.md describe it.
+- [x] `walkthrough checking` replaces the set, refuses unknown ids, prints the set, and re-recorded steps drop gone ids.
+- [x] A step being checked shows its notice and queue sub-line, its actions are held on the page, by A and F, and by the server; ask and comment still work.
+- [x] The Summary lists steps still being checked as open.
+- [x] A finding pinned after the step's decision puts the step back in What's left with "New finding".
+- [x] A new finding on a read or decided step raises the banner, with Go to step and dismiss; several read as one.
+- [x] Both skills say how to use `checking`, word for word in the shared part; the template has the reading-order rule and its hash is shipped.
+- [x] Guide, GLOSSARY.md and DESIGN.md describe it.
 
 ## Seams under test
 

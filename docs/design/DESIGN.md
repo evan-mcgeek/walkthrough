@@ -510,7 +510,7 @@ The IDE pattern, played straight.
 
 ### Queue ("To review")
 The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; reopened amber; not met rust; session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
-A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding since you decided"; its decision stays.
+A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding", which fits the rail on one line; its decision stays.
 
 ### In This Step (facts rail)
 Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons.
