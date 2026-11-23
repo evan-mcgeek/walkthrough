@@ -12,8 +12,10 @@ import { el, type PageName, post as postTo, region, showAlert, showUnreachable }
 import { icon, type IconName } from './icons';
 import { renderMarkdown } from './markdown';
 
-/** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
-const exported = document.getElementById('exported')?.textContent;
+/** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
+type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string };
+const exportedText = document.getElementById('exported')?.textContent;
+const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
 
 function markdown(text: string, className: string): HTMLElement {
@@ -216,12 +218,8 @@ function headerView(): HTMLElement[] {
     el(
       'div',
       { className: 'header-end' },
-      ...(readOnly
-        ? [el('span', { className: 'header-note' }, 'Exported, read-only')]
-        : [
-            statusView(),
-            ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
-          ]),
+      statusView(),
+      ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small', onclick: () => void stop() }, 'Stop')]),
     ),
   ];
 }
@@ -663,6 +661,8 @@ function disclosure(label: (Node | string)[], open: boolean, onToggle: () => voi
 
 function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
   if (!step.assumptions.length) return [];
+  if (readOnly)
+    return [el('div', { className: 'assumptions' }, el('p', { className: 'assumed-head' }, 'Assumed, not read'), el('ul', { className: 'assumed' }, ...step.assumptions.map(assumption => el('li', {}, assumption))))];
   const open = !closed.has(step.id);
   const button = disclosure(['Assumed, not read'], open, () => { toggle(closed, step.id); }, 'disclosure assumed-toggle');
   button.id = `assumed-${step.id}`;
@@ -674,14 +674,13 @@ function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
 
 function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HTMLElement[] {
   const key = `fold:${step.id}`;
-  const open = opened.has(key);
+  // An export has no one to open it for, so it shows the files at once.
+  const open = readOnly || opened.has(key);
   const problems = step.problems.length ? [el('span', { className: 'tag reopened' }, plural(step.problems.length, 'problem'))] : [];
-  const summary = disclosure(
-    [el('span', {}, plural(step.files.length, 'file')), el('span', { className: 'spacer' }), ...problems],
-    open,
-    () => { toggle(opened, key); },
-    'fold-summary',
-  );
+  const label = [el('span', {}, plural(step.files.length, 'file')), el('span', { className: 'spacer' }), ...problems];
+  const summary = readOnly
+    ? el('p', { className: 'fold-summary' }, icon('folded'), ...label)
+    : disclosure(label, open, () => { toggle(opened, key); }, 'fold-summary');
   if (!open) return [el('div', { className: 'block' }, summary)];
   const files = el(
     'ul',
@@ -730,15 +729,12 @@ function stepDecisionView(step: Step): HTMLElement[] {
     ];
   }
   if (!decision) return [];
-  return [
-    el(
-      'div',
-      { className: 'decision-said' },
-      ...(decision.note ? [el('span', { className: 'muted' }, 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
-      ...(decision.text ? [markdown(decision.text, 'said person')] : []),
-      ...followUps(decision).map(said),
-    ),
+  const shown = [
+    ...(decision.note ? [el('span', { className: 'muted' }, readOnly ? 'Note' : 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
+    ...(decision.text ? [markdown(decision.text, 'said person')] : []),
+    ...followUps(decision).map(said),
   ];
+  return shown.length ? [el('div', { className: 'decision-said' }, ...shown)] : [];
 }
 
 /** The sticky bar at the foot of a step: its actions, or the form an action asks for, and the Ask box. */
@@ -759,15 +755,20 @@ function actionBar(step: Step): HTMLElement[] {
   return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
 }
 
+/** Asks about the whole step, as threads under it. */
+function stepAsks(step: Step): HTMLElement[] {
+  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
+  return asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : [];
+}
+
 function stepView(step: Step): HTMLElement {
   const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
-  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
   const section = el(
     'section',
     { className: 'step' },
     el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
     ...stepBody(step),
-    ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
+    ...stepAsks(step),
     ...actionBar(step),
   );
   section.setAttribute('aria-labelledby', title.id);
@@ -1057,7 +1058,47 @@ function viewBody(view: View): HTMLElement {
   }
 }
 
+/** A step in the export: its number, title and state, then all it shows on the page but the actions. */
+function exportStep(step: Step, number: number): HTMLElement {
+  const title = el('span', { id: `step-${step.id}` }, step.title);
+  // Its id is the step's own address, so a link to a step scrolls to it.
+  const section = el(
+    'section',
+    { className: 'export-step', id: step.id },
+    el('h2', { className: 'export-title' }, el('span', { className: 'number' }, String(number)), title, stateTag({ type: 'step', id: step.id }, true)),
+    ...stepBody(step),
+    ...stepAsks(step),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return section;
+}
+
+/** The export is one document: every step in order, then the checklist, the session's messages and the whole walkthrough. */
+function exportView(at: string): HTMLElement[] {
+  const { steps } = walkthrough;
+  const when = new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  const decided = steps.filter(stepDecided).length;
+  return [
+    el(
+      'header',
+      { className: 'export-head' },
+      el('h1', {}, nameOf(walkthrough)),
+      el('p', { className: 'muted' }, `Walkthrough export · ${when} · ${plural(steps.length, 'step')}, ${String(decided)} decided`),
+    ),
+    ...unplacedNotice(),
+    ...detachedView(),
+    ...steps.map((step, index) => exportStep(step, index + 1)),
+    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'end' })] : []),
+    ...(sessionMessages().length ? [sessionView()] : []),
+    ...wholeView(),
+  ];
+}
+
 function render(): void {
+  if (exported) {
+    main.replaceChildren(...exportView(exported.at));
+    return;
+  }
   lastSession = JSON.stringify(session);
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
@@ -1106,7 +1147,7 @@ function stepBy(delta: number): void {
 }
 
 document.addEventListener('keydown', event => {
-  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && picked) {
     const end = drawn.get(picked.step)?.rows.get(lineKey(picked.file, picked.lines[1]));
     unpick();
@@ -1119,6 +1160,8 @@ document.addEventListener('keydown', event => {
 });
 
 window.addEventListener('hashchange', () => {
+  // The export is one document the browser scrolls to the address itself.
+  if (readOnly) return;
   moves++;
   taking = null;
   render();
@@ -1127,8 +1170,16 @@ window.addEventListener('hashchange', () => {
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });
 
+if (exported) {
+  document.body.classList.add('exported');
+  header.remove();
+  queue.remove();
+  main.className = 'export';
+  document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
+}
+
 ({ walkthrough, session } = exported
-  ? (JSON.parse(exported) as { walkthrough: WalkthroughView; session: SessionView })
+  ? exported
   : await Promise.all(
       ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
     ).then(([shownWalkthrough, shownSession]) => ({
@@ -1136,6 +1187,8 @@ window.addEventListener('hashchange', () => {
       session: shownSession as SessionView,
     })));
 render();
+// The browser looked for the address before the export drew its steps.
+if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 
 const POLL_MS = 1500;
 let polling = false;
