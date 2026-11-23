@@ -40,21 +40,22 @@ const pathOf = (file: string | FoldedFile) => (typeof file === 'string' ? file :
 export const pathsOf = (step: StepInput | Step) => step.files.map(pathOf);
 
 // Ids follow files rather than places, so decisions, notes and links follow them; a gone id is never reused.
+// The pairs sharing most files are matched first, so a step split in two leaves its id with the larger part.
 function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): string[] {
   let next = Math.max(lastStep, ...steps.map(step => Number(step.id)));
-  const free = new Map(steps.map(step => [step.id, new Set(pathsOf(step))]));
-  return inputs.map(input => {
-    const files = pathsOf(input);
-    let best: string | undefined;
-    let most = 0;
-    for (const [id, paths] of free) {
-      const shared = files.filter(one => paths.has(one)).length;
-      if (shared > most) [best, most] = [id, shared];
-    }
-    if (best === undefined) return String(++next);
-    free.delete(best);
-    return best;
+  const pairs = inputs.flatMap((input, at) => {
+    const files = new Set(pathsOf(input));
+    return steps.map((step, old) => ({ at, old, id: step.id, shared: pathsOf(step).filter(one => files.has(one)).length }));
   });
+  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
+  const ids: (string | undefined)[] = inputs.map(() => undefined);
+  const taken = new Set<string>();
+  for (const { at, id, shared } of pairs)
+    if (shared > 0 && ids[at] === undefined && !taken.has(id)) {
+      ids[at] = id;
+      taken.add(id);
+    }
+  return ids.map(id => id ?? String(++next));
 }
 
 export async function buildSteps(cwd: string, walkthrough: Walkthrough, inputs: StepInput[]): Promise<Step[]> {

@@ -211,4 +211,14 @@ describe('recording the steps again', () => {
     expect(view.steps.map(step => step.id)).toEqual(['1']);
     expect(view.reopened['step:1']).toMatchObject({ action: 'approve' });
   });
+
+  test('a step split in two leaves its id with the part that has most of its files, whichever comes first', () => {
+    repo = makeRepo({ feature: { 'cart.ts': 'export const cart = [];\n' } });
+    repo.run('start');
+    repo.record([{ title: 'All', explanation: 'Everything.', files: ['app.ts', 'cart.ts', 'login.ts'] }]);
+
+    const recorded = repo.record([CART, { title: 'Most', explanation: 'Login.', files: ['app.ts', 'login.ts'] }]);
+
+    expect(recorded.stdout).toBe('Recorded 2 steps: 2 (Cart), 1 (Most).\n');
+  });
 });
