@@ -184,3 +184,18 @@ test('a redraw from the session or from steps recorded again keeps the step bein
   await expect(folded).toBeVisible();
   await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 });
+
+test('in Tool panel a line note on a folded step opens its file and takes focus from the Notes tab', async ({ page, repo }) => {
+  const noted = repo.record([{ step: '2', file: 'schema.json', lines: [1, 1], label: 'Stale', text: 'Still lists the field.' }], 'note');
+  if (noted.status !== 0) throw new Error(noted.stderr);
+  await page.getByRole('banner').getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Tool panel' }).click();
+  await page.getByRole('link', { name: 'Regenerated schema' }).click();
+  const panel = page.getByRole('region', { name: 'Tool panel' });
+  await panel.getByRole('tab', { name: /^Notes/ }).click();
+
+  await panel.getByRole('button', { name: /^Stale/ }).click();
+
+  const note = page.getByRole('region', { name: 'Regenerated schema' }).getByRole('article', { name: 'Stale' });
+  await expect(note).toBeVisible();
+  await expect(note).toBeFocused();
+});

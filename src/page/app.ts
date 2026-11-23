@@ -1864,7 +1864,7 @@ const stepNotesOf = (step: Step) =>
 function showNote(step: Step, note: Note): void {
   if (step.kind === 'folded') {
     opened.add(`fold:${step.id}`);
-    opened.add(step.id);
+    if (note.note.file !== undefined) opened.add(`fold-diff:${step.id}:${note.note.file}`);
   }
   render();
   const shown = document.getElementById(`note-${note.id}`);
