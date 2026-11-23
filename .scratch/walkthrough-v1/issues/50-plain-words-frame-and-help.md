@@ -14,7 +14,7 @@ Build the page's frame and words exactly as the boards show them.
 5. Title bars name each window ("To review 8", "Explanation", "Checklist") with a hide button whose tooltip names its key.
 6. Clean DESIGN.md of what no longer exists (bottom-strip tokens and spacing), and update GLOSSARY.md where a page word it quotes changed.
 
-Design: docs/design/DESIGN.md and the round 3 boards in docs/design/screens.html.
+Design: docs/design/HANDOFF.md first (it wins over the boards where they differ), then docs/design/DESIGN.md and the round 3 boards in docs/design/screens.html.
 
 **Blocked by:** none
 

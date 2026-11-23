@@ -8,7 +8,7 @@ Round 3 of the design (docs/design/DESIGN.md, the boards in docs/design/screens.
 3. A step being checked (#checking), files to skim (#fold3), the header rhythm (#rhythm), the note menu (#notemenu), file explanations (#perfile) and notes on removed code (1px dashed control edge, 8px radius): match the boards where the built page differs.
 4. The export and 390px follow each board where it draws them.
 
-Design: docs/design/DESIGN.md and the round 3 boards in docs/design/screens.html.
+Design: docs/design/HANDOFF.md first (it wins over the boards where they differ), then docs/design/DESIGN.md and the round 3 boards in docs/design/screens.html.
 
 **Blocked by:** 50 Plain words, the frame without a tool panel, the stepper and Help (both edit src/page/app.ts)
 

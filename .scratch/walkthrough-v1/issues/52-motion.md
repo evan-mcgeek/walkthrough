@@ -7,7 +7,7 @@ The Motion section of docs/design/DESIGN.md, with docs/design/prototype.html as 
 2. Reduced motion: no translate, rotate or scale anywhere; opacity and colour only, as DESIGN.md lists case by case.
 3. Motion never delays input or state: a click takes effect at once and the animation follows; tests never wait on an animation to see state.
 
-Design: docs/design/DESIGN.md (Motion) and docs/design/prototype.html.
+Design: docs/design/HANDOFF.md first (it wins over the boards where they differ), then docs/design/DESIGN.md (Motion) and docs/design/prototype.html.
 
 **Blocked by:** 51 The Summary as a ledger (both edit src/page/app.ts)
 
