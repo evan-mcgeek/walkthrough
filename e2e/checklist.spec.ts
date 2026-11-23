@@ -55,7 +55,7 @@ test('a status word alone never puts an item in the rail; only the mark the sess
   repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'Who may log in?' }] }, 'checklist');
   await page.reload();
   const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version']);
+  await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version', 'Summary']);
 
   repo.record({ title: 'Criteria', items: [{ status: 'not met', mark: 'not-met', text: 'Who may log in?' }] }, 'checklist');
 

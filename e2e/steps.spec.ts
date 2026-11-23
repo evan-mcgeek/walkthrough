@@ -29,7 +29,7 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const recorded = repo.record(steps);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
-  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link')).toHaveCount(3);
+  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link')).toHaveCount(4);
 });
 
 test('shows one step at a time with its explanation and files, folded steps collapsed, and moves between steps', async ({
@@ -37,7 +37,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
 }) => {
   const rail = page.getByRole('navigation', { name: "What's left" });
   await expect(rail.getByRole('heading', { name: 'To review 3' })).toBeVisible();
-  await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version']);
+  await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('aria-current', 'step');
   const first = page.getByRole('region', { name: 'Login check' });
   await expect(first.getByText('Undecided', { exact: true })).toBeVisible();
@@ -186,7 +186,7 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await page.keyboard.press('j');
   await expect(end).toBeVisible();
-  await end.getByRole('link', { name: '3 App version' }).click();
+  await end.getByRole('region', { name: 'Flagged' }).getByRole('link', { name: '3 App version' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
 });
 

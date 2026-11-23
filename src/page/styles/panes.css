@@ -778,11 +778,11 @@
   height: 0;
 }
 
-/* Just above the main pane's docked action bar (16px + 34px + 24px and its rule). */
+/* Just above the main pane's docked action bar (16px + 30px + 24px and its rule). */
 .toast-region {
   position: absolute;
   right: var(--s6);
-  bottom: calc(75px + var(--s3));
+  bottom: calc(71px + var(--s3));
   pointer-events: none;
 }
 
