@@ -1,6 +1,6 @@
 {
   "name": "walkthrough",
-  "description": "A guided review of a code change on a local page, one step at a time. Provides /walkthrough and the walkthrough CLI.",
+  "description": "A guided review of a code change on a local page, one step at a time. Provides /walkthrough for your own change, /walkthrough:pr for a review request, and the walkthrough CLI.",
   "author": {
     "name": "evan-mcgeek",
     "url": "https://github.com/evan-mcgeek"
