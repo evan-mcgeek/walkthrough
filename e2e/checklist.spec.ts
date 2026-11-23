@@ -9,7 +9,7 @@ const checklist = {
   title: 'Acceptance criteria',
   items: [
     { status: 'met', text: 'A person can log in.', steps: ['1'] },
-    { status: 'not yet', text: 'The app shows its **version**.', steps: ['1', '2'] },
+    { status: 'not yet', mark: 'not-met', text: 'The app shows its **version**.', steps: ['1', '2'] },
     { status: 'open question', text: 'Who may log in?' },
   ],
 };
@@ -20,11 +20,23 @@ test.beforeEach(async ({ page, repo, url }) => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
 });
 
-test('shows the session title and items with their statuses beside the steps', async ({ page, repo }) => {
+test('an item the session marks not met is left in the rail and opens the checklist with its title, items and statuses', async ({
+  page,
+  repo,
+}) => {
   const recorded = repo.record(checklist, 'checklist');
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   await page.reload();
+  const rail = page.getByRole('navigation', { name: "What's left" });
+  const left = rail.getByRole('link', { name: 'The app shows its version.' });
+  await expect(left).toHaveText('The app shows its version.Checklist');
+  await expect(left).toHaveAttribute('data-state', 'not-met');
+  await expect(rail.getByRole('link', { name: 'A person can log in.' })).toHaveCount(0);
+  await expect(rail.getByRole('heading', { name: 'Left 3' })).toBeVisible();
 
+  await left.click();
+
+  await expect(left).toHaveAttribute('aria-current', 'page');
   const panel = page.getByRole('region', { name: 'Acceptance criteria' });
   const items = panel.getByRole('listitem');
   await expect(items).toHaveCount(3);
@@ -34,15 +46,29 @@ test('shows the session title and items with their statuses beside the steps', a
   await expect(items.nth(1).getByText('The app shows its version.', { exact: true })).toBeVisible();
   await expect(items.nth(1).locator('strong')).toHaveText('version');
   await expect(items.nth(2).getByText('open question', { exact: true })).toBeVisible();
+  await expect(items.nth(1)).toHaveAttribute('data-mark', 'not-met');
+  await expect(items.nth(0)).toHaveAttribute('data-mark', 'unchecked');
   await expect(items.nth(2).getByRole('link')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+});
+
+test('a status word alone never puts an item in the rail; only the mark the session records does', async ({ page, repo }) => {
+  repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'Who may log in?' }] }, 'checklist');
+  await page.reload();
+  const rail = page.getByRole('navigation', { name: "What's left" });
+  await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version']);
+
+  repo.record({ title: 'Criteria', items: [{ status: 'not met', mark: 'not-met', text: 'Who may log in?' }] }, 'checklist');
+
+  await expect(rail.getByRole('link', { name: 'Who may log in?' })).toBeVisible();
 });
 
 test('an item link opens the step it links to', async ({ page, repo }) => {
   repo.record(checklist, 'checklist');
   await page.reload();
+  await page.getByRole('link', { name: 'The app shows its version.' }).click();
   const second = page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem').nth(1);
-  await expect(second.getByRole('link')).toHaveText(['Step 1', 'Step 2']);
+  await expect(second.getByRole('link')).toHaveText(['1', '2']);
+  await expect(second.getByRole('link', { name: 'Step 1' })).toHaveAttribute('title', 'Login check');
 
   await second.getByRole('link', { name: 'Step 2' }).click();
 
@@ -50,8 +76,12 @@ test('an item link opens the step it links to', async ({ page, repo }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toHaveCount(0);
 });
 
-test('with no checklist recorded, the panel is absent', async ({ page }) => {
-  await page.reload();
-  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+test('the checklist shows at the end of the walkthrough, and is absent when none is recorded', async ({ page, repo }) => {
+  await page.goto(`${page.url().split('#')[0] ?? ''}#end`);
+  await expect(page.getByRole('region', { name: '0 of 2 steps decided' })).toBeVisible();
   await expect(page.locator('.checklist')).toHaveCount(0);
+
+  repo.record(checklist, 'checklist');
+
+  await expect(page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem')).toHaveCount(3);
 });

@@ -34,7 +34,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await rows.nth(2).getByRole('button', { name: 'feature/login' }).click();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(page.getByRole('region', { name: 'Login' }).getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'All 1 step decided' }).getByRole('row')).toHaveText(['1LoginApprove']);
 });
 
 test('the Stop button ends the list', async ({ page, repo, url }) => {

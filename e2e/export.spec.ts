@@ -42,16 +42,16 @@ test('the export shows the walkthrough read-only, offline, from its one file', a
   const shownNote = shown.getByRole('article', { name: 'Risk' });
   await expect(shownNote.getByText('Everyone gets in.')).toBeVisible();
   await expect(shownNote.getByText('Is that on purpose?')).toBeVisible();
-  await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
-  await expect(exported.getByRole('button')).toHaveCount(2);
-  await expect(exported.getByRole('button')).toHaveText(['Previous', 'Next']);
+  await expect(exported.getByRole('button')).toHaveText(['1 decided']);
   await expect(exported.getByRole('textbox')).toHaveCount(0);
   await expect(exported.getByRole('status', { name: 'Session' })).toHaveCount(0);
 
-  await exported.getByRole('link', { name: '2. App version' }).click();
+  await exported.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'App version' }).click();
 
   await expect(exported.getByRole('region', { name: 'App version' }).locator('.d2h-del')).toContainText([
     'export const app = 1;',
   ]);
+  await exported.keyboard.press('j');
+  await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
   expect(problems).toEqual([]);
 });

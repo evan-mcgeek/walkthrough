@@ -31,7 +31,7 @@ Every rule here is a default; edit any of it.
 ## Checklist
 
 - When the ticket or spec has acceptance criteria, record them as a checklist titled "Acceptance criteria", one item per criterion, linked to the steps that deliver it.
-- Statuses: "met", "partly met" or "not shown".
+- Statuses: "met", "partly met" or "not shown", marked "met", "partly" and "not-met".
 - Add one last item, "Serves no criterion", linked to every step that delivers none of them.
 
 ## Reviewers and findings

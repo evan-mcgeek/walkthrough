@@ -26,13 +26,27 @@ const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {
   const box = region('alert');
-  box.replaceChildren(...(message === null ? [] : [icon('warn'), message]));
+  box.className = 'banner attention';
+  box.replaceChildren(...(message === null ? [] : [icon('warn'), el('span', {}, message)]));
   box.hidden = message === null;
+  if (message === null) document.body.classList.remove('unreachable');
 }
 
-export type PageName = { name: string; reopen: string };
+/** `retry` asks the server again at once; without it the page only keeps trying on its own. */
+export type PageName = { name: string; reopen: string; retry?: () => void };
 
-export const unreachable = ({ name, reopen }: PageName) => `Could not reach the ${name}. ${reopen}`;
+/** Says the server is gone and dims the page behind the banner until it answers again. */
+export function showUnreachable({ name, reopen, retry }: PageName): void {
+  const box = region('alert');
+  box.className = 'banner attention';
+  box.replaceChildren(
+    icon('offline'),
+    el('span', { className: 'banner-text' }, el('strong', {}, `Could not reach the ${name}.`), ` ${reopen}`),
+    ...(retry ? [el('button', { type: 'button', className: 'btn small', onclick: retry }, 'Retry now')] : []),
+  );
+  box.hidden = false;
+  document.body.classList.add('unreachable');
+}
 
 /** The server's answer, or null once the person has been told why there is none. */
 export async function post(page: PageName, route: string, body: Record<string, unknown>): Promise<Response | null> {
@@ -55,7 +69,7 @@ export async function post(page: PageName, route: string, body: Record<string, u
     showAlert(typeof said.error === 'string' ? said.error : `The ${page.name} could not do that (${String(answer.status)}).`);
     return null;
   } catch {
-    showAlert(unreachable(page));
+    showUnreachable(page);
     return null;
   }
 }

@@ -39,10 +39,13 @@
 
 .segment,
 .progress:empty {
-  flex: 1;
   height: 5px;
   border-radius: var(--r-hairline);
   background: var(--rule);
+}
+
+.segment {
+  flex: 1;
 }
 
 .segment[data-state='decided'] {

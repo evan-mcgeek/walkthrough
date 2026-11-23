@@ -78,6 +78,28 @@ describe('walkthrough checklist', () => {
     });
   });
 
+  test('keeps the mark the session gives an item, which the page shows as its icon, whatever the status says', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(steps);
+
+    const recorded = recordChecklist({
+      title: 'Criteria',
+      items: [
+        { status: 'not shown', mark: 'not-met', text: 'A.' },
+        { status: 'half', mark: 'partly', text: 'B.' },
+        { status: 'not met', text: 'C.' },
+      ],
+    });
+
+    expect(recorded.stderr).toBe('');
+    expect((await shownAt(repo.url())).checklist?.items.map(({ text, mark }) => [text, mark])).toEqual([
+      ['A.', 'not-met'],
+      ['B.', 'partly'],
+      ['C.', undefined],
+    ]);
+  });
+
   test('refuses links to steps the walkthrough does not have, naming each, and keeps the old checklist', async () => {
     repo = makeRepo();
     repo.run('start');
@@ -110,6 +132,7 @@ describe('walkthrough checklist', () => {
       [{ title: 'T', items: [{ text: 'A.' }] }, 'item 1 needs a status'],
       [{ title: 'T', items: [{ status: 'met', text: '' }] }, 'item 1 needs a text'],
       [{ title: 'T', items: [{ status: 'met', text: 'A.', steps: [1] }] }, 'item 1: steps must be a list of step ids'],
+      [{ title: 'T', items: [{ status: 'met', text: 'A.', mark: 'done' }] }, 'item 1: mark must be one of met, partly, not-met, unchecked'],
     ] as const) {
       const refused = recordChecklist(input);
       expect(refused.status).toBe(1);
@@ -172,7 +195,7 @@ describe('walkthrough checklist', () => {
     repo = makeRepo();
     const guide = repo.run('guide').stdout;
     expect(guide).toContain('walkthrough checklist --file <file>');
-    expect(guide).toContain('{"title": string, "items": [{"status": string, "text": string, "steps": [step id, ...]}, ...]}');
+    expect(guide).toContain('{"title": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}');
     const example = /Example checklist:\n(\{[\s\S]*?\n\})\n/.exec(guide)?.[1] ?? '';
     repo.run('start');
     repo.record([

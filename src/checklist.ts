@@ -1,6 +1,6 @@
 // The session's checklist: its title, statuses and texts are the session's own; this checks only their shape and that linked steps exist.
 import { fieldsOf, filled, parseObject } from './input';
-import type { Checklist, Walkthrough } from './walkthrough';
+import { type Checklist, MARKS, type Mark, type Walkthrough } from './walkthrough';
 
 // Ids follow the session's id or the item's text, never the place, so a decision cannot land on another item.
 export function parseChecklist(text: string, { steps, checklist, lastChecklistItem = 0 }: Walkthrough): Checklist {
@@ -13,10 +13,11 @@ export function parseChecklist(text: string, { steps, checklist, lastChecklistIt
   const kept = new Set<string>();
   const checked = items.map((one: unknown, at) => {
     const name = `item ${String(at + 1)}`;
-    const { id, status, text: itemText, steps: links = [] } = fieldsOf(one);
+    const { id, status, mark, text: itemText, steps: links = [] } = fieldsOf(one);
     if (!filled(status)) throw new Error(`${name} needs a status`);
     if (!filled(itemText)) throw new Error(`${name} needs a text`);
     if (!Array.isArray(links) || !links.every(filled)) throw new Error(`${name}: steps must be a list of step ids`);
+    if (mark !== undefined && !MARKS.includes(mark as Mark)) throw new Error(`${name}: mark must be one of ${MARKS.join(', ')}`);
     if (id !== undefined && !filled(id))
       throw new Error(`${name}: id must be the id of an item, as walkthrough checklist printed it`);
     if (id !== undefined && !before.some(old => old.id === id)) throw new Error(`${name}: the checklist has no item ${id} to keep`);
@@ -24,7 +25,7 @@ export function parseChecklist(text: string, { steps, checklist, lastChecklistIt
     if (id !== undefined) kept.add(id);
     for (const link of links)
       if (!known.has(link)) unknown.push(`${name} links to step ${link}, which this walkthrough does not have`);
-    return { id, status, text: itemText, steps: links };
+    return { id, status, ...(mark !== undefined && { mark: mark as Mark }), text: itemText, steps: links };
   });
   if (unknown.length > 0) throw new Error(`the checklist was not recorded:\n  ${unknown.join('\n  ')}`);
   let next = Math.max(lastChecklistItem, ...before.map(old => Number(old.id)));
