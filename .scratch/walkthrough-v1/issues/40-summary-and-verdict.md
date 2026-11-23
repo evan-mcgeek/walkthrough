@@ -12,4 +12,4 @@ Design: the round 2 boards have landed: follow docs/design/DESIGN.md and docs/de
 
 **Blocked by:** 36 Two flows, two commands
 
-**Status:** ready-for-agent
+**Status:** done
