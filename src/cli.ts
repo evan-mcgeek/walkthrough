@@ -12,6 +12,7 @@ import { type Decision, decisionsOf, parseActions, walkthroughView } from './dec
 import { exportPage } from './export';
 import { listView } from './list';
 import { GUIDE } from './guide';
+import { policyCommand } from './policy';
 import { plural } from './words';
 import { nameOf } from './items';
 import { makeInbox, stateDir } from './paths';
@@ -226,6 +227,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     process.stdout.write(GUIDE);
   },
   listen: listenCommand,
+  policy: policyCommand,
   say: sayCommand,
   stop: async args => {
     if (args.includes('--list')) {
@@ -264,8 +266,8 @@ try {
         '  commands: start | guide | files | steps < steps.json | checklist < checklist.json | note < notes.json\n' +
         '    | actions < actions.json | decisions\n' +
         '    | listen | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] <text> | stop | prune [<branch> | <id>]\n' +
-        '    | export [--out <file>] | list | stop --list\n' +
-        '  every command but guide and list finds the walkthrough from the options start was given: none for the current branch',
+        '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
+        '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);
 } catch (error) {
