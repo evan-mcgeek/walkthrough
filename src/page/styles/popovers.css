@@ -1,0 +1,129 @@
+/*
+  Popovers (docs/design/DESIGN.md, Popovers: Appearance and Shortcuts): a modal dialog.popover with its .popover-head,
+  .radios as .accents (swatch rows) or .options (verdict-option buttons), and the shortcut sheet's .keys table of kbd caps.
+*/
+
+.popover {
+  position: fixed;
+  box-sizing: border-box;
+  max-width: calc(100vw - 2 * var(--s4));
+  max-height: calc(100dvh - 2 * var(--s4));
+  margin: 0;
+  padding: var(--s4);
+  overflow-y: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
+}
+
+/* The page stays in view behind a popover; only the popover takes clicks and keys. */
+.popover::backdrop {
+  background: none;
+}
+
+.popover-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: 650 13px/1.4 var(--font-ui);
+}
+
+.popover-head > .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.popover-label {
+  margin: var(--s3) 0 var(--s2);
+  color: var(--muted);
+  font: 600 12px/1.4 var(--font-ui);
+}
+
+.popover .hint {
+  margin: var(--s3) 0 0;
+}
+
+/* ---------- Appearance ---------- */
+
+.popover.appearance {
+  inset: 52px var(--s4) auto auto;
+  width: 300px;
+}
+
+.radios {
+  display: flex;
+  gap: var(--s2);
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--ink);
+  font: var(--text-body-ui);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.accents {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.accents > .radio {
+  padding: 6px var(--s2);
+}
+
+.accents > .radio:hover,
+.accents > .radio[aria-checked='true'] {
+  background: var(--surface-tint);
+}
+
+.accents > .radio[aria-checked='true'] {
+  font-weight: 600;
+}
+
+/* Each swatch shows its own accent, whichever is chosen. */
+.swatch {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-xs);
+  background: light-dark(#2433b8, #8c97ff);
+}
+
+.swatch.petrol {
+  background: light-dark(#0e6577, #5cc2d4);
+}
+
+.swatch.berry {
+  background: light-dark(#9c1f62, #f07ab4);
+}
+
+.options > .radio {
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--control-edge);
+  background: var(--canvas);
+  color: var(--ink-secondary);
+}
+
+.options > .radio:hover {
+  background: var(--surface-tint);
+}
+
+.options > .radio[aria-checked='true'] {
+  border-color: var(--ink-secondary);
+  background: var(--surface-tint);
+  color: var(--ink);
+  font-weight: 600;
+}

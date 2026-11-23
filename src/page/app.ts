@@ -6,16 +6,18 @@ import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
+import type { Viewer } from '../viewer';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, kindView, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
+import { appearanceDialog, loadViewer, showViewer } from './appearance';
 import { icon, type IconName } from './icons';
 import { type Layout, LAYOUTS, storedLayout, storeLayout } from './layout';
 import { renderMarkdown } from './markdown';
 import { animate, now, play, reduced, replay } from './motion';
 
 /** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
-type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string };
+type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string; viewer?: Viewer };
 const exportedText = document.getElementById('exported')?.textContent;
 const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
@@ -401,7 +403,9 @@ document.addEventListener('click', event => {
   if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
 });
 
-/** The header's More menu, which holds what the header has no room for at phone width. */
+const moreButton = () => document.querySelector('[data-key="more"]');
+
+/** The header's More menu: Appearance, and at phone width what the header has no room for. */
 function moreMenu(): HTMLElement {
   const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
     menuOpen = menuOpen === 'more' ? null : 'more';
@@ -414,12 +418,16 @@ function moreMenu(): HTMLElement {
   button.dataset['key'] = 'more';
   const box = el('div', { className: 'more-menu' }, button);
   if (menuOpen !== 'more') return box;
-  const choices: [string, () => void][] = stopped
-    ? []
-    : [
-        ...(walkthrough.steps.length && currentView().kind !== 'deck' ? [['Swipe to decide', () => { go('deck'); }] as [string, () => void]] : []),
-        ['Stop', () => void stop()],
-      ];
+  const appearance: [string, () => void] = ['Appearance', () => { appearanceDialog(moreButton); }];
+  const choices: [string, () => void][] = !phone.matches
+    ? [appearance]
+    : stopped
+      ? [appearance]
+      : [
+          ...(walkthrough.steps.length && currentView().kind !== 'deck' ? [['Swipe to decide', () => { go('deck'); }] as [string, () => void]] : []),
+          appearance,
+          ['Stop', () => void stop()],
+        ];
   const item = (label: string, choose: () => void, role = 'menuitem') => {
     const made = el('button', { type: 'button', tabIndex: -1, onclick: () => { closeMenu(); choose(); } }, label);
     made.setAttribute('role', role);
@@ -474,8 +482,8 @@ function drawHeader(): void {
     headerEnd,
     [
       el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
-      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
       ...kindView(walkthrough.kindLabel),
+      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
       ...progressView(),
     ],
     [],
@@ -2357,6 +2365,9 @@ if (exported) {
   main.className = 'export';
   document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
 }
+
+if (exported?.viewer) showViewer(exported.viewer);
+else if (!exported) await loadViewer();
 
 ({ walkthrough, session } = exported
   ? exported

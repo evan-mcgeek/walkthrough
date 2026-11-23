@@ -1,9 +1,7 @@
 /*
   The page's one stylesheet. Order matters: vendor styles first, then the design's tokens and controls,
-  then the page's own rules, so the page wins over diff2html and highlight.js.
+  then the page's own rules, so the page wins over diff2html.
 */
-@import 'highlight.js/styles/github.css' (prefers-color-scheme: light);
-@import 'highlight.js/styles/github-dark.css' (prefers-color-scheme: dark);
 @import 'diff2html/bundles/css/diff2html.min.css';
 @import './styles/fonts.css';
 @import './styles/tokens.css';
@@ -11,7 +9,9 @@
 @import './styles/header.css';
 @import './styles/panes.css';
 @import './styles/diff.css';
+@import './styles/syntax.css';
 @import './styles/layouts.css';
+@import './styles/popovers.css';
 @import './styles/deck.css';
 @import './styles/list.css';
 @import './styles/export.css';
@@ -175,6 +175,6 @@ details summary {
 }
 
 .markdown a {
-  color: var(--violet-text);
+  color: var(--accent-text);
   text-underline-offset: 2px;
 }

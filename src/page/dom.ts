@@ -26,6 +26,66 @@ export function region(id: string): HTMLElement {
   return found;
 }
 
+/**
+ * A popover that holds the focus while open (Appearance, the shortcut sheet): Escape or a click outside closes it,
+ * and the focus goes back to what `returnTo` finds then, as a redraw may have replaced the control that opened it.
+ */
+export function openDialog(label: string, returnTo: () => Element | null, ...content: Node[]): HTMLDialogElement {
+  const heading = el('h2', { className: 'popover-head', id: `dialog-${label.toLowerCase().replace(/\W+/g, '-')}` });
+  heading.append(label);
+  const dialog = el('dialog', { className: 'popover' }, heading, ...content);
+  dialog.setAttribute('aria-labelledby', heading.id);
+  // A click on the dialog itself, not on what it holds, landed on its backdrop.
+  dialog.addEventListener('click', event => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    const back = returnTo();
+    if (back instanceof HTMLElement) back.focus();
+  });
+  document.body.append(dialog);
+  dialog.showModal();
+  return dialog;
+}
+
+/** Radio buttons as one tab stop, moved through with the arrow keys; `choose` takes the value picked. */
+export function radioGroup<T extends string>(label: string, options: readonly (readonly [T, string])[], chosen: T, choose: (value: T) => void): HTMLElement {
+  const radios = options.map(([value, name]) => {
+    const radio = el('button', { type: 'button', className: 'radio', tabIndex: value === chosen ? 0 : -1 }, name);
+    radio.setAttribute('role', 'radio');
+    radio.setAttribute('aria-checked', String(value === chosen));
+    radio.dataset['value'] = value;
+    // A dialog opening on the group puts the focus on what is chosen.
+    radio.autofocus = value === chosen;
+    radio.onclick = () => {
+      pick(value);
+    };
+    return radio;
+  });
+  const pick = (value: T) => {
+    for (const radio of radios) {
+      const on = radio.dataset['value'] === value;
+      radio.setAttribute('aria-checked', String(on));
+      radio.tabIndex = on ? 0 : -1;
+      if (on) radio.focus();
+    }
+    choose(value);
+  };
+  const group = el('div', { className: 'radios' }, ...radios);
+  group.setAttribute('role', 'radiogroup');
+  group.setAttribute('aria-label', label);
+  group.onkeydown = event => {
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    const at = radios.findIndex(radio => radio === document.activeElement);
+    const next = options[(at + step + options.length) % options.length];
+    if (next) pick(next[0]);
+  };
+  return group;
+}
+
 const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {

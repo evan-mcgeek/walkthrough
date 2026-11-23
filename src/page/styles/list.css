@@ -66,7 +66,7 @@
 }
 
 .list-open:hover {
-  color: var(--violet-text);
+  color: var(--accent-text);
 }
 
 .list-id {

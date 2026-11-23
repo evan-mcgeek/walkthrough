@@ -1,46 +1,53 @@
 /*
-  Design tokens (docs/design/DESIGN.md). Every colour on the page comes from a semantic token below,
-  defined once per theme; the theme follows the system setting.
+  Design tokens (docs/design/DESIGN.md). Every colour on the page comes from a semantic token below, as light-dark(light, dark);
+  the theme follows the system unless the person picks one (html[data-theme]), and html[data-accent] re-points the accent family.
 */
 
 :root {
   color-scheme: light dark;
 
   /* Neutrals */
-  --canvas: #ffffff;
-  --surface: #f6f7f9;
-  --surface-tint: #eef0f3;
-  --rule: #dde1e6;
-  --rule-soft: #e9ecef;
-  --control-edge: #d0d5dc;
-  --ink: #1d2126;
-  --ink-secondary: #3a4048;
-  --muted: #5b636d;
+  --canvas: light-dark(#ffffff, #15181d);
+  --surface: light-dark(#f6f7f9, #1b1f25);
+  --surface-tint: light-dark(#eef0f3, #232830);
+  --rule: light-dark(#dde1e6, #2c323b);
+  --rule-soft: light-dark(#e9ecef, #252a32);
+  --control-edge: light-dark(#d0d5dc, #3a414b);
+  --ink: light-dark(#1d2126, #e5e8ec);
+  --ink-secondary: light-dark(#3a4048, #c3c8cf);
+  --muted: light-dark(#5b636d, #9aa2ac);
+  --icon-knockout: light-dark(#ffffff, #15181d);
 
-  /* Walkthrough violet: the mark, the primary action, progress, selection and focus */
-  --violet: #5b3fd6;
-  --violet-hover: #4a30c2;
-  --violet-text: #4a2fc0;
-  --violet-wash: #f0edfc;
-  --violet-line: #dad3f8;
-  --on-violet: #ffffff;
-  --icon-knockout: #ffffff;
+  /* Data marks on the instrument, not text */
+  --progress-read: light-dark(#a3aab4, #5a626d);
+  --marker-note: light-dark(#6b737d, #9aa2ac);
 
-  /* Status: amber is reopened or attention, rust is not met, live is the Listening session */
-  --amber: #8a5a00;
-  --amber-wash: #fbf1dc;
-  --rust: #9a3412;
-  --live: #2b7a4b;
+  /* The accent (Ultramarine by default): the mark, the primary action, decided progress, focus, picked lines and your own words */
+  --accent: light-dark(#2433b8, #8c97ff);
+  --accent-hover: light-dark(#1b2896, #a3abff);
+  --accent-text: light-dark(#2433b8, #a9b1ff);
+  --accent-wash: light-dark(#eceefc, #1e2346);
+  --accent-line: light-dark(#d3d7f7, #333b70);
+  --on-accent: light-dark(#ffffff, #0b0f2e);
+  --line-pick: light-dark(#eef0fd, #1d2242);
+  --line-pick-gutter: light-dark(#d9ddf8, #2a3263);
+
+  /* Status: amber is reopened, finding or attention, rust is not met, live is the Listening session */
+  --amber: light-dark(#8a5a00, #e3b260);
+  --amber-wash: light-dark(#fbf1dc, #33280f);
+  --rust: light-dark(#9a3412, #f0a083);
+  --live: light-dark(#2b7a4b, #6fcf97);
 
   /* Diff */
-  --diff-add: #e8f6ec;
-  --diff-add-gutter: #d3eedc;
-  --diff-del: #fcebea;
-  --diff-del-gutter: #f6d6d3;
-  --line-pick: #efebfd;
-  --line-pick-gutter: #ddd5f9;
+  --diff-add: light-dark(#e8f6ec, #14281c);
+  --diff-add-gutter: light-dark(#d3eedc, #193423);
+  --diff-del: light-dark(#fcebea, #33191a);
+  --diff-del-gutter: light-dark(#f6d6d3, #3f1f20);
+  --stripe-add: light-dark(#3c9a5f, #4fbf7a);
+  --stripe-del: light-dark(#c8473b, #ef7e6f);
 
-  --shadow-float: 0 1px 2px rgb(20 24 30 / 6%), 0 8px 24px rgb(20 24 30 / 10%);
+  --shadow-float:
+    0 1px 2px light-dark(rgb(20 24 30 / 6%), rgb(0 0 0 / 40%)), 0 8px 24px light-dark(rgb(20 24 30 / 10%), rgb(0 0 0 / 35%));
 
   /* Type */
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -54,6 +61,7 @@
   --text-meta: 500 12px/1.4 var(--font-ui);
   --text-code: 400 12.5px/21px var(--font-mono);
   --text-mono-label: 500 12.5px/1.4 var(--font-mono);
+  --text-key: 500 11.5px/1.4 var(--font-mono);
 
   /* Spacing: the one 4px scale */
   --s1: 4px;
@@ -81,38 +89,33 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --canvas: #15181d;
-    --surface: #1b1f25;
-    --surface-tint: #232830;
-    --rule: #2c323b;
-    --rule-soft: #252a32;
-    --control-edge: #3a414b;
-    --ink: #e5e8ec;
-    --ink-secondary: #c3c8cf;
-    --muted: #9aa2ac;
+:root[data-theme='light'] {
+  color-scheme: light;
+}
 
-    --violet: #9b86ff;
-    --violet-hover: #ad9cff;
-    --violet-text: #bdb0ff;
-    --violet-wash: #272143;
-    --violet-line: #3d3470;
-    --on-violet: #130e2b;
-    --icon-knockout: #15181d;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
 
-    --amber: #e3b260;
-    --amber-wash: #33280f;
-    --rust: #f0a083;
-    --live: #6fcf97;
+/* The other accents re-point the whole family together; each keeps AA in both themes. */
+:root[data-accent='petrol'] {
+  --accent: light-dark(#0e6577, #5cc2d4);
+  --accent-hover: light-dark(#0a4f5d, #7fd2e0);
+  --accent-text: light-dark(#0e6577, #7fd2e0);
+  --accent-wash: light-dark(#e3f1f3, #14323a);
+  --accent-line: light-dark(#c4e1e6, #1f4a55);
+  --on-accent: light-dark(#ffffff, #061a1f);
+  --line-pick: light-dark(#e7f3f5, #132e35);
+  --line-pick-gutter: light-dark(#cbe4e9, #1c4550);
+}
 
-    --diff-add: #14281c;
-    --diff-add-gutter: #193423;
-    --diff-del: #33191a;
-    --diff-del-gutter: #3f1f20;
-    --line-pick: #241e44;
-    --line-pick-gutter: #342b66;
-
-    --shadow-float: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 35%);
-  }
+:root[data-accent='berry'] {
+  --accent: light-dark(#9c1f62, #f07ab4);
+  --accent-hover: light-dark(#7f174f, #f59cc7);
+  --accent-text: light-dark(#9c1f62, #f59cc7);
+  --accent-wash: light-dark(#f8e7f0, #3a1a2b);
+  --accent-line: light-dark(#efc9dc, #5a2843);
+  --on-accent: light-dark(#ffffff, #2a0717);
+  --line-pick: light-dark(#faecf3, #341827);
+  --line-pick-gutter: light-dark(#f1d2e1, #4f2239);
 }

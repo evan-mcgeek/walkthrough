@@ -71,9 +71,9 @@ test('the header keeps Stop in a More menu, which Escape closes', async ({ page 
 
   await more.click();
   const menu = page.getByRole('menu', { name: 'More' });
-  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Stop']);
+  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Appearance', 'Stop']);
   await expect(menu.getByRole('menuitem', { name: 'Swipe to decide' })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowUp');
   await expect(menu.getByRole('menuitem', { name: 'Stop' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);
