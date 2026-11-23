@@ -3,13 +3,19 @@
   "name": "walkthrough",
   "description": "Walkthrough: guided reviews of code changes.",
   "owner": {
-    "name": "evan-mcgeek"
+    "name": "evan-mcgeek",
+    "url": "https://github.com/evan-mcgeek"
   },
   "plugins": [
     {
       "name": "walkthrough",
       "description": "A guided review of a code change on a local page, one step at a time.",
-      "source": "./plugin"
+      "source": {
+        "source": "git-subdir",
+        "url": "evan-mcgeek/walkthrough",
+        "path": "plugin",
+        "ref": "release"
+      }
     }
   ]
 }
