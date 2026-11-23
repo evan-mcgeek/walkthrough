@@ -2,13 +2,14 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
-import { cleanText, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
+import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, request, type SessionView, type Taken } from './session';
 import { anchorOf } from './notes';
 import { fieldsOf, filled, parseList } from './input';
 import { type Action, type Item, itemKey } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
+type Choice = PageRequest & (Taken | Cleared);
 export type WalkthroughView = Walkthrough & {
   actions: Record<string, Action[]>;
   decided: Record<string, Decision | null>;
@@ -27,7 +28,8 @@ const STEP_ACTIONS: Action[] = [
 
 const readFile = (dir: string) => path.join(dir, 'read.json');
 const fingerprint = (content: string) => crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
-const isDecision = (entry: Entry): entry is Decision => entry.from === 'page' && entry.kind === 'decision';
+const isChoice = (entry: Entry): entry is Choice => entry.from === 'page' && entry.kind === 'decision';
+const taken = (choice: Choice | undefined): Decision | null => (choice && !('clear' in choice) ? choice : null);
 const keyOf = (value: unknown) => (typeof value === 'object' && value !== null ? itemKey(value as Item) : '');
 
 // A decision outlives no change to what it is about.
@@ -47,11 +49,12 @@ const actionsOf = ({ actions }: Walkthrough, item: Item) =>
   actions?.[itemKey(item)] ?? (item.type === 'step' ? STEP_ACTIONS : []);
 
 export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
-  const decisions = conversation.filter(isDecision);
+  const choices = conversation.filter(isChoice);
   return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
-    const decision = decisions.findLast(one => itemKey(one.item) === key && one.on === on) ?? null;
-    const earlier = decision ? undefined : decisions.findLast(one => itemKey(one.item) === key);
-    return { item, key, actions: actionsOf(walkthrough, item), decision, reopened: earlier ?? null };
+    const latest = choices.findLast(one => itemKey(one.item) === key && one.on === on);
+    // A clear on what the item is now leaves nothing to reopen.
+    const earlier = latest ? undefined : choices.findLast(one => itemKey(one.item) === key);
+    return { item, key, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
   });
 }
 
@@ -110,14 +113,21 @@ export function parseActions(text: string, walkthrough: Walkthrough, conversatio
   });
 }
 
-export async function decide(
-  dir: string,
-  { item, action, note, text }: Record<string, unknown>,
-): Promise<{ walkthrough: WalkthroughView | null; session: SessionView } | null> {
+type Decided = { walkthrough: WalkthroughView | null; session: SessionView };
+
+export async function decide(dir: string, { item, action, note, text, clear }: Record<string, unknown>): Promise<Decided | null> {
   const walkthrough = readWalkthrough(dir);
-  const found = walkthrough && itemsOf(walkthrough, conversationOf(dir)).find(one => one.key === keyOf(item));
-  const offered = found && actionsOf(walkthrough, found.item).find(one => one.id === action);
-  if (!found || !offered) return null;
+  const conversation = conversationOf(dir);
+  const found = walkthrough && itemsOf(walkthrough, conversation).find(one => one.key === keyOf(item));
+  if (!found) return null;
+  if (clear !== undefined) {
+    const decided = decisionsOf(walkthrough, conversation).find(one => one.key === found.key)?.decision;
+    if (clear !== true || !decided || action !== undefined || note !== undefined || text !== undefined) return null;
+    const session = await request(dir, { kind: 'decision', item: found.item, clear: true, on: found.on });
+    return { walkthrough: walkthroughView(dir), session };
+  }
+  const offered = actionsOf(walkthrough, found.item).find(one => one.id === action);
+  if (!offered) return null;
   if (offered.note ? !filled(note) : note !== undefined) return null;
   if (offered.edit ? !filled(text) : text !== undefined) return null;
   const session = await request(dir, {
