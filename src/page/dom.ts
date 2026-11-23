@@ -48,6 +48,16 @@ export function showUnreachable({ name, reopen, retry }: PageName): void {
   document.body.classList.add('unreachable');
 }
 
+const send = (route: string, body: Record<string, unknown>) =>
+  fetch(`/${route}?token=${token}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+/** For what the page sends on its own: how it ends leaves the alert about what the person did alone. */
+export const postQuietly = (route: string, body: Record<string, unknown>) => send(route, body).catch(() => null);
+
 /** The server's answer, or null once the person has been told why there is none. */
 export async function post(page: PageName, route: string, body: Record<string, unknown>): Promise<Response | null> {
   const problem = tooLong(body);
@@ -56,11 +66,7 @@ export async function post(page: PageName, route: string, body: Record<string, u
     return null;
   }
   try {
-    const answer = await fetch(`/${route}?token=${token}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const answer = await send(route, body);
     if (answer.ok) {
       showAlert(null);
       return answer;

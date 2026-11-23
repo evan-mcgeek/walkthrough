@@ -1,7 +1,10 @@
-// Loaded first by every test run: HOME and the walkthrough folders point into a temp folder, so no test touches real state.
+// Imported by both test configs, so it runs once in the runner's main process and every worker inherits the sandbox.
+// HOME and the walkthrough folders point into a temp folder, so no test touches real state.
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { shareHistory } from './helpers';
 
 if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
   const realHome = os.homedir();
@@ -24,6 +27,19 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
     WALKTHROUGH_STATE: path.join(sandbox, 'state'),
   });
   process.on('exit', () => {
-    fs.rmSync(sandbox, { recursive: true, force: true });
+    try {
+      // macOS gives the Documents, Downloads and Library folders it creates in a home an "everyone deny delete" ACL.
+      if (process.platform === 'darwin') spawnSync('chmod', ['-R', '-N', home]);
+      fs.rmSync(sandbox, { recursive: true, force: true, maxRetries: 5 });
+    } catch (error) {
+      console.error(`could not remove the test sandbox: ${String(error)}`);
+    }
   });
+  // A signal no runner handles ends the process without 'exit'; Playwright handles neither.
+  for (const signal of ['SIGTERM', 'SIGHUP'] as const)
+    process.once(signal, () => {
+      if (!process.listenerCount(signal)) process.exit(128 + os.constants.signals[signal]);
+    });
+  // Its git runs also have xcrun look git up for the new HOME once here, not in every worker at once, which timed out under load.
+  shareHistory();
 }

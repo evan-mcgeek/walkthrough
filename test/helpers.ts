@@ -31,23 +31,14 @@ const commit = (cwd: string, message: string, files: Files) => {
 
 export type Repo = ReturnType<typeof makeRepo>;
 
-/**
- * `feature/login` branched from main at `base`, adding `login.ts` and changing `app.ts`; main moved on after it.
- * `start` adds files to main's first commit and `feature` to the branch's commit; `env` is added to the CLI's environment.
- * The working copy is left on the feature branch.
- */
-export function makeRepo({
-  start = {},
-  feature = {},
-  env: extraEnv = {},
-}: { start?: Files; feature?: Files; env?: Record<string, string> } = {}) {
-  const root = fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', 'repo-'));
-  const dir = path.join(root, 'shop');
-  const state = path.join(root, 'state');
-  const bin = path.join(root, 'bin');
-  const logs = path.join(root, 'logs');
-  for (const folder of [dir, bin, logs]) fs.mkdirSync(folder);
+const sandboxed = (prefix: string) => fs.mkdtempSync(path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', prefix));
 
+type History = { root: string; base: string; head: string };
+
+function buildHistory(start: Files, feature: Files): History {
+  const root = sandboxed('history-');
+  const dir = path.join(root, 'shop');
+  fs.mkdirSync(dir);
   git(root, 'init', '--bare', '-b', 'main', 'origin.git');
   git(dir, 'init', '-b', 'main');
   git(dir, 'remote', 'add', 'origin', path.join(root, 'origin.git'));
@@ -64,6 +55,53 @@ export function makeRepo({
   commit(dir, 'Main moves on', { 'other.ts': 'export const other = 1;\n' });
   git(dir, 'push', 'origin', 'main');
   git(dir, 'checkout', 'feature/login');
+  return { root, base, head };
+}
+
+const DEFAULT_HISTORY = JSON.stringify([{}, {}]);
+const sharedHistory = () => path.join(process.env['WALKTHROUGH_TEST_SANDBOX'] ?? '', 'history.json');
+
+/** Builds the default history before the workers start, so they copy it rather than all building it at once. */
+export const shareHistory = () => {
+  fs.writeFileSync(sharedHistory(), JSON.stringify(buildHistory({}, {})));
+};
+
+/** Each history is built once and copied, as the dozens of git runs that build one crawl on a busy machine. */
+const histories = new Map<string, History>();
+
+function history(start: Files, feature: Files): History {
+  const key = JSON.stringify([start, feature]);
+  let made = histories.get(key);
+  if (!made) {
+    made =
+      key === DEFAULT_HISTORY && fs.existsSync(sharedHistory())
+        ? (JSON.parse(fs.readFileSync(sharedHistory(), 'utf8')) as History)
+        : buildHistory(start, feature);
+    histories.set(key, made);
+  }
+  return made;
+}
+
+/**
+ * `feature/login` branched from main at `base`, adding `login.ts` and changing `app.ts`; main moved on after it.
+ * `start` adds files to main's first commit and `feature` to the branch's commit; `env` is added to the CLI's environment.
+ * The working copy is left on the feature branch.
+ */
+export function makeRepo({
+  start = {},
+  feature = {},
+  env: extraEnv = {},
+}: { start?: Files; feature?: Files; env?: Record<string, string> } = {}) {
+  const root = sandboxed('repo-');
+  const dir = path.join(root, 'shop');
+  const state = path.join(root, 'state');
+  const bin = path.join(root, 'bin');
+  const logs = path.join(root, 'logs');
+  const { root: from, base, head } = history(start, feature);
+  fs.cpSync(from, root, { recursive: true });
+  const config = path.join(dir, '.git', 'config');
+  fs.writeFileSync(config, fs.readFileSync(config, 'utf8').replace(/url = .*/, `url = ${path.join(root, 'origin.git')}`));
+  for (const folder of [bin, logs]) fs.mkdirSync(folder);
 
   const log = (name: string) => path.join(logs, name);
   for (const opener of ['open', 'xdg-open'])
