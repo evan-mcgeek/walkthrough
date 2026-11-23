@@ -31,11 +31,9 @@ const record = (repo: Repo, input: unknown, command = 'steps') => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
 };
 
-const queue = (page: Page) => page.getByRole('navigation', { name: "What's left" });
+const queue = (page: Page) => page.getByRole('navigation', { name: 'To review' });
 const edge = (page: Page, side: 'left' | 'right') => page.locator(`.edge-stripe.${side}`);
-const bottom = (page: Page) => page.getByRole('toolbar', { name: 'Tool panel (hidden)' });
 const checklistPanel = (page: Page) => page.getByRole('complementary', { name: 'Checklist' });
-const toolPanel = (page: Page) => page.getByRole('region', { name: 'Tool panel' });
 const step = (page: Page, name: string) => page.getByRole('region', { name });
 
 /** The checklist shows in the rail first, so the page has drawn it before a panel is opened. */
@@ -45,9 +43,8 @@ async function withChecklist(page: Page, repo: Repo) {
 }
 
 async function showAll(page: Page) {
-  for (const key of ['2', '3', '4']) await page.keyboard.press(key);
+  for (const key of ['2', '3']) await page.keyboard.press(key);
   await expect(checklistPanel(page)).toBeVisible();
-  await expect(toolPanel(page)).toBeVisible();
 }
 
 test.beforeEach(async ({ page, repo, url }) => {
@@ -65,11 +62,10 @@ test('by default the queue is open and every other panel waits on its edge', asy
 
   await expect(edge(page, 'left').getByRole('button')).toHaveText(['Explanation']);
   await expect(edge(page, 'left').getByRole('button', { name: 'Explanation' })).toHaveAttribute('title', 'Show Explanation (3)');
-  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1/2']);
+  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1 of 2 met']);
   await expect(edge(page, 'right').getByRole('button')).toHaveAttribute('title', 'Show Checklist (2)');
-  await expect(bottom(page).getByRole('button')).toHaveText(['Notes0', 'From the session1']);
+  await expect(page.getByRole('toolbar')).toHaveCount(2);
   await expect(checklistPanel(page)).toBeHidden();
-  await expect(toolPanel(page)).toBeHidden();
   await expect(page.getByRole('navigation', { name: 'Steps' })).toBeHidden();
 });
 
@@ -103,10 +99,6 @@ test('each panel hides from its title bar and comes back from its edge or its ke
   await expect(prose.getByText('Bumps the app constant.')).toBeVisible();
   await expect(step(page, 'App version').locator('.code .d2h-file-wrapper')).toHaveCount(1);
 
-  await bottom(page).getByRole('button', { name: /^Notes/ }).click();
-  await expect(toolPanel(page).getByRole('tab', { name: /^Notes/ })).toHaveAttribute('aria-selected', 'true');
-  await expect(toolPanel(page).getByRole('button', { name: 'Hide tool panel' })).toHaveAttribute('title', 'Hide tool panel (4)');
-  await expect(bottom(page)).toBeHidden();
 
   // A new server listens on a new port, whose browser storage starts empty.
   await page.goto('about:blank');
@@ -115,12 +107,10 @@ test('each panel hides from its title bar and comes back from its edge or its ke
   await page.goto(`${repo.url()}#2`);
   await expect(step(page, 'App version')).toBeVisible();
   await expect(checklistPanel(page)).toBeVisible();
-  await expect(toolPanel(page)).toBeVisible();
   await expect(step(page, 'App version').locator('.prose .step-title')).toBeVisible();
 
-  for (const key of ['2', '3', '4']) await page.keyboard.press(key);
+  for (const key of ['2', '3']) await page.keyboard.press(key);
   await expect(checklistPanel(page)).toBeHidden();
-  await expect(toolPanel(page)).toBeHidden();
   await expect(step(page, 'App version').locator('.prose')).toHaveCount(0);
 });
 
@@ -147,7 +137,7 @@ for (const [name, setUp] of [
     expect(await heard(deciding)).toMatchObject({ kind: 'decision', item: { type: 'step', id: '1' }, action: 'approve' });
     const second = step(page, 'App version');
     await expect(second).toBeVisible();
-    await expect(page.getByRole('banner').getByText('1/2', { exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').getByText('Step 2 of 2 · 1 decided', { exact: true })).toBeVisible();
     const asking = repo.background('listen');
     await second.getByRole('textbox', { name: 'Ask about this step' }).fill('Why bump it?');
     await second.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
@@ -171,11 +161,9 @@ for (const [name, setUp] of [
     await expect(second.getByText('Too early.', { exact: true })).toBeVisible();
   });
 
-test('with every panel shown the Undo toast sits over the main pane, clear of the checklist and the tool panel', async ({ page, repo }) => {
+test('with every panel shown the Undo toast sits over the main pane, clear of the checklist', async ({ page, repo }) => {
   await withChecklist(page, repo);
-  await page.keyboard.press('2');
-  await page.keyboard.press('4');
-  await expect(toolPanel(page)).toBeVisible();
+  await showAll(page);
 
   await step(page, 'Login check').getByRole('button', { name: 'Approve' }).click();
 
@@ -216,40 +204,30 @@ test('the checklist panel says what it counts and what it is for, and each item 
   await expect(page.getByRole('main').getByText('not yet', { exact: true })).toBeVisible();
 });
 
-test('the tool panel puts the step notes, the session and what is detached in tabs under the step', async ({ page, repo }) => {
+test('with no tool panel, notes stay on their lines and what the session said waits on the Session messages page', async ({ page, repo }) => {
   record(
     repo,
     [
       { step: '1', label: 'Risk', text: 'Everyone gets in.' },
-      { step: '1', label: 'Nit', text: 'A *name*.', file: 'login.ts', lines: [1, 1], low: true },
+      { step: '1', label: 'Nit', text: 'A *name*.', file: 'login.ts', lines: [1, 1] },
     ],
     'note',
   );
   repo.run('say', 'The lockfile is in no step.');
-  await expect(bottom(page).getByRole('button')).toHaveText(['Notes2', 'From the session1']);
+  const messages = queue(page).getByRole('link', { name: 'Session messages' });
+  await expect(messages).toHaveText('Session messages1 message');
+  const login = step(page, 'Login check');
+  await expect(login.getByRole('complementary', { name: 'In this step' })).toContainText('2 notes');
+  await expect(login.getByRole('article', { name: 'Nit' })).toBeVisible();
+  await expect(page.getByText('The lockfile is in no step.')).toHaveCount(0);
 
-  await bottom(page).getByRole('button', { name: /^From the session/ }).click();
+  await page.keyboard.press('4');
+  await expect(page.getByRole('region', { name: 'Tool panel' })).toHaveCount(0);
+  await expect(page.getByRole('tab')).toHaveCount(0);
 
-  const panel = toolPanel(page);
-  await expect(panel.getByRole('tab')).toHaveText(['Notes2', 'From the session1']);
-  await expect(panel.getByRole('tab', { name: /^From the session/ })).toHaveAttribute('aria-selected', 'true');
-  await expect(panel.getByRole('tabpanel')).toContainText('The lockfile is in no step.');
-  await panel.getByRole('tab', { name: /^From the session/ }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(panel.getByRole('tab', { name: /^Notes/ })).toBeFocused();
-  await expect(panel.getByRole('tabpanel').getByRole('button')).toHaveText(['RiskEveryone gets in.', 'Nitline 1A name.']);
-  const nit = step(page, 'Login check').getByRole('article', { name: 'Nit' });
-  await expect(nit).toBeHidden();
-
-  await panel.getByRole('button', { name: /^Nit/ }).click();
-
-  await expect(nit).toBeVisible();
-  await expect(nit).toBeFocused();
-
-  // Not again beside the main pane that shows the session.
-  await queue(page).getByRole('link', { name: 'From the session' }).click();
-  await expect(page.getByText('The lockfile is in no step.')).toHaveCount(1);
-  await expect(page.getByRole('tab', { name: /^From the session/ })).toHaveCount(0);
+  await messages.click();
+  await expect(page.getByRole('heading', { name: 'Session messages', level: 2 })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'From the session' })).toContainText('The lockfile is in no step.');
 });
 
 test.describe('with a long file', () => {
@@ -270,7 +248,7 @@ test.describe('with a long file', () => {
 
       repo.run('say', 'Still here.');
 
-      await expect(page.getByRole('link', { name: 'From the session' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Session messages' })).toBeVisible();
       expect(await pane(page).evaluate(scroller => scroller.scrollTop)).toBe(600);
     });
 

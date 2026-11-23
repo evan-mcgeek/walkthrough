@@ -27,7 +27,7 @@ test('an item the session marks not met is left in the rail and opens the checkl
   const recorded = repo.record(checklist, 'checklist');
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   await page.reload();
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   const left = rail.getByRole('link', { name: 'The app shows its version.' });
   await expect(left).toHaveText('The app shows its version.Checklist');
   await expect(left).toHaveAttribute('data-state', 'not-met');
@@ -69,7 +69,7 @@ test('inline code in an item stays on one line in the narrow panel', async ({ pa
 test('a status word alone never puts an item in the rail; only the mark the session records does', async ({ page, repo }) => {
   repo.record({ title: 'Criteria', items: [{ status: 'not met', text: 'Who may log in?' }] }, 'checklist');
   await page.reload();
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link')).toHaveText(['Login check', 'App version', 'Summary']);
 
   repo.record({ title: 'Criteria', items: [{ status: 'not met', mark: 'not-met', text: 'Who may log in?' }] }, 'checklist');
@@ -101,17 +101,18 @@ test('the checklist shows on the Summary, and is absent when none is recorded', 
   await expect(page.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveCount(3);
 });
 
-test('checklist marks and rail states are named for screen readers, not only drawn', async ({ page, repo }) => {
+test('checklist marks and rail states are named for screen readers and in their tooltips, not only drawn', async ({ page, repo }) => {
   const recorded = repo.record(checklist, 'checklist');
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   await page.reload();
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
 
-  await expect(rail.getByRole('link', { name: 'App version' }).getByRole('img')).toHaveAccessibleName('Unread');
-  await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('Read');
+  await expect(rail.getByRole('link', { name: 'App version' }).getByRole('img')).toHaveAccessibleName('Not read yet');
+  await expect(rail.getByRole('link', { name: 'App version' }).locator('svg title')).toHaveText('Not read yet');
+  await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('The step you are on');
   await expect(rail.getByRole('link', { name: 'The app shows its version.' }).getByRole('img')).toHaveAccessibleName('Not met');
   await rail.getByRole('link', { name: 'The app shows its version.' }).click();
   const items = page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
-  for (const [at, mark] of ['Not checked', 'Not met', 'Not checked'].entries())
+  for (const [at, mark] of ['Not checked yet', 'Not met', 'Not checked yet'].entries())
     await expect(items.nth(at).getByRole('img').first()).toHaveAccessibleName(mark);
 });

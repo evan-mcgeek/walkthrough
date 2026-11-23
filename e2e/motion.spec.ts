@@ -36,7 +36,7 @@ const record = (repo: Repo, input: unknown, command = 'steps') => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   return recorded.stdout;
 };
-const rail = (page: Page) => page.getByRole('navigation', { name: "What's left" });
+const rail = (page: Page) => page.getByRole('navigation', { name: 'To review' });
 
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
@@ -72,8 +72,8 @@ test('deciding slides the rail row out, fills the progress, ticks the counts and
 
 test('reduced motion keeps opacity only', async ({ page, repo }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Assumed, not read' }).click();
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: '1 assumption' }).click();
+  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Assumed, not checked' }).click();
+  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: '1 thing assumed, not checked' }).click();
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   repo.run('say', '--question', 'Is that right?');
@@ -90,8 +90,8 @@ test('reduced motion keeps opacity only', async ({ page, repo }) => {
 
 test('Needs you pulses twice, assumptions and more notes reveal, and a redraw from polling starts nothing', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
-  await step.getByRole('button', { name: 'Assumed, not read' }).click();
-  await step.getByRole('button', { name: '1 assumption' }).click();
+  await step.getByRole('button', { name: 'Assumed, not checked' }).click();
+  await step.getByRole('button', { name: '1 thing assumed, not checked' }).click();
   record(
     repo,
     [
@@ -114,7 +114,7 @@ test('Needs you pulses twice, assumptions and more notes reveal, and a redraw fr
   const before = (await played(page)).length;
 
   repo.run('say', 'Still reading.');
-  await expect(page.getByRole('link', { name: /From the session/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Session messages/ })).toBeVisible();
   // Two more polls, the second with nothing new.
   await page.waitForResponse('**/data/walkthrough.json');
   await page.waitForResponse('**/data/walkthrough.json');

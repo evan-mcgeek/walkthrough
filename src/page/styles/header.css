@@ -1,6 +1,6 @@
 /*
   The 44px header: .logo, the session's .kind, the mono .session-label, the segmented .progress bar with its .progress-count,
-  then .header-end (.status, Stop, the More menu) pushed to the right.
+  then .header-end (the .status-prefix and .status, End session, the More menu) pushed to the right.
 */
 
 .app-header {
@@ -50,6 +50,7 @@
 .progress {
   display: flex;
   flex: none;
+  align-items: center;
   gap: 3px;
   width: 180px;
 }
@@ -80,9 +81,14 @@
   transform-origin: left;
 }
 
-.segment[data-state='current'],
 .segment[data-state='read'] {
   background: var(--progress-read);
+}
+
+/* Where the person is, whatever the step's state: solid ink and taller, on any accent and theme. */
+.segment[data-state='current'] {
+  height: 9px;
+  background: var(--ink);
 }
 
 .segment[data-state='reopened'] {
@@ -94,6 +100,7 @@
   color: var(--muted);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .header-end {
@@ -102,6 +109,12 @@
   align-items: center;
   gap: var(--s3);
   margin-left: auto;
+}
+
+.status-prefix {
+  margin-right: calc(-1 * var(--s1));
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .status {
@@ -145,12 +158,13 @@
   background: none;
 }
 
-/* The More menu holds Appearance, and at phone width what the header has no room for. */
+/* The More menu holds Appearance and Help, and at phone width what the header has no room for. */
 .more-menu {
   position: relative;
 }
 
-/* At phone width the bar takes its own full-width strip under the header's line, and Stop and the panels move into More. */
+/* At phone width the bar takes its own full-width strip under the header's line, End session and the panels move into More,
+   and the step picker under the header says the count. */
 @media (max-width: 760px) {
   .app-header {
     flex-wrap: wrap;
@@ -161,7 +175,6 @@
 
   .logo,
   .session-label,
-  .progress-count,
   .header-end {
     height: 44px;
     display: flex;
@@ -182,7 +195,8 @@
     padding-bottom: var(--s2);
   }
 
-  .header-end > .stop {
+  .header-end > :is(.stop, .status-prefix),
+  .progress-count {
     display: none;
   }
 
@@ -193,10 +207,6 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-  }
-
-  .app-header .kind ~ .progress-count {
-    display: none;
   }
 
   .app-header .kind ~ .session-label {

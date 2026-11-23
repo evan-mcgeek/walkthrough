@@ -29,13 +29,13 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const recorded = repo.record(steps);
   if (recorded.status !== 0) throw new Error(recorded.stderr);
-  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link')).toHaveCount(4);
+  await expect(page.getByRole('navigation', { name: 'To review' }).getByRole('link')).toHaveCount(4);
 });
 
 test('shows one step at a time with its explanation and files, folded steps collapsed, and moves between steps', async ({
   page,
 }) => {
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('heading', { name: 'To review 3' })).toBeVisible();
   await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('aria-current', 'step');
@@ -57,19 +57,19 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(overview).toHaveCSS('color', ink);
   await expect(overview).toHaveCSS('font-size', '15px');
   await expect(overview).toHaveCSS('line-height', '24px');
-  const assumed = first.getByRole('list', { name: 'Assumed, not read' });
+  const assumed = first.getByRole('list', { name: 'Assumed, not checked' });
   await expect(assumed.getByRole('listitem')).toHaveText(['Nothing else calls login yet.', 'Tests run without a network.']);
-  await first.getByRole('button', { name: 'Assumed, not read' }).click();
+  await first.getByRole('button', { name: 'Assumed, not checked' }).click();
   await expect(assumed).toBeHidden();
-  await expect(first.getByRole('button', { name: '2 assumptions' })).toHaveAttribute('aria-expanded', 'false');
-  await first.getByRole('button', { name: '2 assumptions' }).click();
+  await expect(first.getByRole('button', { name: '2 things assumed, not checked' })).toHaveAttribute('aria-expanded', 'false');
+  await first.getByRole('button', { name: '2 things assumed, not checked' }).click();
   await expect(assumed).toBeVisible();
   await expect(first.locator('.d2h-ins')).toContainText(['export const login = () => true;', "test('login', () => {});"]);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toHaveCount(0);
 
   await page.keyboard.press('j');
   const folded = page.getByRole('region', { name: 'Regenerated schema' });
-  await expect(folded.getByText('Folded by the session, not shown line by line.')).toBeVisible();
+  await expect(folded.getByText('Files to skim', { exact: true })).toBeVisible();
   const files = folded.getByRole('list', { name: 'Folded files' });
   await expect(files).toHaveCount(0);
   await folded.getByRole('button', { name: /^1 file/ }).click();
@@ -87,7 +87,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await rail.getByRole('link', { name: 'App version' }).click();
   await expect(page.getByRole('region', { name: 'App version' }).getByText('Bumps the app constant.')).toBeVisible();
   await expect(page.getByRole('region', { name: 'App version' }).locator('strong')).toHaveText('constant');
-  await expect(page.getByRole('list', { name: 'Assumed, not read' })).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Assumed, not checked' })).toHaveCount(0);
   await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('aria-current', 'step');
   await expect(rail.getByRole('link', { name: 'Login check' })).not.toHaveAttribute('aria-current');
 
@@ -96,7 +96,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
 });
 
 test('the rail is reached and used from the keyboard, and keeps its focus through a redraw', async ({ page, repo, browserName }) => {
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   // Safari moves between links with Option-Tab, as its own setting leaves plain Tab to form controls.
   const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
@@ -147,7 +147,7 @@ test('shows how many steps are decided and left, and approving moves on to the n
 
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^1 of 3 steps decided, 2 left/);
   await expect(page.getByRole('region', { name: 'Regenerated schema' })).toBeVisible();
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('heading', { name: 'To review 2' })).toBeVisible();
   await rail.getByRole('button', { name: '1 decided' }).click();
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveText('Login checkDecided: Approve');
@@ -167,7 +167,7 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   const end = page.getByRole('region', { name: 'Summary' });
   await expect(end.getByRole('region', { name: 'Decided' }).getByRole('row')).toHaveText(['Approve1 Login check, 2 Regenerated schema2', 'Flag3 App version1']);
   await expect(end.getByRole('region', { name: 'Flagged' }).getByRole('listitem')).toHaveText(['3 App versionNot this version.']);
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByText('Everything is decided.')).toBeVisible();
   await expect(rail.getByRole('heading', { name: 'To review 0' })).toBeVisible();
 
@@ -183,7 +183,7 @@ test('a redraw from the session or from steps recorded again keeps the step bein
   page,
   repo,
 }) => {
-  await page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'Regenerated schema' }).click();
+  await page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Regenerated schema' }).click();
   const folded = page.getByRole('region', { name: 'Regenerated schema' });
   await folded.getByRole('button', { name: /^1 file/ }).click();
   await folded.getByRole('button', { name: 'Show diff' }).click();
@@ -205,19 +205,18 @@ test('a redraw from the session or from steps recorded again keeps the step bein
   await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 });
 
-test('in the tool panel a line note on a folded step opens its file and takes focus from the Notes tab', async ({ page, repo }) => {
+test('a line note on a folded step opens the fold and its file, so the note is never hidden behind Show diff', async ({ page, repo }) => {
   const noted = repo.record([{ step: '2', file: 'schema.json', lines: [1, 1], label: 'Stale', text: 'Still lists the field.' }], 'note');
   if (noted.status !== 0) throw new Error(noted.stderr);
-  await page.keyboard.press('4');
   await page.getByRole('link', { name: 'Regenerated schema' }).click();
-  const panel = page.getByRole('region', { name: 'Tool panel' });
-  await panel.getByRole('tab', { name: /^Notes/ }).click();
+  const folded = page.getByRole('region', { name: 'Regenerated schema' });
 
-  await panel.getByRole('button', { name: /^Stale/ }).click();
+  await expect(folded.getByRole('article', { name: 'Stale' })).toBeVisible();
+  await expect(folded.getByRole('button', { name: 'Hide diff' })).toHaveAttribute('aria-expanded', 'true');
 
-  const note = page.getByRole('region', { name: 'Regenerated schema' }).getByRole('article', { name: 'Stale' });
-  await expect(note).toBeVisible();
-  await expect(note).toBeFocused();
+  await folded.getByRole('button', { name: 'Hide diff' }).click();
+  await expect(folded.getByRole('article', { name: 'Stale' })).toBeHidden();
+  await expect(folded.getByRole('button', { name: 'Show diff' })).toHaveAttribute('aria-expanded', 'false');
 });
 
 test('a step passed on the way to another is not marked read', async ({ page }) => {

@@ -28,7 +28,7 @@ test.beforeEach(async ({ page, repo, url }) => {
 test('a step being checked says so and holds its actions, while the person can still read and ask about it', async ({ page, repo }) => {
   run(repo, 'checking', '1', '2');
   const step = page.getByRole('region', { name: 'Login' });
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
 
   await expect(step.getByText('The session is still checking this step. Findings may still arrive.')).toBeVisible();
   await expect(rail.getByRole('link', { name: /Login/ })).toContainText('Being checked');
@@ -59,7 +59,7 @@ test('a step being checked says so and holds its actions, while the person can s
 test('a finding pinned after the person decided the step brings it back with a banner that goes to it', async ({ page, repo }) => {
   await page.getByRole('region', { name: 'Login' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App' })).toBeVisible();
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   const banner = page.getByRole('alert');
 
   record(repo, [finding('1', 'Everyone gets in.')], 'note');

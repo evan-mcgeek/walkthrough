@@ -27,7 +27,7 @@ export function region(id: string): HTMLElement {
 }
 
 /**
- * A popover that holds the focus while open (Appearance, the shortcut sheet): Escape or a click outside closes it,
+ * A popover that holds the focus while open (Appearance, Help): Escape or a click outside closes it,
  * and the focus goes back to what `returnTo` finds then, as a redraw may have replaced the control that opened it.
  */
 export function openDialog(label: string, returnTo: () => Element | null, ...content: Node[]): HTMLDialogElement {

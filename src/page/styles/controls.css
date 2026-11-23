@@ -3,7 +3,7 @@
   Buttons: .btn (secondary), .btn.primary, .btn.ghost, .btn.offer, .btn.small; .icon-button; .link.
   Joined switches: .segmented, .segmented.icons. Fields: input, textarea, select; .select wraps a select with the drawn chevron.
   State: .tag, .tag.decided, .tag.reopened (a dot and a word). Pills: .counter, .file-chip; the quiet .kind word.
-  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box, .detached-box; .menu floats under its button.
+  Boxes: .notice, .notice.attention, .banner, .banner.attention, .question-box; .menu floats under its button.
 */
 
 body {
@@ -428,15 +428,6 @@ select:disabled {
   margin: 0;
   color: var(--amber);
   font: var(--text-label);
-}
-
-.detached-box {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s3);
-  border: 1px dashed var(--control-edge);
-  border-radius: var(--r-xl);
 }
 
 /* A menu of [role=menuitem] and [role=menuitemcheckbox] buttons, floating under the control that opened it. */

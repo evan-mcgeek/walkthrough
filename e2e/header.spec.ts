@@ -7,7 +7,7 @@ const progress = (page: Page) => page.getByRole('progressbar', { name: 'Steps de
 const segments = (page: Page) =>
   progress(page).locator('[data-state]').evaluateAll(all => all.map(one => one.getAttribute('data-state')));
 
-test('the progress bar has a segment per step coloured by its state, with a count of decided steps', async ({
+test('the progress bar has a segment per step coloured by its state, marks where the person is, and says the step and the count', async ({
   page,
   repo,
   url,
@@ -23,18 +23,44 @@ test('the progress bar has a segment per step coloured by its state, with a coun
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '0 of 3 steps decided, 3 left, 1 read');
   await expect(progress(page)).toHaveAttribute('aria-valuenow', '0');
   await expect(progress(page)).toHaveAttribute('aria-valuemax', '3');
-  await expect(page.getByText('0/3', { exact: true })).toBeVisible();
+  await expect(page.getByText('Step 1 of 3 · 0 decided', { exact: true })).toBeVisible();
   expect(await segments(page)).toEqual(['current', 'unread', 'unread']);
+  await expect(progress(page).locator('[data-state]').nth(1)).toHaveAttribute('title', '2 App version: not read yet');
+  await expect(progress(page).locator('[data-state]').nth(0)).toHaveAttribute('title', '1 Login check: you are here');
 
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '1 of 3 steps decided, 2 left, 2 read');
-  await expect(page.getByText('1/3', { exact: true })).toBeVisible();
+  await expect(page.getByText('Step 2 of 3 · 1 decided', { exact: true })).toBeVisible();
   expect(await segments(page)).toEqual(['decided', 'current', 'unread']);
+  await expect(progress(page).locator('[data-state]').nth(0)).toHaveAttribute('title', '1 Login check: decided');
 
   await page.getByRole('link', { name: 'Cart' }).click();
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '1 of 3 steps decided, 2 left, 3 read');
   expect(await segments(page)).toEqual(['decided', 'read', 'current']);
+
+  // A decided step read again is still where the person is: solid ink and taller.
+  await page.keyboard.press('k');
+  await page.keyboard.press('k');
+  await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
+  expect(await segments(page)).toEqual(['current', 'read', 'read']);
+  const current = progress(page).locator('[data-state="current"]');
+  await expect(current).toHaveCSS('height', '9px');
+  await expect(progress(page).locator('[data-state="read"]').first()).toHaveCSS('height', '5px');
+  expect(await current.evaluate(one => getComputedStyle(one).backgroundColor)).toBe(
+    await page.evaluate(() => {
+      const probe = document.body.appendChild(document.createElement('span'));
+      probe.style.color = 'var(--ink)';
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }),
+  );
+
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
+  await expect(page.getByText('Summary · 1 decided', { exact: true })).toBeVisible();
+  expect(await segments(page)).toEqual(['decided', 'read', 'read']);
 });
 
 test('the session status shows its state with a dot, or a spinning icon while the session works', async ({
@@ -65,13 +91,17 @@ test('the session status shows its state with a dot, or a spinning icon while th
   await expect(status.locator('.dot')).toHaveCount(1);
 });
 
-test('the header names the walkthrough and its range, and Stop stays at hand', async ({ page, repo, url }) => {
+test('the header names the walkthrough and its range, and End session stays at hand after the muted Session status', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const label = page.getByRole('heading', { level: 1 });
   await expect(label).toHaveText('feature/login');
   const range = `${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`;
   await expect(label).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
-  await expect(page.getByRole('banner').getByRole('button', { name: 'Stop' })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'End session' })).toBeVisible();
+  const prefix = page.getByRole('banner').getByText('Session', { exact: true });
+  await expect(prefix).toBeVisible();
+  const [said, status] = await Promise.all([prefix.boundingBox(), page.getByRole('status', { name: 'Session' }).boundingBox()]);
+  expect(said && status && said.x + said.width < status.x).toBe(true);
 });
 
 test('the header shows the kind the session gave the walkthrough beside its name, in muted ink', async ({ page, repo, url }) => {

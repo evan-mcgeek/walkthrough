@@ -1,7 +1,7 @@
 /*
   Tool windows (docs/design/DESIGN.md, Layout and Tool Windows): the .queue rail, the explanation column (.main.split, its .prose
-  beside its .code), the 288px .side checklist and the .tools panel under the step. Each has a .panel-head title bar whose .panel-hide
-  sends it to its edge: a vertical .edge-button on the 26px .edge-stripe.left or .right, or the 28px .bottom-strip of the tool panel's tabs.
+  beside its .code) and the 288px .side checklist. Each has a .panel-head title bar whose .panel-hide
+  sends it to its edge: a vertical .edge-button on the 26px .edge-stripe.left or .right.
 */
 
 .center {
@@ -19,9 +19,7 @@
 
 .queue[hidden],
 .side[hidden],
-.tools[hidden],
-.edge-stripe[hidden],
-.bottom-strip[hidden] {
+.edge-stripe[hidden] {
   display: none;
 }
 
@@ -113,23 +111,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.bottom-strip {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 2px;
-  height: 28px;
-  box-sizing: border-box;
-  padding: 0 var(--s2);
-  border-top: 1px solid var(--rule);
-  background: var(--surface);
-}
-
-.bottom-strip > .edge-button {
-  padding: 2px var(--s2);
-  writing-mode: horizontal-tb;
-}
-
 /* ---------- checklist ---------- */
 
 .side:not([hidden]) {
@@ -216,114 +197,6 @@
   margin-bottom: var(--s4);
 }
 
-/* ---------- tool panel ---------- */
-
-.tools:not([hidden]) {
-  display: block;
-  flex: none;
-  max-height: 40%;
-  padding: 0 var(--s6) var(--s3);
-  overflow-y: auto;
-  border-top: 1px solid var(--rule);
-  background: var(--surface);
-}
-
-/* The tab row is the tool panel's title bar. */
-.tools > .panel-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  margin: 0 calc(-1 * var(--s6)) var(--s2);
-  padding: 0 var(--s4) 0 var(--s5);
-  border-bottom: 1px solid var(--rule);
-  background: var(--surface);
-}
-
-.tab-list {
-  display: flex;
-  gap: 2px;
-}
-
-.tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: var(--s2) var(--s3);
-  border: 0;
-  background: none;
-  color: var(--ink-secondary);
-  font: 400 13px/1.4 var(--font-ui);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--fast) linear;
-}
-
-.tab:hover {
-  color: var(--ink);
-}
-
-.tab[aria-selected='true'] {
-  color: var(--ink);
-  font-weight: 600;
-  box-shadow: inset 0 -2px 0 var(--accent);
-}
-
-.tab:focus-visible {
-  outline-offset: -2px;
-}
-
-.tool-body > :is(.muted, .notice, .detached-box) {
-  margin: var(--s2) 0;
-}
-
-.note-index {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.note-link {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s2);
-  width: 100%;
-  padding: var(--s1) 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: var(--text-body-ui);
-  text-align: left;
-  cursor: pointer;
-}
-
-.note-link .label {
-  flex: none;
-  font-weight: 650;
-}
-
-.note-link .lines {
-  flex: none;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.note-link .lines::after {
-  margin-left: var(--s2);
-  content: '·';
-}
-
-.note-link .gist {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.note-link:hover .gist {
-  color: var(--ink);
-}
-
 /* At phone width the panels stack under the main pane, which scrolls on its own; their toggles live in the More menu. */
 @media (max-width: 760px) {
   .side:not([hidden]) {
@@ -331,18 +204,5 @@
     max-height: 40%;
     border-top: 1px solid var(--rule);
     border-left: 0;
-  }
-
-  .tools:not([hidden]) {
-    padding: 0 var(--s4) var(--s3);
-  }
-
-  .tools > .panel-head {
-    margin: 0 calc(-1 * var(--s4)) var(--s2);
-    padding: 0 var(--s2) 0 var(--s3);
-  }
-
-  .tab-list {
-    overflow-x: auto;
   }
 }

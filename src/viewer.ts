@@ -5,8 +5,8 @@ export const CHOICES = {
   theme: ['system', 'light', 'dark'],
 } as const;
 
-/** The page's tool windows, in the order of the keys 1 to 4 that show and hide them. */
-export const PANELS = ['queue', 'checklist', 'explanation', 'tools'] as const;
+/** The page's tool windows, in the order of the keys 1 to 3 that show and hide them. */
+export const PANELS = ['queue', 'checklist', 'explanation'] as const;
 export type Panel = (typeof PANELS)[number];
 
 type Choices = typeof CHOICES;
@@ -15,7 +15,7 @@ export type Viewer = { [Setting in keyof Choices]: Choices[Setting][number] } & 
 export const DEFAULT_VIEWER: Viewer = {
   accent: 'ultramarine',
   theme: 'system',
-  panels: { queue: true, checklist: false, explanation: false, tools: false },
+  panels: { queue: true, checklist: false, explanation: false },
 };
 
 const fields = (value: unknown): Record<string, unknown> =>

@@ -40,11 +40,11 @@ test.beforeEach(async ({ page, repo, url }) => {
 });
 
 test('a step whose diff changed shows reopened with the decision it had', async ({ page }) => {
-  const rail = page.getByRole('navigation', { name: "What's left" });
-  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened', 'From the session3 detached', 'Summary']);
+  const rail = page.getByRole('navigation', { name: 'To review' });
+  await expect(rail.getByRole('link')).toHaveText(['Login checkChanged since you decided', 'Session messages3 on removed code', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reopened');
   const step = page.getByRole('region', { name: 'Login check' });
-  await expect(step.getByText('Reopened', { exact: true })).toBeVisible();
+  await expect(step.getByText('Changed since you decided', { exact: true })).toBeVisible();
   await expect(step.getByText('Changed since you chose Approve.', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
   const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
@@ -52,14 +52,15 @@ test('a step whose diff changed shows reopened with the decision it had', async 
   await expect(segments).toHaveAttribute('data-state', 'reopened');
 });
 
-test('notes whose step or lines are gone show detached from the session, still open to a reply', async ({ page }) => {
-  const detached = page.getByRole('region', { name: /^Detached/ });
+test('notes whose step or lines are gone show as notes on removed code on the Session messages page, still open to a reply', async ({ page }) => {
+  const detached = page.getByRole('region', { name: /^Notes on removed code/ });
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(detached).toHaveCount(0);
-  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
-  await expect(fromSession).toHaveText('From the session3 detached');
+  const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
+  await expect(fromSession).toHaveText('Session messages3 on removed code');
   await fromSession.click();
-  await expect(detached.getByRole('heading')).toHaveText('Detached3');
+  await expect(detached.getByRole('heading')).toHaveText('Notes on removed code3');
+  await expect(detached.getByText('Their lines are gone from the change, so they wait here instead of being dropped.')).toBeVisible();
   await expect(detached.getByRole('article')).toHaveCount(2);
   await expect(detached.getByText('Checklist “Logs in.” linked to a step that no longer exists', { exact: true })).toBeVisible();
   const version = detached.getByRole('article', { name: 'Version note' });
@@ -76,9 +77,9 @@ test('changed files in no step yet are named until the session records steps for
   git(repo.dir, 'commit', '-m', 'Add cart');
   repo.run('start');
   const notice = page.getByRole('region', { name: 'Changed files not in any step yet' });
-  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
+  const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
 
-  await expect(fromSession).toHaveText('From the session1 file not in a step, 3 detached');
+  await expect(fromSession).toHaveText('Session messages1 file not in a step · 3 on removed code');
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(notice).toHaveCount(0);
   await fromSession.click();
@@ -91,7 +92,7 @@ test('changed files in no step yet are named until the session records steps for
   ]);
 
   await expect(notice).toHaveCount(0);
-  await expect(fromSession).toHaveText('From the session3 detached');
+  await expect(fromSession).toHaveText('Session messages3 on removed code');
 });
 
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {

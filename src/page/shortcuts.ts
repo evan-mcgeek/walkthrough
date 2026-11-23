@@ -1,19 +1,117 @@
 import { el, openDialog } from './dom';
-import { icon } from './icons';
+import { icon, type IconName } from './icons';
 
-/** Every key the page answers, in the order the sheet lists them; each part of the page binds the keys it acts on. */
+/** Every key the page answers, in the order Help lists them; each part of the page binds the keys it acts on. */
 const SHORTCUTS = [
   { caps: 'J / K', does: 'Next / previous step' },
   { caps: 'A', does: 'Approve and go to the next step' },
   { caps: 'F', does: 'Flag (asks for a note)' },
   { caps: '/', does: 'Ask about this step' },
-  { caps: 'Click, Shift-click', does: 'Pick lines from their numbers' },
+  { caps: 'Click, Shift-click a line', does: 'Pick lines' },
   { caps: 'C', does: 'Comment on picked lines' },
   { caps: 'V', does: 'Mark the file as viewed' },
-  { caps: '1 – 4', does: 'Show or hide a panel' },
+  { caps: '1 – 3', does: 'Show or hide a panel' },
   { caps: 'G then S', does: 'Go to the Summary' },
   { caps: '?', does: 'This sheet' },
 ] as const;
+
+/** What each state icon means, in the words Help and the icon's tooltip use. */
+export const MEANS: Partial<Record<IconName, string>> = {
+  current: 'The step you are on',
+  read: 'Read, not decided yet',
+  unread: 'Not read yet',
+  decided: 'Decided: you chose Approve or Flag',
+  reopened: 'Changed since you decided',
+  folded: 'Files to skim: the session says why',
+  met: 'Met',
+  partly: 'Partly met',
+  'not-met': 'Not met',
+  unchecked: 'Not checked yet',
+};
+
+const SEGMENTS = [
+  ['decided', 'Decided'],
+  ['read', 'Read'],
+  ['unread', 'Not read yet'],
+  ['reopened', 'Changed since you decided'],
+  ['current', 'Where you are: solid ink, taller'],
+] as const;
+
+const STATUSES = [
+  ['listening', 'Listening', 'The session is ready for your questions'],
+  ['working', 'Working', 'The session is busy on something you asked'],
+  ['needs-you', 'Needs you', 'The session asked you a question'],
+  ['gone', 'Gone', 'The session stopped listening; what you send waits for it'],
+] as const;
+
+/** A legend table: what each mark shows, then what it means. */
+const legend = (rows: [Node, string][]) =>
+  el('table', { className: 'keys legend' }, el('tbody', {}, ...rows.map(([mark, means]) => el('tr', {}, el('td', {}, mark), el('td', {}, means)))));
+
+const group = (name: string) => el('p', { className: 'popover-label' }, name);
+
+function meanings(): HTMLElement[] {
+  const rowIcon = (name: IconName) => {
+    const mark = el('span', { className: 'help-mark' }, icon(name));
+    mark.dataset['state'] = name;
+    return mark;
+  };
+  const means = (name: IconName): [Node, string] => [rowIcon(name), MEANS[name] ?? ''];
+  const steps = (['current', 'read', 'unread', 'decided', 'reopened'] as const).map(means);
+  const checking = el('span', { className: 'help-mark' }, icon('unchecked'));
+  const segments = SEGMENTS.map(([state, means]): [Node, string] => {
+    const segment = el('span', { className: 'segment' }, ...(state === 'decided' ? [el('span', { className: 'segment-fill' })] : []));
+    segment.dataset['state'] = state;
+    return [segment, means];
+  });
+  const notes: [Node, string][] = [
+    [el('span', { className: 'help-label finding' }, icon('warn'), 'Finding'), 'A problem the session found'],
+    [el('span', { className: 'help-label' }, icon('message'), 'Note'), 'A remark from the session'],
+    [el('span', { className: 'help-label' }, 'You asked'), 'Your question and its answer'],
+    [el('span', { className: 'help-label own' }, icon('own'), 'Your comment'), 'Yours: the session gets it with your decisions'],
+  ];
+  const statuses = STATUSES.map(([state, name, means]): [Node, string] => {
+    const status = el('span', { className: 'status' }, state === 'working' ? icon('spinner') : el('span', { className: 'dot' }), name);
+    status.dataset['state'] = state;
+    return [status, means];
+  });
+  return [
+    el(
+      'div',
+      { className: 'help-column' },
+      el('h2', { className: 'popover-head', id: 'help-head' }, 'What things mean'),
+      group('Steps in To review'),
+      legend([...steps, [checking, 'The session is still checking it'], means('folded')]),
+      group('The progress bar'),
+      legend(segments),
+    ),
+    el(
+      'div',
+      { className: 'help-column' },
+      el('span', { className: 'popover-head' }),
+      group('Notes on the code'),
+      legend(notes),
+      group('Session status'),
+      legend(statuses),
+      group('Checklist items'),
+      legend((['met', 'partly', 'not-met', 'unchecked'] as const).map(means)),
+    ),
+  ];
+}
+
+/** Help: what every icon, colour and status on the page means, then the keyboard shortcuts. */
+export function helpSheet(returnTo: () => Element | null): HTMLDialogElement {
+  const rows = SHORTCUTS.map(({ caps, does }) => el('tr', {}, el('td', {}, el('kbd', {}, caps)), el('td', {}, does)));
+  const keys = el(
+    'div',
+    { className: 'help-column' },
+    el('h2', { className: 'popover-head', id: 'help-keys' }, icon('keyboard'), 'Keyboard shortcuts'),
+    el('table', { className: 'keys' }, el('tbody', {}, ...rows)),
+  );
+  const dialog = openDialog('Help: what things mean', returnTo, ...meanings(), keys);
+  dialog.classList.add('help');
+  return dialog;
+}
 
 const bound = new Map<string, (event: KeyboardEvent) => void>();
 
@@ -49,11 +147,3 @@ export function runShortcut(event: KeyboardEvent): boolean {
 
 /** "Approve (A)": what a control does and the key that does it, as its tooltip says. */
 export const withKey = (label: string, key: string) => `${label} (${key})`;
-
-export function shortcutSheet(returnTo: () => Element | null): HTMLDialogElement {
-  const rows = SHORTCUTS.map(({ caps, does }) => el('tr', {}, el('td', {}, el('kbd', {}, caps)), el('td', {}, does)));
-  const dialog = openDialog('Keyboard shortcuts', returnTo, el('table', { className: 'keys' }, el('tbody', {}, ...rows)));
-  dialog.classList.add('sheet');
-  dialog.querySelector('.popover-head')?.prepend(icon('keyboard'));
-  return dialog;
-}

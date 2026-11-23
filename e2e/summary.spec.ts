@@ -21,7 +21,7 @@ const finishing = {
   item: { type: 'walkthrough' },
   hint: 'Gives you the fix list in the chat.',
   actions: [
-    { id: 'hand', label: 'Hand fixes to the author' },
+    { id: 'hand', label: 'Send the fix list to the session' },
     { id: 'recheck', label: 'Ask the session to re-check' },
   ],
 };
@@ -83,20 +83,20 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
 
   const summary = page.getByRole('region', { name: 'Summary' });
   await expect(page).toHaveURL(/#summary$/);
-  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'Summary' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Summary' })).toHaveAttribute('aria-current', 'page');
   await expect(summary.getByText('2 still open', { exact: true })).toBeVisible();
   await expect(summary.getByText('1 of 3 steps decided · 1 flagged · 1 of your comments · checklist 1 of 2 met', { exact: true })).toBeVisible();
   const section = (name: string) => summary.getByRole('region', { name });
   await expect(section('Still open').getByRole('listitem')).toHaveText([
-    '2 App versionReopened: changed since you chose Approve',
+    '2 App versionChanged since you chose Approve',
     '3 CartUndecided',
   ]);
   await expect(section('Decided').getByRole('row')).toHaveText(['Flag1 Login check1']);
   await expect(section('Flagged').getByRole('listitem')).toHaveText(['1 Login checkEveryone gets in.']);
   await expect(section('Your comments').getByRole('listitem')).toHaveText(['login.ts · 1Say who may log in.']);
   await expect(section('Checklist').getByRole('listitem')).toHaveText([/^Logs in\.\s*met$/, /^Has a cart\.\s*not shown$/]);
-  const drafts = section('[AI] drafts');
-  await expect(drafts.getByRole('heading')).toHaveText('[AI] drafts1 edited · 1 dropped');
+  const drafts = section('Comments the session drafted');
+  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 edited · 1 dropped');
   await expect(drafts.getByRole('listitem')).toHaveText(['cart.ts · 1Edited[AI] Name the items.', 'Step 3Dropped[AI] Add a test.']);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
 
@@ -106,7 +106,7 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   const options = verdict.getByRole('radiogroup', { name: 'Verdict' }).getByRole('radio');
   await expect(options).toHaveText(['Ready for colleagues', 'Needs fixes']);
   await expect(options.nth(0)).toHaveAttribute('aria-checked', 'false');
-  const hand = summary.getByRole('button', { name: 'Hand fixes to the author' });
+  const hand = summary.getByRole('button', { name: 'Send the fix list to the session' });
   await expect(hand).toBeDisabled();
   await expect(hand).toHaveClass(/primary/);
   await expect(summary.getByRole('button', { name: 'Ask the session to re-check' })).toBeEnabled();
@@ -130,11 +130,11 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   await expect(verdict.getByRole('radio', { name: 'Ready for colleagues' })).toBeFocused();
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('aria-checked', 'true');
   await hand.click();
-  await expect(summary.getByText('Decided: Hand fixes to the author', { exact: true })).toBeVisible();
+  await expect(summary.getByText('Decided: Send the fix list to the session', { exact: true })).toBeVisible();
 });
 
 test('G then S goes to the Summary from any step, and the Summary is the last row of the queue', async ({ page }) => {
-  const rail = page.getByRole('navigation', { name: "What's left" });
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link').last()).toHaveText('Summary');
 
   await page.keyboard.press('g');
