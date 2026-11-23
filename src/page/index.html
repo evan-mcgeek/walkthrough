@@ -7,9 +7,12 @@
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="app.js"></script>
   </head>
-  <body>
+  <body class="walkthrough">
     <header id="header" class="app-header"></header>
     <p id="alert" class="banner attention" role="alert" hidden></p>
-    <main id="main"></main>
+    <div id="panes" class="panes">
+      <nav id="queue" class="queue" aria-label="What's left"></nav>
+      <main id="main" class="main"></main>
+    </div>
   </body>
 </html>

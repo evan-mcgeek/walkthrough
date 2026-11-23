@@ -40,11 +40,12 @@ test.beforeEach(async ({ page, repo, url }) => {
 });
 
 test('a step whose diff changed shows reopened with the decision it had', async ({ page }) => {
-  const nav = page.getByRole('navigation', { name: 'Steps' });
-  await expect(nav.getByRole('listitem')).toHaveCount(1);
-  await expect(nav.getByRole('listitem').filter({ hasText: 'Login check' })).toContainText('Reopened');
+  const rail = page.getByRole('navigation', { name: "What's left" });
+  await expect(rail.getByRole('link')).toHaveText(['Login checkReopened']);
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reopened');
   const step = page.getByRole('region', { name: 'Login check' });
-  await expect(step.getByText('Reopened: changed since you chose Approve', { exact: true })).toBeVisible();
+  await expect(step.getByText('Reopened', { exact: true })).toBeVisible();
+  await expect(step.getByText('Changed since you chose Approve.', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
   const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
   await expect(segments).toHaveCount(1);
@@ -52,8 +53,10 @@ test('a step whose diff changed shows reopened with the decision it had', async 
 });
 
 test('notes whose step or lines are gone show detached, still open to a reply', async ({ page }) => {
-  const detached = page.getByRole('region', { name: 'Detached' });
+  const detached = page.getByRole('region', { name: /^Detached/ });
+  await expect(detached.getByRole('heading')).toHaveText('Detached3');
   await expect(detached.getByRole('article')).toHaveCount(2);
+  await expect(detached.getByText('Checklist “Logs in.” linked to a step that no longer exists', { exact: true })).toBeVisible();
   const version = detached.getByRole('article', { name: 'Version note' });
   await expect(version.getByText('Was on a step no longer in the change', { exact: true })).toBeVisible();
   const third = detached.getByRole('article', { name: 'Third line' });
@@ -67,10 +70,12 @@ test('changed files in no step yet are named until the session records steps for
   git(repo.dir, 'add', 'cart.ts');
   git(repo.dir, 'commit', '-m', 'Add cart');
   repo.run('start');
-  const notice = page.getByRole('region', { name: 'In no step yet' });
+  const notice = page.getByRole('region', { name: 'Changed files not in any step yet' });
+  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
 
   await expect(notice).toContainText('cart.ts');
   await expect(notice).not.toContainText('login.ts');
+  await expect(fromSession).toHaveText('From the session1 file not in a step');
 
   record(repo, [
     { title: 'Login check', explanation: 'Adds a login function.', files: ['login.ts'] },
@@ -78,10 +83,12 @@ test('changed files in no step yet are named until the session records steps for
   ]);
 
   await expect(notice).toHaveCount(0);
+  await expect(fromSession).toHaveCount(0);
 });
 
 test('a checklist link to a step that is gone shows as gone, beside the links that remain', async ({ page }) => {
+  await page.keyboard.press('j');
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
-  await expect(item.getByRole('link')).toHaveText(['Step 1']);
+  await expect(item.getByRole('link', { name: 'Step 1' })).toHaveText('1');
   await expect(item.getByText('1 linked step is no longer in the change', { exact: true })).toBeVisible();
 });

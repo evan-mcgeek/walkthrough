@@ -1,6 +1,6 @@
 import type { Listed } from '../list';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
+import { el, type PageName, post as postTo, region, showUnreachable } from './dom';
 
 const header = region('header');
 const main = region('main');
@@ -64,6 +64,6 @@ const poller = setInterval(() => {
       if (text !== shown) render(JSON.parse(text) as Listed[]);
     })
     .catch(() => {
-      showAlert(unreachable(PAGE));
+      showUnreachable(PAGE);
     });
 }, 5000);

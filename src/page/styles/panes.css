@@ -1,0 +1,727 @@
+/*
+  The "What's left" layout (docs/design/DESIGN.md, Layout and Queue): the header and any banner over .panes,
+  the 232px .queue rail on the surface tone and the .main pane, which scrolls on its own with the action bar docked to its foot.
+*/
+
+.walkthrough {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.walkthrough > .app-header,
+.walkthrough > #alert {
+  flex: none;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner > .btn {
+  flex: none;
+}
+
+.panes {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Behind a banner saying the page cannot act: read-only, its controls faded. */
+.panes.stopped,
+.unreachable .panes {
+  pointer-events: none;
+}
+
+.panes.stopped :is(.btn, input, textarea, .segmented),
+.unreachable .panes :is(.btn, input, textarea, .segmented) {
+  opacity: 0.5;
+}
+
+.panes.stopped :is(.step-title, .explanation),
+.unreachable .panes :is(.step-title, .explanation) {
+  color: var(--muted);
+}
+
+/* ---------- queue ---------- */
+
+.queue {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 232px;
+  box-sizing: border-box;
+  padding: var(--s3) var(--s2);
+  overflow-y: auto;
+  border-right: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.queue-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--s1) var(--s2) var(--s2);
+  color: var(--ink-secondary);
+  font: var(--text-label);
+}
+
+.queue-empty {
+  margin: 0;
+  padding: 6px var(--s2);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.queue-item {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s2);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font: 400 13.5px/1.35 var(--font-ui);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background-color var(--fast) linear;
+}
+
+.queue-item:hover {
+  background: var(--surface-tint);
+}
+
+.queue-item > .icon {
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.queue-title {
+  min-width: 0;
+}
+
+.queue-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.queue-sub.attention {
+  color: var(--amber);
+}
+
+.queue-item[aria-current] {
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--rule);
+  font-weight: 600;
+}
+
+.queue-item[aria-current] > .icon,
+.queue-item[data-state='read'] > .icon {
+  color: var(--indigo);
+}
+
+.queue-item[data-state='reopened'] > .icon {
+  color: var(--amber);
+}
+
+.queue-item[data-state='not-met'] > .icon {
+  color: var(--rust);
+}
+
+.queue-item[data-state='folded'] .queue-title {
+  color: var(--muted);
+}
+
+.queue-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: var(--s2);
+}
+
+.decided-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: 6px var(--s2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--muted);
+  font: 400 13px/1.4 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.decided-toggle:hover {
+  background: var(--surface-tint);
+}
+
+.decided-toggle > .icon:last-child {
+  margin-left: auto;
+}
+
+.queue-decided {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.queue-decided .queue-item:not([aria-current]),
+.queue-decided .queue-item:not([aria-current]) > .icon {
+  color: var(--muted);
+}
+
+/* ---------- main pane ---------- */
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--s5) var(--s6) 0;
+  overflow-y: auto;
+}
+
+/* What the main pane shows fills it, so the action bar sits at its foot when the step is short. */
+.main > :last-child {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  padding-bottom: var(--s5);
+}
+
+.main > .notice {
+  margin-bottom: var(--s4);
+}
+
+.main > .question-box {
+  margin-bottom: var(--s4);
+}
+
+.main > .detached-box {
+  margin-bottom: var(--s5);
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+
+.step-title {
+  margin: 0;
+  font: var(--text-headline);
+  letter-spacing: -0.01em;
+}
+
+.explanation {
+  max-width: 68ch;
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: var(--text-body);
+  text-wrap: pretty;
+}
+
+.block {
+  margin-top: var(--s5);
+}
+
+.step-notes {
+  margin-top: var(--s4);
+}
+
+.conversation {
+  margin-top: var(--s5);
+}
+
+.reopened-line {
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: var(--text-body);
+}
+
+.reopened-line s {
+  color: var(--muted);
+}
+
+.decision-said {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 68ch;
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: var(--text-body-ui);
+}
+
+.decision-said .said.person {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* ---------- disclosures ---------- */
+
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 400 13px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.disclosure:hover {
+  color: var(--ink-secondary);
+}
+
+.assumed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--s1) 0 0 20px;
+  padding-left: var(--s4);
+  color: var(--ink-secondary);
+  font: var(--text-body-ui);
+  list-style: disc;
+}
+
+.assumed[hidden] {
+  display: none;
+}
+
+/* ---------- folded step ---------- */
+
+.fold-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: 10px var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--text-body-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.fold-summary:hover {
+  background: var(--surface);
+}
+
+.fold-summary > .icon {
+  color: var(--muted);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.fold-files {
+  margin: var(--s4) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.fold-files li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2) var(--s3);
+  padding: var(--s3) 0;
+  font: var(--text-body-ui);
+}
+
+.fold-files li + li {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.fold-path {
+  font: var(--text-mono-label);
+}
+
+.fold-reason {
+  color: var(--muted);
+}
+
+.problems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
+  background: var(--amber-wash);
+  color: var(--ink);
+  font: var(--text-body-ui);
+}
+
+.problem > .icon {
+  margin-top: 1px;
+  color: var(--amber);
+}
+
+.fold-diff {
+  margin-top: var(--s4);
+}
+
+/* ---------- action bar ---------- */
+
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: auto 0 calc(-1 * var(--s5));
+  padding: var(--s4) 0 var(--s5);
+  border-top: 1px solid var(--rule-soft);
+  background: var(--canvas);
+}
+
+.block ~ .action-bar,
+.conversation ~ .action-bar {
+  margin-top: var(--s5);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.action-row > .choices {
+  margin: 0;
+}
+
+.line-box {
+  display: flex;
+  flex: 1;
+  min-width: 200px;
+}
+
+.line-box input {
+  flex: 1;
+  min-width: 0;
+}
+
+.taking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.taking textarea {
+  min-height: 84px;
+}
+
+.taking-head {
+  margin: 0;
+  font: 600 13.5px/1.4 var(--font-ui);
+}
+
+.taking-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.hint {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.decide .taking {
+  margin-top: var(--s2);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- notices at the top of the pane ---------- */
+
+.notice > .icon {
+  margin-top: 2px;
+}
+
+.notice-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--s1);
+}
+
+.file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.question-text {
+  font-size: 14px;
+}
+
+.detached-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-label);
+}
+
+.detached-head > .icon,
+.detached-item > .icon {
+  color: var(--muted);
+}
+
+.detached-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-body-ui);
+}
+
+.detached-item > .icon {
+  margin-top: 2px;
+}
+
+/* ---------- preparing ---------- */
+
+.preparing-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  margin-bottom: var(--s5);
+}
+
+.preparing-head > .icon {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: var(--indigo);
+}
+
+.preparing-head strong {
+  display: block;
+  font-size: 15px;
+}
+
+.skeleton {
+  height: 11px;
+  border-radius: var(--r-sm);
+  background: var(--surface-tint);
+}
+
+.skeleton.title {
+  width: 46%;
+  height: 22px;
+  margin-bottom: 14px;
+}
+
+.skeleton + .skeleton {
+  margin-top: 9px;
+}
+
+.skeleton.short {
+  width: 70%;
+}
+
+/* ---------- checklist ---------- */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: var(--text-label);
+}
+
+.checklist > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  font: 400 13.5px/1.4 var(--font-ui);
+}
+
+.checklist li > .icon {
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.checklist li[data-mark='not-met'] > .icon {
+  color: var(--rust);
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.item-status {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.step-link {
+  height: fit-content;
+  padding: 0 var(--s1);
+  border: 1px solid var(--indigo-line);
+  border-radius: var(--r-xs);
+  color: var(--indigo-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.step-link:hover {
+  background: var(--indigo-wash);
+}
+
+.checklist .gone {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding-left: 24px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.checklist .decide {
+  flex-basis: 100%;
+  padding: 0 0 0 24px;
+}
+
+/* ---------- end of the walkthrough ---------- */
+
+.decisions {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font: var(--text-body-ui);
+}
+
+.decisions td {
+  padding: 9px 6px;
+  border-top: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+
+.decisions .number {
+  width: 24px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.decisions a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.decisions a:hover {
+  color: var(--indigo-text);
+}
+
+.decisions .decision {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.decision-note {
+  display: block;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.end > .checklist,
+.whole {
+  margin-top: var(--s6);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+}
+
+.whole {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.whole > .section-head {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+/* ---------- from the session ---------- */
+
+.messages > .thread {
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--rule-soft);
+}
+
+/* Until the phone layout: the rail stacks above the step and the page scrolls as one. */
+@media (max-width: 760px) {
+  .walkthrough {
+    height: auto;
+  }
+
+  .panes {
+    flex-direction: column;
+  }
+
+  .queue {
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .main {
+    padding: var(--s4) var(--s4) 0;
+    overflow: visible;
+  }
+
+  .main > :last-child {
+    padding-bottom: var(--s4);
+  }
+}

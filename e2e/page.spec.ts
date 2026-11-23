@@ -10,8 +10,10 @@ test('shows the session preparing until it records steps, then the steps without
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   const range = `${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`;
   await expect(page.getByRole('heading', { level: 1 })).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
-  const preparing = page.getByText('The session is preparing the steps; they appear here as it records them.');
+  const preparing = page.getByText('Preparing the steps');
   await expect(preparing).toBeVisible();
+  await expect(page.getByText('They appear here as the session records them.')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: "What's left" })).toContainText('No steps yet');
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveCount(0);
   let loads = 0;
   page.on('load', () => loads++);
@@ -42,15 +44,18 @@ test('an approved step stays approved when the page is opened again', async ({ p
 
   const again = reopened.getByRole('region', { name: 'Login' });
   await expect(again.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await again.getByRole('button', { name: 'Change decision' }).click();
   await expect(again.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the Stop button ends the server', async ({ page, request, url }) => {
   await page.getByRole('button', { name: 'Stop' }).click();
 
-  await expect(page.getByText('The walkthrough has stopped. You can close this tab.')).toBeVisible();
+  await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Stopped');
   await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expect(page.locator('#panes')).toHaveAttribute('inert', '');
+  await expect(page.getByText('Preparing the steps')).toBeVisible();
   await expect(request.get(url)).rejects.toThrow();
 });
 
@@ -64,8 +69,9 @@ test('an action after the server stopped says how to reopen the walkthrough', as
   await page.getByRole('button', { name: 'Approve' }).click();
 
   await expect(page.getByRole('alert')).toHaveText(
-    'Could not reach the walkthrough. Run /walkthrough again to reopen it.',
+    'Could not reach the walkthrough. Run /walkthrough again to reopen it.Retry now',
   );
+  await expect(page.locator('body')).toHaveClass(/unreachable/);
 });
 
 test('a walkthrough of a range is headed by its label', async ({ page, repo }) => {

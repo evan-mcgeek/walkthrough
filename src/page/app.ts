@@ -6,10 +6,10 @@ import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, type Item, itemKey, nameOf } from '../items';
-import type { Checklist, Step } from '../walkthrough';
+import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
-import { el, type PageName, post as postTo, region, showAlert, unreachable } from './dom';
-import { icon } from './icons';
+import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
+import { icon, type IconName } from './icons';
 import { renderMarkdown } from './markdown';
 
 /** The state an exported file carries; it shows the walkthrough as it was, with nothing to send to. */
@@ -23,13 +23,17 @@ function markdown(text: string, className: string): HTMLElement {
   return box;
 }
 
+/** Session Markdown as one line of plain text, for a rail row or a mention. */
+const plain = (text: string) => markdown(text, '').textContent.replace(/\s+/g, ' ').trim();
+
 const header = region('header');
+const queue = region('queue');
 const main = region('main');
 
 /** Counts what the page sent, so a poll answered from before it is not drawn over its result. */
 let posted = 0;
 
-const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough again to reopen it.' };
+const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough again to reopen it.', retry: () => { poll(); } };
 const post = (route: string, body: Record<string, unknown>) => {
   posted++;
   return postTo(PAGE, route, body);
@@ -42,32 +46,64 @@ const drafts = new Map<string, string>();
 
 const decisionOf = (item: Item) => walkthrough.decided[itemKey(item)] ?? null;
 const stepDecided = (step: Step) => decisionOf({ type: 'step', id: step.id }) !== null;
+const stepReopened = (step: Step) => walkthrough.reopened[itemKey({ type: 'step', id: step.id })];
 /** The label of the item's action `id`, or the id when the session no longer offers it. */
 const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
 
-function currentStep({ steps }: WalkthroughView): Step | undefined {
+/** What the main pane shows; each is its own address, so the browser's back and forward move between them too. */
+type View =
+  | { kind: 'step'; step: Step }
+  | { kind: 'session' }
+  | { kind: 'checklist'; item?: string }
+  | { kind: 'end' }
+  | { kind: 'preparing' };
+
+const CHECKLIST_ITEM = /^checklist-(.+)$/;
+
+function currentView(): View {
   const named = decodeURIComponent(location.hash.slice(1));
-  return steps.find(step => step.id === named) ?? steps.find(step => !stepDecided(step)) ?? steps[0];
+  const { steps } = walkthrough;
+  if (named === 'session') return { kind: 'session' };
+  if (named === 'checklist' && walkthrough.checklist) return { kind: 'checklist' };
+  const item = CHECKLIST_ITEM.exec(named)?.[1];
+  if (item !== undefined && walkthrough.checklist) return { kind: 'checklist', item };
+  if (named === 'end' && steps.length) return { kind: 'end' };
+  const step = steps.find(one => one.id === named) ?? steps.find(one => !stepDecided(one));
+  if (step) return { kind: 'step', step };
+  return steps.length ? { kind: 'end' } : { kind: 'preparing' };
 }
 
-/** Each step is its own address, so the browser's back and forward move between steps too. */
-function show(step: Step | undefined): void {
-  if (!step) return;
-  location.hash = encodeURIComponent(step.id);
-}
+const currentStep = () => {
+  const view = currentView();
+  return view.kind === 'step' ? view.step : undefined;
+};
+
+const go = (address: string) => {
+  location.hash = encodeURIComponent(address);
+};
+
+/** Counts the person's moves between views, so an answer that arrives later never moves them again. */
+let moves = 0;
 
 let taking: { key: string; action: string } | null = null;
+/** Decided items whose actions the person opened again to change their decision. */
+const changing = new Set<string>();
 
 async function decide(item: Item, action: string, fields: { note?: string; text?: string } = {}): Promise<void> {
+  const before = moves;
   const answer = await post('decide', { item, action, ...fields });
   if (!answer) return;
   ({ walkthrough, session } = (await answer.json()) as { walkthrough: WalkthroughView; session: SessionView });
   for (const field of ['note', 'text']) drafts.delete(`decide:${itemKey(item)}:${action}:${field}`);
   taking = null;
+  changing.delete(itemKey(item));
   render();
-  if (item.type !== 'step') return;
-  const at = walkthrough.steps.findIndex(one => one.id === item.id);
-  show([...walkthrough.steps.slice(at + 1), ...walkthrough.steps.slice(0, at)].find(one => !stepDecided(one)));
+  // Moving on is only for the person still on the step they decided.
+  if (item.type !== 'step' || moves !== before) return;
+  const { steps } = walkthrough;
+  const at = steps.findIndex(one => one.id === item.id);
+  const next = [...steps.slice(at + 1), ...steps.slice(0, at)].find(one => !stepDecided(one));
+  go(next ? next.id : 'end');
 }
 
 const reading = new Set<string>();
@@ -101,8 +137,17 @@ async function stop(): Promise<void> {
   if (!(await post('stop', {}))) return;
   clearInterval(poller);
   stopped = true;
-  header.replaceChildren(...headerView());
-  main.replaceChildren(el('p', { className: 'notice' }, 'The walkthrough has stopped. You can close this tab.'));
+  taking = null;
+  render();
+  const banner = region('alert');
+  banner.className = 'banner';
+  banner.replaceChildren(
+    el('span', { className: 'banner-text' }, el('strong', {}, 'Stopped.'), ' The walkthrough has stopped and your decisions are kept. You can close this tab.'),
+  );
+  banner.hidden = false;
+  const panes = region('panes');
+  panes.classList.add('stopped');
+  panes.inert = true;
 }
 
 const SESSION: Record<SessionState, readonly [string, string]> = {
@@ -127,7 +172,7 @@ type SegmentState = 'decided' | 'reopened' | 'current' | 'read' | 'unread';
 
 function segmentState(step: Step, current: Step | undefined): SegmentState {
   if (stepDecided(step)) return 'decided';
-  if (walkthrough.reopened[itemKey({ type: 'step', id: step.id })]) return 'reopened';
+  if (stepReopened(step)) return 'reopened';
   if (step === current) return 'current';
   return walkthrough.read.includes(step.id) ? 'read' : 'unread';
 }
@@ -136,7 +181,7 @@ function segmentState(step: Step, current: Step | undefined): SegmentState {
 function progressView(): HTMLElement[] {
   const { steps } = walkthrough;
   const decided = steps.filter(stepDecided).length;
-  const current = currentStep(walkthrough);
+  const current = currentStep();
   const said = steps.length
     ? `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`
     : 'No steps yet';
@@ -204,6 +249,20 @@ function draftForm(boxes: HTMLTextAreaElement[], action: string, onSend: () => v
 const draftBox = (draft: string, label: string, action: string, onSend: () => void) =>
   draftForm([draftArea(draft, label)], action, onSend);
 
+/** A one-line box that sends on Enter, as the board's Ask and Reply boxes do. */
+function lineBox(draft: string, label: string, placeholder: string, onSend: () => void): HTMLFormElement {
+  const box = el('input', { type: 'text', value: drafts.get(draft) ?? '', placeholder });
+  box.dataset['draft'] = draft;
+  box.setAttribute('aria-label', label);
+  box.oninput = () => drafts.set(draft, box.value);
+  const form = el('form', { className: 'line-box' }, box);
+  form.onsubmit = event => {
+    event.preventDefault();
+    onSend();
+  };
+  return form;
+}
+
 /** The person's words as they typed them; the session's as Markdown. */
 const said = (entry: Entry) =>
   entry.from === 'session' ? markdown(entry.text, 'said session') : el('p', { className: 'said person' }, entry.text ?? '');
@@ -232,6 +291,16 @@ const anchorOf = (entry: Note | Ask) => {
 /** A note that answers an ask shows in the ask's thread, with its own replies. */
 const answersAsk = (entry: Entry) => isNote(entry) && entry.answer !== undefined;
 
+/** What the session said that belongs to no step: not an answer and not a note. */
+const sessionMessages = () =>
+  session.conversation.filter((entry): entry is SessionMessage => entry.from === 'session' && !entry.answer && !entry.note);
+
+const answered = (message: SessionMessage) =>
+  session.conversation.some(entry => entry.from === 'page' && entry.kind === 'reply' && entry.to === message.id);
+
+/** A question waits in its box until the person replies to it. */
+const waitingQuestions = () => (readOnly ? [] : sessionMessages().filter(message => message.question && !answered(message)));
+
 function askThread(asked: Ask): HTMLElement {
   const answers = followUps(asked);
   const inNotes = new Set(answers.filter(isNote).flatMap(note => followUps(note).map(entry => entry.id)));
@@ -248,44 +317,58 @@ function askThread(asked: Ask): HTMLElement {
 const linesLabel = ([first, last]: Lines) =>
   first === last ? `Line ${String(first)}` : `Lines ${String(first)}-${String(last)}`;
 
-function decideView(item: Item, text = ''): HTMLElement[] {
+/** How an action shows: the built-in Approve leads, Flag follows, and what the session offers on a step is marked as offered. */
+type Look = 'primary' | 'secondary' | 'offer';
+
+function actionButton(item: Item, action: Action, look: Look, small: boolean): HTMLButtonElement {
+  const key = itemKey(item);
+  const classes = ['btn', ...(look === 'secondary' ? [] : [look]), ...(small ? ['small'] : [])];
+  const button = el('button', { type: 'button', className: classes.join(' ') }, ...(look === 'offer' ? [icon('message')] : []), action.label);
+  button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
+  button.onclick = () => {
+    if (action.note || action.edit) {
+      taking = { key, action: action.id };
+      render();
+      document.querySelector<HTMLTextAreaElement>('.taking textarea')?.focus();
+    } else void decide(item, action.id);
+  };
+  return button;
+}
+
+function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false): HTMLElement {
+  const actions = walkthrough.actions[itemKey(item)] ?? [];
+  const group = el('div', { className: 'choices' }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Decide');
+  return group;
+}
+
+const firstLeads = (_: Action, at: number): Look => (at === 0 ? 'primary' : 'secondary');
+const stepLook = ({ id }: Action): Look => (id === 'approve' ? 'primary' : id === 'flag' ? 'secondary' : 'offer');
+
+function stateTag(item: Item, long: boolean): HTMLElement {
+  const key = itemKey(item);
+  const decision = walkthrough.decided[key] ?? null;
+  const reopened = walkthrough.reopened[key];
+  if (decision) return el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`);
+  if (reopened)
+    return el('span', { className: 'tag reopened' }, long ? `Reopened: changed since you chose ${labelOf(item, reopened.action)}` : 'Reopened');
+  return el('span', { className: 'tag' }, 'Undecided');
+}
+
+/** The state, actions and what was said about the decision of a note, checklist item or the whole walkthrough. */
+function decideView(item: Item, text = '', small = true): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
   if (!actions.length) return [];
-  const decision = walkthrough.decided[key] ?? null;
-  const reopened = walkthrough.reopened[key];
-  // A reopened item keeps what the person and the session said about the decision it had.
-  const shown = decision ?? reopened;
-  const state = decision
-    ? el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`)
-    : reopened
-      ? el('span', { className: 'tag reopened' }, `Reopened: changed since you chose ${labelOf(item, reopened.action)}`)
-      : el('span', { className: 'tag' }, 'Undecided');
-  const buttons = actions.map(action => {
-    const button = el('button', { type: 'button', className: 'btn' }, action.label);
-    button.setAttribute('aria-pressed', String(decision?.action === action.id));
-    button.onclick = () => {
-      if (action.note || action.edit) {
-        taking = { key, action: action.id };
-        render();
-      } else void decide(item, action.id);
-    };
-    return button;
-  });
-  const group = el('div', { className: 'choices' }, ...buttons);
-  group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', 'Decide');
+  const shown = walkthrough.decided[key] ?? walkthrough.reopened[key];
   const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
   return [
     el(
       'div',
       { className: 'decide' },
-      el(
-        'div',
-        { className: 'decide-row' },
-        state,
-        ...(readOnly ? [] : [group]),
-      ),
+      el('div', { className: 'decide-row' }, stateTag(item, true), ...(readOnly ? [] : [actionGroup(item, firstLeads, small)])),
+      // A reopened item keeps what the person and the session said about the decision it had.
       ...(shown ? decisionSaid(shown) : []),
       ...(taken ? [takingForm(item, taken, text)] : []),
     ),
@@ -306,14 +389,26 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
     ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
     ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
   ];
-  const form = draftForm(boxes, 'Send', () => {
+  const form = el(
+    'form',
+    { className: 'taking' },
+    el('p', { className: 'taking-head' }, action.label),
+    ...boxes,
+    el(
+      'div',
+      { className: 'taking-row' },
+      el('span', { className: 'hint' }, 'Goes to the session with your decision.'),
+      el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; render(); } }, 'Cancel'),
+      el('button', { type: 'submit', className: 'btn primary' }, 'Send'),
+    ),
+  );
+  form.onsubmit = event => {
+    event.preventDefault();
     void decide(item, action.id, {
       ...(action.note && { note: drafts.get(draft('note')) ?? '' }),
       ...(action.edit && { text: drafts.get(draft('text')) ?? text }),
     });
-  });
-  form.classList.add('taking');
-  form.append(el('button', { type: 'button', className: 'btn ghost', onclick: () => { taking = null; render(); } }, 'Cancel'));
+  };
   return form;
 }
 
@@ -359,20 +454,6 @@ function notesView(notes: Note[], place: string): HTMLElement[] {
     else opened.delete(place);
   };
   return [...views, more];
-}
-
-function askView(step: Step): HTMLElement[] {
-  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
-  if (readOnly && !asks.length) return [];
-  const draft = `ask:${step.id}`;
-  return [el(
-    'div',
-    { className: 'conversation' },
-    ...asks.map(askThread),
-    ...writable(draftBox(draft, 'Ask about this step', 'Ask', () => {
-      void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
-    })),
-  )];
 }
 
 /** `ended` once the last line is picked too; from the keyboard the first line is picked on its own first. */
@@ -432,47 +513,6 @@ function pickedAsk(step: Step, file: string, lines: Lines): HTMLElement {
   form.append(el('button', { type: 'button', className: 'btn ghost', onclick: unpick }, 'Cancel'));
   form.classList.add('picked-ask');
   return form;
-}
-
-function choiceButtons({ id, choices = [] }: SessionMessage): HTMLElement[] {
-  if (!choices.length) return [];
-  const buttons = choices.map(choice =>
-    el('button', { type: 'button', className: 'btn', onclick: () => void send('reply', { to: id, text: choice }) }, choice),
-  );
-  return [el('div', { className: 'choices' }, ...buttons)];
-}
-
-function sessionMessages(): HTMLElement[] {
-  const messages = session.conversation.filter(
-    (entry): entry is SessionMessage => entry.from === 'session' && !entry.answer && !entry.note,
-  );
-  if (!messages.length) return [];
-  const threads = messages.map(message => {
-    const replies = session.conversation.filter(
-      entry => entry.from === 'page' && entry.kind === 'reply' && entry.to === message.id,
-    );
-    const draft = `reply:${message.id}`;
-    const asking = message.question && !replies.length && !readOnly;
-    return el(
-      'div',
-      { className: asking ? 'thread question-box' : 'thread' },
-      ...(asking ? [el('p', { className: 'question-head' }, icon('ask'), 'The session asks')] : []),
-      said(message),
-      ...followUps(message).map(said),
-      ...(asking
-        ? [
-            ...choiceButtons(message),
-            draftBox(draft, 'Reply', 'Reply', () => {
-              void send('reply', { to: message.id, text: drafts.get(draft) ?? '' }, draft);
-            }),
-          ]
-        : []),
-    );
-  });
-  const title = el('h2', { id: 'from-session' }, 'From the session');
-  const section = el('section', { className: 'messages conversation' }, title, ...threads);
-  section.setAttribute('aria-labelledby', title.id);
-  return [section];
 }
 
 const lineKey = (file: string, line: number) => JSON.stringify([file, line]);
@@ -601,19 +641,63 @@ function addPreview(wrapper: Element, stepId: string, file: string): void {
   diff.after(preview);
 }
 
-const paths = (label: string, files: string[]) =>
-  el('p', { className: 'paths' }, `${label}: `, ...files.flatMap((file, at) => [at ? ', ' : '', el('code', {}, file)]));
+/** Disclosures the person opened (low-priority notes, a folded step's files and diff, the decided steps), so a redraw keeps them open. */
+const opened = new Set<string>();
+/** Assumption lists the person closed; they start open. */
+const closed = new Set<string>();
 
-function assumedView(stepId: string, assumptions: string[]): HTMLElement[] {
-  if (!assumptions.length) return [];
-  const label = el('p', { id: `assumed-${stepId}` }, el('strong', {}, 'Assumed, not read'));
-  const list = el('ul', {}, ...assumptions.map(assumption => el('li', {}, assumption)));
-  list.setAttribute('aria-labelledby', label.id);
-  return [label, list];
+function toggle(set: Set<string>, key: string): void {
+  if (set.has(key)) set.delete(key);
+  else set.add(key);
+  render();
 }
 
-/** Steps whose collapsed diff the person opened, so a redraw keeps it open. */
-const opened = new Set<string>();
+function disclosure(label: (Node | string)[], open: boolean, onToggle: () => void, className: string): HTMLButtonElement {
+  const button = el('button', { type: 'button', className }, icon(open ? 'chevron-down' : 'chevron-right'), ...label);
+  button.setAttribute('aria-expanded', String(open));
+  button.onclick = onToggle;
+  return button;
+}
+
+function assumedView(step: Step & { kind: 'step' }): HTMLElement[] {
+  if (!step.assumptions.length) return [];
+  const open = !closed.has(step.id);
+  const button = disclosure(['Assumed, not read'], open, () => { toggle(closed, step.id); }, 'disclosure assumed-toggle');
+  button.id = `assumed-${step.id}`;
+  const list = el('ul', { className: 'assumed', hidden: !open }, ...step.assumptions.map(assumption => el('li', {}, assumption)));
+  list.setAttribute('aria-labelledby', button.id);
+  button.setAttribute('aria-controls', (list.id = `assumed-list-${step.id}`));
+  return [el('div', { className: 'assumptions' }, button, list)];
+}
+
+function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HTMLElement[] {
+  const key = `fold:${step.id}`;
+  const open = opened.has(key);
+  const problems = step.problems.length ? [el('span', { className: 'tag reopened' }, plural(step.problems.length, 'problem'))] : [];
+  const summary = disclosure(
+    [el('span', {}, plural(step.files.length, 'file')), el('span', { className: 'spacer' }), ...problems],
+    open,
+    () => { toggle(opened, key); },
+    'fold-summary',
+  );
+  if (!open) return [el('div', { className: 'block' }, summary)];
+  const files = el(
+    'ul',
+    { className: 'fold-files' },
+    ...step.files.map(file => el('li', {}, el('code', { className: 'fold-path' }, file.path), markdown(file.reason, 'fold-reason'))),
+  );
+  files.setAttribute('aria-label', 'Folded files');
+  const found = step.problems.length
+    ? [el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', { className: 'problem' }, icon('warn'), markdown(problem, 'problem-text'))))]
+    : [];
+  found[0]?.setAttribute('aria-label', 'Problems the session found');
+  const details = el('details', { className: 'fold-diff', open: opened.has(step.id) }, el('summary', {}, 'Show the diff'), diffView(step, pinned));
+  details.ontoggle = () => {
+    if (details.open) opened.add(step.id);
+    else opened.delete(step.id);
+  };
+  return [el('div', { className: 'block' }, summary, files, ...found, ...(step.diff ? [details] : []))];
+}
 
 function stepBody(step: Step): HTMLElement[] {
   const pinned = session.conversation.filter(
@@ -623,160 +707,350 @@ function stepBody(step: Step): HTMLElement[] {
   const notes = stepNotes.length ? [el('div', { className: 'step-notes' }, ...notesView(stepNotes, `more:${step.id}`))] : [];
   switch (step.kind) {
     case 'step':
-      return [
-        el(
-          'div',
-          { className: 'about' },
-          markdown(step.explanation, 'explanation'),
-          ...assumedView(step.id, step.assumptions),
-          paths('Files', step.files),
-        ),
-        ...notes,
-        diffView(step, pinned),
-      ];
-    case 'folded': {
-      const details = el(
-        'details',
-        { open: opened.has(step.id) },
-        el('summary', {}, 'Show the diff'),
-        diffView(step, pinned),
-      );
-      details.ontoggle = () => {
-        if (details.open) opened.add(step.id);
-        else opened.delete(step.id);
-      };
-      return [
-        el(
-          'div',
-          { className: 'about' },
-          el('p', {}, 'Folded by the session, not shown line by line.'),
-          el('ul', {}, ...step.files.map(file => el('li', {}, el('code', {}, file.path), `: ${file.reason}`))),
-          ...(step.problems.length
-            ? [
-                el('p', {}, el('strong', {}, 'Problems the session found:')),
-                el('ul', { className: 'problems' }, ...step.problems.map(problem => el('li', {}, problem))),
-              ]
-            : []),
-        ),
-        ...notes,
-        ...(step.diff ? [details] : []),
-      ];
-    }
+      return [markdown(step.explanation, 'explanation'), ...assumedView(step), ...notes, el('div', { className: 'block' }, diffView(step, pinned))];
+    case 'folded':
+      return [el('p', { className: 'explanation' }, 'Folded by the session, not shown line by line.'), ...notes, ...foldedView(step, pinned)];
   }
 }
 
-function stepView(step: Step, steps: Step[]): HTMLElement {
-  const title = el('h2', { id: `step-${step.id}` }, step.title);
-  const at = steps.indexOf(step);
-  const move = (label: string, to: Step | undefined) =>
-    el('button', { type: 'button', className: 'btn', disabled: !to, onclick: () => { show(to); } }, label);
+/** What the person and the session said about the step's decision, or the decision it had before it reopened. */
+function stepDecisionView(step: Step): HTMLElement[] {
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  const reopened = stepReopened(step);
+  if (reopened && !decision) {
+    const note = reopened.note ? [' ', el('s', {}, `“${reopened.note}”`)] : [];
+    return [
+      el('p', { className: 'reopened-line' }, 'Changed since you chose ', el('strong', {}, labelOf(item, reopened.action)), '.', ...note),
+      ...followUps(reopened).map(said),
+    ];
+  }
+  if (!decision) return [];
+  return [
+    el(
+      'div',
+      { className: 'decision-said' },
+      ...(decision.note ? [el('span', { className: 'muted' }, 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
+      ...(decision.text ? [markdown(decision.text, 'said person')] : []),
+      ...followUps(decision).map(said),
+    ),
+  ];
+}
+
+/** The sticky bar at the foot of a step: its actions, or the form an action asks for, and the Ask box. */
+function actionBar(step: Step): HTMLElement[] {
+  if (readOnly) return [];
+  const item: Item = { type: 'step', id: step.id };
+  const key = itemKey(item);
+  const actions = walkthrough.actions[key] ?? [];
+  const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
+  if (taken) return [el('div', { className: 'action-bar' }, takingForm(item, taken, ''))];
+  const draft = `ask:${step.id}`;
+  const ask = lineBox(draft, 'Ask about this step', 'Ask about this step…', () => {
+    void send('ask', { step: step.id, text: drafts.get(draft) ?? '' }, draft);
+  });
+  const decided = stepDecided(step) && !changing.has(key);
+  const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
+  return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, decided ? change : actionGroup(item, stepLook), ask))];
+}
+
+function stepView(step: Step): HTMLElement {
+  const title = el('h2', { className: 'step-title', id: `step-${step.id}` }, step.title);
+  const asks = session.conversation.filter(isAsk).filter(asked => anchorOf(asked) === step.id && !asked.lines);
   const section = el(
     'section',
     { className: 'step' },
-    el('div', { className: 'step-head' }, title),
-    ...decideView({ type: 'step', id: step.id }),
+    el('div', { className: 'title-row' }, title, stateTag({ type: 'step', id: step.id }, false)),
+    ...stepDecisionView(step),
     ...stepBody(step),
-    ...askView(step),
+    ...(asks.length ? [el('div', { className: 'conversation' }, ...asks.map(askThread))] : []),
+    ...actionBar(step),
   );
   section.setAttribute('aria-labelledby', title.id);
-  const pager = el('div', { className: 'pager' }, move('Previous', steps[at - 1]), move('Next', steps[at + 1]));
-  return el('div', {}, section, pager);
+  return section;
 }
 
-function stepsNav(steps: Step[], current: Step | undefined): HTMLElement {
-  const item = (step: Step) => {
+/** A row of the rail: a state icon, a title and an optional sub-line, linking to what it names. */
+function queueRow(
+  address: string,
+  state: string,
+  mark: IconName,
+  title: string,
+  sub: { text: string; attention?: boolean } | null,
+  // Only a step is one of a sequence; the session's messages and the checklist are pages of their own.
+  current: false | 'step' | 'page',
+): HTMLElement {
+  const row = el(
+    'a',
+    { href: `#${encodeURIComponent(address)}`, className: 'queue-item' },
+    icon(mark),
+    el('span', { className: 'queue-title' }, title, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
+  );
+  row.dataset['state'] = state;
+  if (current) row.setAttribute('aria-current', current);
+  return row;
+}
+
+function stepRow(step: Step, isCurrent: boolean): HTMLElement {
+  const current = isCurrent && 'step';
+  if (stepDecided(step)) {
     const decision = decisionOf({ type: 'step', id: step.id });
-    const href = `#${encodeURIComponent(step.id)}`;
-    const link = el('a', { href, className: decision ? 'decided' : '' }, `${String(steps.indexOf(step) + 1)}. ${step.title}`);
-    if (step === current) link.setAttribute('aria-current', 'step');
-    const read = walkthrough.read.includes(step.id) ? 'Read' : '';
-    const reopened = walkthrough.reopened[itemKey({ type: 'step', id: step.id })] ? 'Reopened' : read;
-    const mark = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : reopened;
-    return el('li', {}, link, ...(mark ? [el('span', { className: 'mark' }, mark)] : []));
-  };
-  const nav = el('nav', { className: 'steps' }, el('ol', {}, ...steps.filter(step => !stepDecided(step)).map(item)));
-  const decided = steps.filter(stepDecided);
-  if (decided.length) {
-    const group = el(
-      'details',
-      { className: 'decided-steps', open: opened.has('decided') || (current !== undefined && decided.includes(current)) },
-      el('summary', {}, `${String(decided.length)} decided`),
-      el('ol', {}, ...decided.map(item)),
-    );
-    group.ontoggle = () => {
-      if (group.open) opened.add('decided');
-      else opened.delete('decided');
-    };
-    nav.append(group);
+    const label = decision ? labelOf({ type: 'step', id: step.id }, decision.action) : '';
+    return queueRow(step.id, 'decided', 'decided', step.title, { text: `Decided: ${label}` }, current);
   }
-  nav.setAttribute('aria-label', 'Steps');
-  return nav;
+  if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, { text: 'Reopened' }, current);
+  if (step.kind === 'folded') {
+    const problems = step.problems.length ? { text: plural(step.problems.length, 'problem'), attention: true } : null;
+    return queueRow(step.id, 'folded', 'folded', step.title, problems, current);
+  }
+  const read = walkthrough.read.includes(step.id);
+  return queueRow(step.id, read ? 'read' : 'unread', read ? 'read' : 'unread', step.title, null, current);
 }
 
-function wholeView(): HTMLElement[] {
-  const decide = decideView({ type: 'walkthrough' });
-  if (!decide.length) return [];
-  const heading = el('h2', { id: 'whole' }, 'Whole walkthrough');
-  const section = el('section', { className: 'whole' }, heading, ...decide);
-  section.setAttribute('aria-labelledby', heading.id);
-  return [section];
+/** Checklist items that still need the person: marked not met by the session, or offering actions not yet decided. */
+function leftItems(): ChecklistItem[] {
+  return (walkthrough.checklist?.items ?? []).filter(item => {
+    const key = itemKey({ type: 'checklist', id: item.id });
+    return item.mark === 'not-met' || ((walkthrough.actions[key] ?? []).length > 0 && !walkthrough.decided[key]);
+  });
 }
 
-function checklistView({ title, items }: Checklist, steps: Step[]): HTMLElement {
-  const heading = el('h2', { id: 'checklist' }, title);
+const MARK_ICON = { met: 'met', partly: 'partly', 'not-met': 'not-met', unchecked: 'unchecked' } as const satisfies Record<string, IconName>;
+
+function queueView(view: View): HTMLElement[] {
+  const { steps } = walkthrough;
+  const current = view.kind === 'step' ? view.step : undefined;
+  const rows = steps.filter(step => !stepDecided(step)).map(step => stepRow(step, step === current));
+  const messages = sessionMessages().length;
+  const unplaced = walkthrough.unplaced?.length ?? 0;
+  if (messages || unplaced) {
+    const sub = [...(messages ? [plural(messages, 'message')] : []), ...(unplaced ? [`${plural(unplaced, 'file')} not in a step`] : [])];
+    rows.push(queueRow('session', 'message', 'message', 'From the session', { text: sub.join(', ') }, view.kind === 'session' && 'page'));
+  }
+  for (const item of leftItems()) {
+    const at = view.kind === 'checklist' && view.item === item.id;
+    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', MARK_ICON[item.mark ?? 'unchecked'], plain(item.text), { text: 'Checklist' }, at && 'page'));
+  }
+  const counted = steps.length > 0 || rows.length > 0;
+  const head = el('h2', { className: 'queue-head', id: 'queue-head' }, 'Left', ...(counted ? [el('span', { className: 'counter' }, String(rows.length))] : []));
+  const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
+  const decided = steps.filter(stepDecided);
+  const open = opened.has('decided') || (current !== undefined && decided.includes(current));
+  const toggleDecided = el(
+    'button',
+    { type: 'button', className: 'decided-toggle', onclick: () => { toggle(opened, 'decided'); } },
+    icon('decided'),
+    el('span', {}, `${String(decided.length)} decided`),
+    icon(open ? 'chevron-down' : 'chevron-right'),
+  );
+  toggleDecided.setAttribute('aria-expanded', String(open));
+  const foot = decided.length
+    ? [
+        el(
+          'div',
+          { className: 'queue-foot' },
+          toggleDecided,
+          ...(open ? [el('div', { className: 'queue-decided' }, ...decided.map(step => stepRow(step, step === current)))] : []),
+        ),
+      ]
+    : [];
+  return [head, ...rows, ...empty, ...foot];
+}
+
+const stepNumber = (id: string) => walkthrough.steps.findIndex(step => step.id === id) + 1;
+
+function checklistView({ title, items }: Checklist, view: View): HTMLElement {
+  const heading = el('h2', { className: view.kind === 'checklist' ? 'step-title' : 'section-head', id: 'checklist' }, title);
   const rows = items.map(item => {
     const links: HTMLElement[] = item.steps.flatMap(id => {
-      const at = steps.findIndex(step => step.id === id);
-      const step = steps[at];
-      return step ? [el('a', { href: `#${encodeURIComponent(id)}`, title: step.title }, `Step ${String(at + 1)}`)] : [];
+      const at = stepNumber(id);
+      const step = walkthrough.steps[at - 1];
+      if (!step) return [];
+      const link = el('a', { href: `#${encodeURIComponent(id)}`, className: 'step-link', title: step.title }, String(at));
+      link.setAttribute('aria-label', `Step ${String(at)}`);
+      return [link];
     });
     const gone = item.steps.length - links.length;
-    if (gone)
-      links.push(el('span', { className: 'gone' }, `${plural(gone, 'linked step')} ${gone === 1 ? 'is' : 'are'} no longer in the change`));
-    return el(
+    const mark = item.mark ?? 'unchecked';
+    const row = el(
       'li',
-      {},
-      el('span', { className: 'status' }, item.status),
-      markdown(item.text, 'item-text'),
-      ...(links.length ? [el('p', { className: 'links' }, ...links)] : []),
+      { className: view.kind === 'checklist' && view.item === item.id ? 'current' : '' },
+      icon(MARK_ICON[mark]),
+      el('div', { className: 'item-body' }, markdown(item.text, 'item-text'), el('span', { className: 'item-status' }, item.status)),
+      ...links,
+      ...(gone
+        ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} ${gone === 1 ? 'is' : 'are'} no longer in the change`)]
+        : []),
       ...decideView({ type: 'checklist', id: item.id }, item.text),
     );
+    row.dataset['mark'] = mark;
+    row.id = `checklist-item-${item.id}`;
+    return row;
   });
-  const section = el('section', { className: 'checklist' }, heading, el('ul', {}, ...rows));
+  const head = view.kind === 'checklist' ? el('div', { className: 'title-row' }, heading) : heading;
+  // Counted only when the session marks items, since a status alone says nothing the page can count.
+  if (items.some(item => item.mark !== undefined))
+    head.append(el('span', { className: 'counter' }, `${String(items.filter(item => item.mark === 'met').length)}/${String(items.length)}`));
+  const section = el('section', { className: 'checklist' }, head, el('ul', {}, ...rows));
   section.setAttribute('aria-labelledby', heading.id);
   return section;
 }
 
-function unplacedView(): HTMLElement[] {
-  const files = walkthrough.unplaced ?? [];
-  if (!files.length) return [];
-  const title = el('h2', { id: 'unplaced' }, 'In no step yet');
+function wholeView(): HTMLElement[] {
+  const item: Item = { type: 'walkthrough' };
+  const actions = walkthrough.actions[itemKey(item)] ?? [];
+  if (!actions.length) return [];
+  const heading = el('h2', { className: 'section-head', id: 'whole' }, 'Whole walkthrough', stateTag(item, true));
+  const shown = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
+  const taken = taking?.key === itemKey(item) ? actions.find(action => action.id === taking?.action) : undefined;
   const section = el(
     'section',
-    { className: 'messages conversation' },
-    title,
-    el('p', { className: 'muted' }, 'These files changed since the steps were recorded; the session puts them in steps.'),
-    paths('Files', files),
+    { className: 'whole' },
+    heading,
+    ...(shown ? decisionSaid(shown) : []),
+    ...(readOnly ? [] : [taken ? takingForm(item, taken, '') : el('div', { className: 'action-row' }, actionGroup(item, firstLeads))]),
+  );
+  section.setAttribute('aria-labelledby', heading.id);
+  return [section];
+}
+
+function endView(): HTMLElement {
+  const { steps } = walkthrough;
+  const decided = steps.filter(stepDecided).length;
+  const title = el(
+    'h2',
+    { className: 'step-title', id: 'end' },
+    decided === steps.length ? `All ${plural(steps.length, 'step')} decided` : `${String(decided)} of ${plural(steps.length, 'step')} decided`,
+  );
+  const rows = steps.map((step, at) => {
+    const item: Item = { type: 'step', id: step.id };
+    const decision = decisionOf(item);
+    return el(
+      'tr',
+      {},
+      el('td', { className: 'number' }, String(at + 1)),
+      el('td', {}, el('a', { href: `#${encodeURIComponent(step.id)}` }, step.title), ...(decision?.note ? [el('span', { className: 'decision-note' }, decision.note)] : [])),
+      el('td', { className: 'decision' }, decision ? el('span', { className: 'tag decided' }, labelOf(item, decision.action)) : stateTag(item, false)),
+    );
+  });
+  const section = el(
+    'section',
+    { className: 'end' },
+    el('div', { className: 'title-row' }, title),
+    el('p', { className: 'explanation' }, 'Decisions stay changeable until you finish.'),
+    el('table', { className: 'decisions' }, el('tbody', {}, ...rows)),
+    ...(walkthrough.checklist ? [checklistView(walkthrough.checklist, { kind: 'end' })] : []),
+    ...wholeView(),
   );
   section.setAttribute('aria-labelledby', title.id);
-  return [section];
+  return section;
+}
+
+function sessionView(): HTMLElement {
+  const title = el('h2', { className: 'step-title', id: 'from-session' }, 'From the session');
+  const waiting = new Set(waitingQuestions().map(message => message.id));
+  const threads = sessionMessages()
+    .filter(message => !waiting.has(message.id))
+    .map(message => el('div', { className: 'thread' }, said(message), ...followUps(message).map(said)));
+  const section = el(
+    'section',
+    { className: 'messages' },
+    el('div', { className: 'title-row' }, title),
+    ...(threads.length ? threads : [el('p', { className: 'muted' }, 'Nothing from the session yet.')]),
+  );
+  section.setAttribute('aria-labelledby', title.id);
+  return section;
+}
+
+function preparingView(): HTMLElement {
+  return el(
+    'div',
+    { className: 'preparing' },
+    el('div', { className: 'preparing-head' }, icon('spinner'), el('div', {}, el('strong', {}, 'Preparing the steps'), el('span', { className: 'muted' }, 'They appear here as the session records them.'))),
+    el('div', { className: 'skeleton title' }),
+    el('div', { className: 'skeleton' }),
+    el('div', { className: 'skeleton short' }),
+  );
+}
+
+function questionBox(message: SessionMessage): HTMLElement {
+  const draft = `reply:${message.id}`;
+  const choices = (message.choices ?? []).map((choice, at) =>
+    el('button', { type: 'button', className: at === 0 ? 'btn primary' : 'btn', onclick: () => void send('reply', { to: message.id, text: choice }) }, choice),
+  );
+  const reply = lineBox(draft, 'Reply', choices.length ? 'Or reply…' : 'Reply…', () => {
+    void send('reply', { to: message.id, text: drafts.get(draft) ?? '' }, draft);
+  });
+  const head = el('p', { className: 'question-head', id: `asks-${message.id}` }, icon('ask'), 'The session asks');
+  const box = el('section', { className: 'question-box' }, head, markdown(message.text, 'question-text'), el('div', { className: 'action-row' }, ...choices, reply));
+  box.setAttribute('aria-labelledby', head.id);
+  return box;
+}
+
+function goneNotice(): HTMLElement[] {
+  if (readOnly || stopped || session.state !== 'gone') return [];
+  return [
+    el(
+      'div',
+      { className: 'notice' },
+      icon('offline'),
+      el('span', {}, el('strong', {}, 'The session stopped listening.'), ' Your decisions are kept; start the session again to continue.'),
+    ),
+  ];
+}
+
+function unplacedNotice(): HTMLElement[] {
+  const files = walkthrough.unplaced ?? [];
+  if (!files.length) return [];
+  const notice = el(
+    'div',
+    { className: 'notice' },
+    icon('file'),
+    el(
+      'div',
+      { className: 'notice-body' },
+      el('span', {}, 'Changed files not in any step yet'),
+      el('div', { className: 'file-chips' }, ...files.map(file => el('code', { className: 'file-chip' }, file))),
+    ),
+  );
+  notice.setAttribute('role', 'region');
+  notice.setAttribute('aria-label', 'Changed files not in any step yet');
+  return [notice];
 }
 
 function detachedView(): HTMLElement[] {
   const gone = session.conversation.filter(
     (entry): entry is Note | Ask => (isNote(entry) || isAsk(entry)) && !answersAsk(entry) && anchorOf(entry) === null,
   );
-  if (!gone.length) return [];
-  const title = el('h2', { id: 'detached' }, 'Detached');
+  const known = new Set(walkthrough.steps.map(step => step.id));
+  const links = (walkthrough.checklist?.items ?? []).filter(item => item.steps.some(id => !known.has(id)));
+  const count = gone.length + links.length;
+  if (!count) return [];
+  const title = el('h2', { className: 'detached-head', id: 'detached' }, icon('unlink'), 'Detached', el('span', { className: 'counter' }, String(count)));
   const section = el(
     'section',
-    { className: 'messages conversation detached-box' },
+    { className: 'detached-box' },
     title,
-    el('p', { className: 'muted' }, 'Notes and questions whose step or lines are no longer in the change.'),
     ...gone.map(entry => (isNote(entry) ? noteView(entry) : el('div', {}, wasView(entry), askThread(entry)))),
+    ...links.map(item => el('p', { className: 'detached-item' }, icon('unlink'), el('span', {}, `Checklist “${plain(item.text)}” linked to a step that no longer exists`))),
   );
   section.setAttribute('aria-labelledby', title.id);
   return [section];
+}
+
+function viewBody(view: View): HTMLElement {
+  switch (view.kind) {
+    case 'step':
+      return stepView(view.step);
+    case 'session':
+      return sessionView();
+    case 'checklist':
+      return walkthrough.checklist ? checklistView(walkthrough.checklist, view) : endView();
+    case 'end':
+      return endView();
+    case 'preparing':
+      return preparingView();
+  }
 }
 
 function render(): void {
@@ -784,30 +1058,24 @@ function render(): void {
   lastWalkthrough = JSON.stringify(walkthrough);
   // Redrawn whole, so the box being typed in gets its focus and caret back.
   const focused = document.activeElement;
-  const typing = focused instanceof HTMLTextAreaElement ? focused : null;
+  const typing = focused instanceof HTMLTextAreaElement || focused instanceof HTMLInputElement ? focused : null;
   const draft = typing?.dataset['draft'];
   const caret = [typing?.selectionStart ?? 0, typing?.selectionEnd ?? 0] as const;
-  const { steps } = walkthrough;
+  const view = currentView();
   header.replaceChildren(...headerView());
-  const current = currentStep(walkthrough);
-  const checklist = walkthrough.checklist ? [checklistView(walkthrough.checklist, steps)] : [];
+  queue.replaceChildren(...queueView(view));
   main.replaceChildren(
-    ...sessionMessages(),
-    ...unplacedView(),
+    ...waitingQuestions().map(questionBox),
+    ...goneNotice(),
+    ...unplacedNotice(),
     ...detachedView(),
-    ...(current
-      ? [el('div', { className: 'side' }, stepsNav(steps, current), ...checklist, ...wholeView()), stepView(current, steps)]
-      : [
-          el('p', { className: 'notice' }, 'The session is preparing the steps; they appear here as it records them.'),
-          ...checklist,
-          ...wholeView(),
-        ]),
+    viewBody(view),
   );
-  if (current) void markRead(current);
+  if (view.kind === 'step') void markRead(view.step);
   // A diff is kept across redraws, so a line number focused in it is still there to focus again.
   if (focused instanceof HTMLElement && focused.isConnected && document.activeElement !== focused) focused.focus();
   if (draft === undefined) return;
-  const box = document.querySelector<HTMLTextAreaElement>(`textarea[data-draft="${CSS.escape(draft)}"]`);
+  const box = document.querySelector<HTMLTextAreaElement | HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`);
   box?.focus();
   box?.setSelectionRange(...caret);
 }
@@ -815,10 +1083,19 @@ function render(): void {
 const isTyping = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
 
+/** j and k walk the steps, and past the last one to the end of the walkthrough. */
 function stepBy(delta: number): void {
   const { steps } = walkthrough;
-  const current = currentStep(walkthrough);
-  show(current && steps[steps.indexOf(current) + delta]);
+  const view = currentView();
+  if (view.kind === 'end' && delta < 0) {
+    const last = steps.at(-1);
+    if (last) go(last.id);
+    return;
+  }
+  if (view.kind !== 'step') return;
+  const next = steps[steps.indexOf(view.step) + delta];
+  if (next) go(next.id);
+  else if (delta > 0) go('end');
 }
 
 document.addEventListener('keydown', event => {
@@ -835,8 +1112,12 @@ document.addEventListener('keydown', event => {
 });
 
 window.addEventListener('hashchange', () => {
+  moves++;
+  taking = null;
   render();
-  window.scrollTo(0, 0);
+  main.scrollTo(0, 0);
+  const view = currentView();
+  if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });
 
 ({ walkthrough, session } = exported
@@ -856,22 +1137,26 @@ const fetchText = async (data: string) => {
   if (!answer.ok) throw new Error(`${data}: ${String(answer.status)}`);
   return answer.text();
 };
+
 // The session records and answers through the CLI, so the page asks for the walkthrough and the session again and again.
-const poller = readOnly ? undefined : setInterval(() => {
-  if (polling) return;
+function poll(): void {
+  if (polling || stopped) return;
   polling = true;
   const since = posted;
   Promise.all([fetchText('data/walkthrough.json'), fetchText('data/session.json')])
     .then(([walkthroughText, sessionText]) => {
+      if (document.body.classList.contains('unreachable')) showAlert(null);
       if (since !== posted || (walkthroughText === lastWalkthrough && sessionText === lastSession)) return;
       walkthrough = JSON.parse(walkthroughText) as WalkthroughView;
       session = JSON.parse(sessionText) as SessionView;
       render();
     })
     .catch(() => {
-      showAlert(unreachable(PAGE));
+      showUnreachable(PAGE);
     })
     .finally(() => {
       polling = false;
     });
-}, POLL_MS);
+}
+
+const poller = readOnly ? undefined : setInterval(poll, POLL_MS);

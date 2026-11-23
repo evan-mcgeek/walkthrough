@@ -12,7 +12,7 @@ test('Ask reaches the listening session and its answer shows at the step', async
 
   const step = page.getByRole('region', { name: 'Login' });
   await step.getByRole('textbox', { name: 'Ask about this step' }).fill('Why is app 2 now?');
-  await step.getByRole('button', { name: 'Ask' }).click();
+  await step.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
 
   const { stdout } = await listener.ended;
   const asked = JSON.parse(stdout) as { id: string; kind: string; text: string };
@@ -36,14 +36,22 @@ test('a question from the session needs the person until they reply', async ({ p
   const listener = repo.background('listen');
   const chip = page.getByRole('status', { name: 'Session' });
   await expect(chip).toHaveText('Needs you');
+  const asks = page.getByRole('region', { name: 'The session asks' });
+  await expect(asks.getByText('Is the login meant to accept everyone?')).toBeVisible();
+  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
+  await expect(fromSession).toHaveText('From the session1 message');
 
-  await page.getByRole('textbox', { name: 'Reply' }).fill('No, only staff.');
-  await page.getByRole('button', { name: 'Reply' }).click();
+  await asks.getByRole('textbox', { name: 'Reply' }).fill('No, only staff.');
+  await asks.getByRole('textbox', { name: 'Reply' }).press('Enter');
 
   expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'reply', text: 'No, only staff.' });
   await expect(chip).toHaveText('Working');
-  await expect(page.getByText('No, only staff.')).toBeVisible();
+  await expect(asks).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Reply' })).toHaveCount(0);
+  await fromSession.click();
+  const thread = page.getByRole('region', { name: 'From the session' });
+  await expect(thread.getByText('Is the login meant to accept everyone?')).toBeVisible();
+  await expect(thread.getByText('No, only staff.')).toBeVisible();
 });
 
 test('a draft question survives the page redrawing', async ({ page, repo, url }) => {
@@ -63,14 +71,18 @@ test('a question offers its answers as buttons, and the choice reaches the liste
   await expect(page).toHaveURL(url);
   repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
   const listener = repo.background('listen');
-  const question = page.getByRole('region', { name: 'From the session' });
+  const asks = page.getByRole('region', { name: 'The session asks' });
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Needs you');
+  await expect(asks.getByRole('button')).toHaveText(['Staff only', 'Everyone']);
+  await expect(asks.getByRole('textbox', { name: 'Reply' })).toHaveAttribute('placeholder', 'Or reply…');
 
-  await question.getByRole('button', { name: 'Everyone' }).click();
+  await asks.getByRole('button', { name: 'Everyone' }).click();
 
   const replied = JSON.parse((await listener.ended).stdout) as { id: string; kind: string; text: string };
   expect(replied).toMatchObject({ kind: 'reply', text: 'Everyone' });
-  await expect(question.getByRole('button', { name: 'Everyone' })).toHaveCount(0);
+  await expect(asks).toHaveCount(0);
+  await page.getByRole('link', { name: 'From the session' }).click();
+  const question = page.getByRole('region', { name: 'From the session' });
   await expect(question.getByText('Everyone', { exact: true })).toBeVisible();
 
   repo.run('say', '--answer', replied.id, 'Login now accepts everyone.');
@@ -83,9 +95,12 @@ test('the session is gone once its listener stops and has not come back', async 
   const listener = repo.background('listen');
   await expect(chip).toHaveText('Listening');
 
+  await expect(page.getByText('The session stopped listening.')).toHaveCount(0);
+
   listener.child.kill('SIGTERM');
 
   await expect(chip).toHaveText('Gone');
+  await expect(page.getByText('The session stopped listening. Your decisions are kept; start the session again to continue.')).toBeVisible();
 });
 
 test('a question over 4000 characters is refused with the reason and stays in its box', async ({ page, repo, url }) => {
@@ -95,7 +110,7 @@ test('a question over 4000 characters is refused with the reason and stays in it
   const box = step.getByRole('textbox', { name: 'Ask about this step' });
   await box.fill('a'.repeat(4001));
 
-  await step.getByRole('button', { name: 'Ask' }).click();
+  await box.press('Enter');
 
   await expect(page.getByRole('alert')).toHaveText('That text is 4001 characters long; the most it can be is 4000.');
   await expect(box).toHaveValue('a'.repeat(4001));
