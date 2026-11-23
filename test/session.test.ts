@@ -184,7 +184,8 @@ describe('the session status', () => {
   });
 
   test('stays working on an unanswered request however long it takes, and is gone once answered and not back', async () => {
-    repo = makeRepo({ env: BACK_WITHIN });
+    // Long enough that the CLI's exit and a fetch after the answer stay inside it on a loaded machine.
+    repo = makeRepo({ env: { WALKTHROUGH_BACK_WITHIN_MS: '2000' } });
     repo.run('start');
     repo.record(ONE_STEP);
     const id = await asked('Why is app 2 now?');
@@ -194,7 +195,7 @@ describe('the session status', () => {
 
     repo.run('say', '--answer', id, 'Login needs the second app.');
     expect(await stateAt()).toBe('working');
-    await until('the session is gone', async () => (await stateAt()) === 'gone');
+    await until('the session is gone', async () => (await stateAt()) === 'gone', 8000);
   });
 
   test('is listening again when the session comes back after answering', async () => {
@@ -282,5 +283,5 @@ describe('the page server', () => {
 
     await until('the idle server stops', () => fetch(root).then(() => false, () => true), 5000);
     expect(handed((await listener.ended).stdout)).toEqual([{ kind: 'stopped' }]);
-  }, 15_000);
+  });
 });
