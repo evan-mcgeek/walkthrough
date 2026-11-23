@@ -93,6 +93,7 @@ describe('walkthrough steps', () => {
   test('refuses steps that leave a changed file out, repeat one, or name one outside the change, and keeps the old steps', async () => {
     repo = makeRepo({ feature: { 'login.test.ts': "test('login', () => {});\n" } });
     repo.run('start');
+    expect(repo.record(loginSteps).status).toBe(0);
 
     const refused = repo.record([
       { title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'other.ts'] },
@@ -103,7 +104,10 @@ describe('walkthrough steps', () => {
     expect(refused.stderr).toContain('login.ts is in more than one step');
     expect(refused.stderr).toContain('other.ts is not changed in this walkthrough');
     expect(refused.stderr).toContain('no step has app.ts, login.test.ts');
-    expect((await shownAt(repo.url())).steps).toEqual([]);
+    expect((await shownAt(repo.url())).steps.map(({ id, title }) => ({ id, title }))).toEqual([
+      { id: '1', title: 'Login check' },
+      { id: '2', title: 'App version' },
+    ]);
   });
 
   test('refuses a step without an explanation', () => {
