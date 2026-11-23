@@ -117,15 +117,22 @@ export function makeRepo({
   const running: Promise<unknown>[] = [];
   const lines = (name: string) =>
     fs.existsSync(log(name)) ? fs.readFileSync(log(name), 'utf8').trim().split('\n') : [];
+  // What the CLI last printed to stderr, so a page that never opened names why.
+  let said = '';
+  const runCli = (cwd: string, args: string[]) => {
+    const result = spawnSync(CLI, args, { cwd, encoding: 'utf8', env });
+    said = result.stderr;
+    return result;
+  };
 
   return {
     dir,
     state,
     base,
     head,
-    run: (...args: string[]) => spawnSync(CLI, args, { cwd: dir, encoding: 'utf8', env }),
+    run: (...args: string[]) => runCli(dir, args),
     /** Runs the CLI in another folder with this repo's state and fakes. */
-    runIn: (cwd: string, ...args: string[]) => spawnSync(CLI, args, { cwd, encoding: 'utf8', env }),
+    runIn: (cwd: string, ...args: string[]) => runCli(cwd, args),
     /** Runs the CLI in the background, as the session runs `listen`: what it printed and how it ended. */
     background: (...args: string[]) => {
       const child = spawn(CLI, args, { cwd: dir, env });
@@ -156,7 +163,7 @@ export function makeRepo({
     /** The page address the last start opened. */
     url: () => {
       const last = lines('open').at(-1);
-      if (!last) throw new Error('no page was opened');
+      if (!last) throw new Error(`no page was opened${said ? `; the CLI last said: ${said.trim()}` : ''}`);
       return last;
     },
   };
