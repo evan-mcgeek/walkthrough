@@ -525,10 +525,13 @@
   display: flex;
   align-items: center;
   gap: var(--s2);
-  /* As wide as the note's text column (66ch at the note's 14px), so the menu ends where the text does. */
-  max-width: calc(66ch * 14 / 13);
+  /* Measured in the note's own font, as its text is, so the menu ends where the text does in every engine. */
+  max-width: 66ch;
   min-height: 24px;
   margin: 0;
+}
+
+.note-head > * {
   font-size: 13px;
 }
 
