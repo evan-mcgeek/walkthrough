@@ -8,9 +8,10 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "npm run build && vitest run && playwright test",
+    "test": "npm run build && vitest run && playwright test --project=chromium",
+    "test:browsers": "npm run build && vitest run && playwright test",
     "test:cli": "npm run build && vitest run",
-    "test:page": "npm run build && playwright test",
+    "test:page": "npm run build && playwright test --project=chromium",
     "lint": "tsc --noEmit && eslint . --ignore-pattern .claude/",
     "release": "node scripts/release.mjs"
   },
