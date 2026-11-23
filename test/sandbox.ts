@@ -17,6 +17,8 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
   Object.assign(process.env, {
     WALKTHROUGH_TEST_SANDBOX: sandbox,
     HOME: home,
+    // macOS 27 refuses Playwright's Firefox the real app-data folder (microsoft/playwright#42768).
+    CFFIXED_USER_HOME: home,
     XDG_STATE_HOME: path.join(home, '.local', 'state'),
     XDG_CONFIG_HOME: path.join(home, '.config'),
     WALKTHROUGH_STATE: path.join(sandbox, 'state'),
