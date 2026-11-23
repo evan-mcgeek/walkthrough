@@ -98,10 +98,6 @@ export function icon(name: IconName, label?: string): SVGSVGElement {
   if (label) {
     svg.setAttribute('role', 'img');
     svg.setAttribute('aria-label', label);
-    // Its tooltip says it too, for anyone who cannot tell it from its shape or colour.
-    const title = document.createElementNS(SVG, 'title');
-    title.textContent = label;
-    svg.append(title);
   } else svg.setAttribute('aria-hidden', 'true');
   for (const [tag, attributes] of ICONS[name] as readonly Shape[]) {
     const shape = document.createElementNS(SVG, tag);

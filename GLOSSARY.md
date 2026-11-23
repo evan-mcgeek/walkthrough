@@ -29,12 +29,12 @@ A file in it may carry a short explanation of its own, shown above that file's d
 _Avoid_: Hunk, chunk
 
 **Folded step**:
-A step the agent marked as not worth reading line by line, shown collapsed with the agent's reason for each file.
+A step the agent marked as not worth reading line by line, shown collapsed with the agent's reason for each file; the page calls it Files to skim.
 _Avoid_: Mechanical step, generated step
 
 **Being checked**:
 A step the session is still checking, such as with the review policy's reviewers, so its findings may still arrive; the page holds its actions until the session records it as checked.
-A finding that arrives on a step after the person decided it puts the step back in what is left, with their decision kept.
+A finding that arrives on a step after the person decided it puts the step back in To review, the queue, with their decision kept.
 _Avoid_: Pending, in review
 
 ### What the agent puts on the page
@@ -61,7 +61,7 @@ _Avoid_: AC map, outstanding list
 
 **Action**:
 A choice the agent offers on a step, a note, a checklist item, the verdict or the whole walkthrough, which the person can take with an optional note.
-The whole walkthrough's first action is its finishing action, such as handing over the fix list or posting the review.
+The whole walkthrough's first action is its finishing action, such as sending the fix list to the session or posting the review.
 _Avoid_: Button, command
 
 **Decision**:

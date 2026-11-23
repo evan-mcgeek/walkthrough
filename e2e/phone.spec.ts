@@ -144,7 +144,8 @@ test('the rail becomes a select of what is left, with decided steps and the Summ
   const select = rail.getByRole('combobox', { name: 'Step' });
   await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
   await expect(select).toHaveValue('1');
-  await expect(rail.getByText('0 decided', { exact: true })).toBeVisible();
+  await expect(rail.locator('.queue-count')).toHaveText('0 decided');
+  await expect(rail.locator('.queue-count')).toBeVisible();
   await expect(page.getByRole('banner').getByText(/decided/)).toBeHidden();
 
   await select.selectOption('2');
@@ -156,7 +157,7 @@ test('the rail becomes a select of what is left, with decided steps and the Summ
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(select.locator('optgroup')).toHaveAttribute('label', '1 decided');
   await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
-  await expect(rail.getByText('1 decided', { exact: true })).toBeVisible();
+  await expect(rail.locator('.queue-count')).toHaveText('1 decided');
   await select.selectOption('summary');
   await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
   await expect(select.locator('option:checked')).toHaveText('Summary');

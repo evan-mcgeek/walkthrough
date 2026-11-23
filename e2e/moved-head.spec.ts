@@ -49,7 +49,11 @@ test('a step whose diff changed shows reopened with the decision it had', async 
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
   const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
   await expect(segments).toHaveCount(1);
+  await expect(segments).toHaveAttribute('data-state', 'current');
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
   await expect(segments).toHaveAttribute('data-state', 'reopened');
+  await expect(segments).toHaveAttribute('title', '1 Login check: changed since you decided');
 });
 
 test('notes whose step or lines are gone show as notes on removed code on the Session messages page, still open to a reply', async ({ page }) => {

@@ -1768,7 +1768,7 @@ function factsRail(step: Step): HTMLElement[] {
     .filter(item => item.steps.includes(step.id))
     .map(item => {
       const mark = item.mark ?? 'unchecked';
-      const row = el('li', {}, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
+      const row = el('li', { title: MEANS[mark] ?? '' }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
       row.dataset['mark'] = mark;
       return row;
     });
@@ -1831,6 +1831,9 @@ function queueRow(
   );
   row.dataset['state'] = state;
   row.dataset['key'] = `row:${address}`;
+  // The row's tooltip says what its icon shows, for anyone who cannot tell it from its shape or colour.
+  const means = stateName(mark);
+  if (means) row.title = means;
   if (current) row.setAttribute('aria-current', current);
   return row;
 }
@@ -2333,7 +2336,7 @@ function sessionView(stepless = true): HTMLElement {
     'section',
     { className: 'messages' },
     el('div', { className: 'title-row' }, title),
-    about,
+    ...(stepless ? [about] : []),
     ...(body.length ? body : [el('p', { className: 'muted' }, 'Nothing from the session yet.')]),
   );
   section.setAttribute('aria-labelledby', title.id);

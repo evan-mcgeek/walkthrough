@@ -108,7 +108,7 @@ test('checklist marks and rail states are named for screen readers and in their 
   const rail = page.getByRole('navigation', { name: 'To review' });
 
   await expect(rail.getByRole('link', { name: 'App version' }).getByRole('img')).toHaveAccessibleName('Not read yet');
-  await expect(rail.getByRole('link', { name: 'App version' }).locator('svg title')).toHaveText('Not read yet');
+  await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('title', 'Not read yet');
   await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('The step you are on');
   await expect(rail.getByRole('link', { name: 'The app shows its version.' }).getByRole('img')).toHaveAccessibleName('Not met');
   await rail.getByRole('link', { name: 'The app shows its version.' }).click();

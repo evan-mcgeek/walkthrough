@@ -1002,7 +1002,7 @@
   min-width: 0;
 }
 
-.thread-body > .said {
+.thread-body > .said.session {
   margin: 0;
   padding: 0;
   border: 0;
