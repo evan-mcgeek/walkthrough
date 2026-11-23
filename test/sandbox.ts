@@ -34,4 +34,9 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
       console.error(`could not remove the test sandbox: ${String(error)}`);
     }
   });
+  // A signal no runner handles ends the process without 'exit'; Playwright handles neither.
+  for (const signal of ['SIGTERM', 'SIGHUP'] as const)
+    process.once(signal, () => {
+      if (!process.listenerCount(signal)) process.exit(128 + os.constants.signals[signal]);
+    });
 }
