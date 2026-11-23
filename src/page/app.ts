@@ -2273,8 +2273,10 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (isTyping(event.target)) return;
-  if (event.key === 'j' || event.key === 'ArrowRight') stepBy(1);
-  else if (event.key === 'k' || event.key === 'ArrowLeft') stepBy(-1);
+  // Inside what scrolls sideways the arrows scroll it, so long lines stay reachable from the keyboard.
+  const sideways = event.target instanceof Element && event.target.closest('.d2h-file-diff, pre, .preview, .menu') !== null;
+  if (event.key === 'j' || (event.key === 'ArrowRight' && !sideways)) stepBy(1);
+  else if (event.key === 'k' || (event.key === 'ArrowLeft' && !sideways)) stepBy(-1);
 });
 
 phone.addEventListener('change', render);

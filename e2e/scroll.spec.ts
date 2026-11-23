@@ -46,3 +46,17 @@ test('a diff scrolled sideways stays there when the page redraws', async ({ page
   await expect(page.getByRole('combobox', { name: 'Step' }).getByRole('option', { name: 'From the session' })).toHaveCount(1);
   expect(await diff.evaluate(one => one.scrollLeft)).toBe(100);
 });
+
+test('the right arrow in a diff scrolls its long lines instead of moving to the next step', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const diff = page.locator('.d2h-file-wrapper[data-file="long.ts"] .d2h-file-diff');
+  // Once the step's read mark is drawn, no redraw cuts the scroll short.
+  await page.waitForResponse(answer => answer.url().includes('data/walkthrough.json') && answer.status() === 304);
+  await diff.locator('tr[data-line] td.d2h-code-linenumber').first().focus();
+
+  await page.keyboard.press('ArrowRight');
+
+  await expect(page.getByRole('region', { name: 'Long' })).toBeVisible();
+  expect(new URL(page.url()).hash).not.toBe('#end');
+  await expect.poll(() => diff.evaluate(one => one.scrollLeft)).toBeGreaterThan(0);
+});

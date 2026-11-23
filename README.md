@@ -109,7 +109,7 @@ At 390px the actions move to a bottom bar, and "Swipe to decide" in the More men
 
 ### Keyboard
 
-1. `j` and `k`, or the right and left arrows, move between steps.
+1. `j` and `k`, or the right and left arrows, move between steps; inside a diff or a code block the arrows scroll it instead.
 2. To pick lines, press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
 3. Escape cancels a line pick.
 
