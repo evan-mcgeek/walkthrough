@@ -746,6 +746,10 @@
     padding-bottom: var(--s4);
   }
 
+  .step-title {
+    font-size: 19px;
+  }
+
   /* A diff scrolls sideways inside its file; its notes stay pinned to the visible width. */
   .d2h-file-diff {
     overflow-x: auto;
