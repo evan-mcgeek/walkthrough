@@ -43,7 +43,7 @@ test('a diff scrolled sideways stays there when the page redraws', async ({ page
 
   repo.run('say', 'Still here.');
 
-  await expect(page.getByRole('combobox', { name: 'Step' }).getByRole('option', { name: 'From the session' })).toHaveCount(1);
+  await expect(page.getByRole('combobox', { name: 'Step' }).getByRole('option', { name: 'Session messages' })).toHaveCount(1);
   expect(await diff.evaluate(one => one.scrollLeft)).toBe(100);
 });
 

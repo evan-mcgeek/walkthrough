@@ -60,7 +60,7 @@ describe('walkthrough policy', () => {
     const repo = makeRepo({ env: { XDG_CONFIG_HOME: config } });
     const policy = policyIn(config);
     // The template before its last change.
-    const earlier = execFileSync('git', ['cat-file', 'blob', '660660fa71e38e0cfe601c49b416a2a49e887d0c'], {
+    const earlier = execFileSync('git', ['cat-file', 'blob', 'd071979b832119d3f41e57b65eac563d02d24cd4'], {
       cwd: import.meta.dirname,
     });
     fs.mkdirSync(path.dirname(policy), { recursive: true });

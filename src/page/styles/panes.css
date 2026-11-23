@@ -742,20 +742,6 @@
   font-size: 14px;
 }
 
-.detached-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  margin: 0;
-  color: var(--ink-secondary);
-  font: var(--text-label);
-}
-
-.detached-head > .icon,
-.detached-item > .icon {
-  color: var(--muted);
-}
-
 .detached-item {
   display: flex;
   align-items: flex-start;
@@ -767,6 +753,7 @@
 
 .detached-item > .icon {
   margin-top: 2px;
+  color: var(--muted);
 }
 
 /* ---------- preparing ---------- */
@@ -951,15 +938,115 @@
   font-size: 14px;
 }
 
-/* ---------- from the session ---------- */
+/* ---------- Session messages ---------- */
 
-.messages > :is(.notice, .detached-box) {
+.page-about {
+  max-width: 68ch;
+  margin: 0 0 var(--s3);
+  color: var(--ink);
+  font: var(--text-body);
+}
+
+.messages > .notice {
   margin-bottom: var(--s4);
 }
 
-.messages > .thread {
-  padding: var(--s3) 0;
-  border-top: 1px solid var(--rule-soft);
+/* A section under a rule: its heading with an icon and count, then rows with their icon in a gutter. */
+.messages-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-width: 860px;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.messages-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink-secondary);
+  font: 650 13px/1.4 var(--font-ui);
+}
+
+.messages-head > .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.messages-section > .page-about {
+  margin: 0;
+}
+
+/* A message is a row beside its icon, not the quote that style.css draws for what the session said elsewhere. */
+.messages-section > .thread {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: 0;
+  color: var(--ink);
+  font: 400 14px/1.55 var(--font-ui);
+}
+
+.messages-section > .thread > .icon {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.thread-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.thread-body > .said.session {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A note or comment whose code was removed: its icon in a gutter, its label and where it was, then its text. */
+.removed-code > :is(.note, .mine) {
+  position: relative;
+  padding: 0 0 0 var(--s5);
+}
+
+.removed-code .note-head > .icon:first-child,
+.removed-code .mine-who > .icon {
+  position: absolute;
+  top: 4px;
+  left: 0;
+}
+
+.removed-code .note-head > .icon-warn:first-child {
+  color: var(--amber);
+}
+
+.removed-code .note-head .label.finding {
+  color: var(--ink);
+}
+
+/* Where it was follows its label like a phrase, and wraps under it on a narrow screen. */
+.removed-code .note-head {
+  flex-wrap: wrap;
+  column-gap: var(--s1);
+}
+
+.removed-code .note-head > .spacer {
+  min-width: var(--s2);
+}
+
+.removed-code .mine-who {
+  white-space: nowrap;
+}
+
+/* Not a comment box here: one row among the notes, its label still in the accent. */
+.removed-code > .mine {
+  border: 0;
+  background: none;
 }
 
 /* ---------- undo toast ---------- */
@@ -1019,8 +1106,17 @@
 }
 
 /* The rail's phone form, shown only at phone width. */
-.queue-select {
+.queue-select,
+.queue-count {
   display: none;
+}
+
+.queue-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ---------- phone ---------- */
@@ -1043,6 +1139,8 @@
 
   .queue {
     flex-direction: row;
+    align-items: center;
+    gap: var(--s3);
     width: auto;
     padding: var(--s2) var(--s3);
     border-right: 0;
@@ -1050,9 +1148,13 @@
     overflow: visible;
   }
 
-  .queue > :not(.queue-select),
+  .queue > :not(.queue-select, .queue-count),
   .walkthrough[data-view='deck'] .queue {
     display: none;
+  }
+
+  .queue-count {
+    display: block;
   }
 
   .queue-select {

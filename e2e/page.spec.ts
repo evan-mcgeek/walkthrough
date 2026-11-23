@@ -14,7 +14,7 @@ test('shows the session preparing until it records steps, then the steps without
   await expect(preparing).toBeVisible();
   await expect(page.getByText('They appear here as the session records them.')).toBeVisible();
   await expect(page.getByRole('img', { name: 'Preparing' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: "What's left" })).toContainText('No steps yet');
+  await expect(page.getByRole('navigation', { name: 'To review' })).toContainText('No steps yet');
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveCount(0);
   let loads = 0;
   page.on('load', () => loads++);
@@ -63,12 +63,12 @@ test('an approved step stays approved when the page is opened again', async ({ p
   await expect(again.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('the Stop button ends the server', async ({ page, request, url }) => {
-  await page.getByRole('button', { name: 'Stop' }).click();
+test('the End session button ends the server', async ({ page, request, url }) => {
+  await page.getByRole('button', { name: 'End session' }).click();
 
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Stopped');
-  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'End session' })).toHaveCount(0);
   await expect(page.locator('#panes')).toHaveAttribute('inert', '');
   await expect(page.getByText('Preparing the steps')).toBeVisible();
   await expect(request.get(url)).rejects.toThrow();

@@ -241,14 +241,6 @@ components:
   edge-stripe-button-hover:
     backgroundColor: "{colors.surface-tint}"
     textColor: "{colors.ink}"
-  bottom-strip:
-    backgroundColor: "{colors.surface}"
-    height: "28px"
-    padding: "0 8px"
-  bottom-strip-button:
-    textColor: "{colors.ink-secondary}"
-    rounded: "{rounded.control}"
-    padding: "2px 8px"
   segmented-button:
     padding: "4px 12px"
   segmented-pressed:
@@ -378,7 +370,7 @@ It refuses two looks by name: the code-host pull-request page clone, and the ter
 A cool grey neutral scale with a single, person-configurable accent and three narrowly scoped status hues, each token defined once as a light and dark pair (`light-dark()`); the theme follows the system unless the person picks one, and an accent class re-points the accent family.
 
 ### Primary (the accent)
-- **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the active tool-panel tab underline, decided segments of the progress bar, the gutter "+" for a new comment, and the mark.
+- **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, decided segments of the progress bar, the gutter "+" for a new comment, and the mark.
 - **Ultramarine Hover** (`ultramarine-hover`): the primary button's hover and active fill. A disabled primary stays plain Ultramarine on hover.
 - **Ultramarine Text** (`ultramarine-text`): the accent at text contrast, for links, step-number links, the Working status, the selected-line gutter number, the reviewer's own gutter marker and "Your comment" label.
 - **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the reviewer's own comments (wash fill, line border), the focused-input halo (3px), the Ask-about-lines row and step-link borders.
@@ -396,8 +388,8 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, the current queue item, verdict options and popovers.
-- **Surface** (`surface`): the queue rail, the edge stripes and bottom strip of hidden tool windows, secondary buttons, the code pane, the overview stripe, key caps, banners and the session-message rows.
-- **Surface Tint** (`surface-tint`): hover fill (including edge-stripe and bottom-strip buttons) and every pressed or chosen neutral state (segmented controls, Viewed, the chosen verdict and accent option), counters, file chips, draft pills, inline code, skeleton bars.
+- **Surface** (`surface`): the queue rail, the edge stripes of hidden tool windows, secondary buttons, the code pane, the overview stripe, key caps, banners and the session-message rows.
+- **Surface Tint** (`surface-tint`): hover fill (including edge-stripe buttons) and every pressed or chosen neutral state (segmented controls, Viewed, the chosen verdict and accent option), counters, file chips, draft pills, inline code, skeleton bars.
 - **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control.
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text and all reading prose; secondary labels, decided state, verdict status, quotes and table values; the single secondary grey per theme, for metadata, counts, undecided state, status-gone, placeholders, line numbers, hunk headers and resting icons.
 - **Progress Read** (`progress-read`): read and current segments of the progress bar.
@@ -433,7 +425,7 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 - **Meta** (500/600, 12px): counters, facts-rail heading, popover section labels, sub-lines under queue items.
 - **Code** (400, 12.5px / 21px line): diff lines; hunk headers drop to 12px in muted ink.
 - **Mono Label** (500, 12 to 12.5px): file names in file headers and the facts rail, the session label, file chips, list-page walkthrough names, draft locations.
-- **Key** (500, 11.5px mono): key caps in the shortcut sheet.
+- **Key** (500, 11.5px mono): key caps in Help.
 
 ### Prose
 Inside explanations, notes and comments: 12px between blocks; headings at the size of the text around them in 650 with 16px above and 4px below (no size jump, weight alone); disc lists (decimal for ordered) with muted markers, 24px indent and 4px between items; inline code on surface tint with 4px corners and 0 4px padding at 0.9em; links in accent text, underlined at a 2px offset; block quotes in secondary ink behind a 2px rule in the control edge, 12px from the text.
@@ -457,13 +449,13 @@ The link opens the file if it is collapsed and scrolls it to the top of the code
 The export follows the person's panels the same way: the "Files" list under each overview when the column is on, File Notes otherwise.
 Code scrolls horizontally inside its file instead of clipping, with the 10px overview stripe pinned at the right edge. Note rows, the "N more notes" row and the Ask-about-lines composer indent 116px so their text aligns with the code column, not the gutter.
 
-Spacing runs on one 4px scale (`s1` to `s6`: 4, 8, 12, 16, 24, 32px): 4px under the title row, 8px between controls in a row and inside note rows, 12px inside notices and between list rows, 16px between blocks and inside the main pane's top and bottom, 24px for pane sides, 32px for page padding and the head-to-rail gap. Control padding: buttons 0 12px, small buttons 0 8px, counters and file chips 0 8px, step-number links 0 4px, segmented buttons 4px 12px, bottom-strip buttons 2px 8px, icon buttons 4px, the decision chip 4px 8px. Deliberate off-scale values: 2px between queue rows, the 116px code-column indent, and 40px export side padding.
+Spacing runs on one 4px scale (`s1` to `s6`: 4, 8, 12, 16, 24, 32px): 4px under the title row, 8px between controls in a row and inside note rows, 12px inside notices and between list rows, 16px between blocks and inside the main pane's top and bottom, 24px for pane sides, 32px for page padding and the head-to-rail gap. Control padding: buttons 0 12px, small buttons 0 8px, counters and file chips 0 8px, step-number links 0 4px, segmented buttons 4px 12px, icon buttons 4px, the decision chip 4px 8px. Deliberate off-scale values: 2px between queue rows, the 116px code-column indent, and 40px export side padding.
 
-At 390px the header moves the panel show/hide controls and Stop into a "More" menu, where they are checkable menu items and the explanation column is disabled with a "Wider screens" note; the progress bar moves to its own full-width strip under the header, the queue becomes a select with a drawn chevron, the diff scrolls horizontally inside the file while the note stays pinned left, and primary actions become a sticky bottom bar of 44px touch targets. The phone can also decide by swipe deck (see Components); its buttons stay for anyone who does not swipe.
+At 390px the header moves the panel show/hide controls and End session into a "More" menu, where they are checkable menu items and the explanation column is disabled with a "Wider screens" note; the progress bar moves to its own full-width strip under the header, the queue becomes a select with a drawn chevron, the diff scrolls horizontally inside the file while the note stays pinned left, and primary actions become a sticky bottom bar of 44px touch targets. The phone can also decide by swipe deck (see Components); its buttons stay for anyone who does not swipe.
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from tonal steps (canvas against the surface rail) and hairline rules. One shadow exists, for things that float: the actions menu, popovers (Appearance, shortcut sheet) and the top card of the phone swipe deck (the card beneath carries none). Two contact cues are allowed and nothing else: the primary button's inset 1px bottom shade, and the 1px contact shadow under the gutter "+" so it reads above the line numbers. The current queue item is "lifted" with a 1px rule ring, not a shadow.
+Flat by default. Depth comes from tonal steps (canvas against the surface rail) and hairline rules. One shadow exists, for things that float: the actions menu, popovers (Appearance, Help) and the top card of the phone swipe deck (the card beneath carries none). Two contact cues are allowed and nothing else: the primary button's inset 1px bottom shade, and the 1px contact shadow under the gutter "+" so it reads above the line numbers. The current queue item is "lifted" with a 1px rule ring, not a shadow.
 
 ### Shadow Vocabulary
 - **Float** (sidecar `float`): menus, popovers and the top swipe card only.
@@ -471,11 +463,11 @@ Flat by default. Depth comes from tonal steps (canvas against the surface rail) 
 - **Gutter lift** (sidecar `gutter-lift`): the gutter "+" only.
 
 ### Named Rules
-**The Rules Not Boxes Rule.** Files, forms, comment lists, summary sections and folded-file lists are separated by a single top rule, never enclosed in a bordered card. Boxes are kept for things that interrupt or move: notices, the session's question, the detached section (dashed), menus and popovers, the toast, the swipe cards and the reviewer's own comments.
+**The Rules Not Boxes Rule.** Files, forms, comment lists, summary sections and folded-file lists are separated by a single top rule, never enclosed in a bordered card. Boxes are kept for things that interrupt or move: notices, the session's question, menus and popovers, the toast, the swipe cards and the reviewer's own comments.
 
 ## Shapes
 
-Small, tight radii. 4px on every control (buttons, inputs, icon buttons, the Viewed toggle, verdict and accent options, key caps, step links, inline code, focus outlines); 5px on file chips, menu items and the gutter "+"; 6px on joined segmented groups, menus, popovers, textareas and quotes; 7px on notices; 8px on the question box, the detached section, the toast and your own comments; 12px on phone swipe cards; 2px on progress segments. Counters and draft-status pills are full pills; decision state is never a pill. State dots are 8px circles with a 1.5px edge. The progress bar is a row of 5px-high segments with 3px gaps, one per step. Icons are drawn on a 16px grid with 1.6 to 1.8px strokes and round caps (13 to 15px where they sit inside text); the select chevron is drawn from the same set, never the browser's.
+Small, tight radii. 4px on every control (buttons, inputs, icon buttons, the Viewed toggle, verdict and accent options, key caps, step links, inline code, focus outlines); 5px on file chips, menu items and the gutter "+"; 6px on joined segmented groups, menus, popovers, textareas and quotes; 7px on notices; 8px on the question box, the toast and your own comments; 12px on phone swipe cards; 2px on progress segments. Counters and draft-status pills are full pills; decision state is never a pill. State dots are 8px circles with a 1.5px edge. The progress bar is a row of 5px-high segments with 3px gaps, one per step; the current step's is 9px high. Icons are drawn on a 16px grid with 1.6 to 1.8px strokes and round caps (13 to 15px where they sit inside text); the select chevron is drawn from the same set, never the browser's.
 
 ## Components
 
@@ -491,7 +483,7 @@ Restrained and exact; the label carries the meaning.
 - **Tooltips** name the shortcut, for example "Approve and go to the next step (A)".
 
 ### State (not pills)
-Step state is an 8px dot plus a 12.5px 500 word, with no outline or fill around it: **Undecided** is a hollow muted dot; **Decided: <label>** a filled dot in secondary ink; **Reopened** a dashed amber dot in amber. In the summary's decided table the dot is dropped and the label sits in 600 ink.
+Step state is an 8px dot plus a 12.5px 500 word, with no outline or fill around it: **Undecided** is a hollow muted dot; **Decided: <label>** a filled dot in secondary ink; **Changed since you decided** a dashed amber dot in amber. In the summary's decided table the dot is dropped and the label sits in 600 ink.
 
 ### Inputs / Fields
 - **Style:** canvas fill, 1px control edge, 4px corners, 30px tall; textareas 6px corners, min 84px, resizable.
@@ -564,7 +556,7 @@ The title with an "N still open" state and one plain 14.5px count line in second
 Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), and the session statuses: then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
 
 ### Popovers: Appearance and Help
-Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Keyboard shortcuts** (420px, opened with ?): a two-column table, rows on soft rules, key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
+Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Help** (1040px, 60px from the top, one column at 390px): two-column tables, rows on soft rules; its key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
 
 ### Notices
 - **Neutral:** surface fill, 1px rule, 7px radius, muted icon.
@@ -573,7 +565,7 @@ Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px
 - **New finding banner:** the attention banner under the header names a finding that lands on a step the person read or decided ("New finding on step 8, Ultramarine, accents and Appearance, which you approved."; several read as one, "3 new findings on steps 8 and 10."), with a small "Go to step" button and a close icon button to dismiss it. It is for the open page only; after a reload the queue sub-line carries it.
 - **Late finding on the step:** opening a decided step that got a finding after the decision shows an amber-wash line under the title ("A finding arrived after you approved. Your decision stays; change it if the finding matters."), the note labelled "line N · new since you approved", and an action bar of Change decision, the Ask box and "1 new finding" in amber.
 - **Session question:** canvas fill, 1px amber border, 8px radius, amber 650 heading.
-- **Notes on removed code:** 1px dashed control edge, 8px radius.
+- **Notes on removed code:** not a box: a section of the Session messages page under a rule, headed with its icon and count and a line saying why they wait there; each note a row with its icon in a gutter, its label, "was on <file> line N" in muted text, then its text.
 - **Undo toast:** inverted (ink fill, canvas text and icon), 8px radius, 14px text, with an underlined Undo link in 650. It rises 12px over 200ms after a 120ms delay.
 
 ### Image Diff

@@ -38,8 +38,8 @@ test('a question from the session needs the person until they reply', async ({ p
   await expect(chip).toHaveText('Needs you');
   const asks = page.getByRole('region', { name: 'The session asks' });
   await expect(asks.getByText('Is the login meant to accept everyone?')).toBeVisible();
-  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
-  await expect(fromSession).toHaveText('From the session1 message');
+  const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
+  await expect(fromSession).toHaveText('Session messages1 message');
 
   await asks.getByRole('textbox', { name: 'Reply' }).fill('No, only staff.');
   await asks.getByRole('textbox', { name: 'Reply' }).press('Enter');
@@ -81,7 +81,7 @@ test('a question offers its answers as buttons, and the choice reaches the liste
   const replied = JSON.parse((await listener.ended).stdout) as { id: string; kind: string; text: string };
   expect(replied).toMatchObject({ kind: 'reply', text: 'Everyone' });
   await expect(asks).toHaveCount(0);
-  await page.getByRole('link', { name: 'From the session' }).click();
+  await page.getByRole('link', { name: 'Session messages' }).click();
   const question = page.getByRole('region', { name: 'From the session' });
   await expect(question.getByText('Everyone', { exact: true })).toBeVisible();
 
@@ -121,13 +121,13 @@ test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note',
   await expect(page).toHaveURL(url);
   repo.record(ONE_STEP);
   repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
-  const fromSession = page.getByRole('navigation', { name: "What's left" }).getByRole('link', { name: 'From the session' });
+  const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
   const choice = page.getByRole('region', { name: 'The session asks' }).getByRole('button', { name: 'Everyone' });
   await choice.focus();
 
   repo.run('say', 'Still here.');
 
-  await expect(fromSession).toHaveText('From the session2 messages');
+  await expect(fromSession).toHaveText('Session messages2 messages');
   await expect(choice).toBeFocused();
 
   const step = page.getByRole('region', { name: 'Login' });
@@ -137,7 +137,7 @@ test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note',
 
   repo.run('say', 'And here.');
 
-  await expect(fromSession).toHaveText('From the session3 messages');
+  await expect(fromSession).toHaveText('Session messages3 messages');
   await expect(send).toBeFocused();
 });
 

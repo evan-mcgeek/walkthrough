@@ -83,7 +83,6 @@ const ICONS = {
   'panel-queue': [frame, block(2.6, 3.6, 3.4, 8.8)],
   'panel-checklist': [frame, block(10, 3.6, 3.4, 8.8)],
   'panel-explanation': [frame, block(2.6, 3.6, 5.2, 8.8), ['path', { d: 'M4 6h2.4M4 8h2.4M4 10h1.6', ...round, 'stroke-width': 0.9, class: 'knockout' }]],
-  'panel-tools': [frame, block(2.6, 9.4, 10.8, 3)],
 } satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;

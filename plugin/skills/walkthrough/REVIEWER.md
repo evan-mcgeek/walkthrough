@@ -82,9 +82,9 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Fix list
 
 - Offer my verdict on the verdict, "Ready for colleagues" or "Needs fixes", with the hint "Shown to colleagues with the fix list."
-- Offer "Hand over fixes" first on the whole walkthrough, with a hint saying it gives me the fix list in the chat.
+- Offer "Send the fix list to the session" first on the whole walkthrough, with a hint saying it gives me the fix list in the chat.
 - Flagged steps, accepted findings and my own line comments go on a fix list: for each, the step, the file and lines, my note, the finding or my comment.
-- When I take Hand over fixes, give me the fix list in the chat as one message, ready to paste into an author session, headed by my verdict.
+- When I take Send the fix list to the session, give me the fix list in the chat as one message, ready to paste into an author session, headed by my verdict.
 - The author session makes the fixes; the walkthrough session's work ends at the fix list.
 
 ### Rejected findings become conventions

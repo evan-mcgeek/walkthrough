@@ -63,24 +63,25 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
 });
 
-test('the header keeps Stop in a More menu, which Escape closes', async ({ page }) => {
+test('the header keeps End session in a More menu, which Escape closes', async ({ page }) => {
   const header = page.getByRole('banner');
-  await expect(header.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expect(header.getByRole('button', { name: 'End session' })).toHaveCount(0);
+  await expect(header.getByText('Session', { exact: true })).toBeHidden();
   const more = header.getByRole('button', { name: 'More' });
   await expect(more).toHaveAttribute('aria-expanded', 'false');
 
   await more.click();
   const menu = page.getByRole('menu', { name: 'More' });
-  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Appearance', 'Stop']);
+  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Appearance', 'Help: what things mean', 'End session']);
   await expect(menu.getByRole('menuitem', { name: 'Swipe to decide' })).toBeFocused();
   await page.keyboard.press('ArrowUp');
-  await expect(menu.getByRole('menuitem', { name: 'Stop' })).toBeFocused();
+  await expect(menu.getByRole('menuitem', { name: 'End session' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);
   await expect(more).toBeFocused();
 
   await more.click();
-  await page.getByRole('menuitem', { name: 'Stop' }).click();
+  await page.getByRole('menuitem', { name: 'End session' }).click();
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
 });
 
@@ -103,16 +104,14 @@ test('the panels move into the More menu, where the explanation column waits for
   const record = repo.record({ title: 'Acceptance criteria', items: [{ status: 'met', mark: 'met', text: 'A person can log in.', steps: ['1'] }] }, 'checklist');
   if (record.status !== 0) throw new Error(record.stderr);
   await expect(page.locator('.edge-stripe').getByRole('button')).toHaveCount(0);
-  await expect(page.getByRole('toolbar', { name: 'Tool panel (hidden)' })).toBeHidden();
   await page.getByRole('button', { name: 'More' }).click();
   const panels = page.getByRole('menu', { name: 'More' }).getByRole('menuitemcheckbox');
-  await expect(panels).toHaveText(["What's left (1)", 'Checklist (2)', 'Explanation column (3)Wider screens', 'Tool panel (4)']);
+  await expect(panels).toHaveText(['To review (1)', 'Checklist (2)', 'Explanation column (3)Wider screens']);
   await expect(panels.nth(0)).toHaveAttribute('aria-checked', 'true');
   await expect(panels.nth(2)).toHaveAttribute('aria-disabled', 'true');
+  // A rule sets the panels apart from Appearance, Help and End session.
+  await expect(page.getByRole('menu', { name: 'More' }).getByRole('separator')).toHaveCount(1);
 
-  await panels.filter({ hasText: 'Tool panel' }).click();
-  await expect(page.getByRole('tablist', { name: 'Tool panel' })).toBeVisible();
-  await page.getByRole('button', { name: 'More' }).click();
   await page.getByRole('menuitemcheckbox', { name: /^Checklist/ }).click();
   const side = page.getByRole('complementary', { name: 'Checklist' });
   await expect(side.getByText('A person can log in.')).toBeVisible();
@@ -120,7 +119,7 @@ test('the panels move into the More menu, where the explanation column waits for
   const stacked = await side.boundingBox();
   expect(main && stacked && stacked.y >= main.y + main.height - 1).toBe(true);
   await page.getByRole('button', { name: 'More' }).click();
-  await expect(page.getByRole('menuitemcheckbox', { name: 'Tool panel (4)' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Checklist (2)' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('menuitemcheckbox', { name: /^Explanation column/ })).toBeDisabled();
 });
 
@@ -139,32 +138,36 @@ test('the step decides from a bottom bar of touch-sized buttons, with Ask above 
   await expect(step.getByRole('textbox', { name: 'Note' })).toBeFocused();
 });
 
-test('the rail becomes a select of what is left, with decided steps and the Summary after it', async ({ page }) => {
-  const rail = page.getByRole('navigation', { name: "What's left" });
+test('the rail becomes a select of what is left, with decided steps and the Summary after it, and the count beside it', async ({ page }) => {
+  const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link')).toHaveCount(0);
   const select = rail.getByRole('combobox', { name: 'Step' });
-  await expect(select.locator('option')).toHaveText(['Left 2 · Login check', 'App version', 'Summary']);
+  await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
   await expect(select).toHaveValue('1');
+  await expect(rail.locator('.queue-count')).toHaveText('0 decided');
+  await expect(rail.locator('.queue-count')).toBeVisible();
+  await expect(page.getByRole('banner').getByText(/decided/)).toBeHidden();
 
   await select.selectOption('2');
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   expect(new URL(page.url()).hash).toBe('#2');
-  await expect(select.locator('option:checked')).toHaveText('Left 2 · App version');
+  await expect(select.locator('option:checked')).toHaveText('Step 2 of 2 · App version');
 
   await page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(select.locator('optgroup')).toHaveAttribute('label', '1 decided');
-  await expect(select.locator('option')).toHaveText(['Left 1 · Login check', 'App version', 'Summary']);
+  await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
+  await expect(rail.locator('.queue-count')).toHaveText('1 decided');
   await select.selectOption('summary');
   await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
-  await expect(select.locator('option:checked')).toHaveText('Left 1 · Summary');
+  await expect(select.locator('option:checked')).toHaveText('Summary');
 });
 
 test('a card swiped right approves its step, and the next card takes its place', async ({ page, repo }) => {
   await openDeck(page);
   expect(new URL(page.url()).hash).toBe('#deck');
   await expect(page.getByText('Swipe right to approve, left to flag. Tap to open the step.')).toBeVisible();
-  await expect(page.getByRole('navigation', { name: "What's left" }).getByRole('combobox')).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'To review' }).getByRole('combobox')).toBeHidden();
 
   await drag(page, card(page, 1, 'Login check'), 160);
   await expect(card(page, 2, 'App version')).toBeVisible();

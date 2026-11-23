@@ -1,6 +1,6 @@
 /*
-  Popovers (docs/design/DESIGN.md, Popovers: Appearance and Shortcuts): a modal dialog.popover with its .popover-head,
-  .radios as .accents (swatch rows) or .options (verdict-option buttons), and the shortcut sheet's .keys table of kbd caps.
+  Popovers (docs/design/DESIGN.md, Popovers: Appearance and Help): a modal dialog.popover with its .popover-head,
+  .radios as .accents (swatch rows) or .options (verdict-option buttons), and Help's .help-column legends and .keys table of kbd caps.
 */
 
 .popover {
@@ -133,12 +133,114 @@
   font-weight: 600;
 }
 
-/* ---------- the shortcut sheet ---------- */
+/* ---------- Help ---------- */
 
-.popover.sheet {
-  inset: 90px 0 auto;
-  width: 420px;
+/* Three columns: what things mean in two, the keyboard shortcuts in the third; one column on a narrow screen. */
+.popover.help[open] {
+  inset: 60px 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s5);
+  width: 1040px;
   margin: 0 auto;
+}
+
+/* The dialog's own name is for screen readers; each column says what it holds. */
+.popover.help > .popover-head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.help-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.help-column > .popover-head {
+  min-height: 18px;
+  margin: 0;
+}
+
+.help-column > .popover-label {
+  margin: var(--s3) 0 0;
+}
+
+.legend td:first-child {
+  width: 1%;
+}
+
+.help-mark {
+  display: block;
+  color: var(--muted);
+}
+
+.help-mark:is([data-state='current'], [data-state='read']) {
+  color: var(--accent);
+}
+
+.help-mark[data-state='decided'] {
+  color: var(--ink-secondary);
+}
+
+.help-mark[data-state='reopened'] {
+  color: var(--amber);
+}
+
+.help-mark[data-state='not-met'] {
+  color: var(--rust);
+}
+
+.legend .segment {
+  display: block;
+  flex: none;
+  width: 22px;
+}
+
+.help-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.help-label > .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.help-label.finding,
+.help-label.finding > .icon {
+  color: var(--amber);
+}
+
+.help-label.own,
+.help-label.own > .icon {
+  color: var(--accent-text);
+}
+
+@media (max-width: 1072px) {
+  .popover.help[open] {
+    width: auto;
+    inset: 60px var(--s4) auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .popover.help[open] {
+    grid-template-columns: minmax(0, 1fr);
+    inset: 52px var(--s2) auto;
+  }
+
+  .help-column > .popover-head:empty {
+    display: none;
+  }
 }
 
 .keys {
@@ -160,8 +262,12 @@
 }
 
 .keys td:first-child {
-  padding-right: var(--s3);
+  padding-right: var(--s4);
   white-space: nowrap;
+}
+
+.legend td:first-child {
+  padding-right: var(--s3);
 }
 
 .keys kbd {
