@@ -40,7 +40,7 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
 });
 
-test('the Summary closes the queue: what is still open, the verdict, decisions by label, flags, your comments, drafts and the checklist', async ({
+test('the Summary closes the queue: a ledger of every step, still open first, with flags and your comments, the drafts, and a rail with the verdict, finishing actions and checklist', async ({
   page,
   repo,
   url,
@@ -87,22 +87,31 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   await expect(summary.getByText('2 still open', { exact: true })).toBeVisible();
   await expect(summary.getByText('1 of 3 steps decided · 1 flagged · 1 of your comments · checklist 1 of 2 met', { exact: true })).toBeVisible();
   const section = (name: string) => summary.getByRole('region', { name });
-  await expect(section('Still open').getByRole('listitem')).toHaveText([
-    '2 App versionChanged since you chose Approve',
-    '3 CartUndecided',
+  const ledger = summary.getByRole('table', { name: 'Every step and what you decided' });
+  await expect(ledger.getByRole('row')).toHaveText([
+    'Still open2',
+    '2App versionChanged since you chose Approve.Changed',
+    '3CartUndecided',
+    'Decided1',
+    '1Login check“Everyone gets in.”login.ts:1 Say who may log in.Flag',
   ]);
-  await expect(section('Decided').getByRole('row')).toHaveText(['Flag1 Login check1']);
-  await expect(section('Flagged').getByRole('listitem')).toHaveText(['1 Login checkEveryone gets in.']);
-  await expect(section('Your comments').getByRole('listitem')).toHaveText(['login.ts · 1Say who may log in.']);
-  await expect(section('Checklist').getByRole('listitem')).toHaveText([/^Logs in\.\s*met$/, /^Has a cart\.\s*not shown$/]);
+  await expect(ledger.locator('.ledger-decision.changed')).toHaveText('Changed');
+  await expect(ledger.locator('.ledger-decision.muted')).toHaveText('Undecided');
+  await expect(ledger.getByRole('row').last().getByRole('img', { name: 'Your comment' })).toBeVisible();
+  await ledger.getByRole('link', { name: 'Cart' }).click();
+  await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
+  await page.goBack();
+  await expect(summary).toBeVisible();
+  const rail = summary.getByRole('complementary', { name: 'Finish' });
+  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
+  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
   const drafts = section('Comments the session drafted');
   await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 edited · 1 dropped');
   await expect(drafts.getByRole('listitem')).toHaveText(['cart.ts · 1Edited[AI] Name the items.', 'Step 3Dropped[AI] Add a test.']);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
 
-  const verdict = section('Verdict');
-  await expect(verdict.getByText('No verdict yet. Check what is still open, then choose.')).toBeVisible();
-  await expect(verdict.getByText('Shown to colleagues with the fix list.')).toBeVisible();
+  const verdict = rail.getByRole('region', { name: 'Verdict' });
+  await expect(verdict.getByText('No verdict yet.', { exact: true })).toBeVisible();
   const options = verdict.getByRole('radiogroup', { name: 'Verdict' }).getByRole('radio');
   await expect(options).toHaveText(['Ready for colleagues', 'Needs fixes']);
   await expect(options.nth(0)).toHaveAttribute('aria-checked', 'false');
@@ -110,7 +119,9 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   await expect(hand).toBeDisabled();
   await expect(hand).toHaveClass(/primary/);
   await expect(summary.getByRole('button', { name: 'Ask the session to re-check' })).toBeEnabled();
-  await expect(summary.getByText('Gives you the fix list in the chat. Choose a verdict first.', { exact: true })).toBeVisible();
+  await expect(
+    rail.getByText('Choose a verdict first. Shown to colleagues with the fix list. Gives you the fix list in the chat.', { exact: true }),
+  ).toBeVisible();
   // What the page sent before goes to a first listener, so the next one hears only the verdict.
   await repo.background('listen').ended;
   const listener = repo.background('listen');
@@ -124,7 +135,7 @@ test('the Summary closes the queue: what is still open, the verdict, decisions b
   await expect(status).toHaveText('Needs fixes');
   await expect(status.getByRole('button')).toHaveCount(0);
   await expect(hand).toBeEnabled();
-  await verdict.getByRole('button', { name: 'Change' }).click();
+  await expect(rail.getByText('Shown to colleagues with the fix list. Gives you the fix list in the chat.', { exact: true })).toBeVisible();
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toBeFocused();
   await page.keyboard.press('ArrowLeft');
   await expect(verdict.getByRole('radio', { name: 'Ready for colleagues' })).toBeFocused();

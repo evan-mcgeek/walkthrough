@@ -45,8 +45,15 @@ test('a step being checked says so and holds its actions, while the person can s
   await step.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
   await expect(step.getByText('Waiting for the session to answer.')).toBeVisible();
   await rail.getByRole('link', { name: 'Summary' }).click();
-  const open = page.getByRole('region', { name: 'Still open' });
-  await expect(open.getByRole('listitem')).toHaveText(['1 LoginBeing checked', '2 AppBeing checked', '3 CartUndecided']);
+  await expect(page.getByText('0 of 3 steps decided · 2 being checked', { exact: true })).toBeVisible();
+  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  await expect(ledger.getByRole('row')).toHaveText([
+    'Still open3',
+    '1LoginFindings may still arrive.Being checked',
+    '2AppFindings may still arrive.Being checked',
+    '3CartUndecided',
+  ]);
+  await expect(ledger.locator('.ledger-decision.muted')).toHaveText(['Being checked', 'Being checked', 'Undecided']);
 
   run(repo, 'checking', '2');
   await rail.getByRole('link', { name: /Login/ }).click();
@@ -56,13 +63,16 @@ test('a step being checked says so and holds its actions, while the person can s
   await expect(rail.getByRole('button', { name: '1 decided' })).toBeVisible();
 });
 
-test('a finding pinned after the person decided the step brings it back with a banner that goes to it', async ({ page, repo }) => {
+test('a finding pinned after the person decided the step brings it back with a banner that goes to it, and the step says so', async ({
+  page,
+  repo,
+}) => {
   await page.getByRole('region', { name: 'Login' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App' })).toBeVisible();
   const rail = page.getByRole('navigation', { name: 'To review' });
   const banner = page.getByRole('alert');
 
-  record(repo, [finding('1', 'Everyone gets in.')], 'note');
+  record(repo, [{ ...finding('1', 'Everyone gets in.'), file: 'login.ts', lines: [1, 1] }], 'note');
 
   await expect(banner).toHaveText('New finding on step 1, Login, which you approved.Go to step');
   await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding');
@@ -71,6 +81,16 @@ test('a finding pinned after the person decided the step brings it back with a b
   await expect(step).toBeVisible();
   await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
   await expect(banner).toBeHidden();
+  await expect(step.getByText('A finding arrived after you approved. Your decision stays; change it if the finding matters.', { exact: true })).toBeVisible();
+  await expect(step.getByRole('article', { name: 'Finding' }).getByText('line 1 · new since you approved', { exact: true })).toBeVisible();
+  await expect(step.getByRole('button', { name: 'Change decision' })).toBeVisible();
+  await expect(step.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+  await expect(step.locator('.open-findings')).toHaveText('1 new finding');
+  await rail.getByRole('link', { name: 'Summary' }).click();
+  await expect(page.getByRole('table', { name: 'Every step and what you decided' }).getByRole('row', { name: /Login/ })).toHaveText(
+    '1Login1 new finding since you approved.Approve',
+  );
+  await rail.locator(':scope > .queue-item').filter({ hasText: 'Login' }).click();
 
   await page.reload();
   await expect(step).toBeVisible();

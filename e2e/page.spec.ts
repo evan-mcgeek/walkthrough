@@ -56,7 +56,7 @@ test('an approved step stays approved when the page is opened again', async ({ p
   await reopened.goto(url);
 
   await expect(reopened.getByRole('region', { name: 'Summary' })).toBeVisible();
-  await reopened.getByRole('region', { name: 'Summary' }).getByRole('link', { name: '1 Login' }).click();
+  await reopened.getByRole('region', { name: 'Summary' }).getByRole('link', { name: 'Login', exact: true }).click();
   const again = reopened.getByRole('region', { name: 'Login' });
   await expect(again.getByText('Decided: Approve', { exact: true })).toBeVisible();
   await again.getByRole('button', { name: 'Change decision' }).click();

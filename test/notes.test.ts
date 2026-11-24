@@ -48,7 +48,15 @@ describe('walkthrough note', () => {
       expect.objectContaining({
         from: 'session',
         text: 'These could be one.',
-        note: { step: '1', file: 'cart.ts', lines: [2, 4], linesHash: hash, label: 'Finding', low: true },
+        note: {
+          step: '1',
+          file: 'cart.ts',
+          lines: [2, 4],
+          linesHash: hash,
+          linesText: ['const b = 2;', 'const c = 3;', 'const d = 4;'],
+          label: 'Finding',
+          low: true,
+        },
       }),
     ]);
   });

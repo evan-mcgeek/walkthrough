@@ -2,9 +2,13 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileAt } from './change';
 import { walkthroughView } from './decisions';
+import { parseDiff } from './diff';
+import { pixelSize, type PixelSize, previewType } from './preview';
 import { PAGE, readViewer } from './server';
 import { sessionView } from './session';
+import { readWalkthrough } from './walkthrough';
 
 const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
 
@@ -13,12 +17,27 @@ function inline(html: string, tag: string, replacement: string): string {
   return html.replace(tag, () => replacement);
 }
 
+/** Each changed image's pixel size by path, as it is at the head or, deleted, at the base: the export has no server to load it from. */
+function imageSizes(dir: string): Record<string, PixelSize> {
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) return {};
+  const sizes: Record<string, PixelSize> = {};
+  for (const file of walkthrough.steps.flatMap(step => parseDiff(step.diff))) {
+    const [name, rev] = file.isDeleted ? [file.oldName, walkthrough.base] : [file.newName, walkthrough.head];
+    if (!file.isBinary || !previewType(name)?.startsWith('image/')) continue;
+    const bytes = fileAt(process.cwd(), rev, name);
+    const size = bytes && pixelSize(bytes);
+    if (size) sizes[name] = size;
+  }
+  return sizes;
+}
+
 export function exportPage(dir: string): string {
   const read = (file: string) => fs.readFileSync(path.join(PAGE, file), 'utf8');
   // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.
   const script = read('app.js').replace(/<(?=!--|\/script)/gi, '\\x3C');
   const style = read('style.css');
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString(), viewer: readViewer() };
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString(), viewer: readViewer(), images: imageSizes(dir) };
   // The state is data and never runs, so a `<` in it cannot end its element.
   const data = JSON.stringify(state).replaceAll('<', '\\u003c');
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;

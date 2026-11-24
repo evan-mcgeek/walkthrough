@@ -213,6 +213,7 @@ async function listenCommand(args: string[]): Promise<void> {
           ...request,
           on: undefined,
           linesHash: undefined,
+          linesText: undefined,
           ...(request.kind === 'reply' && { about: about(request.to) }),
         }),
       );

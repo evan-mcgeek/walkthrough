@@ -432,8 +432,27 @@
 
 /* The step's own notice, under its title: the session is still checking it. */
 .notice.checking {
-  max-width: 68ch;
   margin: var(--s2) 0 var(--s3);
+}
+
+/* A finding that arrived after the decision: one amber-wash line under the title. */
+.late-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  max-width: 68ch;
+  margin: var(--s1) 0 var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-md);
+  background: var(--amber-wash);
+  color: var(--ink);
+  font: var(--text-body-ui);
+}
+
+.late-line > .icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--amber);
 }
 
 .decision-said {
@@ -549,6 +568,7 @@
 
 .fold-summary > .tag {
   flex: none;
+  margin-left: auto;
 }
 
 /* One row per file: its path, its reason as text, Show diff; the columns line up from row to row. */
@@ -605,6 +625,11 @@
   .fold-files li {
     grid-template-areas: 'path diff' 'reason reason';
     row-gap: var(--s1);
+  }
+
+  /* The summary keeps to its count and problems; the reasons are a tap away. */
+  .fold-reasons {
+    display: none;
   }
 }
 
@@ -673,6 +698,18 @@
 .held {
   color: var(--muted);
   font-size: 12.5px;
+}
+
+/* Held actions read as waiting, not as faded. */
+.holding .btn:disabled {
+  border-color: var(--rule);
+  background: var(--surface);
+  color: var(--muted);
+  opacity: 1;
+}
+
+.action-row > .held {
+  white-space: nowrap;
 }
 
 .line-box {
@@ -1041,6 +1078,15 @@
 
 .removed-code .mine-who {
   white-space: nowrap;
+}
+
+.old-lines {
+  margin: 0;
+  color: var(--muted);
+  font: 400 12px/1.5 var(--font-mono);
+  font-variant-ligatures: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Not a comment box here: one row among the notes, its label still in the accent. */
