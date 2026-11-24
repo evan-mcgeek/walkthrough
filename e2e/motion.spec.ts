@@ -62,7 +62,7 @@ test('deciding lifts the rail row as a chip into "N decided", closes the rows, t
   await page.locator('.progress-marker').evaluate(marker => {
     const seen: string[] = [];
     (window as unknown as { seen: string[] }).seen = seen;
-    new MutationObserver(() => seen.push(marker.className)).observe(marker, { attributeFilter: ['class', 'style'] });
+    new MutationObserver(() => seen.push(marker.getAttribute('class') ?? '')).observe(marker, { attributeFilter: ['class', 'style'] });
   });
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
