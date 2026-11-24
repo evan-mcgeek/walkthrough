@@ -183,10 +183,6 @@
   margin-top: 0;
 }
 
-.split .d2h-file-header {
-  background: var(--surface);
-}
-
 /* The column's own action bar, docked to its foot as the main pane's is. */
 .split > .prose > .action-bar {
   margin: auto 0 calc(-1 * var(--s5));

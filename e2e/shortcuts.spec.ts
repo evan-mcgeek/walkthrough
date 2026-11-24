@@ -24,9 +24,13 @@ test('? opens Help, which says what things mean and lists every key, keeps the p
   const sheet = page.getByRole('dialog', { name: 'Help: what things mean' });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole('heading')).toHaveText(['Help: what things mean', 'What things mean', 'Keyboard shortcuts']);
-  await expect(sheet.locator('.popover-label')).toHaveText(['Steps in To review', 'The progress bar', 'Notes on the code', 'Session status', 'Checklist items']);
-  await expect(sheet.getByRole('row').filter({ hasText: 'Changed since you decided' })).toHaveCount(2);
-  await expect(sheet.getByRole('row').filter({ hasText: 'Where you are: solid ink, taller' }).locator('.segment')).toHaveAttribute('data-state', 'current');
+  await expect(sheet.locator('.popover-label')).toHaveText(['Steps in To review', 'Checklist items', 'The progress bar', 'Notes on the code', 'Session status']);
+  await expect(sheet.getByRole('row').filter({ hasText: 'Changed since you decided (amber)' })).toHaveCount(1);
+  await expect(sheet.getByRole('row').filter({ hasText: 'Striped: needs you, flagged, a finding, or changed' }).locator('.segment')).toHaveAttribute('data-state', 'flag');
+  await expect(sheet.getByRole('row').filter({ hasText: 'Where you are: solid ink, taller' }).locator('.segment')).toHaveAttribute('data-state', 'cur');
+  for (const [said, state] of [['(green)', 'ok'], ['Decided: needs attention, such as Flag (amber)', 'flag'], ['Decided, no tone (grey)', 'neu'], ['Not decided yet (grey)', 'un'],
+  ] as const)
+    await expect(sheet.getByRole('row').filter({ hasText: said }).first().locator('.help-mark')).toHaveAttribute('data-state', state);
   await expect(sheet.locator('kbd')).toHaveText(['J / K', 'A', 'F', '/', 'Click, Shift-click a line', 'C', 'V', '1 – 3', 'G then S', '?']);
   await expect(sheet.getByRole('row').filter({ hasText: 'Show or hide a panel' })).toBeVisible();
   for (let press = 0; press < 3; press++) await page.keyboard.press('Tab');

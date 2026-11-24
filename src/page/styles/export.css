@@ -126,6 +126,12 @@
   border-top: 0;
 }
 
+/* Each skimmed file with its diff sits 32px below the one before it, as files do in a step. */
+.export .fold-files li + li {
+  margin-top: var(--s6);
+  border-top-color: var(--control-edge);
+}
+
 .export .fold-files .d2h-file-header {
   display: none;
 }

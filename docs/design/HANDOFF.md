@@ -71,8 +71,8 @@ Replace the stacked sections (Still open / Verdict / Decided table / Flagged / Y
 - **Being checked:** neutral notice under the title with the dashed not-checked icon (`The session is still checking this step. Findings may still arrive.`); queue sub-line `Being checked` (muted, never amber); Approve and Flag disabled with hint `Decide once the session has checked this step.` (Ask and line comments stay live; A, F and swipe decide nothing); Summary lists it as `Being checked`.
 - **Late finding:** amber banner under the header (`New finding on step 8, <title>, which you approved.` / `3 new findings on steps 3 and 8.`) with `Go to step` and a dismiss; the decided step returns to the queue with its decided icon and amber `New finding`. On the step itself (new): an amber-wash line under the title (`A finding arrived after you approved. Your decision stays; change it if the finding matters.`), the note labelled `line N · new since you approved`, and an action bar of `Change decision`, Ask, and amber `1 new finding`.
 - **Files to skim** (folded step): collapsed summary line (chevron, `18 files` never wrapping, distinct reasons joined by ` · ` with one ellipsis, problem tag); problems shown under it even when collapsed; opened, a grid of path (max 45%) / reason (wraps) / Show diff; at 390px the reason goes under the path. Insert `<wbr>` after `/` in paths so they break cleanly. Export lists every file open with path, reason and diff; images read `Binary image · W × H · replaced`.
-- **File headers:** flush, no margin between files, opened or collapsed.
-- **Notes:** the note block is `max-width: 66ch`, so its `…` menu (`right:0`) opens at the end of the text column on step notes, line notes and notes on Files to skim.
+- **File headers:** on surface tint under a control-edge rule, each file after the first 32px below the one before it, opened or collapsed (this replaced the flush headers first drawn here; DESIGN.md has it).
+- **Notes:** the note block is `max-width: 66ch`; its actions are buttons under its text beside Reply on step notes, line notes and notes on Files to skim (this replaced the `…` menu first drawn here; DESIGN.md has it).
 
 ### 7. Motion (see `prototype.html`; specs in `DESIGN.md` → Motion)
 
@@ -88,6 +88,45 @@ Replace the stacked sections (Still open / Verdict / Decided table / Flagged / Y
 
 Rules learned in review: start every animation in the same task as the click (no `setTimeout` to begin motion); keep the leaving element painted until its exit ends; give layout transitions explicit selectors so broader `transition` rules don't override them.
 
+## Round 4: one traffic-light status set
+
+Boards: Screens → the five "Round 4" sections at the top (header bar, To review, Summary, checklist, Help legend). `DESIGN.md` → Colors → Status has the token table with contrast numbers.
+
+### 1. Tokens (light / dark)
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `--ok` / `--ok-bg` | #1a7340 / #e4f4ea | #5fd38d / #15301f | decided positive, checklist met, Approve swipe chip |
+| `--amb` / `--amb-bg` | unchanged | unchanged | needs you: flagged, open finding, changed since decided, new finding, problem, partly met |
+| `--bad` / `--bad-bg` | #b3261e / #fbe7e5 | #ff8a80 / #3b1a18 | checklist not met only; `--rust` now aliases `--bad` |
+| `--neu` | #7b838d | #8a929c | decided with a tone-less action (icon and bar segment) |
+| `--live` | #3a4048 | #c3c8cf | Listening status: now secondary ink, not green |
+
+The accent no longer carries status anywhere: remove it from progress segments, queue icons and decided fills.
+
+### 2. Tone on actions
+
+- Each action the session records carries `tone: "positive" | "attention" | "none"`. Defaults: Approve positive, Flag attention. Verdict labels carry tone the same way (Approve / Ready for colleagues positive; Request changes / Needs fixes attention; Comment none).
+- A step's display state: current → `cur` (ink); decided positive → `ok`; decided attention → `flag`; decided none → `neu`; changed since decided → `reo`; undecided with an open finding or problem → `find`; anything else undecided (read or not) → `un`. Read-but-undecided has no look of its own any more (keep tracking it in data).
+
+### 3. Where it shows
+
+- **Header bar:** `ok` solid green; `flag`/`reo`/`find` amber hatched (`repeating-linear-gradient(135deg, amber 0 3px, amber@45% 3px 5px)`); `neu` outlined, no fill (`box-shadow: inset 0 0 0 1.5px var(--neu)`) so it differs from Approve by shape, not just shade; `un` faint rule-tone fill; current solid ink 9px. Segment tooltips name the step and state ("4 Parse due dates in the API: Flag, needs you"). No red in the bar.
+- **To review:** icons `ok` green filled check, `flag` amber filled flag, `find` amber triangle, `reo` amber return arrow, `neu` grey filled dash, `un` muted ring, current ink ring with dot. Sub-lines take the colour: "1 open finding", "Changed since you decided" (amber), "Checklist · not met" (red), "Checklist · partly met" (amber); inside "N decided": "Approve" green, "Flag" amber, tone-less label muted.
+- **Summary ledger:** icon and the decision word in the same colour (Approve green, Flag and Changed amber, tone-less secondary ink, Undecided muted). Open findings and problems as amber sub-lines with the triangle.
+- **Verdict:** header status and "Your verdict: <label>" and the chosen option's icon take the verdict's tone.
+- **Checklist:** status word right-aligned in the status colour: Met green, Partly met amber, Not met red, Not checked yet muted; icons circle-check, circle-minus, circle-cross, dashed ring.
+- **Swipe:** Approve chip `--ok` on `--ok-bg`; Flag stays amber.
+- **Buttons:** unchanged. Approve is never green.
+- **Help:** legend rows for every step and checklist state, the bar fills, and the ink marker.
+- **Prototype:** Approve fills the segment green, Flag fills it hatched amber.
+
+### 4. Done when
+
+- No status uses the accent; grep for `--acc` in status selectors.
+- Every coloured state also shows its icon and word; a greyscale screenshot still distinguishes every state, including the bar (solid, hatched, outlined, faint, taller ink).
+- Green appears only for decided-positive or met (plus diff washes); red only for not met.
+
 ## Done when
 
 - Every string in item 1 is gone from the page (grep the templates).
@@ -98,5 +137,6 @@ Rules learned in review: start every animation in the same task as the click (no
 ## Known open items
 
 - Kind label: the boards show an icon; as built it has none (ADR 0005). Keep it icon-less.
+- Round 4 boards still use flush file headers; section 5 of the round 4 brief (32px between files, tinted headers) is being built alongside and is not drawn here.
 - Not drawn: the swipe deck while a step is being checked, Session messages in the export, the Help sheet at 390px.
 - Not re-reviewed after the last change: the ink stepper marker's motion, and the decided count waiting for the chip.

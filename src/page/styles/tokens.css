@@ -19,10 +19,9 @@
   --icon-knockout: light-dark(#ffffff, #15181d);
 
   /* Data marks on the instrument, not text */
-  --progress-read: light-dark(#a3aab4, #5a626d);
   --marker-note: light-dark(#6b737d, #9aa2ac);
 
-  /* The accent (Ultramarine by default): the mark, the primary action, decided progress, focus, picked lines and your own words */
+  /* The accent (Ultramarine by default): the mark, the primary action, focus, picked lines and your own words; never status */
   --accent: light-dark(#2433b8, #8c97ff);
   --accent-hover: light-dark(#1b2896, #a3abff);
   --accent-text: light-dark(#2433b8, #a9b1ff);
@@ -32,11 +31,17 @@
   --line-pick: light-dark(#eef0fd, #1d2242);
   --line-pick-gutter: light-dark(#d9ddf8, #2a3263);
 
-  /* Status: amber is reopened, finding or attention, rust is not met, live is the Listening session */
+  /* Status, one traffic-light set: ok is decided positive or met, amber needs you, bad is not met, neu is decided without tone */
   --amber: light-dark(#8a5a00, #e3b260);
   --amber-wash: light-dark(#fbf1dc, #33280f);
-  --rust: light-dark(#9a3412, #f0a083);
-  --live: light-dark(#2b7a4b, #6fcf97);
+  --ok: light-dark(#1a7340, #5fd38d);
+  --ok-bg: light-dark(#e4f4ea, #15301f);
+  --bad: light-dark(#b3261e, #ff8a80);
+  --bad-bg: light-dark(#fbe7e5, #3b1a18);
+  --rust: var(--bad);
+  --neu: light-dark(#7b838d, #8a929c);
+  /* The Listening session, in secondary ink: green always means decided positive */
+  --live: light-dark(#3a4048, #c3c8cf);
 
   /* Diff */
   --diff-add: light-dark(#e8f6ec, #14281c);

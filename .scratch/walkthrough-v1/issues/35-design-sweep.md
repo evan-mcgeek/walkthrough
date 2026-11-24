@@ -7,8 +7,8 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 31, 32, 33, 34
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A screenshot of each board state from the built page sits beside the board in a review page saved under the docs folder named by the person's global rules, light and dark.
-- [ ] Every contrast pair meets AA, or the miss is reported with its measured ratio.
-- [ ] All tests green in all three browsers.
+- [x] A screenshot of each board state from the built page sits beside the board in a review page saved under the docs folder named by the person's global rules, light and dark.
+- [x] Every contrast pair meets AA, or the miss is reported with its measured ratio.
+- [x] All tests green in all three browsers.

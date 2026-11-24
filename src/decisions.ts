@@ -7,7 +7,7 @@ import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, 
 import { anchorOf } from './notes';
 import { parseDiff } from './diff';
 import { fieldsOf, filled, parseList } from './input';
-import { type Action, type Item, itemKey, STEP_ACTIONS } from './items';
+import { type Action, type Item, itemKey, STEP_ACTIONS, type Tone, TONES } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
@@ -50,8 +50,17 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
   return items.map(one => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
 }
 
-const actionsOf = ({ actions }: Walkthrough, item: Item) =>
-  actions?.[itemKey(item)] ?? (item.type === 'step' ? STEP_ACTIONS : []);
+// A step action recorded as a built-in one with no tone, as a policy written before tones says, takes the built-in's tone.
+const toned = (action: Action): Action => {
+  if (action.tone !== undefined) return action;
+  const own = STEP_ACTIONS.find(one => one.id === action.id && one.label === action.label && !one.note === !action.note);
+  return own?.tone ? { ...action, tone: own.tone } : action;
+};
+
+const actionsOf = ({ actions }: Walkthrough, item: Item) => {
+  if (item.type !== 'step') return actions?.[itemKey(item)] ?? [];
+  return actions?.[itemKey(item)]?.map(toned) ?? STEP_ACTIONS;
+};
 
 export function decisionsOf(walkthrough: Walkthrough, conversation: Entry[]) {
   const choices = conversation.filter(isChoice);
@@ -122,16 +131,23 @@ export function parseActions(
       item: found,
       actions: actions.map((fields: unknown, number) => {
         const name = `action ${String(number + 1)}`;
-        const { id, label, note = false, edit = false } = fieldsOf(fields);
+        const { id, label, note = false, edit = false, tone } = fieldsOf(fields);
         if (!filled(id)) throw fail(`${name} needs an id`);
         if (!filled(label)) throw fail(`${name} needs a label`);
         if (typeof note !== 'boolean') throw fail(`${name}: note must be true or false`);
         if (typeof edit !== 'boolean') throw fail(`${name}: edit must be true or false`);
+        if (tone !== undefined && !TONES.includes(tone as Tone)) throw fail(`${name}: tone must be positive, attention or none`);
         if (edit && found.type !== 'note' && found.type !== 'checklist')
           throw fail(`${name}: only a note or a checklist item has text to edit`);
         if (ids.has(id)) throw fail(`two actions have the id ${id}`);
         ids.add(id);
-        return { id, label, ...(note && { note: true as const }), ...(edit && { edit: true as const }) };
+        return {
+          id,
+          label,
+          ...(note && { note: true as const }),
+          ...(edit && { edit: true as const }),
+          ...(tone !== undefined && { tone: tone as Tone }),
+        };
       }),
       ...(hint !== undefined && { hint: hint.trim() }),
     };
@@ -169,13 +185,13 @@ export async function decide(
   const offered = actionsOf(walkthrough, found.item).find(one => one.id === action);
   if (!offered) return null;
   if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
-  if (offered.note ? !filled(note) : note !== undefined) return null;
+  if (offered.note ? note !== undefined && typeof note !== 'string' : note !== undefined) return null;
   if (offered.edit ? !filled(text) : text !== undefined) return null;
   const session = await request(dir, {
     kind: 'decision',
     item: found.item,
     action: offered.id,
-    ...(offered.note && { note: cleanText(note) }),
+    ...(offered.note && filled(note) && { note: cleanText(note) }),
     ...(offered.edit && { text: cleanText(text) }),
     on: found.on,
   });

@@ -51,7 +51,7 @@ test('a step being checked says so and holds its actions, while the person can s
     'Still open3',
     '1LoginFindings may still arrive.Being checked',
     '2AppFindings may still arrive.Being checked',
-    '3CartUndecided',
+    '3CartApproveFlagUndecided',
   ]);
   await expect(ledger.locator('.ledger-decision.muted')).toHaveText(['Being checked', 'Being checked', 'Undecided']);
 
@@ -100,7 +100,7 @@ test('a finding pinned after the person decided the step brings it back with a b
 
 test('several new findings read as one banner, a finding on an unread step raises none, and dismiss hides it', async ({ page, repo }) => {
   await page.getByRole('region', { name: 'Login' }).getByRole('button', { name: 'Approve' }).click();
-  await expect(page.locator('[data-key="row:2"][data-state="read"]')).toBeVisible();
+  await expect(page.locator('[data-key="row:2"][data-state="cur"]')).toBeVisible();
   const banner = page.getByRole('alert');
 
   record(repo, [finding('3', 'Not read yet.'), { step: '2', label: 'Nit', text: 'Pinned with it.' }], 'note');

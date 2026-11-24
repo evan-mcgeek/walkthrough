@@ -16,8 +16,10 @@ For their own change, `/walkthrough` is the procedure instead.
 3. Run `walkthrough start --kind requested --base <rev> --head <rev> --label <label>` in the repo, with a short label naming the change, such as its number.
    Give the same label whenever the person opens this change again, so the walkthrough goes on with their decisions; fetch its head again first.
    Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "Someone else's change" part, such as `--comments 'Posted with your review'`.
-4. Go on as "Walking through" says, until the walkthrough stops.
-   Your comments are drafts marked "[AI]" that the person posts, edits or drops on the page, apart from the person's own comments, which are never marked; what they post goes out as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
+4. When the policy has you ask how well the person knows the feature, ask it in the chat now, with your question tool when you have one so they pick rather than type, offering the policy's answers and saying they may skip.
+   Read the change while they answer; their answer sets how much your explanations say, as the policy says.
+5. Go on as "Walking through" says, until the walkthrough stops.
+   Your comments are drafts marked "[AI]" that the person edits or drops on the page, apart from the person's own comments, which are never marked; every draft they keep goes out together with their own comments, as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
 
 ## Walking through
 
@@ -97,7 +99,8 @@ A note whose step or lines leave the change, or whose lines change, stays on the
 ## Actions
 
 Record the actions the page offers on steps, notes, checklist items, the verdict and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
-Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
+Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy, and so does each action's `tone`, the colour its decision shows in: `"positive"` green, `"attention"` amber, or `"none"` grey, the same as leaving it out.
+A step with none recorded offers Approve, positive, and Flag, attention.
 The page ends with a Summary, where the person chooses their verdict on the whole walkthrough and takes its finishing action.
 Offer the verdict's choices on the verdict and the finishing action first on the whole walkthrough, as the review policy names them, each with a short hint saying where it goes; the finishing action waits for a verdict.
 A step or checklist item that is gone takes its actions with it, so record actions on new ones.

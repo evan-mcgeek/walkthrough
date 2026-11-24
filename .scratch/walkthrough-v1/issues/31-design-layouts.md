@@ -8,8 +8,8 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 29 "What's left" queue and the main pane, 30 Diff, notes, asks and previews restyled
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Each layout matches its board and keeps every function of the default layout.
-- [ ] The choice survives a reload; a blocked storage falls back to the default without errors.
-- [ ] e2e covers switching and that actions still work in each layout.
+- [x] Each layout matches its board and keeps every function of the default layout.
+- [x] The choice survives a reload; a blocked storage falls back to the default without errors.
+- [x] e2e covers switching and that actions still work in each layout.

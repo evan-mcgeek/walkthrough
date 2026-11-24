@@ -6,6 +6,16 @@ test.use({ files: { 'big.ts': `${big}\n` } });
 
 const file = (page: Page, path: string) => page.locator(`.d2h-file-wrapper[data-file="${path}"]`);
 
+/** A design token as the browser resolves it for colour, in the page's current theme. */
+const tokenColor = (page: Page, token: string) =>
+  page.evaluate(name => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = `var(${name})`;
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
+
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const recorded = repo.record([{ title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts', 'big.ts'] }]);
@@ -28,7 +38,7 @@ test('each file collapses from its header and opens again', async ({ page }) => 
   await expect(login.locator('.d2h-file-diff')).toBeVisible();
 });
 
-test('every file header sits right on the file before it, opened or collapsed', async ({ page }) => {
+test('each file after the first sits 32px below the one before it, opened or collapsed, behind a control-edge rule and a tinted header', async ({ page }) => {
   await page.getByRole('button', { name: 'Collapse login.ts' }).click();
   await page.getByRole('button', { name: 'Collapse app.ts' }).click();
   await page.getByRole('button', { name: 'Expand big.ts' }).click();
@@ -36,7 +46,12 @@ test('every file header sits right on the file before it, opened or collapsed', 
 
   const boxes = await Promise.all(['login.ts', 'app.ts', 'big.ts'].map(path => file(page, path).boundingBox()));
   const gaps = boxes.slice(1).map((box, at) => (box?.y ?? 0) - ((boxes[at]?.y ?? 0) + (boxes[at]?.height ?? 0)));
-  expect(gaps).toEqual([0, 0]);
+  expect(gaps).toEqual([32, 32]);
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await expect(file(page, 'app.ts')).toHaveCSS('border-top-color', await tokenColor(page, '--control-edge'));
+    await expect(file(page, 'app.ts').locator('.d2h-file-header')).toHaveCSS('background-color', await tokenColor(page, '--surface-tint'));
+  }
 });
 
 test('a large file starts collapsed', async ({ page }) => {

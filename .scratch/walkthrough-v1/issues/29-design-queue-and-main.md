@@ -9,9 +9,9 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 28 Design foundation
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Which checklist items count as "not met" comes from data the session records (a flag on the item or its status), never from status words built into the tool (ADR 0005).
-- [ ] The rail and main pane match the boards for every listed state in light and dark.
-- [ ] Keyboard: j / k and arrows still move between steps; the rail is reachable and operable by keyboard.
-- [ ] Existing e2e tests updated to the new structure, none dropped without a replacement.
+- [x] Which checklist items count as "not met" comes from data the session records (a flag on the item or its status), never from status words built into the tool (ADR 0005).
+- [x] The rail and main pane match the boards for every listed state in light and dark.
+- [x] Keyboard: j / k and arrows still move between steps; the rail is reachable and operable by keyboard.
+- [x] Existing e2e tests updated to the new structure, none dropped without a replacement.

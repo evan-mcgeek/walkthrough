@@ -42,18 +42,19 @@ test.beforeEach(async ({ page, repo, url }) => {
 test('a step whose diff changed shows reopened with the decision it had', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link')).toHaveText(['Login checkChanged since you decided', 'Session messages3 on removed code', 'Summary']);
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reopened');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'cur');
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Changed since you decided', { exact: true })).toBeVisible();
   await expect(step.getByText('Changed since you chose Approve.', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
   const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
   await expect(segments).toHaveCount(1);
-  await expect(segments).toHaveAttribute('data-state', 'current');
+  await expect(segments).toHaveAttribute('data-state', 'cur');
   await page.keyboard.press('g');
   await page.keyboard.press('s');
-  await expect(segments).toHaveAttribute('data-state', 'reopened');
-  await expect(segments).toHaveAttribute('title', '1 Login check: changed since you decided');
+  await expect(segments).toHaveAttribute('data-state', 'reo');
+  await expect(segments).toHaveAttribute('title', '1 Login check: changed since you decided, needs you');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'reo');
 });
 
 test('notes whose step or lines are gone show as notes on removed code on the Session messages page, still open to a reply', async ({ page }) => {

@@ -145,34 +145,46 @@ test('one line is picked from the keyboard with Enter on it twice, then asked ab
   await expect(rowAfter(row(page, 'cart.ts', 2)).getByRole('textbox', { name: 'Ask about cart.ts line 2' })).toBeFocused();
 });
 
-test('a note keeps its actions in a menu, opened by its button and left with Escape', async ({ page, repo }) => {
+test('a note shows its actions as buttons under its text beside Reply, and keeps its decided tag and Undo once decided', async ({ page, repo }) => {
   const id = /([0-9a-f]{8})/.exec(repo.record([{ step: '1', file: 'cart.ts', lines: [2, 2], label: 'Risk', text: 'B is two.' }], 'note').stdout)?.[1];
   pin(repo, [{ step: '1', file: 'cart.ts', lines: [4, 4], label: 'Plain', text: 'No actions here.' }]);
   repo.record([{ item: { type: 'note', id }, actions: [{ id: 'post', label: 'Post' }, { id: 'dismiss', label: 'Dismiss' }] }], 'actions');
   const note = page.getByRole('article', { name: 'Risk' });
-  const button = note.getByRole('button', { name: 'Note actions' });
-  await expect(button).toHaveAttribute('aria-expanded', 'false');
-  await expect(note.getByRole('button', { name: 'Post' })).toHaveCount(0);
-  await expect(page.getByRole('article', { name: 'Plain' }).getByRole('button', { name: 'Note actions' })).toHaveCount(0);
-
-  await button.click();
-
-  const menu = note.getByRole('menu', { name: 'Risk actions' });
-  await expect(menu.getByRole('menuitem')).toHaveText(['Post', 'Dismiss']);
-  await expect(menu.getByRole('menuitem', { name: 'Post' })).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(menu.getByRole('menuitem', { name: 'Dismiss' })).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(menu).toHaveCount(0);
-  await expect(button).toBeFocused();
+  const actions = note.getByRole('group', { name: 'Decide' });
+  await expect(actions.getByRole('button')).toHaveText(['Post', 'Dismiss']);
+  await expect(note.getByRole('button', { name: 'Note actions' })).toHaveCount(0);
+  await expect(page.getByRole('article', { name: 'Plain' }).getByRole('group', { name: 'Decide' })).toHaveCount(0);
+  const [text, post, reply] = await Promise.all(
+    [note.locator('.note-text'), actions.getByRole('button', { name: 'Post' }), note.getByRole('button', { name: 'Reply' })].map(one => one.boundingBox()),
+  );
+  if (!text || !post || !reply) throw new Error('The note has no text, actions or Reply.');
+  expect(post.y).toBeGreaterThanOrEqual(text.y + text.height);
+  expect(post.x).toBe(text.x);
+  expect(reply.x).toBeGreaterThan(post.x + post.width);
+  expect(Math.abs(reply.y + reply.height / 2 - (post.y + post.height / 2))).toBeLessThan(2);
 
   const listener = repo.background('listen');
-  await button.click();
-  await menu.getByRole('menuitem', { name: 'Dismiss' }).click();
+  await actions.getByRole('button', { name: 'Dismiss' }).click();
 
   expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'decision', item: { type: 'note', id }, action: 'dismiss' });
-  await expect(menu).toHaveCount(0);
   await expect(note.getByText('Decided: Dismiss', { exact: true })).toBeVisible();
+  await expect(actions.getByRole('button', { name: 'Dismiss' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
+  await expect(note.getByText('Decided: Dismiss', { exact: true })).toHaveCount(0);
+});
+
+test('at phone width a note’s action buttons wrap inside the note', async ({ page, repo }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const id = /([0-9a-f]{8})/.exec(repo.record([{ step: '1', file: 'cart.ts', lines: [2, 2], label: 'Risk', text: 'B is two.' }], 'note').stdout)?.[1];
+  const labels = ['Post as a comment', 'Ask the author first', 'Dismiss for this change'];
+  repo.record([{ item: { type: 'note', id }, actions: labels.map((label, at) => ({ id: `a${String(at)}`, label })) }], 'actions');
+  const note = page.getByRole('article', { name: 'Risk' });
+  const buttons = note.getByRole('group', { name: 'Decide' }).getByRole('button');
+  await expect(buttons).toHaveText(labels);
+  const edge = await note.evaluate(shown => shown.getBoundingClientRect().right);
+  const boxes = await buttons.evaluateAll(all => all.map(button => button.getBoundingClientRect().toJSON() as DOMRect));
+  for (const box of boxes) expect(box.right).toBeLessThanOrEqual(edge);
+  expect(new Set(boxes.map(box => Math.round(box.y))).size).toBeGreaterThan(1);
 });
 
 test('session Markdown shows no raw HTML or images and keeps to the CSP', async ({ page, repo }) => {

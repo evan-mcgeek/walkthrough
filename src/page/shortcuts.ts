@@ -18,10 +18,12 @@ const SHORTCUTS = [
 /** What each state icon means, in the words Help and the icon's tooltip use. */
 export const MEANS: Partial<Record<IconName, string>> = {
   current: 'The step you are on',
-  read: 'Read, not decided yet',
-  unread: 'Not read yet',
-  decided: 'Decided: you chose Approve or Flag',
+  decided: 'Decided: positive, such as Approve',
+  flagged: 'Decided: needs attention, such as Flag',
+  'no-tone': 'Decided, no tone',
+  warn: 'Open finding or problem: needs you',
   reopened: 'Changed since you decided',
+  unread: 'Not decided yet',
   folded: 'Files to skim: the session says why',
   met: 'Met',
   partly: 'Partly met',
@@ -29,12 +31,33 @@ export const MEANS: Partial<Record<IconName, string>> = {
   unchecked: 'Not checked yet',
 };
 
+/** The colour each state icon shows in, said in words beside it. */
+const COLOURS: Partial<Record<IconName, string>> = {
+  current: 'ink',
+  decided: 'green',
+  flagged: 'amber',
+  'no-tone': 'grey',
+  warn: 'amber',
+  reopened: 'amber',
+  unread: 'grey',
+  met: 'green',
+  partly: 'amber',
+  'not-met': 'red',
+  unchecked: 'grey',
+};
+
+const STEP_MARKS = ['current', 'decided', 'flagged', 'warn', 'reopened', 'no-tone', 'unread'] as const;
+const CHECKLIST_MARKS = ['met', 'partly', 'not-met', 'unchecked'] as const;
+
+/** A step's display state each icon shows, so Help draws it in the same colour as To review. */
+const STATE_OF: Partial<Record<IconName, string>> = { current: 'cur', decided: 'ok', flagged: 'flag', 'no-tone': 'neu', warn: 'find', reopened: 'reo', unread: 'un' };
+
 const SEGMENTS = [
-  ['decided', 'Decided'],
-  ['read', 'Read'],
-  ['unread', 'Not read yet'],
-  ['reopened', 'Changed since you decided'],
-  ['current', 'Where you are: solid ink, taller'],
+  ['ok', 'Solid: decided, positive'],
+  ['flag', 'Striped: needs you, flagged, a finding, or changed'],
+  ['neu', 'Outlined: decided, no tone'],
+  ['un', 'Faint: not decided yet'],
+  ['cur', 'Where you are: solid ink, taller'],
 ] as const;
 
 const STATUSES = [
@@ -53,14 +76,13 @@ const group = (name: string) => el('p', { className: 'popover-label' }, name);
 function meanings(): HTMLElement[] {
   const rowIcon = (name: IconName) => {
     const mark = el('span', { className: 'help-mark' }, icon(name));
-    mark.dataset['state'] = name;
+    mark.dataset['state'] = STATE_OF[name] ?? name;
     return mark;
   };
-  const means = (name: IconName): [Node, string] => [rowIcon(name), MEANS[name] ?? ''];
-  const steps = (['current', 'read', 'unread', 'decided', 'reopened'] as const).map(means);
+  const means = (name: IconName): [Node, string] => [rowIcon(name), `${MEANS[name] ?? ''} (${COLOURS[name] ?? ''})`];
   const checking = el('span', { className: 'help-mark' }, icon('unchecked'));
   const segments = SEGMENTS.map(([state, means]): [Node, string] => {
-    const segment = el('span', { className: 'segment' }, ...(state === 'decided' ? [el('span', { className: 'segment-fill' })] : []));
+    const segment = el('span', { className: 'segment' });
     segment.dataset['state'] = state;
     return [segment, means];
   });
@@ -69,7 +91,12 @@ function meanings(): HTMLElement[] {
     [el('span', { className: 'help-label' }, icon('message'), 'Note'), 'A remark from the session'],
     [el('span', { className: 'help-label' }, 'You asked'), 'Your question and its answer'],
     [el('span', { className: 'help-label own' }, icon('own'), 'Your comment'), 'Yours: the session gets it with your decisions'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '1 finding'), 'On a file: go to its first finding'],
+    [el('span', { className: 'help-label' }, icon('message'), '2 notes'), 'On a file: go to its first note'],
+    [el('span', { className: 'help-label own' }, icon('own'), '1 yours'), 'On a file: go to your first comment on it'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '2 open findings'), 'Under a step: go to the next open finding'],
   ];
+  const findings = el('span', { className: 'help-label finding' }, icon('warn'));
   const statuses = STATUSES.map(([state, name, means]): [Node, string] => {
     const status = el('span', { className: 'status' }, state === 'working' ? icon('spinner') : el('span', { className: 'dot' }), name);
     status.dataset['state'] = state;
@@ -81,7 +108,14 @@ function meanings(): HTMLElement[] {
       { className: 'help-column' },
       el('h2', { className: 'popover-head', id: 'help-head' }, 'What things mean'),
       group('Steps in To review'),
-      legend([...steps, [checking, 'The session is still checking it'], means('folded')]),
+      legend([
+        ...STEP_MARKS.map(means),
+        [checking, 'The session is still checking it'],
+        [rowIcon('folded'), MEANS.folded ?? ''],
+        [findings, 'Open findings, as "2 open findings": opens the step at the first'],
+      ]),
+      group('Checklist items'),
+      legend(CHECKLIST_MARKS.map(means)),
       group('The progress bar'),
       legend(segments),
     ),
@@ -93,8 +127,6 @@ function meanings(): HTMLElement[] {
       legend(notes),
       group('Session status'),
       legend(statuses),
-      group('Checklist items'),
-      legend((['met', 'partly', 'not-met', 'unchecked'] as const).map(means)),
     ),
   ];
 }

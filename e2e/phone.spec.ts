@@ -175,6 +175,31 @@ test('a card swiped right approves its step, and the next card takes its place',
   expect(new URL(page.url()).hash).toBe('#deck');
 });
 
+test('mid-swipe, the Approve chip previews the green its decision shows in, and the Flag chip the amber', async ({ page }) => {
+  await openDeck(page);
+  const top = card(page, 1, 'Login check');
+  const box = await top.boundingBox();
+  if (!box) throw new Error('the card is not shown');
+  const colour = (token: string) =>
+    page.evaluate(name => {
+      const probe = document.body.appendChild(document.createElement('span'));
+      probe.style.color = `var(${name})`;
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }, token);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, { steps: 5 });
+
+  const approve = page.locator('.decision-chip.approve');
+  await expect(approve).toHaveCSS('color', await colour('--ok'));
+  await expect(approve).toHaveCSS('background-color', await colour('--ok-bg'));
+  await expect(page.locator('.decision-chip.flag')).toHaveCSS('color', await colour('--amber'));
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+});
+
 test('a card calls out the step’s finding, and no other note', async ({ page, repo }) => {
   record(repo, [{ step: '1', label: 'Thread', text: 'A question.' }], 'note');
   await openDeck(page);
@@ -213,6 +238,18 @@ test('a short swipe decides nothing, Cancel brings a flagged card back, and a ta
   expect(new URL(page.url()).hash).toBe('#1');
   await page.goBack();
   await expect(first).toBeVisible();
+});
+
+test('a step whose actions are Approve and Flag recorded with no tone, as an older policy says, still swipes and shows green', async ({ page, repo }) => {
+  record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'flag', label: 'Flag', note: true }] }], 'actions');
+  await openDeck(page);
+  await expect(page.getByText('Swipe right to approve, left to flag. Tap to open the step.')).toBeVisible();
+
+  await drag(page, card(page, 1, 'Login check'), 160);
+
+  await expect(card(page, 2, 'App version')).toBeVisible();
+  expect(decided(repo)).toEqual([{ action: 'approve' }, null]);
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' }).locator('.segment').first()).toHaveAttribute('data-fill', 'ok');
 });
 
 test('the deck offers no swipe on a step whose actions the session chose; its buttons stay', async ({ page, repo }) => {

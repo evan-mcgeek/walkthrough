@@ -192,23 +192,7 @@
 
 .help-mark {
   display: block;
-  color: var(--muted);
-}
-
-.help-mark:is([data-state='current'], [data-state='read']) {
-  color: var(--accent);
-}
-
-.help-mark[data-state='decided'] {
-  color: var(--ink-secondary);
-}
-
-.help-mark[data-state='reopened'] {
-  color: var(--amber);
-}
-
-.help-mark[data-state='not-met'] {
-  color: var(--rust);
+  color: var(--status, var(--muted));
 }
 
 .legend .segment {

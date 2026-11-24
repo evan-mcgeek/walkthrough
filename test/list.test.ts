@@ -46,25 +46,28 @@ describe('walkthrough list', () => {
     expect(name).toBe('shop');
     expect(list).toEqual([
       { id: 'range-Login%20change', name: 'Login change', target: 'origin/main', steps: 0, decided: 0, read: 0, segments: [], last: expect.any(String) as unknown },
-      { id: 'branch-feature~login', name: 'feature/login', target: 'origin/main', steps: 1, decided: 1, read: 1, segments: ['decided'], last: expect.any(String) as unknown },
+      { id: 'branch-feature~login', name: 'feature/login', target: 'origin/main', steps: 1, decided: 1, read: 1, segments: ['ok'], last: expect.any(String) as unknown },
     ]);
     expect(Date.parse(list[0]?.last ?? '')).toBeGreaterThanOrEqual(Date.parse(list[1]?.last ?? ''));
   });
 
-  test('gives each step a progress segment in step order: decided, read or unread', async () => {
-    repo = makeRepo();
+  test('gives each step a progress segment in step order, as the page shows it: decided in its tone, an open finding, or undecided, read or not', async () => {
+    repo = makeRepo({ feature: { 'cart.ts': 'export const cart = [];\n' } });
     repo.run('start');
     repo.record([
       { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
       { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
+      { title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] },
     ]);
+    await post(repo.url(), '/decide', { item: { type: 'step', id: '1' }, action: 'flag', note: 'Who may log in?' });
     await post(repo.url(), '/read', { step: '2' });
+    repo.record([{ step: '3', label: 'Finding', text: 'The cart is shared.', finding: true }], 'note');
     repo.run('stop');
     repo.run('list');
 
     const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { segments: string[] }[] };
 
-    expect(walkthroughs.map(one => one.segments)).toEqual([['unread', 'read']]);
+    expect(walkthroughs.map(one => one.segments)).toEqual([['flag', 'un', 'find']]);
   });
 
   test('gives the kind a walkthrough was started with, and none to one started without', async () => {
@@ -83,22 +86,22 @@ describe('walkthrough list', () => {
     ]);
   });
 
-  test('gives the label of the verdict the person chose, and none before', async () => {
+  test('gives the label of the verdict the person chose and its tone, and none before', async () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
+    repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes', tone: 'attention' }] }], 'actions');
     await post(repo.url(), '/decide', { item: { type: 'verdict' }, action: 'fixes' });
     repo.run('start', ...RANGE);
     repo.run('stop', ...RANGE);
     repo.run('stop');
     repo.run('list');
 
-    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; verdict?: string }[] };
+    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; verdict?: unknown }[] };
 
     expect(walkthroughs.map(({ name, verdict }) => ({ name, verdict }))).toEqual([
       { name: 'Login change', verdict: undefined },
-      { name: 'feature/login', verdict: 'Needs fixes' },
+      { name: 'feature/login', verdict: { label: 'Needs fixes', shown: 'flag' } },
     ]);
   });
 

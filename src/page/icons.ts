@@ -14,12 +14,19 @@ const frame: Shape = ['rect', { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fi
 const ICONS = {
   /** Queue and step states. */
   unread: [ring()],
-  read: [ring(), ['path', { d: 'M8 1.8a6.2 6.2 0 0 1 0 12.4z', fill: 'currentColor' }]],
   current: [ring(), ['circle', { cx: 8, cy: 8, r: 2.8, fill: 'currentColor' }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
     ['path', { d: 'M4.8 8.2l2.1 2.1 4.3-4.6', ...round, 'stroke-width': 1.8, class: 'knockout' }],
+  ],
+  flagged: [
+    ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
+    ['path', { d: 'M6 11.6V4.6h4.6l-1 1.6 1 1.6H6', ...round, 'stroke-width': 1.5, class: 'knockout' }],
+  ],
+  'no-tone': [
+    ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
+    ['path', { d: 'M5.2 8h5.6', ...round, 'stroke-width': 1.8, class: 'knockout' }],
   ],
   reopened: [line('M13 8a5 5 0 1 1-1.6-3.7'), line('M11.8 1.8v3h-3')],
   folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],

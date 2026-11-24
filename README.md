@@ -57,7 +57,9 @@ To review a change someone asked you to review, run `/walkthrough:pr` with its n
 ```
 
 The session fetches the change as your policy says, without checking it out.
-Your comments become drafts marked `[AI]` that you post, edit or drop on the page, and what you post goes into one pending review that you submit yourself.
+Right after it starts, it asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need; you may skip the question.
+The session's comments become drafts marked `[AI]` that you can edit or drop on the page.
+When you send your review, every draft you kept goes out with your own comments, all together in one pending review that you submit yourself.
 Open the same change again after its author replied or pushed, and the walkthrough goes on where you left it.
 
 These are the two kinds of walkthrough, your own change and a review request.
@@ -107,7 +109,8 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided), your flag notes and comments under their steps, the comments the session drafted (`[AI]` drafts) you accepted, edited or dropped, and beside it the verdict, the finishing actions and the checklist.
+   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
+   Criteria never wait in To review.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
    Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
@@ -129,7 +132,7 @@ Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, 
 | | |
 | --- | --- |
 | ![The default panels: the queue and the step](docs/images/layout-queue.png) | ![The checklist panel at the right](docs/images/layout-three.png) |
-| ![The explanation column beside the code](docs/images/layout-split.png) | |
+| ![The explanation column beside the code](docs/images/layout-split.png) | ![The Summary: what is still open, what you decided, the drafted comments and the verdict](docs/images/summary.png) |
 
 It works on a phone as well.
 At 390px the actions move to a bottom bar, the panels stack under the step and their switches move into the More menu, and "Swipe to decide" there lets you swipe a step right to approve or left to flag.
@@ -246,11 +249,8 @@ Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 `npm run release` builds the current commit and commits the result to the local `release` branch: the plugin folder with its built files, the marketplace manifest, `LICENSE` and this README.
 It needs a clean working tree, never touches the development history and doesn't push.
 
-To publish, push both branches:
-
-```sh
-git push origin main release
-```
+Every pull request to `main` runs `claude plugin validate --strict` on the plugin and the marketplace manifest.
+A pull request labelled `release` publishes when it merges: CI runs the lint and the tests in all three browsers, validates the plugin, runs `npm run release` and pushes the `release` branch.
 
 ## License
 

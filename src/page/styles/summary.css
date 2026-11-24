@@ -79,24 +79,26 @@
 .ledger-mark > .icon {
   display: block;
   margin-top: 2px;
-  color: var(--muted);
-}
-
-.ledger-row[data-state='decided'] .ledger-mark > .icon {
-  --icon-knockout: var(--canvas);
-  color: var(--ink-secondary);
-}
-
-.ledger-row[data-state='reopened'] .ledger-mark > .icon {
-  color: var(--amber);
+  color: var(--status, var(--muted));
 }
 
 .ledger-title {
+  /* With no width of its own the cell takes what is left, so its lines can stop at an ellipsis. */
+  max-width: 0;
   line-height: 20px;
-  overflow-wrap: anywhere;
+}
+
+/* One line per row and per sub-line; the whole text is in the tooltip and on the item itself. */
+.ledger-title > a,
+.ledger-sub,
+.draft-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ledger-title > a {
+  display: block;
   color: var(--ink);
   font-weight: 500;
   text-decoration: none;
@@ -105,6 +107,14 @@
 .ledger-title > a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.ledger-actions {
+  margin-top: var(--s2);
+}
+
+.ledger-title > .taking {
+  margin-top: var(--s2);
 }
 
 .ledger-subs {
@@ -118,7 +128,6 @@
   color: var(--ink-secondary);
   font-size: 13px;
   line-height: 1.45;
-  text-wrap: pretty;
 }
 
 .ledger-sub.muted {
@@ -133,7 +142,7 @@
   color: var(--accent-text);
 }
 
-.ledger-sub.own > .icon {
+.ledger-sub:is(.own, .finding) > .icon {
   display: inline-block;
   width: 13px;
   height: 13px;
@@ -154,6 +163,10 @@
   line-height: 20px;
   text-align: right;
   white-space: nowrap;
+}
+
+.ledger-decision.decided {
+  color: var(--status-words, var(--ink-secondary));
 }
 
 .ledger-decision.muted {
@@ -189,7 +202,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .summary-list .where {
@@ -210,6 +223,22 @@
   display: flex;
   align-items: baseline;
   gap: var(--s2);
+  min-width: 0;
+}
+
+.draft-line {
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.draft-line:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.summary-list li > .ledger-actions {
+  margin-top: var(--s1);
 }
 
 .draft-state {
@@ -253,6 +282,10 @@
   font-size: 13.5px;
 }
 
+.verdict-now > strong {
+  color: var(--status-words, var(--ink));
+}
+
 .verdict-now.reopened {
   display: flex;
   align-items: center;
@@ -271,7 +304,7 @@
   margin-top: var(--s1);
 }
 
-/* A chosen verdict is an ink border on the surface tint, never the accent (The Grey Verdict Rule). */
+/* A chosen verdict is an ink border on the surface tint, never the accent; only its icon takes its tone (The Toned Decision Rule). */
 .verdict-option {
   display: flex;
   align-items: center;
@@ -309,7 +342,7 @@
 }
 
 .verdict-option[aria-checked='true'] > .icon {
-  color: var(--ink-secondary);
+  color: var(--status, var(--ink-secondary));
 }
 
 .finish {
@@ -350,29 +383,10 @@
   margin-bottom: var(--s2);
 }
 
-.rail-checklist {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 13px;
-}
-
-.rail-checklist li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s2);
-  padding: var(--s1) 0;
-  line-height: 1.4;
-}
-
-.rail-checklist .icon {
+.criteria .draft-text > .icon {
   flex: none;
-  margin-top: 1px;
-  color: var(--muted);
-}
-
-.rail-checklist [data-mark='not-met'] > .icon {
-  color: var(--rust);
+  align-self: center;
+  color: var(--status, var(--muted));
 }
 
 /* At phone width the rail drops under the ledger behind a rule. */
@@ -403,7 +417,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--ink-secondary);
+  color: var(--status-words, var(--ink-secondary));
   font: 500 12.5px/1.4 var(--font-ui);
   white-space: nowrap;
 }
@@ -411,7 +425,7 @@
 .verdict-status > .icon {
   width: 14px;
   height: 14px;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 /* The chosen verdict on its way into the header, and the label it replaces fading in the slot. */

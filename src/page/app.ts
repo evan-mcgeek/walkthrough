@@ -6,9 +6,9 @@ import { parseDiff } from '../diff';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
+import { type Action, builtIn, type Item, itemKey, nameOf, type Shown, stepShown, targetName, TONE_SHOWN, toneOf } from '../items';
 import { DEFAULT_VIEWER, type Panel, PANELS, type Viewer } from '../viewer';
-import type { Checklist, ChecklistItem, Step } from '../walkthrough';
+import type { Checklist, ChecklistItem, Mark, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, kindView, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
 import { appearanceDialog, loadViewer, showViewer } from './appearance';
@@ -68,6 +68,15 @@ const beingChecked = (step: Step) => (walkthrough.checking ?? []).includes(step.
 const HELD = 'Decide once the session has checked this step.';
 /** The label of the item's action `id`, or the id when the session no longer offers it. */
 const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
+/** An element in a state's colour. */
+const toned = <T extends HTMLElement>(element: T, state: string): T => {
+  element.dataset['state'] = state;
+  return element;
+};
+/** How a decision on the item shows: in its action's tone. */
+const decidedShown = (item: Item, decision: Decision) => TONE_SHOWN[toneOf(walkthrough.actions[itemKey(item)], decision.action)];
+/** How a step shows; the step the person is on shows where they are, whatever its state. */
+const shownOf = (step: Step, current?: Step): Shown => (step === current ? 'cur' : stepShown(walkthrough, step, openFindings(step).length));
 
 /** What the main pane shows; each is its own address, so the browser's back and forward move between them too. */
 type View =
@@ -326,24 +335,23 @@ function statusView(): HTMLElement {
   return status;
 }
 
-type SegmentState = 'decided' | 'reopened' | 'current' | 'read' | 'unread';
-
-/** The current step's segment is marked whatever its state, so the person sees where they are. */
-function segmentState(step: Step, current: Step | undefined): SegmentState {
-  if (step === current) return 'current';
-  if (stepDecided(step)) return 'decided';
-  if (stepReopened(step)) return 'reopened';
-  return walkthrough.read.includes(step.id) ? 'read' : 'unread';
-}
-
 /** What a segment's colour means, said in its tooltip. */
-const SEGMENT_WORDS: Record<SegmentState, string> = {
-  current: 'you are here',
-  decided: 'decided',
-  reopened: 'changed since you decided',
-  read: 'read',
-  unread: 'not read yet',
-};
+function segmentWords(step: Step, shown: Shown): string {
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  const label = decision ? labelOf(item, decision.action) : '';
+  const open = openFindings(step).length;
+  const words: Record<Shown, string> = {
+    cur: 'you are here',
+    ok: `${label}, decided`,
+    flag: `${label}, needs you`,
+    neu: `${label}, decided`,
+    reo: 'changed since you decided, needs you',
+    find: `${open ? plural(open, 'open finding') : plural(step.kind === 'folded' ? step.problems.length : 0, 'problem')}, needs you`,
+    un: 'not decided yet',
+  };
+  return words[shown];
+}
 
 /** The step the header counts from: the open step, or the deck's top card. */
 const headerStep = () => (currentView().kind === 'deck' ? deckTop() : currentStep());
@@ -377,13 +385,13 @@ function progressView(waits: boolean): HTMLElement[] {
   while (segments.length > steps.length) segments.pop()?.remove();
   while (segments.length < steps.length) segments.push(bar.insertBefore(el('span', { className: 'segment' }), marker.parentNode ? marker : null));
   steps.forEach((step, at) => {
-    const state = segmentState(step, current);
+    const state = shownOf(step, current);
     const segment = segments[at];
     if (!segment) return;
-    segment.title = `${String(at + 1)} ${step.title}: ${SEGMENT_WORDS[state]}`;
+    segment.title = `${String(at + 1)} ${step.title}: ${segmentWords(step, state)}`;
     segment.dataset['state'] = state;
     // What the segment shows under the marker: its own state, wherever the person is.
-    segment.dataset['fill'] = segmentState(step, undefined);
+    segment.dataset['fill'] = shownOf(step);
   });
   const here = current ? steps.indexOf(current) : -1;
   if (steps.length) {
@@ -540,7 +548,7 @@ function panelItems(item: MenuItem): HTMLButtonElement[] {
 const HELP = 'Help: what things mean';
 const END = 'End session';
 
-/** The data-key of the button whose menu is open, the header's More or a note's actions; one at a time, kept across redraws. */
+/** The data-key of the button whose menu is open, kept across redraws. */
 let menuOpen: string | null = null;
 
 function closeMenu(refocus = false): void {
@@ -560,7 +568,7 @@ function openMenu(key: string): void {
 }
 
 document.addEventListener('click', event => {
-  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu'))) closeMenu();
 });
 
 const moreButton = () => document.querySelector('[data-key="more"]');
@@ -628,8 +636,10 @@ const verdictSlot = el('span', { className: 'verdict-status', title: 'Your verdi
 
 function headerVerdict(): HTMLElement[] {
   const label = verdictLabel();
-  if (label === null) return [];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
   if (verdictText.textContent !== label) verdictText.textContent = label;
+  verdictSlot.dataset['state'] = decidedShown(VERDICT, chosen);
   return [verdictSlot];
 }
 
@@ -868,65 +878,6 @@ function take(item: Item, action: Action): void {
   } else void decide(item, action.id);
 }
 
-/** A note's actions, behind its button. */
-function actionsMenu(item: Item, label: string): HTMLElement[] {
-  const key = itemKey(item);
-  const actions = walkthrough.actions[key] ?? [];
-  if (readOnly || !actions.length) return [];
-  const opener = `menu:${key}`;
-  const open = menuOpen === opener;
-  const button = el('button', { type: 'button', className: 'icon-button menu-button' }, icon('more'));
-  button.setAttribute('aria-label', 'Note actions');
-  button.setAttribute('aria-haspopup', 'menu');
-  button.setAttribute('aria-expanded', String(open));
-  button.dataset['key'] = opener;
-  button.onclick = () => {
-    if (open) {
-      closeMenu();
-      return;
-    }
-    openMenu(opener);
-    document.querySelector<HTMLElement>('.menu [role="menuitem"]')?.focus();
-  };
-  if (!open) return [button];
-  const choices = actions.map(action => {
-    const choice = el('button', { type: 'button', tabIndex: -1 }, action.label);
-    choice.setAttribute('role', 'menuitem');
-    choice.dataset['key'] = `menu-item:${key}:${action.id}`;
-    choice.onclick = () => {
-      menuOpen = null;
-      render();
-      take(item, action);
-    };
-    return choice;
-  });
-  const menu = el('div', { className: 'menu', popover: 'manual' }, ...choices);
-  menu.setAttribute('role', 'menu');
-  menu.dataset['motion'] = 'menu';
-  menu.setAttribute('aria-label', `${label} actions`);
-  menu.onkeydown = event => {
-    const at = choices.findIndex(choice => choice === document.activeElement);
-    const moves: Record<string, number> = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: choices.length - 1 };
-    const to = moves[event.key];
-    if (to !== undefined) {
-      event.preventDefault();
-      choices[(to + choices.length) % choices.length]?.focus();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      closeMenu(true);
-    } else if (event.key === 'Tab') {
-      menuOpen = null;
-      // After focus has moved on.
-      setTimeout(render, 0);
-    }
-  };
-  // In the top layer the diff's scroll box cannot clip it.
-  queueMicrotask(() => {
-    if (menu.isConnected && !menu.matches(':popover-open')) menu.showPopover();
-  });
-  return [button, menu];
-}
-
 function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false): HTMLElement {
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   const group = el('div', { className: 'choices' }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
@@ -944,14 +895,14 @@ function stateTag(item: Item, long: boolean): HTMLElement {
   const key = itemKey(item);
   const decision = walkthrough.decided[key] ?? null;
   const reopened = walkthrough.reopened[key];
-  if (decision) return el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`);
+  if (decision) return toned(el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`), decidedShown(item, decision));
   if (reopened)
     return el('span', { className: 'tag reopened' }, long ? `Changed since you chose ${labelOf(item, reopened.action)}` : CHANGED);
   return el('span', { className: 'tag' }, 'Undecided');
 }
 
 /** The state, actions and what was said about the decision of a note, checklist item or the whole walkthrough. */
-function decideView(item: Item, text = '', small = true): HTMLElement[] {
+function decideView(item: Item, text = '', small = true, look: (action: Action, at: number) => Look = firstLeads): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
   if (!actions.length) return [];
@@ -965,7 +916,7 @@ function decideView(item: Item, text = '', small = true): HTMLElement[] {
         'div',
         { className: 'decide-row' },
         ...(shown || readOnly ? [stateTag(item, true)] : []),
-        ...(readOnly ? [] : [actionGroup(item, firstLeads, small)]),
+        ...(readOnly ? [] : [actionGroup(item, look, small)]),
       ),
       // A reopened item keeps what the person and the session said about the decision it had.
       ...(shown ? decisionSaid(shown) : []),
@@ -988,7 +939,8 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
     ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
     ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
   ];
-  for (const box of boxes) box.required = true;
+  // Edited text cannot be empty; the note is the person's to leave out.
+  for (const box of boxes) box.required = box.dataset['draft'] === draft('text');
   const form = el(
     'form',
     { className: 'taking' },
@@ -1028,8 +980,10 @@ function oldLines({ linesText }: Place): HTMLElement[] {
 /** Notes whose Reply box the person opened. */
 const replying = new Set<string>();
 
-function replyView(note: Note): HTMLElement[] {
-  if (readOnly) return [];
+/** The note's foot: its actions as buttons, then Reply, or the Reply box under them once opened. */
+function replyView(note: Note, actions: HTMLElement[]): HTMLElement[] {
+  const foot = (...end: HTMLElement[]) => (actions.length || end.length ? [el('div', { className: 'note-foot' }, ...actions, ...end)] : []);
+  if (readOnly) return foot();
   const draft = `reply:${note.id}`;
   if (!replying.has(note.id) && !drafts.get(draft)) {
     const open = el('button', { type: 'button', className: 'link' }, 'Reply');
@@ -1039,7 +993,7 @@ function replyView(note: Note): HTMLElement[] {
       render();
       document.querySelector<HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
     };
-    return [el('div', { className: 'note-foot' }, open)];
+    return foot(open);
   }
   const form = lineBox(draft, 'Reply', 'Reply…', () => {
     void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft).then(sent => {
@@ -1058,7 +1012,7 @@ function replyView(note: Note): HTMLElement[] {
     render();
     document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`reply:${note.id}`)}"]`)?.focus();
   };
-  return [form];
+  return [...foot(), form];
 }
 
 /** "new since you approved" on a finding that arrived after the person decided its step. */
@@ -1087,8 +1041,6 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
       el('span', { className: note.note.finding ? 'label finding' : 'label' }, ...(note.note.finding && !detached ? [icon('warn')] : []), label),
       ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(placeOf(note))}`)] : late ? [el('span', { className: 'lines' }, late)] : linesOf(lines)),
       ...(shown ? [stateTag(item, false)] : []),
-      el('span', { className: 'spacer' }),
-      ...actionsMenu(item, label),
     ),
     ...(detached ? oldLines(placeOf(note)) : []),
     ...(asked
@@ -1097,7 +1049,7 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
     // A reopened note keeps what the person and the session said about the decision it had.
     ...(shown ? decisionSaid(shown) : []),
     ...(taken ? [takingForm(item, taken, note.text)] : []),
-    ...(taken ? [] : replyView(note)),
+    ...(taken ? [] : replyView(note, readOnly || !walkthrough.actions[key]?.length ? [] : [actionGroup(item, () => 'secondary', true)])),
   );
   view.setAttribute('aria-label', label);
   view.id = `note-${note.id}`;
@@ -1277,7 +1229,7 @@ function commentView(comment: Comment): HTMLElement {
   const { id, lines } = comment;
   const posted = walkthrough.posted.includes(id);
   const where = commentAnchor(comment) === null ? [el('span', { className: 'was' }, `was on ${placeWas(comment)}`)] : linesOf(lines);
-  const view = el('article', { className: 'mine' });
+  const view = el('article', { className: 'mine', id: `comment-${id}` });
   view.setAttribute('aria-label', 'Your comment');
   view.dataset['motion'] = `comment:${id}`;
   if (editingComments.has(id) && !posted && !readOnly) {
@@ -1689,6 +1641,10 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   }
   for (const comment of mine) add(comment.file, comment.lines, 'own', comment);
   markLines(view, rows, marks);
+  for (const old of view.querySelectorAll('.file-marks')) old.remove();
+  if (!readOnly)
+    for (const wrapper of view.querySelectorAll<HTMLElement>('.d2h-file-wrapper'))
+      wrapper.querySelector('.file-stats')?.after(...fileMarks(step, wrapper.dataset['file'] ?? '', pinned.filter(isNote), mine));
   const pick = picked?.step === step.id ? picked : null;
   const pickKey = pick && lineKey(pick.file, pick.lines[1]);
   if (pick && pickKey) {
@@ -1712,6 +1668,29 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
     rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
   }
   return view;
+}
+
+/** After a file's counts, its notes in the marks "In this step" uses; each goes to the first of its kind in the file. */
+function fileMarks(step: Step, file: string, notes: Note[], mine: Comment[]): HTMLElement[] {
+  const inFile = <T extends Note | Comment>(shown: T[]) =>
+    inPageOrder(step, shown.filter(one => pinnedAt(one).file === file && pinnedAt(one).lines !== undefined));
+  const mark = (className: string, name: IconName, words: string, what: string, first: Note | Comment | undefined): HTMLElement[] => {
+    if (!first) return [];
+    const go = () => {
+      if ('from' in first) revealNote(step, first);
+      else reveal(step, first, `comment-${first.id}`);
+    };
+    return [el('button', { type: 'button', className: `file-mark ${className}`.trim(), title: `Go to the first ${what} in this file`, onclick: go }, icon(name), words)];
+  };
+  const findings = inFile(notes.filter(note => note.note.finding));
+  const others = inFile(notes.filter(note => !note.note.finding));
+  const yours = inFile(mine);
+  const marks = [
+    ...mark('finding', 'warn', plural(findings.length, 'finding'), 'finding', findings[0]),
+    ...mark('', 'message', plural(others.length, 'note'), 'note', others[0]),
+    ...mark('own', 'own', `${String(yours.length)} yours`, 'comment of yours', yours[0]),
+  ];
+  return marks.length ? [el('span', { className: 'file-marks' }, ...marks)] : [];
 }
 
 /** Files the person switched to their preview, by step id and path, so a redraw keeps them so. */
@@ -1985,18 +1964,27 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
   change.dataset['key'] = `change:${key}`;
   // While findings are open, Approve weighs no more than Flag.
-  const open = openFindings(step);
+  const open = openFindings(step).length;
   const choices = decided ? change : actionGroup(item, action => (open && action.id === 'approve' ? 'secondary' : stepLook(action)));
   const held = beingChecked(step) ? [el('span', { className: 'held' }, HELD)] : [];
   if (held.length)
     for (const button of [choices, ...choices.querySelectorAll('button')]) if (button instanceof HTMLButtonElement) button.disabled = true;
   const asking = asks ? [ask] : [];
-  const late = decided ? lateFindings(step).length : 0;
-  const count = late
-    ? [el('span', { className: 'open-findings' }, icon('warn'), plural(late, 'new finding'))]
-    : open
-      ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))]
-      : [];
+  const late = decided ? lateFindings(step) : [];
+  const counted = inPageOrder(step, late.length ? late : openFindings(step));
+  const count = counted.length
+    ? [
+        keyed(
+          el(
+            'button',
+            { type: 'button', className: 'open-findings', title: 'Go to the next open finding', onclick: () => { nextFinding(step, counted); } },
+            icon('warn'),
+            late.length ? plural(late.length, 'new finding') : plural(open, 'open finding'),
+          ),
+          `findings:${step.id}`,
+        ),
+      ]
+    : [];
   const bar = held.length ? 'action-bar holding' : 'action-bar';
   if (!phone.matches) return [el('div', { className: bar }, el('div', { className: 'action-row' }, choices, ...asking, ...held, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
@@ -2072,7 +2060,15 @@ function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
 }
 
 /** What a state icon says, to a screen reader and in its tooltip, where no text beside it says so already. */
-const stateName = (mark: IconName) => (['decided', 'reopened'].includes(mark) ? undefined : MEANS[mark]);
+const stateName = (mark: IconName) => (['decided', 'flagged', 'no-tone', 'reopened'].includes(mark) ? undefined : MEANS[mark]);
+
+/** The icon of each way a step shows. */
+const SHOWN_ICON: Record<Shown, IconName> = { cur: 'current', ok: 'decided', flag: 'flagged', neu: 'no-tone', reo: 'reopened', find: 'warn', un: 'unread' };
+
+/** A sub-line's colour: green, amber needs you, or red not met; muted without one. */
+type SubColour = 'ok' | 'attention' | 'bad';
+type Sub = { text: string; colour?: SubColour | undefined };
+const SHOWN_SUB: Partial<Record<Shown, SubColour>> = { ok: 'ok', flag: 'attention' };
 
 /** A row of the rail: a state icon, a title and an optional sub-line, linking to what it names. */
 function queueRow(
@@ -2080,15 +2076,23 @@ function queueRow(
   state: string,
   mark: IconName,
   title: string,
-  sub: { text: string; attention?: boolean } | null,
+  sub: Sub | null,
   // Only a step is one of a sequence; the session's messages and the checklist are pages of their own.
   current: false | 'step' | 'page',
+  // A long title holds to two lines, all of it in its tooltip.
+  clamped = false,
 ): HTMLElement {
+  const name = clamped ? el('span', { className: 'queue-name clamped', title }, title) : title;
   const row = el(
     'a',
     { href: `#${encodeURIComponent(address)}`, className: 'queue-item' },
     icon(mark, stateName(mark)),
-    el('span', { className: 'queue-title' }, title, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
+    el(
+      'span',
+      { className: 'queue-title' },
+      name,
+      ...(sub ? [el('span', { className: `queue-sub ${sub.colour ?? ''}`.trim() }, sub.text)] : []),
+    ),
   );
   row.dataset['state'] = state;
   row.dataset['key'] = `row:${address}`;
@@ -2099,36 +2103,45 @@ function queueRow(
   return row;
 }
 
+/** A step's row; one with open findings opens at the first of them. */
 function stepRow(step: Step, isCurrent: boolean): HTMLElement {
+  const row = stepRowView(step, isCurrent);
+  if (openFindings(step).length)
+    row.onclick = event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openAtFinding(step);
+    };
+  return row;
+}
+
+/** The sub-line says, in this order: a finding after the decision, being checked, changed since decided, open findings, a folded step's problems. */
+function stepRowView(step: Step, isCurrent: boolean): HTMLElement {
   const current = isCurrent && 'step';
   const item: Item = { type: 'step', id: step.id };
+  const shown = shownOf(step, isCurrent ? step : undefined);
   const decision = decisionOf(item);
   if (decision) {
-    const sub = lateFindings(step).length
-      ? { text: 'New finding', attention: true }
-      : { text: `Decided: ${labelOf(item, decision.action)}` };
-    return queueRow(step.id, 'decided', 'decided', step.title, sub, current);
+    const sub: Sub = lateFindings(step).length
+      ? { text: 'New finding', colour: 'attention' }
+      : { text: labelOf(item, decision.action), colour: SHOWN_SUB[decidedShown(item, decision)] };
+    return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, sub, current);
   }
+  const open = openFindings(step).length;
+  const findings: Sub | null = open ? { text: plural(open, 'open finding'), colour: 'attention' } : null;
   const checking = beingChecked(step) ? { text: 'Being checked' } : null;
-  if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, checking ?? { text: CHANGED }, current);
+  if (stepReopened(step)) return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, checking ?? { text: CHANGED, colour: 'attention' }, current);
+  // Files to skim keep their own icon, so the rail names them apart from the steps to read.
   if (step.kind === 'folded') {
-    const problems = step.problems.length ? { text: plural(step.problems.length, 'problem'), attention: true } : null;
-    return queueRow(step.id, 'folded', 'folded', step.title, checking ?? problems, current);
+    const problems: Sub | null = step.problems.length ? { text: plural(step.problems.length, 'problem'), colour: 'attention' } : null;
+    const state = isCurrent ? shown : 'folded';
+    return queueRow(step.id, state, isCurrent ? 'current' : 'folded', step.title, checking ?? findings ?? problems, current);
   }
-  const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, checking, current);
+  return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, checking ?? findings, current);
 }
 
 /** A step is left while it is undecided, or a finding was pinned on it after the person decided it. */
 const stepLeft = (step: Step) => !stepDecided(step) || lateFindings(step).length > 0;
-
-/** Checklist items that still need the person: marked not met by the session, or offering actions not yet decided. */
-function leftItems(): ChecklistItem[] {
-  return (walkthrough.checklist?.items ?? []).filter(item => {
-    const key = itemKey({ type: 'checklist', id: item.id });
-    return item.mark === 'not-met' || ((walkthrough.actions[key] ?? []).length > 0 && !walkthrough.decided[key]);
-  });
-}
 
 const SESSION_PAGE = 'Session messages';
 
@@ -2176,7 +2189,13 @@ function queueSelect(view: View, left: [string, string][], decided: Step[]): HTM
   const known = [...left, ...decided.map(step => [step.id, step.title]), ['summary', '']].some(([address]) => address === shown?.[0]);
   const select = el(
     'select',
-    { onchange: () => { go(select.value); } },
+    {
+      onchange: () => {
+        const step = walkthrough.steps.find(one => one.id === select.value);
+        if (step) openAtFinding(step);
+        else go(select.value);
+      },
+    },
     ...(shown && !known ? [option(shown)] : []),
     ...(walkthrough.steps.length || left.length ? [] : [el('option', { disabled: true, selected: true }, 'No steps yet')]),
     ...left.map(option),
@@ -2197,13 +2216,11 @@ function queueView(view: View): HTMLElement[] {
   const undecided = steps.filter(stepLeft);
   const fromSession = sessionRow(view);
   const rows = [...undecided.map(step => stepRow(step, step === current)), ...fromSession];
-  const left: [string, string][] = undecided.map(step => [step.id, lateFindings(step).length ? `${step.title} · New finding` : step.title]);
+  const left: [string, string][] = undecided.map(step => {
+    const open = openFindings(step).length;
+    return [step.id, lateFindings(step).length ? `${step.title} · New finding` : open ? `${step.title} · ${plural(open, 'open finding')}` : step.title];
+  });
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
-  for (const item of leftItems()) {
-    const at = view.kind === 'checklist' && view.item === item.id;
-    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
-    left.push([`checklist-${item.id}`, plain(item.text)]);
-  }
   const counted = steps.length > 0 || rows.length > 0;
   const leftCount = el('span', { className: 'counter' }, String(rows.length));
   leftCount.dataset['motion'] = 'count:left';
@@ -2273,7 +2290,7 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
         el('p', { className: 'item-line' }, el('span', { className: 'item-status' }, item.status), ...steps),
         ...(gone ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)] : []),
       ),
-      ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text)),
+      ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text, true, () => 'secondary')),
     );
     row.dataset['mark'] = mark;
     row.id = `checklist-item-${item.id}`;
@@ -2324,10 +2341,12 @@ function verdictLabel(): string | null {
   return chosen ? labelOf(VERDICT, chosen.action) : null;
 }
 
-/** The chosen verdict as a status, never a control; neutral whatever it says. */
+/** The chosen verdict as a status in its tone, never a control. */
 const verdictStatus = (): HTMLElement[] => {
   const label = verdictLabel();
-  return label === null ? [] : [el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label)];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
+  return [toned(el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label), decidedShown(VERDICT, chosen))];
 };
 
 /** While the session offers a verdict and none is chosen, the walkthrough's first action, its finishing one, waits. */
@@ -2349,14 +2368,18 @@ type LedgerRow = {
   address: string;
   number: string;
   mark: IconName;
+  /** What colours the icon and a decision's words. */
+  state: string;
   title: string;
   words: string;
   tone: 'decided' | 'muted' | 'changed';
   subs: HTMLElement[];
   open: boolean;
+  /** What an action that edits text starts from. */
+  text?: string;
 };
 
-const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim() }, text);
+const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim(), title: text }, text);
 
 /** The person's own comments on a step, in the accent, each after its file's name and lines. */
 function ownSubs(step: Step): HTMLElement[] {
@@ -2364,7 +2387,7 @@ function ownSubs(step: Step): HTMLElement[] {
     .filter(comment => commentAnchor(comment) === step.id)
     .map(comment => {
       const where = el('span', { className: 'where', title: comment.file }, `${comment.file.split('/').at(-1) ?? comment.file}:${linesShort(comment.lines)}`);
-      return el('span', { className: 'ledger-sub own' }, icon('own', 'Your comment'), where, ' ', plain(comment.text));
+      return el('span', { className: 'ledger-sub own', title: plain(comment.text) }, icon('own', 'Your comment'), where, ' ', plain(comment.text));
     });
 }
 
@@ -2380,33 +2403,39 @@ function stepLedgerRow(step: Step): LedgerRow {
     const said = [decision.note, decision.text].flatMap(text => (text ? [ledgerSub(`“${plain(text)}”`)] : []));
     const late = lateFindings(step).length;
     const arrived = late ? [ledgerSub(`${plural(late, 'new finding')} since you ${doneWith(step)}.`, 'changed')] : [];
-    return { ...row, mark: 'decided', words: labelOf(item, decision.action), tone: 'decided', subs: [...said, ...arrived, ...checking, ...own], open: false };
+    const state = decidedShown(item, decision);
+    const subs = [...said, ...arrived, ...checking, ...own];
+    return { ...row, mark: SHOWN_ICON[state], state, words: labelOf(item, decision.action), tone: 'decided', subs, open: false };
   }
-  if (checking.length) return { ...row, mark: 'unchecked', words: 'Being checked', tone: 'muted', subs: [...checking, ...own], open: true };
+  if (checking.length) return { ...row, mark: 'unchecked', state: 'unchecked', words: 'Being checked', tone: 'muted', subs: [...checking, ...own], open: true };
   if (reopened) {
     const since = ledgerSub(`Changed since you chose ${labelOf(item, reopened.action)}.`, 'muted');
-    return { ...row, mark: 'reopened', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
+    return { ...row, mark: 'reopened', state: 'reo', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
   }
-  const mark = step.kind === 'folded' ? 'folded' : walkthrough.read.includes(step.id) ? 'read' : 'unread';
-  return { ...row, mark, words: 'Undecided', tone: 'muted', subs: own, open: true };
+  const state = shownOf(step);
+  const listed = (count: number, what: string, texts: string[]) =>
+    count ? [ledgerSub(texts.length ? `${plural(count, what)}: ${texts.join(' · ')}` : plural(count, what), 'changed finding')] : [];
+  const findings = openFindings(step);
+  const problems = step.kind === 'folded' ? step.problems : [];
+  // A finding with actions has a row of its own, so the step only counts it.
+  const unlisted = findings.filter(note => !(walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? []).length);
+  const open = [...listed(findings.length, 'open finding', unlisted.map(note => plain(note.text))), ...listed(problems.length, 'problem', problems)];
+  for (const sub of open) sub.prepend(icon('warn'));
+  return { ...row, mark: SHOWN_ICON[state], state, words: 'Undecided', tone: 'muted', subs: [...open, ...own], open: true };
 }
 
 /** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
 function otherOpenRows(): LedgerRow[] {
-  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'title'>;
-  const notes = session.conversation.filter(isNote).map((note): Open => ({
+  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'state' | 'title' | 'text'>;
+  const notes = session.conversation.filter(isNote).filter(note => !isDraft(note)).map((note): Open => ({
     item: { type: 'note', id: note.id },
     address: anchorOf(note) ?? 'session',
     mark: note.note.finding ? 'warn' : 'message',
+    state: note.note.finding ? 'find' : 'note',
     title: `${note.note.label}: ${plain(note.text)}`,
+    text: note.text,
   }));
-  const items = (walkthrough.checklist?.items ?? []).map((one): Open => ({
-    item: { type: 'checklist', id: one.id },
-    address: `checklist-${one.id}`,
-    mark: one.mark ?? 'unchecked',
-    title: plain(one.text),
-  }));
-  return [...notes, ...items]
+  return notes
     .filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0)
     .map(one => {
       const reopened = walkthrough.reopened[itemKey(one.item)];
@@ -2416,6 +2445,31 @@ function otherOpenRows(): LedgerRow[] {
 }
 
 const ledgerRows = () => [...walkthrough.steps.map(stepLedgerRow), ...otherOpenRows()];
+
+/** A Still open row's own actions, so the person decides it from the Summary; a step being checked waits. */
+function ledgerActions(item: Item, text = ''): HTMLElement[] {
+  const key = itemKey(item);
+  const actions = walkthrough.actions[key] ?? [];
+  const step = item.type === 'step' ? walkthrough.steps.find(one => one.id === item.id) : undefined;
+  if (readOnly || !actions.length || (step && beingChecked(step))) return [];
+  const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
+  if (taken) return [takingForm(item, taken, text)];
+  return [el('div', { className: 'ledger-actions' }, actionGroup(item, () => 'secondary', true))];
+}
+
+/** A row's title goes to the exact place: a step at its first open finding, a note on its lines with its file open. */
+function ledgerGo(item: Item, address: string): ((event: MouseEvent) => void) | null {
+  const step = walkthrough.steps.find(one => one.id === address);
+  if (!step) return null;
+  const note = item.type === 'note' ? session.conversation.filter(isNote).find(one => one.id === item.id) : undefined;
+  if (item.type === 'step' ? !openFindings(step).length : !note) return null;
+  return event => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (note) openAtNote(step, note);
+    else openAtFinding(step);
+  };
+}
 
 /** Every step in one table, still open first, then decided; undecided never reads as decided. */
 function ledgerView(rows: LedgerRow[]): HTMLElement {
@@ -2431,17 +2485,20 @@ function ledgerView(rows: LedgerRow[]): HTMLElement {
         'tbody',
         {},
         el('tr', { className: 'ledger-group' }, head),
-        ...group.map(({ item, address, number, mark, title, words, tone, subs }) => {
-          const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
+        ...group.map(({ item, address, number, mark, state, title, words, tone, subs, open, text }) => {
+          const link = keyed(el('a', { href: `#${encodeURIComponent(address)}`, title }, title), `ledger:${itemKey(item)}`);
+          const going = ledgerGo(item, address);
+          if (going) link.onclick = going;
+          const actions = open ? ledgerActions(item, text) : [];
           const row = el(
             'tr',
             { className: 'ledger-row' },
             el('td', { className: 'ledger-number' }, number),
             el('td', { className: 'ledger-mark' }, icon(mark, stateName(mark))),
-            el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : [])),
+            el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : []), ...actions),
             el('td', { className: `ledger-decision ${tone}` }, words),
           );
-          row.dataset['state'] = mark;
+          row.dataset['state'] = state;
           return row;
         }),
       );
@@ -2466,6 +2523,7 @@ function verdictView(): HTMLElement {
       ),
       `verdict:${action.id}`,
     );
+    if (chosen && checked) option.dataset['state'] = decidedShown(VERDICT, chosen);
     option.setAttribute('role', 'radio');
     option.setAttribute('aria-checked', String(checked));
     option.onclick = () => {
@@ -2474,7 +2532,7 @@ function verdictView(): HTMLElement {
     return option;
   });
   const now = chosen
-    ? el('p', { className: 'verdict-now' }, 'Your verdict: ', el('strong', {}, labelOf(VERDICT, chosen.action)))
+    ? el('p', { className: 'verdict-now' }, 'Your verdict: ', toned(el('strong', {}, labelOf(VERDICT, chosen.action)), decidedShown(VERDICT, chosen)))
     : reopened
       ? el('p', { className: 'verdict-now reopened' }, icon('reopened'), `Changed since you chose ${labelOf(VERDICT, reopened.action)}`)
       : el('p', { className: 'verdict-now muted' }, 'No verdict yet.');
@@ -2504,51 +2562,71 @@ function verdictView(): HTMLElement {
   return section;
 }
 
-const DRAFT_STATES = ['Accepted', 'Edited', 'Dropped', 'Undecided'] as const;
+const DRAFT_STATES = ['Goes out', 'Edited', 'Dropped'] as const;
+const draftCount = (count: number, state: (typeof DRAFT_STATES)[number]) =>
+  `${String(count)} ${state === 'Goes out' ? (count === 1 ? 'goes out' : 'go out') : state.toLowerCase()}`;
 
-/** A note the person can edit before taking it is a draft: taking that edit sends it, any other action drops it. */
+/** A note the person can edit before it goes is a draft: it goes out as drafted or edited, unless any other action drops it. */
+const isDraft = (note: Note) => (walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? []).some(action => action.edit);
+
+/** Every draft in one place, one line each, with its own actions; the whole text is on the note, one click away. */
 function draftsView(): HTMLElement[] {
-  const drafts = session.conversation.filter(isNote).flatMap(note => {
-    const actions = walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? [];
-    if (!actions.some(action => action.edit)) return [];
-    const decision = decisionOf({ type: 'note', id: note.id });
-    const sent = decision && actions.find(action => action.id === decision.action)?.edit;
-    const edited = sent && decision.text !== undefined && decision.text !== note.text ? decision.text : undefined;
-    const state: (typeof DRAFT_STATES)[number] = !decision ? 'Undecided' : !sent ? 'Dropped' : edited === undefined ? 'Accepted' : 'Edited';
-    return [{ note, state, text: edited ?? note.text }];
+  const drafts = session.conversation.filter(isNote).filter(isDraft).map(note => {
+    const item: Item = { type: 'note', id: note.id };
+    const decision = decisionOf(item);
+    const kept = !decision || walkthrough.actions[itemKey(item)]?.find(action => action.id === decision.action)?.edit;
+    const edited = kept && decision?.text !== undefined && decision.text !== note.text ? decision.text : undefined;
+    const state: (typeof DRAFT_STATES)[number] = !kept ? 'Dropped' : edited === undefined ? 'Goes out' : 'Edited';
+    return { note, item, state, text: edited ?? note.text };
   });
   if (!drafts.length) return [];
   const counts = DRAFT_STATES.flatMap(state => {
     const count = drafts.filter(one => one.state === state).length;
-    return count ? [`${String(count)} ${state.toLowerCase()}`] : [];
+    return count ? [draftCount(count, state)] : [];
   });
-  const rows = drafts.map(({ note, state, text }) => {
+  const rows = drafts.map(({ note, item, state, text }) => {
     const { file, lines } = note.note;
-    const step = walkthrough.steps.find(one => one.id === anchorOf(note));
+    const address = anchorOf(note) ?? 'session';
+    const step = walkthrough.steps.find(one => one.id === address);
     const where = file !== undefined && lines ? `${file} · ${linesShort(lines)}` : step ? `Step ${String(stepNumber(step.id))}` : 'On removed code';
-    const said = markdown(text, 'summary-text');
-    if (state === 'Dropped') said.replaceChildren(el('s', {}, ...said.childNodes));
+    const words = plain(text);
+    const link = keyed(el('a', { className: 'draft-line', href: `#${encodeURIComponent(address)}`, title: words }, state === 'Dropped' ? el('s', {}, words) : words), `draft:${note.id}`);
+    const going = ledgerGo(item, address);
+    if (going) link.onclick = going;
     return el(
       'li',
       { className: state === 'Dropped' ? 'dropped' : '' },
       el('span', { className: 'where' }, where),
-      el('span', { className: 'draft-text' }, el('span', { className: 'draft-state' }, state), said),
+      el('span', { className: 'draft-text' }, el('span', { className: 'draft-state' }, state), link),
+      ...ledgerActions(item, note.text),
     );
   });
   return [summarySection('Comments the session drafted', counts.join(' · '), el('ul', { className: 'summary-list' }, ...rows))];
 }
 
-/** The checklist in the finish rail: each item's mark and text, its status in the row's tooltip. */
-function checklistSummary(): HTMLElement[] {
+/** A person's mark on a criterion is the tone of the action they took; otherwise the session's mark stands. */
+const TONE_MARK: Partial<Record<string, Mark>> = { positive: 'met', attention: 'not-met' };
+
+/** The criteria under the ledger, prefilled with the session's judgement: its mark shows chosen, and the person presses another only to overrule it. */
+function criteriaView(): HTMLElement[] {
   const { checklist } = walkthrough;
   if (!checklist) return [];
-  const rows = checklist.items.map(item => {
-    const mark = item.mark ?? 'unchecked';
-    const row = el('li', { title: item.status }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
+  const rows = checklist.items.map(one => {
+    const item: Item = { type: 'checklist', id: one.id };
+    const actions = walkthrough.actions[itemKey(item)] ?? [];
+    const decision = decisionOf(item);
+    const mark: Mark | 'unchecked' = (decision && TONE_MARK[toneOf(actions, decision.action)]) || one.mark || 'unchecked';
+    const words = plain(one.text);
+    const link = el('a', { className: 'draft-line', href: `#checklist-${encodeURIComponent(one.id)}`, title: words }, words);
+    const own = actions.length && !readOnly ? ledgerActions(item, one.text) : [];
+    if (!decision)
+      for (const [at, button] of [...(own[0]?.querySelectorAll('button') ?? [])].entries())
+        button.setAttribute('aria-pressed', String(actions[at] !== undefined && TONE_MARK[toneOf(actions, actions[at].id)] === one.mark));
+    const row = el('li', { title: one.status }, el('span', { className: 'draft-text' }, icon(mark, stateName(mark)), link), ...own);
     row.dataset['mark'] = mark;
     return row;
   });
-  return [summarySection('Checklist', metCount(checklist.items), el('ul', { className: 'rail-checklist' }, ...rows))];
+  return [summarySection(checklist.title, metCount(checklist.items), el('ul', { className: 'summary-list criteria' }, ...rows))];
 }
 
 /** The walkthrough's actions, the first of which waits for a verdict. */
@@ -2595,14 +2673,14 @@ function summaryView(): HTMLElement {
     ...(comments ? [`${String(comments)} of your comments`] : []),
     ...(items.some(item => item.mark !== undefined) ? [`checklist ${String(items.filter(item => item.mark === 'met').length)} of ${String(items.length)} met`] : []),
   ];
-  const rail = el('aside', { className: 'finish-rail' }, verdictView(), ...finishView(), ...checklistSummary());
+  const rail = el('aside', { className: 'finish-rail' }, verdictView(), ...finishView());
   rail.setAttribute('aria-label', 'Finish');
   const section = el(
     'section',
     { className: 'summary' },
     el('div', { className: 'title-row' }, title, el('span', { className: 'tag' }, open ? `${String(open)} still open` : 'Nothing still open')),
     el('p', { className: 'summary-line' }, counts.join(' · ')),
-    el('div', { className: 'summary-grid' }, el('div', { className: 'summary-walk' }, ledgerView(rows), ...draftsView()), rail),
+    el('div', { className: 'summary-grid' }, el('div', { className: 'summary-walk' }, ledgerView(rows), ...criteriaView(), ...draftsView()), rail),
   );
   section.setAttribute('aria-labelledby', title.id);
   return section;
@@ -3033,7 +3111,74 @@ const stepNotesOf = (step: Step) =>
   session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
 
 /** The step's findings the person has not decided yet; which notes are findings is the session's flag. */
-const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id })).length;
+const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id }));
+
+const pinnedAt = (one: Note | Comment): Place => ('from' in one ? one.note : one);
+
+/** Notes or comments in the order the step shows them: those on the step first, then each file's by the line they are pinned under. */
+function inPageOrder<T extends Note | Comment>(step: Step, shown: T[]): T[] {
+  const files = step.diff ? [...drawDiff(step).view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].map(wrapper => wrapper.dataset['file']) : [];
+  const rank = (one: T) => {
+    const { file, lines } = pinnedAt(one);
+    return file !== undefined && lines ? [files.indexOf(file) + 1, lines[1]] : [0, 0];
+  };
+  return [...shown].sort((a, b) => {
+    const [fileA = 0, lineA = 0] = rank(a);
+    const [fileB = 0, lineB = 0] = rank(b);
+    return fileA - fileB || lineA - lineB;
+  });
+}
+
+/** Opens what hides a note or comment (its collapsed or Viewed file, a folded step's diff, "N more notes"), then scrolls to it and focuses it. */
+function reveal(step: Step, { file, lines }: { file?: string; lines?: Lines }, id: string, low = false): void {
+  if (file !== undefined && lines) {
+    // A folded step shows a noted file by default, so forgetting the person's toggles shows it.
+    if (step.kind === 'folded') for (const key of [`fold:${step.id}`, `fold-diff:${step.id}:${file}`]) opened.delete(key);
+    else folds.set(file, false);
+  }
+  if (low) opened.add(file !== undefined && lines ? `more:${step.id}:${lineKey(file, lines[1])}` : `more:${step.id}`);
+  render();
+  const shown = [...main.querySelectorAll<HTMLElement>(`#${CSS.escape(id)}`)].find(found => !leavingPane?.contains(found));
+  if (!shown) return;
+  shown.tabIndex = -1;
+  shown.scrollIntoView({ block: 'center' });
+  shown.focus({ preventScroll: true });
+}
+
+const revealNote = (step: Step, note: Note) => {
+  reveal(step, note.note, `note-${note.id}`, note.note.low);
+};
+
+/** The note to reveal once the page has moved to its step. */
+let seeking: { step: string; note: string } | null = null;
+
+function openAtNote(step: Step, note: Note): void {
+  if (decodeURIComponent(location.hash.slice(1)) === step.id) revealNote(step, note);
+  else {
+    seeking = { step: step.id, note: note.id };
+    go(step.id);
+  }
+}
+
+/** A step with open findings opens at the first of them. */
+function openAtFinding(step: Step): void {
+  const [first] = inPageOrder(step, openFindings(step));
+  if (first) openAtNote(step, first);
+  else {
+    seeking = null;
+    go(step.id);
+  }
+}
+
+/** The open finding the action bar went to last, so the next press goes on from it. */
+let lastFinding: string | null = null;
+
+function nextFinding(step: Step, findings: Note[]): void {
+  const next = findings[(findings.findIndex(note => note.id === lastFinding) + 1) % findings.length];
+  if (!next) return;
+  lastFinding = next.id;
+  revealNote(step, next);
+}
 
 /** The step's open findings pinned after the person decided it; the step's own decision stays. */
 function lateFindings(step: Step): Note[] {
@@ -3535,6 +3680,10 @@ window.addEventListener('hashchange', () => {
   codePane.scrollTop = 0;
   const view = currentView();
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
+  const sought = seeking;
+  seeking = null;
+  const note = view.kind === 'step' && view.step.id === sought?.step ? session.conversation.filter(isNote).find(one => one.id === sought.note) : undefined;
+  if (note && view.kind === 'step') revealNote(view.step, note);
 });
 
 const POLL_MS = 1500;

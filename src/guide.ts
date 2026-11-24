@@ -39,18 +39,18 @@ const actionsExample = [
   {
     item: { type: 'note', id: '5f0c2a9e' },
     actions: [
-      { id: 'accept', label: 'Accept' },
-      { id: 'edit', label: 'Edit first', edit: true },
+      { id: 'accept', label: 'Accept', tone: 'positive' },
+      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive' },
       { id: 'drop', label: 'Drop', note: true },
     ],
   },
-  { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'fix', label: 'Needs a fix', note: true }] },
+  { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'fix', label: 'Needs a fix', note: true, tone: 'attention' }] },
   {
     item: { type: 'verdict' },
     hint: 'Sent with the review.',
     actions: [
-      { id: 'approve', label: 'Approve' },
-      { id: 'changes', label: 'Request changes' },
+      { id: 'approve', label: 'Approve', tone: 'positive' },
+      { id: 'changes', label: 'Request changes', tone: 'attention' },
       { id: 'comment', label: 'Comment' },
     ],
   },
@@ -142,15 +142,18 @@ walkthrough actions --file <file>
   The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
-  An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
-  A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
+  An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone}, ...]}, ...]
+  "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
+  left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
+  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention"};
+  an empty list brings these back.
   Other items offer nothing until actions are recorded on them.
   The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
-  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status.
+  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status in its tone.
   The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
   "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
-  A note offering an action with "edit": true is a draft: the Summary lists it as accepted or edited when the person took that action, and dropped when they took another.
+  A note offering an action with "edit": true is a draft: it goes out as drafted, or as edited when the person takes that action, and any other action drops it; the Summary lists every draft and what goes out, and a draft is never still open.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:

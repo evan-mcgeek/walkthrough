@@ -163,8 +163,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   const note = step.getByRole('article', { name: 'Draft' });
   const listener = repo.background('listen');
 
-  await note.getByRole('button', { name: 'Note actions' }).click();
-  await note.getByRole('menuitem', { name: 'Edit first' }).click();
+  await note.getByRole('button', { name: 'Edit first' }).click();
   const text = note.getByRole('textbox', { name: 'Text' });
   await expect(text).toHaveValue('Please **rename** this.');
   // The box holds the text being edited, so the note shows it once and offers no Reply meanwhile.
@@ -182,7 +181,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await expect(note.getByText('Please rename this to cart.', { exact: true })).toBeVisible();
 
   const rail = page.getByRole('navigation', { name: 'To review' });
-  await rail.getByRole('link', { name: 'A person can log in.' }).click();
+  await page.goto(`${page.url().split('#')[0] ?? ''}#checklist-1`);
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   await expect(item.getByRole('button', { name: 'Checked' })).toBeVisible();
   await expect(item.getByText('Undecided', { exact: true })).toHaveCount(0);
@@ -207,7 +206,7 @@ test('a checklist item the session records again after a decision shows reopened
   const disagree = [{ item: { type: 'checklist', id: '1' }, actions: [{ id: 'no', label: 'Disagree', note: true }] }];
   record(repo, { title: 'Criteria', items: [{ status: 'met', text: 'A person can log in.' }] }, 'checklist');
   record(repo, disagree, 'actions');
-  await page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'A person can log in.' }).click();
+  await page.goto(`${page.url().split('#')[0] ?? ''}#checklist-1`);
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   const listener = repo.background('listen');
   await item.getByRole('button', { name: 'Disagree' }).click();
@@ -224,11 +223,11 @@ test('a checklist item the session records again after a decision shows reopened
   await expect(item.getByRole('button', { name: 'Disagree' })).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('steps shown are read apart from decided, and decided steps fold into a count at the foot of the rail', async ({ page }) => {
+test('a step read and one not read look the same until decided, and decided steps fold into a count at the foot of the rail', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '0 of 2 steps decided, 2 left, 1 read');
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'read');
-  await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('data-state', 'unread');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'cur');
+  await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('data-state', 'un');
 
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
@@ -239,13 +238,13 @@ test('steps shown are read apart from decided, and decided steps fold into a cou
   await expect(decided).toHaveAttribute('aria-expanded', 'false');
   await decided.click();
   await expect(decided).toHaveAttribute('aria-expanded', 'true');
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'decided');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'ok');
 
   await page.reload();
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
 });
 
-test('an empty Ask or Flag note is not sent, and the box says it needs words', async ({ page }) => {
+test('an empty Ask is not sent and says it needs words, while Flag sends with its note left empty', async ({ page, repo }) => {
   const sent: string[] = [];
   page.on('request', request => {
     if (request.method() === 'POST') sent.push(new URL(request.url()).pathname);
@@ -257,12 +256,12 @@ test('an empty Ask or Flag note is not sent, and the box says it needs words', a
   await ask.press('Enter');
   await expect(ask).toHaveValue('');
   expect(await ask.evaluate((box: HTMLInputElement) => box.validity.valueMissing)).toBe(true);
-  await step.getByRole('button', { name: 'Flag' }).click();
-  await step.getByRole('button', { name: 'Send' }).click();
-
-  const note = step.getByRole('textbox', { name: 'Note' });
-  await expect(note).toBeFocused();
-  expect(await note.evaluate((box: HTMLTextAreaElement) => box.validity.valueMissing)).toBe(true);
   await expect(page.getByRole('alert')).toBeHidden();
   expect(sent.filter(route => route !== '/read')).toEqual([]);
+
+  await step.getByRole('button', { name: 'Flag' }).click();
+  await step.getByRole('textbox', { name: 'Note' }).fill('   ');
+  await step.getByRole('button', { name: 'Send' }).click();
+  await expect.poll(() => repo.run('decisions').stdout.split('\n')[0] ?? '').toContain('"action":"flag"');
+  expect(repo.run('decisions').stdout.split('\n')[0]).not.toContain('"note"');
 });

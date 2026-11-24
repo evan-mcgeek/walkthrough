@@ -49,8 +49,9 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
     record(repo, [{ step: '3', file: 'cart.ts', lines: [1, 1], label: 'Draft', text: '[AI] Name the `cart`.' }], 'note'),
   )?.[1];
   const dropped = /([0-9a-f]{8})/.exec(record(repo, [{ step: '3', label: 'Draft', text: '[AI] Add a test.' }], 'note'))?.[1];
+  const kept = /([0-9a-f]{8})/.exec(record(repo, [{ step: '3', label: 'Draft', text: '[AI] Check the total.' }], 'note'))?.[1];
   const drafted = [
-    { id: 'post', label: 'Post', edit: true },
+    { id: 'edit', label: 'Edit', edit: true },
     { id: 'drop', label: 'Drop' },
   ];
   record(
@@ -60,13 +61,13 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   );
   record(
     repo,
-    [verdicts, finishing, { item: { type: 'note', id: draft }, actions: drafted }, { item: { type: 'note', id: dropped }, actions: drafted }],
+    [verdicts, finishing, { item: { type: 'note', id: draft }, actions: drafted }, { item: { type: 'note', id: dropped }, actions: drafted }, { item: { type: 'note', id: kept }, actions: drafted }],
     'actions',
   );
   for (const body of [
     { item: { type: 'step', id: '1' }, action: 'flag', note: 'Everyone gets in.' },
     { item: { type: 'step', id: '2' }, action: 'approve' },
-    { item: { type: 'note', id: draft }, action: 'post', text: '[AI] Name the `items`.' },
+    { item: { type: 'note', id: draft }, action: 'edit', text: '[AI] Name the `items`.' },
     { item: { type: 'note', id: dropped }, action: 'drop' },
   ])
     expect((await send(page, url, 'decide', body)).status()).toBe(200);
@@ -90,8 +91,8 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   const ledger = summary.getByRole('table', { name: 'Every step and what you decided' });
   await expect(ledger.getByRole('row')).toHaveText([
     'Still open2',
-    '2App versionChanged since you chose Approve.Changed',
-    '3CartUndecided',
+    '2App versionChanged since you chose Approve.ApproveFlagChanged',
+    '3CartApproveFlagUndecided',
     'Decided1',
     '1Login check“Everyone gets in.”login.ts:1 Say who may log in.Flag',
   ]);
@@ -103,11 +104,18 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await page.goBack();
   await expect(summary).toBeVisible();
   const rail = summary.getByRole('complementary', { name: 'Finish' });
-  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
-  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
+  // The criteria sit under the ledger, prefilled with the session's marks, never in the rail.
+  await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
+  await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
+  await expect(rail.getByRole('region', { name: 'Criteria' })).toHaveCount(0);
   const drafts = section('Comments the session drafted');
-  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 edited · 1 dropped');
-  await expect(drafts.getByRole('listitem')).toHaveText(['cart.ts · 1Edited[AI] Name the items.', 'Step 3Dropped[AI] Add a test.']);
+  // A draft left alone goes out as drafted, all of them together, and none waits in Still open.
+  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 goes out · 1 edited · 1 dropped');
+  await expect(drafts.getByRole('listitem')).toHaveText([
+    'cart.ts · 1Edited[AI] Name the items.EditDrop',
+    'Step 3Dropped[AI] Add a test.EditDrop',
+    'Step 3Goes out[AI] Check the total.EditDrop',
+  ]);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
 
   const verdict = rail.getByRole('region', { name: 'Verdict' });
@@ -144,6 +152,54 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(summary.getByText('Decided: Send the fix list to the session', { exact: true })).toBeVisible();
 });
 
+const tokenColor = (page: Page, token: string) =>
+  page.evaluate(name => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = `var(${name})`;
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
+
+test('the ledger and the verdict take their action\'s tone: Approve green, Flag amber, an action with no tone grey, and the verdict in the rail and the header', async ({
+  page,
+  repo,
+  url,
+}) => {
+  const toned = {
+    ...verdicts,
+    actions: [
+      { id: 'ready', label: 'Ready for colleagues', tone: 'positive' },
+      { id: 'fixes', label: 'Needs fixes', tone: 'attention' },
+    ],
+  };
+  record(repo, [toned, finishing, { item: { type: 'step', id: '3' }, actions: [{ id: 'noted', label: 'Noted' }] }], 'actions');
+  for (const body of [
+    { item: { type: 'step', id: '1' }, action: 'flag', note: 'Everyone gets in.' },
+    { item: { type: 'step', id: '2' }, action: 'approve' },
+    { item: { type: 'step', id: '3' }, action: 'noted' },
+    { item: { type: 'verdict' }, action: 'fixes' },
+  ])
+    expect((await send(page, url, 'decide', body)).status()).toBe(200);
+  await page.goto(`${url}#summary`);
+
+  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const row = (title: string) => ledger.getByRole('row').filter({ hasText: title });
+  for (const [title, token, words] of [
+    ['Login check', '--amber', '--amber'],
+    ['App version', '--ok', '--ok'],
+    ['Cart', '--neu', '--ink-secondary'],
+  ] as const) {
+    await expect(row(title).locator('.ledger-mark svg')).toHaveCSS('color', await tokenColor(page, token));
+    await expect(row(title).locator('.ledger-decision')).toHaveCSS('color', await tokenColor(page, words));
+  }
+  const verdict = page.getByRole('region', { name: 'Verdict' });
+  await expect(verdict.getByText('Needs fixes', { exact: true }).first()).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(verdict.getByRole('radio', { name: 'Needs fixes' }).locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(page.getByRole('banner').getByTitle('Your verdict').locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
+});
+
 test('G then S goes to the Summary from any step, and the Summary is the last row of the queue', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link').last()).toHaveText('Summary');
@@ -158,4 +214,40 @@ test('G then S goes to the Summary from any step, and the Summary is the last ro
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
   await page.keyboard.press('s');
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
+});
+
+test('a Still open row offers its own actions, and its title goes to the exact place with its file open', async ({ page, repo, url }) => {
+  const noteId = /([0-9a-f]{8})/.exec(
+    record(repo, [{ step: '3', file: 'cart.ts', lines: [1, 1], label: 'Finding', text: 'The cart is never emptied.', finding: true }], 'note'),
+  )?.[1];
+  record(
+    repo,
+    [{ item: { type: 'note', id: noteId }, actions: [{ id: 'accept', label: 'Accept' }, { id: 'reject', label: 'Reject', note: true }] }],
+    'actions',
+  );
+  await page.goto(`${url}#3`);
+  await page.getByRole('button', { name: 'Mark cart.ts as viewed' }).click();
+  const note = page.locator(`#note-${noteId ?? ''}`);
+  await expect(note).toBeHidden();
+
+  await page.goto(`${url}#summary`);
+  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const row = (title: string) => ledger.getByRole('row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
+  // The finding has a row of its own, so its step only counts it.
+  await expect(row('Cart').locator('.ledger-sub')).toHaveText('1 open finding');
+  await row('Finding: The cart is never emptied.').getByRole('link').click();
+  await expect(page).toHaveURL(`${url}#3`);
+  await expect(note).toBeInViewport();
+  await expect(note).toBeFocused();
+
+  await page.goto(`${url}#summary`);
+  await row('Login check').getByRole('button', { name: 'Approve' }).click();
+  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approve');
+  await expect(page).toHaveURL(`${url}#summary`);
+
+  await row('Finding: The cart is never emptied.').getByRole('button', { name: 'Reject' }).click();
+  await ledger.getByRole('textbox', { name: 'Note' }).fill('Emptied on checkout.');
+  await ledger.getByRole('button', { name: 'Send' }).click();
+  await expect(row('Finding: The cart is never emptied.')).toHaveCount(0);
+  await expect.poll(() => repo.run('decisions').stdout).toContain('Emptied on checkout.');
 });

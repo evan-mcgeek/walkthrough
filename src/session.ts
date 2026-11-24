@@ -5,7 +5,6 @@ import path from 'node:path';
 import { locked, readJson, writeJson } from './json-files';
 import { type NoteInput, type NoteMark, type Place, placeIn, placeOnly } from './notes';
 import { commentsOf } from './comments';
-import { alive, psStart } from './processes';
 import type { Item } from './items';
 import { readWalkthrough } from './walkthrough';
 
@@ -38,13 +37,15 @@ export type SessionView = { state: SessionState; conversation: Entry[] };
 
 type Listener =
   | { state: 'starting' }
-  | { state: 'listening'; pid: number; started: string }
+  | { state: 'listening'; pid: number }
   | { state: 'handed'; requests: string[] }
   | { state: 'stopped' };
 
 // A session answers and then listens again; until this has passed it has not had the chance to come back.
 const BACK_WITHIN_MS = 60 * 1000;
 const LISTEN_EVERY_MS = 500;
+// A listener stamps its file as it polls; one silent this long has stopped, though its pid may live on.
+const HEARTBEAT_STALE_MS = 10 * 1000;
 
 const files = (dir: string) => ({
   conversation: path.join(dir, 'conversation.jsonl'),
@@ -85,12 +86,23 @@ const openQuestions = (conversation: Entry[]) =>
       !conversation.some(reply => reply.from === 'page' && reply.kind === 'reply' && reply.to === entry.id),
   );
 
-function presence(listener: Listener | null, conversation: Entry[]): Exclude<SessionState, 'needs-you'> {
+// Read on every page poll, so it must not spawn a process: a signal check and the file's age are enough.
+function listens(file: string, listener: { pid: number }): boolean {
+  try {
+    process.kill(listener.pid, 0);
+    const staleAfter = Number(process.env['WALKTHROUGH_HEARTBEAT_STALE_MS']) || HEARTBEAT_STALE_MS;
+    return Date.now() - fs.statSync(file).mtimeMs < staleAfter;
+  } catch {
+    return false;
+  }
+}
+
+function presence(file: string, listener: Listener | null, conversation: Entry[]): Exclude<SessionState, 'needs-you'> {
   switch (listener?.state) {
     case 'starting':
       return 'working';
     case 'listening':
-      return alive(listener) ? 'listening' : 'gone';
+      return listens(file, listener) ? 'listening' : 'gone';
     case 'handed': {
       const answered = listener.requests.map(id =>
         conversation.find(entry => entry.from === 'session' && entry.answer === id),
@@ -112,7 +124,7 @@ export function sessionView(dir: string): SessionView {
   const { listener } = files(dir);
   const state = openQuestions(conversation).length
     ? 'needs-you'
-    : presence(readJson<Listener | null>(listener, null), conversation);
+    : presence(listener, readJson<Listener | null>(listener, null), conversation);
   return { state, conversation };
 }
 
@@ -121,7 +133,7 @@ export async function starting(dir: string): Promise<void> {
   await hold(dir, () => {
     const { listener } = files(dir);
     const now = readJson<Listener | null>(listener, null);
-    if (now?.state !== 'listening' || !alive(now)) writeJson(listener, { state: 'starting' } satisfies Listener);
+    if (now?.state !== 'listening' || !listens(listener, now)) writeJson(listener, { state: 'starting' } satisfies Listener);
   });
 }
 
@@ -239,7 +251,7 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<P
     return now?.state === 'listening' && now.pid === process.pid;
   };
   await hold(dir, () => {
-    writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
+    writeJson(listener, { state: 'listening', pid: process.pid } satisfies Listener);
   });
   const release = () =>
     hold(dir, () => {
@@ -254,7 +266,11 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<P
     const taken = await hold(dir, () => {
       if (!mine()) return 'replaced';
       const requests = readLines<PageRequest>(inbox);
-      if (!requests.length) return null;
+      if (!requests.length) {
+        const now = new Date();
+        fs.utimesSync(listener, now, now);
+        return null;
+      }
       fs.rmSync(inbox, { force: true });
       writeJson(listener, { state: 'handed', requests: requests.map(one => one.id) } satisfies Listener);
       return requests;
