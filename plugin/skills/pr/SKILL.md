@@ -100,6 +100,7 @@ A note whose step or lines leave the change, or whose lines change, stays on the
 
 Record the actions the page offers on steps, notes, checklist items, the verdict and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
 Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy, and so does each action's `tone`, the colour its decision shows in: `"positive"` green, `"attention"` amber, or `"none"` grey, the same as leaving it out.
+So do its `consequence`, at most 8 words on where the decision goes or what it costs, its `outcome`, at most 3 words in the past tense shown once the person took it, and `primary`, the one action per item whose consequence shows under the buttons.
 A step with none recorded offers Approve, positive, and Flag, attention.
 The page ends with a Summary, where the person chooses their verdict on the whole walkthrough and takes its finishing action.
 Offer the verdict's choices on the verdict and the finishing action first on the whole walkthrough, as the review policy names them, each with a short hint saying where it goes; the finishing action waits for a verdict.

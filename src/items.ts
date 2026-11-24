@@ -7,7 +7,20 @@ export type Item = { type: 'step' | 'note' | 'checklist'; id: string } | { type:
 /** The colour a decision with the action shows in; the session picks it from the review policy, and left out it is none. */
 export type Tone = 'positive' | 'attention' | 'none';
 export const TONES: readonly Tone[] = ['positive', 'attention', 'none'];
-export type Action = { id: string; label: string; note?: true; edit?: true; tone?: Tone };
+/** `consequence` says where a decision goes or what it costs, `outcome` what it did; `primary` marks the one whose consequence shows. */
+export type Action = {
+  id: string;
+  label: string;
+  note?: true;
+  edit?: true;
+  tone?: Tone;
+  consequence?: string;
+  outcome?: string;
+  primary?: true;
+};
+/** The most words a consequence and an outcome hold. */
+export const CONSEQUENCE_WORDS = 8;
+export const OUTCOME_WORDS = 3;
 
 /** What a step offers when the session records no actions on it. */
 export const STEP_ACTIONS: Action[] = [

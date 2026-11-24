@@ -39,9 +39,9 @@ const actionsExample = [
   {
     item: { type: 'note', id: '5f0c2a9e' },
     actions: [
-      { id: 'accept', label: 'Accept', tone: 'positive' },
-      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive' },
-      { id: 'drop', label: 'Drop', note: true },
+      { id: 'accept', label: 'Accept', tone: 'positive', consequence: 'Goes on the fix list.', outcome: 'Added to fixes', primary: true },
+      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive', consequence: 'You reword it first.', outcome: 'Edited' },
+      { id: 'drop', label: 'Drop', note: true, consequence: 'The author never sees it.', outcome: 'Dropped' },
     ],
   },
   { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'fix', label: 'Needs a fix', note: true, tone: 'attention' }] },
@@ -143,9 +143,14 @@ walkthrough actions --file <file>
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
   An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone}, ...]}, ...]
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone,
+      "consequence": string, "outcome": string, "primary": boolean}, ...]}, ...]
   "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
   left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
+  "consequence", at most 8 words, says where a decision with the action goes or what it costs, such as "Goes on the fix list.";
+  "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
+  "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
+  The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
   A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention"};
   an empty list brings these back.
   Other items offer nothing until actions are recorded on them.

@@ -63,6 +63,7 @@ _Avoid_: AC map, outstanding list
 A choice the agent offers on a step, a note, a checklist item, the verdict or the whole walkthrough, which the person can take with an optional note.
 The whole walkthrough's first action is its finishing action, such as sending the fix list to the session or posting the review.
 Each action has a tone the session picks from the review policy, positive, attention or none, which colours a decision with it green, amber or grey.
+It may also carry a consequence, where a decision with it goes or what it costs, and an outcome, what the page shows once it is taken; the one primary action of an item shows its consequence under its buttons.
 _Avoid_: Button, command
 
 **Decision**:
