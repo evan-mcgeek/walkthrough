@@ -28,6 +28,7 @@ test.describe('explained files', () => {
       {
         title: 'Login',
         explanation: 'Adds login.',
+        assumptions: ['Callers check the result.'],
         files: ['app.ts', { path: 'big.ts', explanation: 'A long table:\n\n- one\n- two' }, { path: 'login.ts', explanation: 'Lets **everyone** in.' }],
       },
     ]);
@@ -66,6 +67,11 @@ test.describe('explained files', () => {
     await expect(files.locator('.file-explanation')).toHaveText([/^A long table:\s*one\s*two\s*$/, 'Lets everyone in.']);
     await expect(files.locator('.file-explanation').first()).toHaveCSS('font-size', '15px');
     await expect(code.locator('.file-explanation')).toHaveCount(0);
+    const gap = await prose.evaluate(column => {
+      const edge = (selector: string, side: 'top' | 'bottom') => column.querySelector(selector)?.getBoundingClientRect()[side] ?? NaN;
+      return edge('.assumptions', 'top') - edge('.files-block', 'bottom');
+    });
+    expect(gap).toBeCloseTo(16, 1);
     const entry = (path: string) => files.getByRole('listitem').filter({ has: page.getByRole('link', { name: path }) });
     // app.ts is at the top of the code pane and has no explanation.
     await expect(files.locator('[aria-current]')).toHaveCount(0);

@@ -373,6 +373,10 @@
   margin-top: var(--s4);
 }
 
+.files-block + .assumptions {
+  margin-top: var(--s4);
+}
+
 .files-head {
   margin: 0 0 var(--s2);
   color: var(--muted);
@@ -1002,6 +1006,8 @@
 }
 
 .messages > .notice {
+  max-width: 860px;
+  box-sizing: border-box;
   margin-bottom: var(--s4);
 }
 
