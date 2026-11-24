@@ -74,8 +74,8 @@ test('asking about selected lines sends the range, and the answer lands on those
 
   await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
   await expect(row(page, 'cart.ts', 5)).not.toHaveClass(/selected/);
-  await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask about lines' }).click();
-  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
+  await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask', exact: true }).click();
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about lines 2–4' });
   await expect(box).toBeFocused();
   await box.fill('Why three constants?');
   await rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask' }).click();
@@ -85,7 +85,7 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(row(page, 'cart.ts', 3)).not.toHaveClass(/selected/);
   const pinned = rowAfter(row(page, 'cart.ts', 4));
   await expect(pinned.getByText('Why three constants?')).toBeVisible();
-  await expect(pinned.getByText('Waiting for the session to answer.')).toBeVisible();
+  await expect(pinned.getByText('Waiting for an answer')).toBeVisible();
 
   repo.run('say', '--answer', asked.id, '--as', 'Finding', 'Each is used *once*.');
 
@@ -93,7 +93,7 @@ test('asking about selected lines sends the range, and the answer lands on those
   await expect(answer.locator('em', { hasText: 'once' })).toBeVisible();
   await expect(answer).toContainText('lines 2–4');
   await expect(answer).toContainText('You asked: Why three constants?');
-  await expect(pinned.getByText('Waiting for the session to answer.')).toHaveCount(0);
+  await expect(pinned.getByText('Waiting for an answer')).toHaveCount(0);
   await expect(pinned.getByRole('article')).toHaveCount(1);
 
   const replying = repo.background('listen');
@@ -112,15 +112,15 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
 
   await page.keyboard.press('Enter');
   await expect(row(page, 'cart.ts', 2)).toHaveClass(/selected/);
-  await expect(page.getByRole('textbox', { name: /^Ask about cart.ts/ })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: /^Ask about line/ })).toHaveCount(0);
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(number(4)).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask about lines' })).toBeFocused();
+  await expect(rowAfter(row(page, 'cart.ts', 4)).getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
 
-  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about cart.ts lines 2–4' });
+  const box = rowAfter(row(page, 'cart.ts', 4)).getByRole('textbox', { name: 'Ask about lines 2–4' });
   await expect(box).toBeFocused();
   await expect(row(page, 'cart.ts', 3)).toHaveClass(/selected/);
 
@@ -132,7 +132,7 @@ test('lines can be picked from the keyboard to ask about them', async ({ page })
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('Shift+Enter');
   await page.keyboard.press('Enter');
-  await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about cart.ts line 3' })).toBeFocused();
+  await expect(rowAfter(row(page, 'cart.ts', 3)).getByRole('textbox', { name: 'Ask about line 3' })).toBeFocused();
 });
 
 test('one line is picked from the keyboard with Enter on it twice, then asked about', async ({ page }) => {
@@ -142,7 +142,7 @@ test('one line is picked from the keyboard with Enter on it twice, then asked ab
   await page.keyboard.press('Enter');
   await page.keyboard.press('Enter');
 
-  await expect(rowAfter(row(page, 'cart.ts', 2)).getByRole('textbox', { name: 'Ask about cart.ts line 2' })).toBeFocused();
+  await expect(rowAfter(row(page, 'cart.ts', 2)).getByRole('textbox', { name: 'Ask about line 2' })).toBeFocused();
 });
 
 test('a note shows its actions as buttons under its text beside Reply, and keeps its decided tag and Undo once decided', async ({ page, repo }) => {
@@ -167,11 +167,11 @@ test('a note shows its actions as buttons under its text beside Reply, and keeps
   await actions.getByRole('button', { name: 'Dismiss' }).click();
 
   expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'decision', item: { type: 'note', id }, action: 'dismiss' });
-  await expect(note.getByText('Decided: Dismiss', { exact: true })).toBeVisible();
+  await expect(note.locator('.tag.decided')).toHaveText('Dismiss');
   // Once decided the actions close to one Change, so the decision cannot be sent twice by accident.
   await expect(actions.getByRole('button')).toHaveText(['Change']);
   await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
-  await expect(note.getByText('Decided: Dismiss', { exact: true })).toHaveCount(0);
+  await expect(note.locator('.tag.decided')).toHaveCount(0);
 });
 
 test('at phone width a note’s action buttons wrap inside the note', async ({ page, repo }) => {
@@ -219,7 +219,7 @@ test('session Markdown shows no raw HTML or images and keeps to the CSP', async 
 });
 
 test('a line number is a button that says when its line is picked', async ({ page }) => {
-  const number = (line: number) => page.getByRole('button', { name: `Ask about line ${String(line)} of cart.ts` });
+  const number = (line: number) => page.locator('.d2h-file-wrapper[data-file="cart.ts"]').getByRole('button', { name: `Ask about line ${String(line)}`, exact: true });
   await expect(number(2)).toHaveAttribute('aria-pressed', 'false');
   await number(2).focus();
 

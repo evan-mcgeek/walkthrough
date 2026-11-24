@@ -36,7 +36,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(page.getByRole('columnheader')).toHaveText(['Walkthrough', 'Progress', 'Verdict', 'Last activity']);
   const rows = page.getByRole('row');
   await expect(rows).toHaveCount(3);
-  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerequestedrange-Login%20change', 'Preparing', 'No verdict yet', /now|ago/]);
+  await expect(rows.nth(1).getByRole('cell')).toHaveText(['Login changerequestedrange-Login%20change', 'Preparing', '', /now|ago/]);
   await expect(rows.nth(1).locator('.kind')).toHaveAttribute('title', 'The kind of walkthrough');
   await expect(rows.nth(2).locator('.kind')).toHaveCount(0);
   await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', 'Needs fixes', /now|ago/]);
@@ -58,7 +58,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await rows.nth(2).getByRole('button', { name: 'feature/login' }).click();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
-  await expect(page.getByRole('table', { name: 'Every step and what you decided' }).getByRole('row')).toHaveText(['Decided1', '1LoginApprove']);
+  await expect(page.locator('table.ledger').getByRole('row')).toHaveText(['Decided1', '1LoginApproved']);
 });
 
 test('the Stop button ends the list', async ({ page, repo, url }) => {
@@ -69,7 +69,7 @@ test('the Stop button ends the list', async ({ page, repo, url }) => {
 
   await page.getByRole('button', { name: 'Stop' }).click();
 
-  await expect(page.getByText('The list has stopped. You can close this tab.')).toBeVisible();
+  await expect(page.getByText('List stopped. You can close this tab.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
   await expect(page.request.get(list)).rejects.toThrow();
 });
@@ -103,7 +103,7 @@ test('at phone width a walkthrough keeps its name on one line beside its activit
   await page.goto(repo.url());
 
   const row = page.getByRole('row').nth(1);
-  await expect(row.getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '0 of 1 step decided, 0 read', 'No verdict yet', /now|ago/]);
+  await expect(row.getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '0 of 1 step decided, 0 read', '', /now|ago/]);
   expect((await row.getByRole('button', { name: 'feature/login' }).boundingBox())?.height).toBeLessThan(24);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

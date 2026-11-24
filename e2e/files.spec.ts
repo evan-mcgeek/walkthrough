@@ -61,16 +61,16 @@ test('a large file starts collapsed', async ({ page }) => {
 });
 
 test('Viewed collapses a file, outlasts a reload, and decides nothing', async ({ page, repo }) => {
-  const viewed = page.getByRole('button', { name: 'Mark login.ts as viewed' });
+  const viewed = page.getByRole('button', { name: 'Viewed login.ts' });
   await expect(viewed).toHaveAttribute('aria-pressed', 'false');
-  await expect(viewed).toHaveAttribute('title', 'Mark as viewed (V)');
+  await expect(viewed).toHaveAttribute('title', 'Viewed (V)');
 
   await viewed.click();
 
   await expect(viewed).toHaveAttribute('aria-pressed', 'true');
   await expect(viewed).toHaveText('Viewed');
   await expect(file(page, 'login.ts').locator('.d2h-file-diff')).toBeHidden();
-  await expect(page.getByRole('region', { name: 'Login' }).getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Login' }).locator('.tag.decided')).toHaveCount(0);
   await expect.poll(() => JSON.parse(repo.run('decisions').stdout.split('\n')[0] ?? '{}') as unknown).toMatchObject({ decision: null });
 
   await page.reload();
@@ -86,10 +86,10 @@ test('V marks the file in focus viewed, or else the first one not viewed yet', a
 
   await page.keyboard.press('v');
 
-  await expect(page.getByRole('button', { name: 'Mark app.ts as viewed' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Viewed app.ts' })).toHaveAttribute('aria-pressed', 'true');
   await page.evaluate(() => {
     (document.activeElement as HTMLElement | null)?.blur();
   });
   await page.keyboard.press('v');
-  await expect(page.getByRole('button', { name: 'Mark login.ts as viewed' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Viewed login.ts' })).toHaveAttribute('aria-pressed', 'true');
 });

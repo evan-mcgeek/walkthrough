@@ -45,7 +45,7 @@ test('a step whose diff changed shows reopened with the decision it had', async 
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'cur');
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Changed since you decided', { exact: true })).toBeVisible();
-  await expect(step.getByText('Changed since you chose Approve.', { exact: true })).toBeVisible();
+  await expect(step.getByText('Changed since you approved.', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'First line' })).toBeVisible();
   const segments = page.getByRole('progressbar', { name: 'Steps decided' }).locator('[data-state]');
   await expect(segments).toHaveCount(1);
@@ -58,16 +58,16 @@ test('a step whose diff changed shows reopened with the decision it had', async 
 });
 
 test('notes whose step or lines are gone show as notes on removed code on the Session messages page, still open to a reply', async ({ page }) => {
-  const detached = page.getByRole('region', { name: /^Notes on removed code/ });
+  const detached = page.getByRole('region', { name: /^On removed code/ });
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(detached).toHaveCount(0);
   const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
   await expect(fromSession).toHaveText('Session messages3 on removed code');
   await fromSession.click();
-  await expect(detached.getByRole('heading')).toHaveText('Notes on removed code3');
-  await expect(detached.getByText('Their lines are gone from the change, so they wait here instead of being dropped.')).toBeVisible();
+  await expect(detached.getByRole('heading')).toHaveText('On removed code3');
+  await expect(detached.getByText('Their lines are gone from the change', { exact: false })).toHaveCount(0);
   await expect(detached.getByRole('article')).toHaveCount(2);
-  await expect(detached.getByText('Checklist “Logs in.” linked to a step that no longer exists', { exact: true })).toBeVisible();
+  await expect(detached.getByText('“Logs in.”: its step is gone', { exact: true })).toBeVisible();
   const version = detached.getByRole('article', { name: 'Version note' });
   await expect(version.getByText('was on a step no longer in the change', { exact: true })).toBeVisible();
   const third = detached.getByRole('article', { name: 'Third line' });
@@ -83,7 +83,7 @@ test('changed files in no step yet are named until the session records steps for
   git(repo.dir, 'add', 'cart.ts');
   git(repo.dir, 'commit', '-m', 'Add cart');
   repo.run('start');
-  const notice = page.getByRole('region', { name: 'Changed files not in any step yet' });
+  const notice = page.getByRole('region', { name: 'Not in any step' });
   const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
 
   await expect(fromSession).toHaveText('Session messages1 file not in a step · 3 on removed code');
@@ -92,7 +92,7 @@ test('changed files in no step yet are named until the session records steps for
   await fromSession.click();
   await expect(notice).toContainText('cart.ts');
   await expect(notice).not.toContainText('login.ts');
-  const [box, section] = await Promise.all([notice.boundingBox(), page.getByRole('region', { name: /Notes on removed code/ }).boundingBox()]);
+  const [box, section] = await Promise.all([notice.boundingBox(), page.getByRole('region', { name: /On removed code/ }).boundingBox()]);
   expect(box?.width).toBe(section?.width);
 
   record(repo, [

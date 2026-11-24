@@ -40,7 +40,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(rail.getByRole('link')).toHaveText(['Login check', 'Regenerated schema1 problem', 'App version', 'Summary']);
   await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('aria-current', 'step');
   const first = page.getByRole('region', { name: 'Login check' });
-  await expect(first.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(first.locator('.tag.decided')).toHaveCount(0);
   await expect(first.getByText('Adds a login function that lets everyone in.', { exact: true })).toBeVisible();
   await expect(first.getByText('The app needs a login entry point.', { exact: true })).toBeVisible();
   await expect(first.locator('.d2h-file-name')).toHaveText(['login.ts', 'login.test.ts']);
@@ -74,7 +74,7 @@ test('shows one step at a time with its explanation and files, folded steps coll
   await expect(files).toHaveCount(0);
   await folded.getByRole('button', { name: /^1 file/ }).click();
   await expect(files.getByRole('listitem')).toHaveText(/^schema\.json\s*Regenerated from the schema source\.\s*Show diff$/);
-  await expect(folded.getByRole('list', { name: 'Problems the session found' }).getByRole('listitem')).toHaveText(
+  await expect(folded.getByRole('list', { name: 'Problems' }).getByRole('listitem')).toHaveText(
     'schema.json still lists the removed field.',
   );
   const added = folded.locator('.d2h-code-line-ctn').filter({ hasText: '{"field": 1}' });
@@ -165,10 +165,10 @@ test('deciding the last open step opens the Summary, which j reaches from the la
   await page.getByRole('button', { name: 'Send' }).click();
 
   const end = page.getByRole('region', { name: 'Summary' });
-  const ledger = end.getByRole('table', { name: 'Every step and what you decided' });
-  await expect(ledger.getByRole('row')).toHaveText(['Decided3', '1Login checkApprove', '2Regenerated schemaApprove', '3App version“Not this version.”Flag']);
+  const ledger = end.locator('table.ledger');
+  await expect(ledger.getByRole('row')).toHaveText(['Decided3', '1Login checkApproved', '2Regenerated schemaApproved', '3App version“Not this version.”Flagged']);
   const rail = page.getByRole('navigation', { name: 'To review' });
-  await expect(rail.getByText('Everything is decided.')).toBeVisible();
+  await expect(rail.getByText('Nothing left.', { exact: true })).toBeVisible();
   await expect(rail.getByRole('heading', { name: 'To review 0' })).toBeVisible();
 
   await page.keyboard.press('k');

@@ -21,17 +21,17 @@ test('? opens Help, which says what things mean and lists every key, keeps the p
 
   await page.keyboard.press('?');
 
-  const sheet = page.getByRole('dialog', { name: 'Help: what things mean' });
+  const sheet = page.getByRole('dialog', { name: 'Help' });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByRole('heading')).toHaveText(['Help: what things mean', 'What things mean', 'Keyboard shortcuts']);
-  await expect(sheet.locator('.popover-label')).toHaveText(['Steps in To review', 'Checklist items', 'The progress bar', 'Notes on the code', 'Session status']);
+  await expect(sheet.getByRole('heading')).toHaveText(['Help', 'Icons', 'Keys']);
+  await expect(sheet.locator('.popover-label')).toHaveText(['Checklist', 'Notes', 'Session status']);
   await expect(sheet.getByRole('row').filter({ hasText: 'Changed since you decided (amber)' })).toHaveCount(1);
-  await expect(sheet.getByRole('row').filter({ hasText: 'Striped: needs you, flagged, a finding, or changed' }).locator('.segment')).toHaveAttribute('data-state', 'flag');
-  await expect(sheet.getByRole('row').filter({ hasText: 'Where you are: solid ink, taller' }).locator('.segment')).toHaveAttribute('data-state', 'cur');
-  for (const [said, state] of [['(green)', 'ok'], ['Decided: needs attention, such as Flag (amber)', 'flag'], ['Decided, no tone (grey)', 'neu'], ['Not decided yet (grey)', 'un'],
+  await expect(sheet.getByRole('row').filter({ has: page.locator('.segment[data-state="flag"]') })).toHaveText('Needs you');
+  await expect(sheet.getByRole('row').filter({ has: page.locator('.segment[data-state="cur"]') })).toHaveText('Where you are');
+  for (const [said, state] of [['(green)', 'ok'], ['Flagged (amber)', 'flag'], ['Decided, no tone (grey)', 'neu'], ['Not decided yet (grey)', 'un'],
   ] as const)
     await expect(sheet.getByRole('row').filter({ hasText: said }).first().locator('.help-mark')).toHaveAttribute('data-state', state);
-  await expect(sheet.locator('kbd')).toHaveText(['J / K', 'A', 'F', '/', 'Click, Shift-click a line', 'C', 'V', '1 – 3', 'G then S', '?']);
+  await expect(sheet.locator('kbd')).toHaveText(['J / K', 'A', 'F', '/', 'Click, Shift-click', 'C', 'V', '1 – 3', 'G then S', '?']);
   await expect(sheet.getByRole('row').filter({ hasText: 'Show or hide a panel' })).toBeVisible();
   for (let press = 0; press < 3; press++) await page.keyboard.press('Tab');
   await expect(approve).not.toBeFocused();
@@ -44,30 +44,30 @@ test('? opens Help, which says what things mean and lists every key, keeps the p
   await expect(approve).toBeFocused();
 });
 
-test('the More menu holds Appearance and Help, and opens Help too', async ({ page }) => {
+test('the More menu holds Appearance, Help and End session, and opens Help too', async ({ page }) => {
   const more = page.getByRole('banner').getByRole('button', { name: 'More' });
   await more.click();
-  await expect(page.getByRole('menu', { name: 'More' }).getByRole('menuitem')).toHaveText(['Appearance', 'Help: what things mean']);
-  await page.getByRole('menuitem', { name: 'Help: what things mean' }).click();
-  await expect(page.getByRole('dialog', { name: 'Help: what things mean' })).toBeVisible();
+  await expect(page.getByRole('menu', { name: 'More' }).getByRole('menuitem')).toHaveText(['Appearance', 'Help', 'End session']);
+  await page.getByRole('menuitem', { name: 'Help' }).click();
+  await expect(page.getByRole('dialog', { name: 'Help' })).toBeVisible();
 
   await page.mouse.click(5, 300);
 
-  await expect(page.getByRole('dialog', { name: 'Help: what things mean' })).toBeHidden();
+  await expect(page.getByRole('dialog', { name: 'Help' })).toBeHidden();
   await expect(more).toBeFocused();
 });
 
 test('A approves, F flags with a note and / goes to the Ask box; none fires while typing or in a menu', async ({ page, repo }) => {
   const first = page.getByRole('region', { name: 'Login check' });
-  await expect(first.getByRole('button', { name: 'Approve' })).toHaveAttribute('title', 'Approve and go to the next step (A)');
+  await expect(first.getByRole('button', { name: 'Approve' })).toHaveAttribute('title', 'Approve (A)');
   await expect(first.getByRole('button', { name: 'Flag' })).toHaveAttribute('title', 'Flag (F)');
-  await expect(first.getByRole('textbox', { name: 'Ask about this step' })).toHaveAttribute('placeholder', 'Ask about this step…');
+  await expect(first.getByRole('textbox', { name: 'Ask about this step' })).toHaveAttribute('placeholder', 'Ask about this step');
   await expect(first.locator('form').filter({ has: page.getByRole('textbox', { name: 'Ask about this step' }) })).toHaveAttribute('title', 'Ask about this step (/)');
 
   await page.getByRole('banner').getByRole('button', { name: 'More' }).click();
   await expect(page.getByRole('menuitem').first()).toBeFocused();
   await page.keyboard.press('a');
-  await expect(page.getByText('Step 1 of 2 · 0 decided', { exact: true })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuenow', '0');
   await page.keyboard.press('Escape');
 
   const deciding = repo.background('listen');
@@ -90,7 +90,8 @@ test('A approves, F flags with a note and / goes to the Ask box; none fires whil
   await expect(note).toBeFocused();
   await page.keyboard.type('Too early.');
   await second.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByText('Summary · 2 decided', { exact: true })).toBeVisible();
+  await expect(page.locator('.progress-count')).toHaveText('Summary');
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuenow', '2');
 });
 
 test('G then S goes to the Summary, and G alone does nothing', async ({ page }) => {

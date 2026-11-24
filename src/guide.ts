@@ -151,7 +151,7 @@ walkthrough actions --file <file>
   "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
   "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
   The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
-  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention"};
+  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive", "outcome": "Approved"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention", "outcome": "Flagged"};
   an empty list brings these back.
   Other items offer nothing until actions are recorded on them.
   The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.

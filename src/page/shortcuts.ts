@@ -4,29 +4,29 @@ import { icon, type IconName } from './icons';
 /** Every key the page answers, in the order Help lists them; each part of the page binds the keys it acts on. */
 const SHORTCUTS = [
   { caps: 'J / K', does: 'Next / previous step' },
-  { caps: 'A', does: 'Approve and go to the next step' },
-  { caps: 'F', does: 'Flag (asks for a note)' },
+  { caps: 'A', does: 'Approve' },
+  { caps: 'F', does: 'Flag' },
   { caps: '/', does: 'Ask about this step' },
-  { caps: 'Click, Shift-click a line', does: 'Pick lines' },
-  { caps: 'C', does: 'Comment on picked lines' },
-  { caps: 'V', does: 'Mark the file as viewed' },
+  { caps: 'Click, Shift-click', does: 'Pick lines' },
+  { caps: 'C', does: 'Comment' },
+  { caps: 'V', does: 'Viewed' },
   { caps: '1 – 3', does: 'Show or hide a panel' },
-  { caps: 'G then S', does: 'Go to the Summary' },
+  { caps: 'G then S', does: 'Summary' },
   { caps: '?', does: 'This sheet' },
 ] as const;
 
 /** What each state icon means, in the words Help and the icon's tooltip use. */
 export const MEANS: Partial<Record<IconName, string>> = {
-  current: 'The step you are on',
-  decided: 'Decided: positive, such as Approve',
-  flagged: 'Decided: needs attention, such as Flag',
+  current: 'Where you are',
+  decided: 'Approved',
+  flagged: 'Flagged',
   'no-tone': 'Decided, no tone',
-  warn: 'Open finding or problem: needs you',
+  warn: 'Needs you',
   reopened: 'Changed since you decided',
   unread: 'Not decided yet',
-  folded: 'Files to skim: the session says why',
+  folded: 'Files to skim',
   met: 'Met',
-  partly: 'Partly met',
+  partly: 'Partly',
   'not-met': 'Not met',
   unchecked: 'Not checked yet',
 };
@@ -53,18 +53,18 @@ const CHECKLIST_MARKS = ['met', 'partly', 'not-met', 'unchecked'] as const;
 const STATE_OF: Partial<Record<IconName, string>> = { current: 'cur', decided: 'ok', flagged: 'flag', 'no-tone': 'neu', warn: 'find', reopened: 'reo', unread: 'un' };
 
 const SEGMENTS = [
-  ['ok', 'Solid: decided, positive'],
-  ['flag', 'Striped: needs you, flagged, a finding, or changed'],
-  ['neu', 'Outlined: decided, no tone'],
-  ['un', 'Faint: not decided yet'],
-  ['cur', 'Where you are: solid ink, taller'],
+  ['ok', 'Approved'],
+  ['flag', 'Needs you'],
+  ['neu', 'Decided, no tone'],
+  ['un', 'Not decided yet'],
+  ['cur', 'Where you are'],
 ] as const;
 
 const STATUSES = [
-  ['listening', 'Listening', 'The session is ready for your questions'],
-  ['working', 'Working', 'The session is busy on something you asked'],
-  ['needs-you', 'Needs you', 'The session asked you a question'],
-  ['gone', 'Gone', 'The session stopped listening; what you send waits for it'],
+  ['listening', 'Listening', 'Listening: questions reach the session now'],
+  ['working', 'Working', 'Working on your question'],
+  ['needs-you', 'Needs you', 'Needs you'],
+  ['gone', 'Session gone', 'Session gone: what you send waits'],
 ] as const;
 
 /** A legend table: what each mark shows, then what it means. */
@@ -87,16 +87,16 @@ function meanings(): HTMLElement[] {
     return [segment, means];
   });
   const notes: [Node, string][] = [
-    [el('span', { className: 'help-label finding' }, icon('warn'), 'Finding'), 'A problem the session found'],
-    [el('span', { className: 'help-label' }, icon('message'), 'Note'), 'A remark from the session'],
-    [el('span', { className: 'help-label' }, 'You asked'), 'Your question and its answer'],
-    [el('span', { className: 'help-label own' }, icon('own'), 'Your comment'), 'Yours: the session gets it with your decisions'],
-    [el('span', { className: 'help-label finding' }, icon('warn'), '1 finding'), 'On a file: go to its first finding'],
-    [el('span', { className: 'help-label' }, icon('message'), '2 notes'), 'On a file: go to its first note'],
-    [el('span', { className: 'help-label own' }, icon('own'), '1 yours'), 'On a file: go to your first comment on it'],
-    [el('span', { className: 'help-label finding' }, icon('warn'), '2 open findings'), 'Under a step: go to the next open finding'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), 'Finding'), 'Needs you'],
+    [el('span', { className: 'help-label' }, icon('message'), 'Note'), ''],
+    [el('span', { className: 'help-label' }, 'You asked'), 'Question'],
+    [el('span', { className: 'help-label own' }, icon('own'), 'Your comment'), 'Yours: goes out with your review'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '1 finding'), 'First finding in this file'],
+    [el('span', { className: 'help-label' }, icon('message'), '2 notes'), 'First note in this file'],
+    [el('span', { className: 'help-label own' }, icon('own'), '1 yours'), 'Your first comment here'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '2 open findings'), 'Next finding'],
   ];
-  const findings = el('span', { className: 'help-label finding' }, icon('warn'));
+  const findings = el('span', { className: 'help-label finding' }, icon('warn'), 'N');
   const statuses = STATUSES.map(([state, name, means]): [Node, string] => {
     const status = el('span', { className: 'status' }, state === 'working' ? icon('spinner') : el('span', { className: 'dot' }), name);
     status.dataset['state'] = state;
@@ -106,24 +106,22 @@ function meanings(): HTMLElement[] {
     el(
       'div',
       { className: 'help-column' },
-      el('h2', { className: 'popover-head', id: 'help-head' }, 'What things mean'),
-      group('Steps in To review'),
+      el('h2', { className: 'popover-head', id: 'help-head' }, 'Icons'),
       legend([
         ...STEP_MARKS.map(means),
-        [checking, 'The session is still checking it'],
+        [checking, 'Being checked'],
         [rowIcon('folded'), MEANS.folded ?? ''],
-        [findings, 'Open findings, as "2 open findings": opens the step at the first'],
+        [findings, 'Opens the first finding'],
       ]),
-      group('Checklist items'),
+      group('Checklist'),
       legend(CHECKLIST_MARKS.map(means)),
-      group('The progress bar'),
       legend(segments),
     ),
     el(
       'div',
       { className: 'help-column' },
       el('span', { className: 'popover-head' }),
-      group('Notes on the code'),
+      group('Notes'),
       legend(notes),
       group('Session status'),
       legend(statuses),
@@ -131,16 +129,16 @@ function meanings(): HTMLElement[] {
   ];
 }
 
-/** Help: what every icon, colour and status on the page means, then the keyboard shortcuts. */
+/** Help: what every icon, colour and status on the page means, then the keys. */
 export function helpSheet(returnTo: () => Element | null): HTMLDialogElement {
   const rows = SHORTCUTS.map(({ caps, does }) => el('tr', {}, el('td', {}, el('kbd', {}, caps)), el('td', {}, does)));
   const keys = el(
     'div',
     { className: 'help-column' },
-    el('h2', { className: 'popover-head', id: 'help-keys' }, icon('keyboard'), 'Keyboard shortcuts'),
+    el('h2', { className: 'popover-head', id: 'help-keys' }, icon('keyboard'), 'Keys'),
     el('table', { className: 'keys' }, el('tbody', {}, ...rows)),
   );
-  const dialog = openDialog('Help: what things mean', returnTo, ...meanings(), keys);
+  const dialog = openDialog('Help', returnTo, ...meanings(), keys);
   dialog.classList.add('help');
   return dialog;
 }

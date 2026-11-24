@@ -9,7 +9,7 @@ type ListPage = { repo: string; walkthroughs: Listed[] };
 const header = region('header');
 const main = region('main');
 
-const PAGE: PageName = { name: 'list', reopen: 'Run walkthrough list again to reopen it.' };
+const PAGE: PageName = { name: 'list', reopen: 'Run walkthrough list to reopen.' };
 const post = (route: string, body: Record<string, unknown>) => postTo(PAGE, route, body);
 
 async function open(one: Listed): Promise<void> {
@@ -23,7 +23,7 @@ async function stop(): Promise<void> {
   header.querySelector('.header-end')?.remove();
   const banner = region('alert');
   banner.className = 'banner';
-  banner.replaceChildren(el('span', { className: 'banner-text' }, el('strong', {}, 'The list has stopped.'), ' You can close this tab.'));
+  banner.replaceChildren(el('span', { className: 'banner-text' }, el('strong', {}, 'List stopped.'), ' You can close this tab.'));
   banner.hidden = false;
   main.classList.add('stopped');
   main.inert = true;
@@ -75,13 +75,7 @@ function row(one: Listed): HTMLTableRowElement {
     // The id is what walkthrough prune takes to remove this one.
     el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
     el('td', { role: 'cell' }, progress(one)),
-    el(
-      'td',
-      { role: 'cell' },
-      one.verdict === undefined
-        ? el('span', { className: 'muted' }, 'No verdict yet')
-        : verdictStatus(one.verdict),
-    ),
+    el('td', { role: 'cell' }, ...(one.verdict === undefined ? [] : [verdictStatus(one.verdict)])),
     el('td', { role: 'cell', className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );
 }
@@ -103,7 +97,6 @@ function render(page: ListPage): void {
   );
   main.replaceChildren(
     el('h1', { className: 'list-title' }, 'Walkthroughs'),
-    el('p', { className: 'muted list-sub' }, 'In this repository'),
     page.walkthroughs.length
       ? el(
           'table',
@@ -111,7 +104,7 @@ function render(page: ListPage): void {
           el('thead', { role: 'rowgroup' }, head),
           el('tbody', { role: 'rowgroup' }, ...page.walkthroughs.map(row)),
         )
-      : el('p', { className: 'list-empty' }, 'This repo has no walkthroughs; run /walkthrough to start one.'),
+      : el('p', { className: 'list-empty' }, 'No walkthroughs. Run /walkthrough.'),
   );
   if (focused !== undefined) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }

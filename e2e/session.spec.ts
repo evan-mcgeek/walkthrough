@@ -19,13 +19,13 @@ test('Ask reaches the listening session and its answer shows at the step', async
   expect(asked).toMatchObject({ kind: 'ask', text: 'Why is app 2 now?' });
   await expect(chip).toHaveText('Working');
   await expect(step.getByText('Why is app 2 now?')).toBeVisible();
-  await expect(step.getByText('Waiting for the session to answer.')).toBeVisible();
+  await expect(step.getByText('Waiting for an answer')).toBeVisible();
 
   repo.run('say', '--answer', asked.id, 'Login needs the second app.');
   repo.background('listen');
 
   await expect(step.getByText('Login needs the second app.')).toBeVisible();
-  await expect(step.getByText('Waiting for the session to answer.')).toHaveCount(0);
+  await expect(step.getByText('Waiting for an answer')).toHaveCount(0);
   await expect(chip).toHaveText('Listening');
   await expect(step.getByRole('button', { name: 'Approve' })).toBeVisible();
 });
@@ -36,7 +36,7 @@ test('a question from the session needs the person until they reply', async ({ p
   const listener = repo.background('listen');
   const chip = page.getByRole('status', { name: 'Session' });
   await expect(chip).toHaveText('Needs you');
-  const asks = page.getByRole('region', { name: 'The session asks' });
+  const asks = page.locator('.question-box');
   await expect(asks.getByText('Is the login meant to accept everyone?')).toBeVisible();
   const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
   await expect(fromSession).toHaveText('Session messages1 message');
@@ -49,7 +49,7 @@ test('a question from the session needs the person until they reply', async ({ p
   await expect(asks).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Reply' })).toHaveCount(0);
   await fromSession.click();
-  const thread = page.getByRole('region', { name: 'From the session' });
+  const thread = page.locator('.messages-section.from-session');
   await expect(thread.getByText('Is the login meant to accept everyone?')).toBeVisible();
   await expect(thread.getByText('No, only staff.')).toBeVisible();
 });
@@ -71,7 +71,7 @@ test('a question offers its answers as buttons, and the choice reaches the liste
   await expect(page).toHaveURL(url);
   repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
   const listener = repo.background('listen');
-  const asks = page.getByRole('region', { name: 'The session asks' });
+  const asks = page.locator('.question-box');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Needs you');
   await expect(asks.getByRole('button')).toHaveText(['Staff only', 'Everyone']);
   await expect(asks.getByRole('textbox', { name: 'Reply' })).toHaveAttribute('placeholder', 'Or reply…');
@@ -82,7 +82,7 @@ test('a question offers its answers as buttons, and the choice reaches the liste
   expect(replied).toMatchObject({ kind: 'reply', text: 'Everyone' });
   await expect(asks).toHaveCount(0);
   await page.getByRole('link', { name: 'Session messages' }).click();
-  const question = page.getByRole('region', { name: 'From the session' });
+  const question = page.locator('.messages-section.from-session');
   await expect(question.getByText('Everyone', { exact: true })).toBeVisible();
 
   repo.run('say', '--answer', replied.id, 'Login now accepts everyone.');
@@ -95,12 +95,12 @@ test('the session is gone once its listener stops and has not come back', async 
   const listener = repo.background('listen');
   await expect(chip).toHaveText('Listening');
 
-  await expect(page.getByText('The session stopped listening.')).toHaveCount(0);
+  await expect(page.getByText('Session gone.', { exact: true })).toHaveCount(0);
 
   listener.child.kill('SIGTERM');
 
-  await expect(chip).toHaveText('Gone');
-  await expect(page.getByText('The session stopped listening. Your decisions are kept; start the session again to continue.')).toBeVisible();
+  await expect(chip).toHaveText('Session gone');
+  await expect(page.getByText('Session gone. Your decisions are kept; start the session again to continue.')).toBeVisible();
 });
 
 test('a question over 4000 characters is refused with the reason and stays in its box', async ({ page, repo, url }) => {
@@ -114,7 +114,7 @@ test('a question over 4000 characters is refused with the reason and stays in it
 
   await expect(page.getByRole('alert')).toHaveText('That text is 4001 characters long; the most it can be is 4000.');
   await expect(box).toHaveValue('a'.repeat(4001));
-  await expect(step.getByText('Waiting for the session to answer.')).toHaveCount(0);
+  await expect(step.getByText('Waiting for an answer')).toHaveCount(0);
 });
 
 test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note', async ({ page, repo, url }) => {
@@ -122,7 +122,7 @@ test('a redraw keeps keyboard focus on a choice and on the Send of a Flag note',
   repo.record(ONE_STEP);
   repo.run('say', '--question', '--choice', 'Staff only', '--choice', 'Everyone', 'Who may log in?');
   const fromSession = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Session messages' });
-  const choice = page.getByRole('region', { name: 'The session asks' }).getByRole('button', { name: 'Everyone' });
+  const choice = page.locator('.question-box').getByRole('button', { name: 'Everyone' });
   await choice.focus();
 
   repo.run('say', 'Still here.');

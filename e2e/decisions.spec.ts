@@ -22,7 +22,7 @@ test.beforeEach(async ({ page, repo, url }) => {
 
 test('a step offers Approve, Flag and Ask; Flag takes a note before it reaches the session', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
-  await expect(step.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(step.locator('.tag.decided')).toHaveCount(0);
   await expect(step.getByRole('group', { name: 'Decide' }).getByRole('button')).toHaveText(['Approve', 'Flag']);
   await expect(step.getByRole('button', { name: 'Approve' })).toHaveClass(/primary/);
   await expect(step.getByRole('textbox', { name: 'Ask about this step' })).toBeVisible();
@@ -42,10 +42,10 @@ test('a step offers Approve, Flag and Ask; Flag takes a note before it reaches t
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await page.getByRole('navigation', { name: 'To review' }).getByRole('button', { name: '1 decided' }).click();
   await page.getByRole('link', { name: 'Login check' }).click();
-  await expect(step.getByText('Decided: Flag', { exact: true })).toBeVisible();
+  await expect(step.getByText('Flagged', { exact: true })).toBeVisible();
   await expect(step.getByText('Everyone gets in.', { exact: true })).toBeVisible();
   await expect(step.getByRole('button', { name: 'Flag' })).toHaveCount(0);
-  await step.getByRole('button', { name: 'Change decision' }).click();
+  await step.getByRole('button', { name: 'Change', exact: true }).click();
   await expect(step.getByRole('button', { name: 'Flag' })).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -67,7 +67,7 @@ test('a decision answered after the person opened another step leaves them on th
   answer();
 
   const step = page.getByRole('region', { name: 'Login check' });
-  await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(step.getByText('Approved', { exact: true })).toBeVisible();
   // The page moves on in the same task that draws the decision, so the address is final once the tag shows.
   expect(new URL(page.url()).hash).toBe('#1');
   await expect(step).toBeVisible();
@@ -89,7 +89,7 @@ test('a decision on a step the session changed since the page drew it is refused
   await expect(page.getByText('This changed since the page showed it; look at it again.')).toBeVisible();
   release();
   const step = page.getByRole('region', { name: 'Everything' });
-  await expect(step.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(step.locator('.tag.decided')).toHaveCount(0);
 });
 
 test('a press on an action survives the page redrawing before the release', async ({ page, repo }) => {
@@ -115,19 +115,19 @@ test('a decision can be changed, and the latest one shows with the note, never t
   await step.getByRole('button', { name: 'Approve' }).click();
   await page.getByRole('navigation', { name: 'To review' }).getByRole('button', { name: '1 decided' }).click();
   await page.getByRole('link', { name: 'Login check' }).click();
-  await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(step.getByText('Approved', { exact: true })).toBeVisible();
   await repo.background('listen').ended;
   const listener = repo.background('listen');
 
-  await step.getByRole('button', { name: 'Change decision' }).click();
+  await step.getByRole('button', { name: 'Change', exact: true }).click();
   await step.getByRole('button', { name: 'Flag' }).click();
   await step.getByRole('textbox', { name: 'Note' }).fill('Not yet.');
   await step.getByRole('button', { name: 'Send' }).click();
 
   const flagged = await decisionOf(repo, listener);
   await page.getByRole('link', { name: 'Login check' }).click();
-  await expect(step.getByText('Decided: Flag', { exact: true })).toBeVisible();
-  await step.getByRole('button', { name: 'Change decision' }).click();
+  await expect(step.getByText('Flagged', { exact: true })).toBeVisible();
+  await step.getByRole('button', { name: 'Change', exact: true }).click();
   await expect(step.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'false');
   const taken = page.waitForResponse(async response => response.url().includes('session.json') && (await response.text()).includes('Added to the fix list.'));
   repo.run('say', '--answer', String(flagged['id']), 'Added to the fix list.');
@@ -180,7 +180,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
     action: 'edit',
     text: 'Please rename this to cart.',
   });
-  await expect(note.getByText('Decided: Edit first', { exact: true })).toBeVisible();
+  await expect(note.locator('.tag.decided')).toHaveText('Edit first');
   await expect(note.getByText('Please rename this to cart.', { exact: true })).toBeVisible();
 
   const rail = page.getByRole('navigation', { name: 'To review' });
@@ -191,7 +191,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await item.getByRole('button', { name: 'Checked' }).click();
   await item.getByRole('textbox', { name: 'Note' }).fill('Tried it.');
   await item.getByRole('button', { name: 'Send' }).click();
-  await expect(item.getByText('Decided: Checked', { exact: true })).toBeVisible();
+  await expect(item.locator('.tag.decided')).toHaveText('Checked');
   await expect(rail.getByRole('link', { name: 'A person can log in.' })).toHaveCount(0);
 
   await rail.getByRole('link', { name: 'App version' }).click();
@@ -199,7 +199,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   const whole = page.getByRole('region', { name: 'Summary' });
   await expect(whole.locator('.finish').getByText('Undecided', { exact: true })).toHaveCount(0);
   await whole.getByRole('button', { name: 'Post my comments' }).click();
-  await expect(whole.getByText('Decided: Post my comments', { exact: true })).toBeVisible();
+  await expect(whole.locator('.tag.decided')).toHaveText('Post my comments');
 });
 
 test('a checklist item the session records again after a decision shows reopened, keeping the note', async ({
@@ -220,7 +220,7 @@ test('a checklist item the session records again after a decision shows reopened
   record(repo, { title: 'Criteria', items: [{ id: '1', status: 'not met', text: 'Only staff can log in.' }] }, 'checklist');
   repo.run('say', '--answer', String(decided['id']), 'Marked it not met.');
 
-  await expect(item.getByText('Changed since you chose Disagree', { exact: true })).toBeVisible();
+  await expect(item.getByText('Changed since you chose disagree', { exact: true })).toBeVisible();
   await expect(item.getByText('Only staff can.', { exact: true })).toBeVisible();
   await expect(item.getByText('Marked it not met.', { exact: true })).toHaveCount(0);
   await expect(item.getByRole('button', { name: 'Disagree' })).toHaveAttribute('aria-pressed', 'false');
@@ -284,7 +284,7 @@ test('a decided note, draft or finishing action closes to one Change; the verdic
   await note.getByRole('button', { name: 'Accept' }).click();
   await expect(note.getByRole('button', { name: 'Accept' })).toHaveCount(0);
   await expect(note.getByRole('button', { name: 'Reject' })).toHaveCount(0);
-  await expect(note.getByText('Decided: Accept', { exact: true })).toBeVisible();
+  await expect(note.locator('.tag.decided')).toHaveText('Accept');
   await note.getByRole('button', { name: 'Change' }).click();
   await expect(note.getByRole('button', { name: 'Reject' })).toBeVisible();
 
@@ -294,7 +294,7 @@ test('a decided note, draft or finishing action closes to one Change; the verdic
   await summary.getByRole('button', { name: 'Send my review' }).click();
   await expect(summary.getByRole('button', { name: 'Send my review' })).toHaveCount(0);
   await expect(summary.getByRole('radio', { name: 'Approve' })).toHaveCount(0);
-  await expect(summary.getByText('Your verdict:')).toBeVisible();
+  await expect(summary.locator('.verdict-now')).toHaveText('Approve');
   await summary.getByRole('button', { name: 'Change' }).click();
   await expect(summary.getByRole('button', { name: 'Send my review' })).toBeVisible();
   await expect(summary.getByRole('radio', { name: 'Approve' })).toBeVisible();

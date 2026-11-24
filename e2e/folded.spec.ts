@@ -41,7 +41,7 @@ test('collapsed, a folded step is one line of its distinct reasons, with its pro
   expect((await summary.boundingBox())?.height).toBeLessThan(44);
   const cut = await summary.locator('.fold-reasons').evaluate(box => box.scrollWidth > box.clientWidth && getComputedStyle(box).textOverflow === 'ellipsis');
   expect(cut).toBe(true);
-  await expect(step.getByRole('list', { name: 'Problems the session found' })).toHaveText('shot-07.txt is older than the page it shows.');
+  await expect(step.getByRole('list', { name: 'Problems' })).toHaveText('shot-07.txt is older than the page it shows.');
   await expect(step.getByRole('list', { name: 'Folded files' })).toHaveCount(0);
 });
 
@@ -76,7 +76,7 @@ test('opened, each folded file is a row with its reason as text that wraps', asy
   await expect(reason).toHaveCSS('white-space', 'normal');
   await expect(reason).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   expect((await reason.boundingBox())?.height).toBeGreaterThan(30);
-  await expect(step.getByRole('list', { name: 'Problems the session found' })).toBeVisible();
+  await expect(step.getByRole('list', { name: 'Problems' })).toBeVisible();
 });
 
 test('a note’s action buttons start where its text does, on a step, on lines and on a folded step', async ({ page, repo, url }) => {

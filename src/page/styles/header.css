@@ -1,6 +1,6 @@
 /*
   The 44px header: .logo, the session's .kind, the mono .session-label, the segmented .progress bar with its .progress-count,
-  then .header-end (the .status-prefix and .status, End session, the More menu) pushed to the right.
+  then .header-end (the .status and the More menu) pushed to the right.
 */
 
 .app-header {
@@ -184,12 +184,6 @@
   margin-left: auto;
 }
 
-.status-prefix {
-  margin-right: calc(-1 * var(--s1));
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .status {
   display: flex;
   align-items: center;
@@ -208,6 +202,16 @@
 
 .status[data-state='listening'] {
   color: var(--live);
+}
+
+/* Listening is the dot alone; its word stays for screen readers and the tooltip says it. */
+.status[data-state='listening'] .status-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .status[data-state='working'] {
@@ -231,12 +235,12 @@
   background: none;
 }
 
-/* The More menu holds Appearance and Help, and at phone width what the header has no room for. */
+/* The More menu holds Appearance, Help and End session, and at phone width what the header has no room for. */
 .more-menu {
   position: relative;
 }
 
-/* At phone width the bar takes its own full-width strip under the header's line, End session and the panels move into More,
+/* At phone width the bar takes its own full-width strip under the header's line, the panels move into More,
    and the step picker under the header says the count. */
 @media (max-width: 760px) {
   .app-header {
@@ -268,7 +272,6 @@
     padding-bottom: var(--s2);
   }
 
-  .header-end > :is(.stop, .status-prefix),
   .progress-count {
     display: none;
   }

@@ -25,7 +25,7 @@ test('a picked range offers Ask or Comment, and a comment saved there is kept fo
   await row(page, 4).locator('.line-num2').click({ modifiers: ['Shift'] });
   const picked = rowAfter(page, 4);
   await expect(picked.getByText('Lines 2–4', { exact: true })).toBeVisible();
-  await expect(picked.getByRole('button')).toHaveText(['Ask about lines', 'Comment']);
+  await expect(picked.getByRole('button')).toHaveText(['Ask', 'Comment']);
 
   await picked.getByRole('button', { name: 'Comment' }).click();
   const box = picked.getByRole('textbox', { name: 'Your comment' });
@@ -97,7 +97,7 @@ test('C comments on the focused line or on the picked range, from the keyboard',
   await page.keyboard.press('Enter');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await expect(rowAfter(page, 4).getByRole('button', { name: 'Ask about lines' })).toBeFocused();
+  await expect(rowAfter(page, 4).getByRole('button', { name: 'Ask', exact: true })).toBeFocused();
   await page.keyboard.press('c');
   await expect(rowAfter(page, 4).getByRole('textbox', { name: 'Your comment' })).toBeFocused();
   await expect(rowAfter(page, 4)).toContainText('lines 3–4');

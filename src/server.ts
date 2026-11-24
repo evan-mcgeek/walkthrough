@@ -179,7 +179,7 @@ const answered = (view: object | typeof CHANGED | typeof CHECKING | null): Answe
   view === CHANGED
     ? { status: 409, body: { error: 'This changed since the page showed it; look at it again.' } }
     : view === CHECKING
-      ? { status: 409, body: { error: 'Decide once the session has checked this step.' } }
+      ? { status: 409, body: { error: 'Decide after the check.' } }
       : view
       ? { status: 200, body: view }
       : { status: 400 };

@@ -41,8 +41,8 @@ describe('deciding with the default step actions', () => {
 
     expect(actions).toEqual({
       'step:1': [
-        { id: 'approve', label: 'Approve', tone: 'positive' },
-        { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+        { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+        { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
       ],
     });
   });
@@ -115,12 +115,12 @@ describe('walkthrough actions', () => {
     repo.record([{ item: step1, actions: [] }], 'actions');
 
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'positive' },
-      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+      { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
     ]);
   });
 
-  test('a step action recorded as the built-in Approve or Flag with no tone takes the built-in tone, and a tone given wins', async () => {
+  test('a step action recorded as the built-in Approve or Flag takes the built-in tone and outcome it gives none of, and those given win', async () => {
     started();
     repo.record(
       [
@@ -135,8 +135,8 @@ describe('walkthrough actions', () => {
       'actions',
     );
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'positive' },
-      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+      { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
     ]);
 
     repo.record(
@@ -145,15 +145,17 @@ describe('walkthrough actions', () => {
           item: step1,
           actions: [
             { id: 'approve', label: 'Approve', tone: 'none' },
-            { id: 'flag', label: 'Flag' },
+            { id: 'flag', label: 'Flag', note: true, outcome: 'Sent back' },
+            { id: 'skip', label: 'Flag' },
           ],
         },
       ],
       'actions',
     );
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'none' },
-      { id: 'flag', label: 'Flag' },
+      { id: 'approve', label: 'Approve', tone: 'none', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Sent back' },
+      { id: 'skip', label: 'Flag' },
     ]);
   });
 

@@ -50,11 +50,10 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
   return items.map(one => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
 }
 
-// A step action recorded as a built-in one with no tone, as a policy written before tones says, takes the built-in's tone.
+// A step action recorded as a built-in one takes the built-in's tone and outcome where it gives none, as a policy written before them says.
 const toned = (action: Action): Action => {
-  if (action.tone !== undefined) return action;
   const own = STEP_ACTIONS.find(one => one.id === action.id && one.label === action.label && !one.note === !action.note);
-  return own?.tone ? { ...action, tone: own.tone } : action;
+  return own ? { ...own, ...action } : action;
 };
 
 const actionsOf = ({ actions }: Walkthrough, item: Item) => {

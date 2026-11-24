@@ -24,8 +24,8 @@ export const OUTCOME_WORDS = 3;
 
 /** What a step offers when the session records no actions on it. */
 export const STEP_ACTIONS: Action[] = [
-  { id: 'approve', label: 'Approve', tone: 'positive' },
-  { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+  { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+  { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
 ];
 
 /** Whether `actions` are the built-in Approve and Flag, as opposed to actions the session chose. */
