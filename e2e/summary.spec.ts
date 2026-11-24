@@ -104,8 +104,10 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await page.goBack();
   await expect(summary).toBeVisible();
   const rail = summary.getByRole('complementary', { name: 'Finish' });
-  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
-  await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
+  // The criteria sit under the ledger, prefilled with the session's marks, never in the rail.
+  await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
+  await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
+  await expect(rail.getByRole('region', { name: 'Criteria' })).toHaveCount(0);
   const drafts = section('Comments the session drafted');
   // A draft left alone goes out as drafted, all of them together, and none waits in Still open.
   await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 goes out · 1 edited · 1 dropped');

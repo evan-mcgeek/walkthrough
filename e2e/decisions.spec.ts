@@ -181,7 +181,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await expect(note.getByText('Please rename this to cart.', { exact: true })).toBeVisible();
 
   const rail = page.getByRole('navigation', { name: 'To review' });
-  await rail.getByRole('link', { name: 'A person can log in.' }).click();
+  await page.goto(`${page.url().split('#')[0] ?? ''}#checklist-1`);
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   await expect(item.getByRole('button', { name: 'Checked' })).toBeVisible();
   await expect(item.getByText('Undecided', { exact: true })).toHaveCount(0);
@@ -206,7 +206,7 @@ test('a checklist item the session records again after a decision shows reopened
   const disagree = [{ item: { type: 'checklist', id: '1' }, actions: [{ id: 'no', label: 'Disagree', note: true }] }];
   record(repo, { title: 'Criteria', items: [{ status: 'met', text: 'A person can log in.' }] }, 'checklist');
   record(repo, disagree, 'actions');
-  await page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'A person can log in.' }).click();
+  await page.goto(`${page.url().split('#')[0] ?? ''}#checklist-1`);
   const item = page.getByRole('region', { name: 'Criteria' }).getByRole('listitem');
   const listener = repo.background('listen');
   await item.getByRole('button', { name: 'Disagree' }).click();

@@ -8,7 +8,7 @@ import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
 import { type Action, builtIn, type Item, itemKey, nameOf, type Shown, stepShown, targetName, TONE_SHOWN, toneOf } from '../items';
 import { DEFAULT_VIEWER, type Panel, PANELS, type Viewer } from '../viewer';
-import type { Checklist, ChecklistItem, Step } from '../walkthrough';
+import type { Checklist, ChecklistItem, Mark, Step } from '../walkthrough';
 import { plural } from '../words';
 import { el, kindView, type PageName, post as postTo, postQuietly, region, selectBox, showAlert, showUnreachable } from './dom';
 import { appearanceDialog, loadViewer, showViewer } from './appearance';
@@ -902,7 +902,7 @@ function stateTag(item: Item, long: boolean): HTMLElement {
 }
 
 /** The state, actions and what was said about the decision of a note, checklist item or the whole walkthrough. */
-function decideView(item: Item, text = '', small = true): HTMLElement[] {
+function decideView(item: Item, text = '', small = true, look: (action: Action, at: number) => Look = firstLeads): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
   if (!actions.length) return [];
@@ -916,7 +916,7 @@ function decideView(item: Item, text = '', small = true): HTMLElement[] {
         'div',
         { className: 'decide-row' },
         ...(shown || readOnly ? [stateTag(item, true)] : []),
-        ...(readOnly ? [] : [actionGroup(item, firstLeads, small)]),
+        ...(readOnly ? [] : [actionGroup(item, look, small)]),
       ),
       // A reopened item keeps what the person and the session said about the decision it had.
       ...(shown ? decisionSaid(shown) : []),
@@ -2069,7 +2069,6 @@ const SHOWN_ICON: Record<Shown, IconName> = { cur: 'current', ok: 'decided', fla
 type SubColour = 'ok' | 'attention' | 'bad';
 type Sub = { text: string; colour?: SubColour | undefined };
 const SHOWN_SUB: Partial<Record<Shown, SubColour>> = { ok: 'ok', flag: 'attention' };
-const MARK_SUB: Record<string, SubColour> = { met: 'ok', partly: 'attention', 'not-met': 'bad' };
 
 /** A row of the rail: a state icon, a title and an optional sub-line, linking to what it names. */
 function queueRow(
@@ -2143,14 +2142,6 @@ function stepRowView(step: Step, isCurrent: boolean): HTMLElement {
 
 /** A step is left while it is undecided, or a finding was pinned on it after the person decided it. */
 const stepLeft = (step: Step) => !stepDecided(step) || lateFindings(step).length > 0;
-
-/** Checklist items that still need the person: marked not met by the session, or offering actions not yet decided. */
-function leftItems(): ChecklistItem[] {
-  return (walkthrough.checklist?.items ?? []).filter(item => {
-    const key = itemKey({ type: 'checklist', id: item.id });
-    return item.mark === 'not-met' || ((walkthrough.actions[key] ?? []).length > 0 && !walkthrough.decided[key]);
-  });
-}
 
 const SESSION_PAGE = 'Session messages';
 
@@ -2230,13 +2221,6 @@ function queueView(view: View): HTMLElement[] {
     return [step.id, lateFindings(step).length ? `${step.title} · New finding` : open ? `${step.title} · ${plural(open, 'open finding')}` : step.title];
   });
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
-  for (const item of leftItems()) {
-    const at = view.kind === 'checklist' && view.item === item.id;
-    const mark = item.mark ?? 'unchecked';
-    const sub = { text: `Checklist · ${(MEANS[mark] ?? '').toLowerCase()}`, colour: MARK_SUB[mark] };
-    rows.push(queueRow(`checklist-${item.id}`, mark, mark, plain(item.text), sub, at && 'page', true));
-    left.push([`checklist-${item.id}`, plain(item.text)]);
-  }
   const counted = steps.length > 0 || rows.length > 0;
   const leftCount = el('span', { className: 'counter' }, String(rows.length));
   leftCount.dataset['motion'] = 'count:left';
@@ -2306,7 +2290,7 @@ function checklistRows(items: ChecklistItem[], view: View, compact: boolean): HT
         el('p', { className: 'item-line' }, el('span', { className: 'item-status' }, item.status), ...steps),
         ...(gone ? [el('p', { className: 'gone' }, icon('unlink'), `${plural(gone, 'linked step')} no longer in the change`)] : []),
       ),
-      ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text)),
+      ...(compact ? [] : decideView({ type: 'checklist', id: item.id }, item.text, true, () => 'secondary')),
     );
     row.dataset['mark'] = mark;
     row.id = `checklist-item-${item.id}`;
@@ -2451,15 +2435,7 @@ function otherOpenRows(): LedgerRow[] {
     title: `${note.note.label}: ${plain(note.text)}`,
     text: note.text,
   }));
-  const items = (walkthrough.checklist?.items ?? []).map((one): Open => ({
-    item: { type: 'checklist', id: one.id },
-    address: `checklist-${one.id}`,
-    mark: one.mark ?? 'unchecked',
-    state: one.mark ?? 'unchecked',
-    title: plain(one.text),
-    text: one.text,
-  }));
-  return [...notes, ...items]
+  return notes
     .filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0)
     .map(one => {
       const reopened = walkthrough.reopened[itemKey(one.item)];
@@ -2628,17 +2604,29 @@ function draftsView(): HTMLElement[] {
   return [summarySection('Comments the session drafted', counts.join(' · '), el('ul', { className: 'summary-list' }, ...rows))];
 }
 
-/** The checklist in the finish rail: each item's mark and text, its status in the row's tooltip. */
-function checklistSummary(): HTMLElement[] {
+/** A person's mark on a criterion is the tone of the action they took; otherwise the session's mark stands. */
+const TONE_MARK: Partial<Record<string, Mark>> = { positive: 'met', attention: 'not-met' };
+
+/** The criteria under the ledger, prefilled with the session's judgement: its mark shows chosen, and the person presses another only to overrule it. */
+function criteriaView(): HTMLElement[] {
   const { checklist } = walkthrough;
   if (!checklist) return [];
-  const rows = checklist.items.map(item => {
-    const mark = item.mark ?? 'unchecked';
-    const row = el('li', { title: item.status }, icon(mark, stateName(mark)), el('span', {}, plain(item.text)));
+  const rows = checklist.items.map(one => {
+    const item: Item = { type: 'checklist', id: one.id };
+    const actions = walkthrough.actions[itemKey(item)] ?? [];
+    const decision = decisionOf(item);
+    const mark: Mark | 'unchecked' = (decision && TONE_MARK[toneOf(actions, decision.action)]) || one.mark || 'unchecked';
+    const words = plain(one.text);
+    const link = el('a', { className: 'draft-line', href: `#checklist-${encodeURIComponent(one.id)}`, title: words }, words);
+    const own = actions.length && !readOnly ? ledgerActions(item, one.text) : [];
+    if (!decision)
+      for (const [at, button] of [...(own[0]?.querySelectorAll('button') ?? [])].entries())
+        button.setAttribute('aria-pressed', String(actions[at] !== undefined && TONE_MARK[toneOf(actions, actions[at].id)] === one.mark));
+    const row = el('li', { title: one.status }, el('span', { className: 'draft-text' }, icon(mark, stateName(mark)), link), ...own);
     row.dataset['mark'] = mark;
     return row;
   });
-  return [summarySection('Checklist', metCount(checklist.items), el('ul', { className: 'rail-checklist' }, ...rows))];
+  return [summarySection(checklist.title, metCount(checklist.items), el('ul', { className: 'summary-list criteria' }, ...rows))];
 }
 
 /** The walkthrough's actions, the first of which waits for a verdict. */
@@ -2685,14 +2673,14 @@ function summaryView(): HTMLElement {
     ...(comments ? [`${String(comments)} of your comments`] : []),
     ...(items.some(item => item.mark !== undefined) ? [`checklist ${String(items.filter(item => item.mark === 'met').length)} of ${String(items.length)} met`] : []),
   ];
-  const rail = el('aside', { className: 'finish-rail' }, verdictView(), ...finishView(), ...checklistSummary());
+  const rail = el('aside', { className: 'finish-rail' }, verdictView(), ...finishView());
   rail.setAttribute('aria-label', 'Finish');
   const section = el(
     'section',
     { className: 'summary' },
     el('div', { className: 'title-row' }, title, el('span', { className: 'tag' }, open ? `${String(open)} still open` : 'Nothing still open')),
     el('p', { className: 'summary-line' }, counts.join(' · ')),
-    el('div', { className: 'summary-grid' }, el('div', { className: 'summary-walk' }, ledgerView(rows), ...draftsView()), rail),
+    el('div', { className: 'summary-grid' }, el('div', { className: 'summary-walk' }, ledgerView(rows), ...criteriaView(), ...draftsView()), rail),
   );
   section.setAttribute('aria-labelledby', title.id);
   return section;

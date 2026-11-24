@@ -36,10 +36,10 @@ const edge = (page: Page, side: 'left' | 'right') => page.locator(`.edge-stripe.
 const checklistPanel = (page: Page) => page.getByRole('complementary', { name: 'Checklist' });
 const step = (page: Page, name: string) => page.getByRole('region', { name });
 
-/** The checklist shows in the rail first, so the page has drawn it before a panel is opened. */
+/** The page has drawn the checklist, on its edge or in its panel, before a panel is opened. */
 async function withChecklist(page: Page, repo: Repo) {
   record(repo, checklist, 'checklist');
-  await expect(queue(page).getByRole('link', { name: 'The app shows its version.' })).toBeVisible();
+  await expect(page.locator('[data-key="show:checklist"]').or(checklistPanel(page).getByText('The app shows its version.')).first()).toBeVisible();
 }
 
 async function showAll(page: Page) {
@@ -57,7 +57,7 @@ test('by default the queue is open and every other panel waits on its edge', asy
   await withChecklist(page, repo);
   repo.run('say', 'The lockfile is in no step.');
   const hide = queue(page).getByRole('button', { name: 'Hide To review' });
-  await expect(queue(page).getByRole('heading', { name: 'To review 4' })).toBeVisible();
+  await expect(queue(page).getByRole('heading', { name: 'To review 3' })).toBeVisible();
   await expect(hide).toHaveAttribute('title', 'Hide To review (1)');
 
   await expect(edge(page, 'left').getByRole('button')).toHaveText(['Explanation']);
@@ -75,7 +75,7 @@ test('each panel hides from its title bar and comes back from its edge or its ke
   await queue(page).getByRole('button', { name: 'Hide To review' }).click();
 
   await expect(queue(page)).toBeHidden();
-  await expect(edge(page, 'left').getByRole('button')).toHaveText(['To review3', 'Explanation']);
+  await expect(edge(page, 'left').getByRole('button')).toHaveText(['To review2', 'Explanation']);
   const walk = page.getByRole('navigation', { name: 'Steps' });
   await expect(walk).toContainText('Step 1');
   await expect(walk.getByRole('button', { name: 'Previous step' })).toBeDisabled();
@@ -154,8 +154,8 @@ for (const [name, setUp] of [
     await second.getByRole('button', { name: 'Send' }).click();
 
     await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
-    // The Summary keeps the checklist within reach, whichever panels are shown.
-    await expect(page.getByRole('main').getByRole('region', { name: 'Checklist' })).toBeVisible();
+    // The Summary keeps the criteria within reach, whichever panels are shown.
+    await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
     await page.keyboard.press('k');
     await expect(second.getByText('Decided: Flag', { exact: true })).toBeVisible();
     await expect(second.getByText('Too early.', { exact: true })).toBeVisible();
@@ -201,7 +201,7 @@ test('the checklist panel says what it counts and what it is for, and each item 
   await notMet.getByRole('link', { name: 'Step 2' }).click();
   await expect(step(page, 'App version')).toBeVisible();
 
-  await queue(page).getByRole('link', { name: 'The app shows its version.' }).click();
+  await page.goto(`${page.url().split('#')[0] ?? ''}#checklist-2`);
   await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Acceptance criteria' })).toHaveCount(1);
   await expect(page.getByRole('main').getByText('not yet', { exact: true })).toBeVisible();

@@ -108,7 +108,8 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict, the finishing actions and the checklist.
+   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
+   Criteria never wait in To review.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
    Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.

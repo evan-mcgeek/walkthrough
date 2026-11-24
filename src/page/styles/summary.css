@@ -383,24 +383,9 @@
   margin-bottom: var(--s2);
 }
 
-.rail-checklist {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 13px;
-}
-
-.rail-checklist li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s2);
-  padding: var(--s1) 0;
-  line-height: 1.4;
-}
-
-.rail-checklist .icon {
+.criteria .draft-text > .icon {
   flex: none;
-  margin-top: 1px;
+  align-self: center;
   color: var(--status, var(--muted));
 }
 
