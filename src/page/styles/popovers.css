@@ -195,18 +195,6 @@
   color: var(--status, var(--muted));
 }
 
-.help-mark:is([data-state='current'], [data-state='read']) {
-  color: var(--accent);
-}
-
-.help-mark[data-state='decided'] {
-  color: var(--ink-secondary);
-}
-
-.help-mark[data-state='reopened'] {
-  color: var(--amber);
-}
-
 .legend .segment {
   display: block;
   flex: none;

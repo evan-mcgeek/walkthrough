@@ -6,7 +6,7 @@ import { parseDiff } from '../diff';
 import { previewType } from '../preview';
 import type { Decision, WalkthroughView } from '../decisions';
 import type { Entry, PageRequest, SessionMessage, SessionState, SessionView } from '../session';
-import { type Action, builtIn, type Item, itemKey, nameOf, targetName } from '../items';
+import { type Action, builtIn, type Item, itemKey, nameOf, type Shown, stepShown, targetName, TONE_SHOWN, toneOf } from '../items';
 import { DEFAULT_VIEWER, type Panel, PANELS, type Viewer } from '../viewer';
 import type { Checklist, ChecklistItem, Step } from '../walkthrough';
 import { plural } from '../words';
@@ -68,6 +68,15 @@ const beingChecked = (step: Step) => (walkthrough.checking ?? []).includes(step.
 const HELD = 'Decide once the session has checked this step.';
 /** The label of the item's action `id`, or the id when the session no longer offers it. */
 const labelOf = (item: Item, id: string) => walkthrough.actions[itemKey(item)]?.find(action => action.id === id)?.label ?? id;
+/** An element in a state's colour. */
+const toned = <T extends HTMLElement>(element: T, state: string): T => {
+  element.dataset['state'] = state;
+  return element;
+};
+/** How a decision on the item shows: in its action's tone. */
+const decidedShown = (item: Item, decision: Decision) => TONE_SHOWN[toneOf(walkthrough.actions[itemKey(item)], decision.action)];
+/** How a step shows; the step the person is on shows where they are, whatever its state. */
+const shownOf = (step: Step, current?: Step): Shown => (step === current ? 'cur' : stepShown(walkthrough, step, openFindings(step).length));
 
 /** What the main pane shows; each is its own address, so the browser's back and forward move between them too. */
 type View =
@@ -326,24 +335,23 @@ function statusView(): HTMLElement {
   return status;
 }
 
-type SegmentState = 'decided' | 'reopened' | 'current' | 'read' | 'unread';
-
-/** The current step's segment is marked whatever its state, so the person sees where they are. */
-function segmentState(step: Step, current: Step | undefined): SegmentState {
-  if (step === current) return 'current';
-  if (stepDecided(step)) return 'decided';
-  if (stepReopened(step)) return 'reopened';
-  return walkthrough.read.includes(step.id) ? 'read' : 'unread';
-}
-
 /** What a segment's colour means, said in its tooltip. */
-const SEGMENT_WORDS: Record<SegmentState, string> = {
-  current: 'you are here',
-  decided: 'decided',
-  reopened: 'changed since you decided',
-  read: 'read',
-  unread: 'not read yet',
-};
+function segmentWords(step: Step, shown: Shown): string {
+  const item: Item = { type: 'step', id: step.id };
+  const decision = decisionOf(item);
+  const label = decision ? labelOf(item, decision.action) : '';
+  const open = openFindings(step).length;
+  const words: Record<Shown, string> = {
+    cur: 'you are here',
+    ok: `${label}, decided`,
+    flag: `${label}, needs you`,
+    neu: `${label}, decided`,
+    reo: 'changed since you decided, needs you',
+    find: `${open ? plural(open, 'open finding') : plural(step.kind === 'folded' ? step.problems.length : 0, 'problem')}, needs you`,
+    un: 'not decided yet',
+  };
+  return words[shown];
+}
 
 /** The step the header counts from: the open step, or the deck's top card. */
 const headerStep = () => (currentView().kind === 'deck' ? deckTop() : currentStep());
@@ -377,13 +385,13 @@ function progressView(waits: boolean): HTMLElement[] {
   while (segments.length > steps.length) segments.pop()?.remove();
   while (segments.length < steps.length) segments.push(bar.insertBefore(el('span', { className: 'segment' }), marker.parentNode ? marker : null));
   steps.forEach((step, at) => {
-    const state = segmentState(step, current);
+    const state = shownOf(step, current);
     const segment = segments[at];
     if (!segment) return;
-    segment.title = `${String(at + 1)} ${step.title}: ${SEGMENT_WORDS[state]}`;
+    segment.title = `${String(at + 1)} ${step.title}: ${segmentWords(step, state)}`;
     segment.dataset['state'] = state;
     // What the segment shows under the marker: its own state, wherever the person is.
-    segment.dataset['fill'] = segmentState(step, undefined);
+    segment.dataset['fill'] = shownOf(step);
   });
   const here = current ? steps.indexOf(current) : -1;
   if (steps.length) {
@@ -628,8 +636,10 @@ const verdictSlot = el('span', { className: 'verdict-status', title: 'Your verdi
 
 function headerVerdict(): HTMLElement[] {
   const label = verdictLabel();
-  if (label === null) return [];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
   if (verdictText.textContent !== label) verdictText.textContent = label;
+  verdictSlot.dataset['state'] = decidedShown(VERDICT, chosen);
   return [verdictSlot];
 }
 
@@ -885,7 +895,7 @@ function stateTag(item: Item, long: boolean): HTMLElement {
   const key = itemKey(item);
   const decision = walkthrough.decided[key] ?? null;
   const reopened = walkthrough.reopened[key];
-  if (decision) return el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`);
+  if (decision) return toned(el('span', { className: 'tag decided' }, `Decided: ${labelOf(item, decision.action)}`), decidedShown(item, decision));
   if (reopened)
     return el('span', { className: 'tag reopened' }, long ? `Changed since you chose ${labelOf(item, reopened.action)}` : CHANGED);
   return el('span', { className: 'tag' }, 'Undecided');
@@ -2049,7 +2059,16 @@ function stepView(step: Step, notices: HTMLElement[], view: View): HTMLElement {
 }
 
 /** What a state icon says, to a screen reader and in its tooltip, where no text beside it says so already. */
-const stateName = (mark: IconName) => (['decided', 'reopened'].includes(mark) ? undefined : MEANS[mark]);
+const stateName = (mark: IconName) => (['decided', 'flagged', 'no-tone', 'reopened'].includes(mark) ? undefined : MEANS[mark]);
+
+/** The icon of each way a step shows. */
+const SHOWN_ICON: Record<Shown, IconName> = { cur: 'current', ok: 'decided', flag: 'flagged', neu: 'no-tone', reo: 'reopened', find: 'warn', un: 'unread' };
+
+/** A sub-line's colour: green, amber needs you, or red not met; muted without one. */
+type SubColour = 'ok' | 'attention' | 'bad';
+type Sub = { text: string; colour?: SubColour | undefined };
+const SHOWN_SUB: Partial<Record<Shown, SubColour>> = { ok: 'ok', flag: 'attention' };
+const MARK_SUB: Record<string, SubColour> = { met: 'ok', partly: 'attention', 'not-met': 'bad' };
 
 /** A row of the rail: a state icon, a title and an optional sub-line, linking to what it names. */
 function queueRow(
@@ -2057,7 +2076,7 @@ function queueRow(
   state: string,
   mark: IconName,
   title: string,
-  sub: { text: string; attention?: boolean; mark?: IconName } | null,
+  sub: Sub | null,
   // Only a step is one of a sequence; the session's messages and the checklist are pages of their own.
   current: false | 'step' | 'page',
   // A long title holds to two lines, all of it in its tooltip.
@@ -2072,7 +2091,7 @@ function queueRow(
       'span',
       { className: 'queue-title' },
       name,
-      ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, ...(sub.mark ? [icon(sub.mark)] : []), sub.text)] : []),
+      ...(sub ? [el('span', { className: `queue-sub ${sub.colour ?? ''}`.trim() }, sub.text)] : []),
     ),
   );
   row.dataset['state'] = state;
@@ -2100,23 +2119,25 @@ function stepRow(step: Step, isCurrent: boolean): HTMLElement {
 function stepRowView(step: Step, isCurrent: boolean): HTMLElement {
   const current = isCurrent && 'step';
   const item: Item = { type: 'step', id: step.id };
+  const shown = shownOf(step, isCurrent ? step : undefined);
   const decision = decisionOf(item);
   if (decision) {
-    const sub = lateFindings(step).length
-      ? { text: 'New finding', attention: true }
-      : { text: `Decided: ${labelOf(item, decision.action)}` };
-    return queueRow(step.id, 'decided', 'decided', step.title, sub, current);
+    const sub: Sub = lateFindings(step).length
+      ? { text: 'New finding', colour: 'attention' }
+      : { text: labelOf(item, decision.action), colour: SHOWN_SUB[decidedShown(item, decision)] };
+    return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, sub, current);
   }
   const open = openFindings(step).length;
-  const findings = open ? { text: plural(open, 'open finding'), attention: true, mark: 'warn' as const } : null;
+  const findings: Sub | null = open ? { text: plural(open, 'open finding'), colour: 'attention' } : null;
   const checking = beingChecked(step) ? { text: 'Being checked' } : null;
-  if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, checking ?? { text: CHANGED }, current);
+  if (stepReopened(step)) return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, checking ?? { text: CHANGED, colour: 'attention' }, current);
+  // Files to skim keep their own icon, so the rail names them apart from the steps to read.
   if (step.kind === 'folded') {
-    const problems = step.problems.length ? { text: plural(step.problems.length, 'problem'), attention: true } : null;
-    return queueRow(step.id, 'folded', 'folded', step.title, checking ?? findings ?? problems, current);
+    const problems: Sub | null = step.problems.length ? { text: plural(step.problems.length, 'problem'), colour: 'attention' } : null;
+    const state = isCurrent ? shown : 'folded';
+    return queueRow(step.id, state, isCurrent ? 'current' : 'folded', step.title, checking ?? findings ?? problems, current);
   }
-  const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, checking ?? findings, current);
+  return queueRow(step.id, shown, SHOWN_ICON[shown], step.title, checking ?? findings, current);
 }
 
 /** A step is left while it is undecided, or a finding was pinned on it after the person decided it. */
@@ -2210,7 +2231,9 @@ function queueView(view: View): HTMLElement[] {
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
-    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page', true));
+    const mark = item.mark ?? 'unchecked';
+    const sub = { text: `Checklist · ${(MEANS[mark] ?? '').toLowerCase()}`, colour: MARK_SUB[mark] };
+    rows.push(queueRow(`checklist-${item.id}`, mark, mark, plain(item.text), sub, at && 'page', true));
     left.push([`checklist-${item.id}`, plain(item.text)]);
   }
   const counted = steps.length > 0 || rows.length > 0;
@@ -2333,10 +2356,12 @@ function verdictLabel(): string | null {
   return chosen ? labelOf(VERDICT, chosen.action) : null;
 }
 
-/** The chosen verdict as a status, never a control; neutral whatever it says. */
+/** The chosen verdict as a status in its tone, never a control. */
 const verdictStatus = (): HTMLElement[] => {
   const label = verdictLabel();
-  return label === null ? [] : [el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label)];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
+  return [toned(el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label), decidedShown(VERDICT, chosen))];
 };
 
 /** While the session offers a verdict and none is chosen, the walkthrough's first action, its finishing one, waits. */
@@ -2358,6 +2383,8 @@ type LedgerRow = {
   address: string;
   number: string;
   mark: IconName;
+  /** What colours the icon and a decision's words. */
+  state: string;
   title: string;
   words: string;
   tone: 'decided' | 'muted' | 'changed';
@@ -2389,30 +2416,40 @@ function stepLedgerRow(step: Step): LedgerRow {
     const said = [decision.note, decision.text].flatMap(text => (text ? [ledgerSub(`“${plain(text)}”`)] : []));
     const late = lateFindings(step).length;
     const arrived = late ? [ledgerSub(`${plural(late, 'new finding')} since you ${doneWith(step)}.`, 'changed')] : [];
-    return { ...row, mark: 'decided', words: labelOf(item, decision.action), tone: 'decided', subs: [...said, ...arrived, ...checking, ...own], open: false };
+    const state = decidedShown(item, decision);
+    const subs = [...said, ...arrived, ...checking, ...own];
+    return { ...row, mark: SHOWN_ICON[state], state, words: labelOf(item, decision.action), tone: 'decided', subs, open: false };
   }
-  if (checking.length) return { ...row, mark: 'unchecked', words: 'Being checked', tone: 'muted', subs: [...checking, ...own], open: true };
+  if (checking.length) return { ...row, mark: 'unchecked', state: 'unchecked', words: 'Being checked', tone: 'muted', subs: [...checking, ...own], open: true };
   if (reopened) {
     const since = ledgerSub(`Changed since you chose ${labelOf(item, reopened.action)}.`, 'muted');
-    return { ...row, mark: 'reopened', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
+    return { ...row, mark: 'reopened', state: 'reo', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
   }
-  const mark = step.kind === 'folded' ? 'folded' : walkthrough.read.includes(step.id) ? 'read' : 'unread';
-  return { ...row, mark, words: 'Undecided', tone: 'muted', subs: own, open: true };
+  const state = shownOf(step);
+  const listed = (count: number, what: string, texts: string[]) =>
+    count ? [ledgerSub(`${plural(count, what)}: ${texts.join(' · ')}`, 'changed finding')] : [];
+  const findings = openFindings(step);
+  const problems = step.kind === 'folded' ? step.problems : [];
+  const open = [...listed(findings.length, 'open finding', findings.map(note => plain(note.text))), ...listed(problems.length, 'problem', problems)];
+  for (const sub of open) sub.prepend(icon('warn'));
+  return { ...row, mark: SHOWN_ICON[state], state, words: 'Undecided', tone: 'muted', subs: [...open, ...own], open: true };
 }
 
 /** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
 function otherOpenRows(): LedgerRow[] {
-  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'title'>;
+  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'state' | 'title'>;
   const notes = session.conversation.filter(isNote).map((note): Open => ({
     item: { type: 'note', id: note.id },
     address: anchorOf(note) ?? 'session',
     mark: note.note.finding ? 'warn' : 'message',
+    state: note.note.finding ? 'find' : 'note',
     title: `${note.note.label}: ${plain(note.text)}`,
   }));
   const items = (walkthrough.checklist?.items ?? []).map((one): Open => ({
     item: { type: 'checklist', id: one.id },
     address: `checklist-${one.id}`,
     mark: one.mark ?? 'unchecked',
+    state: one.mark ?? 'unchecked',
     title: plain(one.text),
   }));
   return [...notes, ...items]
@@ -2440,7 +2477,7 @@ function ledgerView(rows: LedgerRow[]): HTMLElement {
         'tbody',
         {},
         el('tr', { className: 'ledger-group' }, head),
-        ...group.map(({ item, address, number, mark, title, words, tone, subs }) => {
+        ...group.map(({ item, address, number, mark, state, title, words, tone, subs }) => {
           const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
           const row = el(
             'tr',
@@ -2450,7 +2487,7 @@ function ledgerView(rows: LedgerRow[]): HTMLElement {
             el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : [])),
             el('td', { className: `ledger-decision ${tone}` }, words),
           );
-          row.dataset['state'] = mark;
+          row.dataset['state'] = state;
           return row;
         }),
       );
@@ -2475,6 +2512,7 @@ function verdictView(): HTMLElement {
       ),
       `verdict:${action.id}`,
     );
+    if (chosen && checked) option.dataset['state'] = decidedShown(VERDICT, chosen);
     option.setAttribute('role', 'radio');
     option.setAttribute('aria-checked', String(checked));
     option.onclick = () => {
@@ -2483,7 +2521,7 @@ function verdictView(): HTMLElement {
     return option;
   });
   const now = chosen
-    ? el('p', { className: 'verdict-now' }, 'Your verdict: ', el('strong', {}, labelOf(VERDICT, chosen.action)))
+    ? el('p', { className: 'verdict-now' }, 'Your verdict: ', toned(el('strong', {}, labelOf(VERDICT, chosen.action)), decidedShown(VERDICT, chosen)))
     : reopened
       ? el('p', { className: 'verdict-now reopened' }, icon('reopened'), `Changed since you chose ${labelOf(VERDICT, reopened.action)}`)
       : el('p', { className: 'verdict-now muted' }, 'No verdict yet.');

@@ -73,29 +73,32 @@
   overflow: hidden;
 }
 
-/* The fill is its own element, so deciding can draw it in from the left. */
-.segment-fill {
-  position: absolute;
-  inset: 0;
-  background: var(--accent);
-  transform-origin: left;
+/* One traffic-light set read by shape as well as colour: solid green decided positive, hatched amber needs you, outlined grey decided without tone, the faint track not decided. */
+.segment:is([data-state='ok'], [data-fill='ok']) {
+  --fill: var(--ok);
 }
 
-.segment[data-state='read'] {
-  background: var(--progress-read);
+.segment:is([data-state='neu'], [data-fill='neu']) {
+  --fill: transparent;
+  --edge: inset 0 0 0 1.5px var(--neu);
+}
+
+.segment:is([data-state='flag'], [data-state='reo'], [data-state='find'], [data-fill='flag'], [data-fill='reo'], [data-fill='find']) {
+  --fill: repeating-linear-gradient(135deg, var(--amber) 0 3px, color-mix(in srgb, var(--amber) 45%, transparent) 3px 5px);
+}
+
+.segment[data-state] {
+  background: var(--fill, var(--rule));
+  box-shadow: var(--edge, none);
 }
 
 /* Where the person is, whatever the step's state: solid ink and taller, on any accent and theme. */
-.segment[data-state='current'] {
+.segment[data-state='cur'] {
   height: 9px;
   background: var(--ink);
 }
 
-.segment[data-state='reopened'] {
-  background: var(--amber);
-}
-
-/* The header's bar: fills scale in from the left, grey when read and the accent when decided, under an ink marker that walks. */
+/* The header's bar: fills scale in from the left under an ink marker that walks. */
 .progress {
   position: relative;
 }
@@ -103,35 +106,26 @@
 .progress > .segment[data-state] {
   height: 5px;
   background: var(--rule);
-  transition: background-color var(--slow) linear;
+  box-shadow: none;
 }
 
-.progress > .segment::before,
+.progress > .segment[data-fill='neu'] {
+  background: none;
+}
+
 .progress > .segment::after {
   content: '';
   position: absolute;
   inset: 0;
+  background: var(--fill, none);
+  box-shadow: var(--edge, none);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--slow) var(--ease-out);
 }
 
-.progress > .segment::before {
-  background: var(--progress-read);
-}
-
-.progress > .segment::after {
-  background: var(--accent);
-}
-
-.progress > .segment[data-fill='read']::before,
-.progress > .segment[data-fill='decided']::before,
-.progress > .segment[data-fill='decided']::after {
+.progress > .segment:not([data-fill='un'])::after {
   transform: none;
-}
-
-.progress > .segment[data-fill='reopened'] {
-  background: var(--amber);
 }
 
 .progress-marker {
@@ -163,16 +157,13 @@
     transition: opacity var(--base) linear;
   }
 
-  .progress > .segment::before,
   .progress > .segment::after {
     opacity: 0;
     transform: none;
     transition: opacity var(--base) linear;
   }
 
-  .progress > .segment[data-fill='read']::before,
-  .progress > .segment[data-fill='decided']::before,
-  .progress > .segment[data-fill='decided']::after {
+  .progress > .segment:not([data-fill='un'])::after {
     opacity: 1;
   }
 }

@@ -16,7 +16,7 @@ test('the list shows every walkthrough of the repo with its progress and opens o
     'aria-valuetext',
     '1 of 1 step decided, 0 left, 1 read',
   );
-  repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
+  repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes', tone: 'attention' }] }], 'actions');
   await page.getByRole('radio', { name: 'Needs fixes' }).click();
   await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
   // Away from the page first, whose polls would fail once its server stops.
@@ -40,10 +40,18 @@ test('the list shows every walkthrough of the repo with its progress and opens o
   await expect(rows.nth(1).locator('.kind')).toHaveAttribute('title', 'The kind of walkthrough');
   await expect(rows.nth(2).locator('.kind')).toHaveCount(0);
   await expect(rows.nth(2).getByRole('cell')).toHaveText(['feature/loginbranch-feature~login', '1 of 1 step decided, 1 read', 'Needs fixes', /now|ago/]);
-  // A decided segment is filled in the accent, as the mark is.
-  const accent = await page.locator('.logo .icon-mark').evaluate(mark => getComputedStyle(mark).color);
-  const decided = rows.nth(2).locator('.segment[data-state="decided"]');
-  expect(await decided.evaluate(one => getComputedStyle(one.firstElementChild ?? one).backgroundColor)).toBe(accent);
+  // A decided segment and the verdict take their action's tone, as on the page: Approve green, Needs fixes amber.
+  const token = (name: string) =>
+    page.evaluate(variable => {
+      const probe = document.body.appendChild(document.createElement('span'));
+      probe.style.color = `var(${variable})`;
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }, name);
+  const decided = rows.nth(2).locator('.segment[data-state="ok"]');
+  expect(await decided.evaluate(one => getComputedStyle(one).backgroundColor)).toBe(await token('--ok'));
+  await expect(rows.nth(2).getByTitle('Your verdict')).toHaveCSS('color', await token('--amber'));
   // The full time stays at hand behind the relative one.
   await expect(rows.nth(2).locator('time')).toHaveAttribute('datetime', /^\d{4}-\d\d-\d\dT/);
 

@@ -1,4 +1,6 @@
 // What the person can decide on and the choices the session offers, shared by the CLI and the page.
+import type { WalkthroughView } from './decisions';
+import type { Step } from './walkthrough';
 
 /** The verdict is the person's decision on the whole walkthrough; the walkthrough's own actions finish it. */
 export type Item = { type: 'step' | 'note' | 'checklist'; id: string } | { type: 'verdict' } | { type: 'walkthrough' };
@@ -23,7 +25,7 @@ export const builtIn = (actions: Action[]) =>
       own.label === action.label &&
       !own.note === !action.note &&
       !own.edit === !action.edit &&
-      own.tone === (action.tone ?? 'none')
+      (action.tone === undefined || own.tone === action.tone)
     );
   });
 
@@ -31,11 +33,20 @@ export const builtIn = (actions: Action[]) =>
  * How a step shows in the header bar, To review, the Summary and Help: where the person is, decided in its action's tone,
  * changed since decided, undecided with an open finding or problem, or undecided; whether it was read has no look.
  */
-export type StepLook = 'cur' | 'ok' | 'flag' | 'neu' | 'reo' | 'find' | 'un';
-export const TONE_LOOK: Record<Tone, StepLook> = { positive: 'ok', attention: 'flag', none: 'neu' };
+export type Shown = 'cur' | 'ok' | 'flag' | 'neu' | 'reo' | 'find' | 'un';
+export const TONE_SHOWN: Record<Tone, 'ok' | 'flag' | 'neu'> = { positive: 'ok', attention: 'flag', none: 'neu' };
 
 /** The tone of the action taken on an item, none when the action is gone or has no tone. */
 export const toneOf = (actions: Action[] | undefined, id: string): Tone => actions?.find(one => one.id === id)?.tone ?? 'none';
+
+/** How a step shows away from where the person is; `findings` counts its open findings. */
+export function stepShown(view: Pick<WalkthroughView, 'actions' | 'decided' | 'reopened'>, step: Step, findings: number): Exclude<Shown, 'cur'> {
+  const key = itemKey({ type: 'step', id: step.id });
+  const decision = view.decided[key];
+  if (decision) return TONE_SHOWN[toneOf(view.actions[key], decision.action)];
+  if (view.reopened[key]) return 'reo';
+  return findings > 0 || (step.kind === 'folded' && step.problems.length > 0) ? 'find' : 'un';
+}
 
 export const itemKey = (item: Item) => ('id' in item ? `${item.type}:${item.id}` : item.type);
 

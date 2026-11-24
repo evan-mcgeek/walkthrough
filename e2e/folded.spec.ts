@@ -45,6 +45,24 @@ test('collapsed, a folded step is one line of its distinct reasons, with its pro
   await expect(step.getByRole('list', { name: 'Folded files' })).toHaveCount(0);
 });
 
+test('in To review a folded step keeps its own icon, and its title reads in ink like every other row, in light and dark', async ({ page }) => {
+  const rail = page.getByRole('navigation', { name: 'To review' });
+  const row = rail.getByRole('link', { name: /Screens/ });
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    const ink = await page.evaluate(() => {
+      const probe = document.body.appendChild(document.createElement('span'));
+      probe.style.color = 'var(--ink)';
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    });
+    await expect(row.locator('.icon-folded')).toBeVisible();
+    await expect(row.locator('.queue-title')).toHaveCSS('color', ink);
+    await expect(rail.getByRole('link', { name: /Notes/ }).locator('.queue-title')).toHaveCSS('color', ink);
+  }
+});
+
 test('opened, each folded file is a row with its reason as text that wraps', async ({ page, url }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${url}#2`);

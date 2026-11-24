@@ -2,17 +2,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { walkthroughView } from './decisions';
-import { itemKey, nameOf } from './items';
+import { itemKey, nameOf, type Shown, stepShown, TONE_SHOWN, toneOf } from './items';
+import { conversationOf } from './session';
 
-export type Segment = 'decided' | 'reopened' | 'read' | 'unread';
+export type Segment = Exclude<Shown, 'cur'>;
 
 /** `id` is the walkthrough's folder in the repo's state; `segments` are its steps in order; `last` is when the session or the person last changed it. */
 export type Listed = {
   id: string;
   name: string;
   kind?: string;
-  /** The label of the verdict the person chose, while it holds. */
-  verdict?: string;
+  /** The label of the verdict the person chose, while it holds, and how it shows. */
+  verdict?: { label: string; shown: 'ok' | 'flag' | 'neu' };
   target: string;
   steps: number;
   decided: number;
@@ -30,12 +31,17 @@ export function listView(repoDir: string): Listed[] {
     const dir = path.join(repoDir, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
-    const segments = view.steps.map((step): Segment => {
-      const key = itemKey({ type: 'step', id: step.id });
-      if (view.decided[key]) return 'decided';
-      if (view.reopened[key]) return 'reopened';
-      return view.read.includes(step.id) ? 'read' : 'unread';
-    });
+    const conversation = conversationOf(dir);
+    const findings = (id: string) =>
+      conversation.filter(
+        entry =>
+          entry.from === 'session' &&
+          entry.note?.finding &&
+          entry.answer === undefined &&
+          view.anchored[entry.id] === id &&
+          !view.decided[itemKey({ type: 'note', id: entry.id })],
+      ).length;
+    const segments = view.steps.map(step => stepShown(view, step, findings(step.id)));
     const verdict = view.decided['verdict'];
     const changed = ACTIVITY.map(file => fs.statSync(path.join(dir, file), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
@@ -43,10 +49,15 @@ export function listView(repoDir: string): Listed[] {
         id: entry.name,
         name: nameOf(view),
         ...(view.kindLabel !== undefined && { kind: view.kindLabel }),
-        ...(verdict && { verdict: view.actions['verdict']?.find(one => one.id === verdict.action)?.label ?? verdict.action }),
+        ...(verdict && {
+          verdict: {
+            label: view.actions['verdict']?.find(one => one.id === verdict.action)?.label ?? verdict.action,
+            shown: TONE_SHOWN[toneOf(view.actions['verdict'], verdict.action)],
+          },
+        }),
         target: view.target,
         steps: view.steps.length,
-        decided: segments.filter(segment => segment === 'decided').length,
+        decided: view.steps.filter(step => view.decided[itemKey({ type: 'step', id: step.id })]).length,
         read: view.read.length,
         segments,
         last: new Date(Math.max(...changed)).toISOString(),

@@ -62,6 +62,7 @@ _Avoid_: AC map, outstanding list
 **Action**:
 A choice the agent offers on a step, a note, a checklist item, the verdict or the whole walkthrough, which the person can take with an optional note.
 The whole walkthrough's first action is its finishing action, such as sending the fix list to the session or posting the review.
+Each action has a tone the session picks from the review policy, positive, attention or none, which colours a decision with it green, amber or grey.
 _Avoid_: Button, command
 
 **Decision**:
@@ -72,7 +73,7 @@ Taking it back with Undo is sent the same way and leaves the item undecided.
 The last entry of the queue: what the person decided and what is still open, their comments and the drafts, the verdict and the finishing action.
 
 **Verdict**:
-The person's decision on the whole walkthrough, one of the choices the session offers for it, such as Approve or Needs fixes; chosen only on the Summary, and shown as a neutral status once chosen.
+The person's decision on the whole walkthrough, one of the choices the session offers for it, such as Approve or Needs fixes; chosen only on the Summary, and shown as a status in its action's tone once chosen.
 The finishing action waits for it.
 _Avoid_: Final decision, review state
 

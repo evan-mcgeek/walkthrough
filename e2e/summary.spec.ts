@@ -144,6 +144,54 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(summary.getByText('Decided: Send the fix list to the session', { exact: true })).toBeVisible();
 });
 
+const tokenColor = (page: Page, token: string) =>
+  page.evaluate(name => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = `var(${name})`;
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
+
+test('the ledger and the verdict take their action\'s tone: Approve green, Flag amber, an action with no tone grey, and the verdict in the rail and the header', async ({
+  page,
+  repo,
+  url,
+}) => {
+  const toned = {
+    ...verdicts,
+    actions: [
+      { id: 'ready', label: 'Ready for colleagues', tone: 'positive' },
+      { id: 'fixes', label: 'Needs fixes', tone: 'attention' },
+    ],
+  };
+  record(repo, [toned, finishing, { item: { type: 'step', id: '3' }, actions: [{ id: 'noted', label: 'Noted' }] }], 'actions');
+  for (const body of [
+    { item: { type: 'step', id: '1' }, action: 'flag', note: 'Everyone gets in.' },
+    { item: { type: 'step', id: '2' }, action: 'approve' },
+    { item: { type: 'step', id: '3' }, action: 'noted' },
+    { item: { type: 'verdict' }, action: 'fixes' },
+  ])
+    expect((await send(page, url, 'decide', body)).status()).toBe(200);
+  await page.goto(`${url}#summary`);
+
+  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const row = (title: string) => ledger.getByRole('row').filter({ hasText: title });
+  for (const [title, token, words] of [
+    ['Login check', '--amber', '--amber'],
+    ['App version', '--ok', '--ok'],
+    ['Cart', '--neu', '--ink-secondary'],
+  ] as const) {
+    await expect(row(title).locator('.ledger-mark svg')).toHaveCSS('color', await tokenColor(page, token));
+    await expect(row(title).locator('.ledger-decision')).toHaveCSS('color', await tokenColor(page, words));
+  }
+  const verdict = page.getByRole('region', { name: 'Verdict' });
+  await expect(verdict.getByText('Needs fixes', { exact: true }).first()).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(verdict.getByRole('radio', { name: 'Needs fixes' }).locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(page.getByRole('banner').getByTitle('Your verdict').locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
+});
+
 test('G then S goes to the Summary from any step, and the Summary is the last row of the queue', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link').last()).toHaveText('Summary');

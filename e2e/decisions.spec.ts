@@ -223,11 +223,11 @@ test('a checklist item the session records again after a decision shows reopened
   await expect(item.getByRole('button', { name: 'Disagree' })).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('steps shown are read apart from decided, and decided steps fold into a count at the foot of the rail', async ({ page }) => {
+test('a step read and one not read look the same until decided, and decided steps fold into a count at the foot of the rail', async ({ page }) => {
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '0 of 2 steps decided, 2 left, 1 read');
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'read');
-  await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('data-state', 'unread');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'cur');
+  await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('data-state', 'un');
 
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
@@ -238,7 +238,7 @@ test('steps shown are read apart from decided, and decided steps fold into a cou
   await expect(decided).toHaveAttribute('aria-expanded', 'false');
   await decided.click();
   await expect(decided).toHaveAttribute('aria-expanded', 'true');
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'decided');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveAttribute('data-state', 'ok');
 
   await page.reload();
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');

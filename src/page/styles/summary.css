@@ -82,15 +82,6 @@
   color: var(--status, var(--muted));
 }
 
-.ledger-row[data-state='decided'] .ledger-mark > .icon {
-  --icon-knockout: var(--canvas);
-  color: var(--ink-secondary);
-}
-
-.ledger-row[data-state='reopened'] .ledger-mark > .icon {
-  color: var(--amber);
-}
-
 .ledger-title {
   line-height: 20px;
   overflow-wrap: anywhere;
@@ -133,12 +124,23 @@
   color: var(--accent-text);
 }
 
-.ledger-sub.own > .icon {
+.ledger-sub:is(.own, .finding) > .icon {
   display: inline-block;
   width: 13px;
   height: 13px;
   margin-right: 6px;
   vertical-align: -2px;
+}
+
+/* An open finding or problem hangs its words after the triangle, so a second line starts under the first word. */
+.ledger-sub.finding {
+  display: flex;
+  gap: 6px;
+}
+
+.ledger-sub.finding > .icon {
+  flex: none;
+  margin: 3px 0 0;
 }
 
 .ledger-sub > .where {
@@ -154,6 +156,10 @@
   line-height: 20px;
   text-align: right;
   white-space: nowrap;
+}
+
+.ledger-decision.decided {
+  color: var(--status-words, var(--ink-secondary));
 }
 
 .ledger-decision.muted {
@@ -253,6 +259,10 @@
   font-size: 13.5px;
 }
 
+.verdict-now > strong {
+  color: var(--status-words, var(--ink));
+}
+
 .verdict-now.reopened {
   display: flex;
   align-items: center;
@@ -271,7 +281,7 @@
   margin-top: var(--s1);
 }
 
-/* A chosen verdict is an ink border on the surface tint, never the accent (The Grey Verdict Rule). */
+/* A chosen verdict is an ink border on the surface tint, never the accent; only its icon takes its tone (The Toned Decision Rule). */
 .verdict-option {
   display: flex;
   align-items: center;
@@ -309,7 +319,7 @@
 }
 
 .verdict-option[aria-checked='true'] > .icon {
-  color: var(--ink-secondary);
+  color: var(--status, var(--ink-secondary));
 }
 
 .finish {
@@ -399,7 +409,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--ink-secondary);
+  color: var(--status-words, var(--ink-secondary));
   font: 500 12.5px/1.4 var(--font-ui);
   white-space: nowrap;
 }
@@ -407,7 +417,7 @@
 .verdict-status > .icon {
   width: 14px;
   height: 14px;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 /* The chosen verdict on its way into the header, and the label it replaces fading in the slot. */

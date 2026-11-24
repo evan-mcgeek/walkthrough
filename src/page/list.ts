@@ -49,14 +49,20 @@ function progress(one: Listed): HTMLElement {
     'span',
     { className: 'list-bar' },
     ...one.segments.map(state => {
-      // A decided segment is filled as in the page's header, which draws its fill as a child.
-      const segment = el('span', { className: 'segment' }, ...(state === 'decided' ? [el('span', { className: 'segment-fill' })] : []));
+      const segment = el('span', { className: 'segment' });
       segment.dataset['state'] = state;
       return segment;
     }),
   );
   bar.setAttribute('aria-hidden', 'true');
   return el('span', { className: 'list-progress' }, bar, `${String(one.decided)} of ${plural(one.steps, 'step')} decided, ${String(one.read)} read`);
+}
+
+/** The chosen verdict in its tone, as the page's header shows it. */
+function verdictStatus({ label, shown }: { label: string; shown: string }): HTMLElement {
+  const status = el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label);
+  status.dataset['state'] = shown;
+  return status;
 }
 
 function row(one: Listed): HTMLTableRowElement {
@@ -74,7 +80,7 @@ function row(one: Listed): HTMLTableRowElement {
       { role: 'cell' },
       one.verdict === undefined
         ? el('span', { className: 'muted' }, 'No verdict yet')
-        : el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), one.verdict),
+        : verdictStatus(one.verdict),
     ),
     el('td', { role: 'cell', className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );

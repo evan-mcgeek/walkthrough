@@ -94,7 +94,7 @@ const noteSaying = (page: Page, text: string) => page.getByRole('article').filte
 const sendComment = (page: Page, url: string, body: unknown) =>
   page.request.post(new URL(`/comment?token=${new URL(url).pathname.split('/')[2] ?? ''}`, url).href, { data: body });
 
-test('a step with open findings says how many in To review, and choosing it opens the step at the first', async ({ page, repo }) => {
+test('a step with open findings says how many in To review beside one triangle, and choosing it opens the step at the first', async ({ page, repo }) => {
   pin(repo, [
     { step: '1', file: 'cart.ts', lines: [90, 90], label: 'Bug', text: 'Overdue todos sort last.', finding: true },
     { step: '1', file: 'cart.ts', lines: [60, 60], label: 'Bug', text: 'A due date of today reads as overdue.', finding: true },
@@ -104,7 +104,12 @@ test('a step with open findings says how many in To review, and choosing it open
   const sub = row.locator('.queue-sub');
   await expect(sub).toHaveText('2 open findings');
   await expect(sub).toHaveClass(/attention/);
-  await expect(sub.locator('.icon-warn')).toHaveCount(1);
+  // The row's own state icon is the triangle away from the step, so the count carries none of its own.
+  await expect(sub.locator('.icon')).toHaveCount(0);
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
+  await expect(row.locator('.icon-warn')).toHaveCount(1);
+  await page.goBack();
   const first = noteSaying(page, 'A due date of today reads as overdue.');
   await expect(first).toBeHidden();
 

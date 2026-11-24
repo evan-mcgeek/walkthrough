@@ -120,6 +120,43 @@ describe('walkthrough actions', () => {
     ]);
   });
 
+  test('a step action recorded as the built-in Approve or Flag with no tone takes the built-in tone, and a tone given wins', async () => {
+    started();
+    repo.record(
+      [
+        {
+          item: step1,
+          actions: [
+            { id: 'approve', label: 'Approve' },
+            { id: 'flag', label: 'Flag', note: true },
+          ],
+        },
+      ],
+      'actions',
+    );
+    expect((await shownAt(repo.url())).actions['step:1']).toEqual([
+      { id: 'approve', label: 'Approve', tone: 'positive' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+    ]);
+
+    repo.record(
+      [
+        {
+          item: step1,
+          actions: [
+            { id: 'approve', label: 'Approve', tone: 'none' },
+            { id: 'flag', label: 'Flag' },
+          ],
+        },
+      ],
+      'actions',
+    );
+    expect((await shownAt(repo.url())).actions['step:1']).toEqual([
+      { id: 'approve', label: 'Approve', tone: 'none' },
+      { id: 'flag', label: 'Flag' },
+    ]);
+  });
+
   test('recording the steps or the checklist again keeps the actions of items that keep their id', async () => {
     started();
     repo.record(

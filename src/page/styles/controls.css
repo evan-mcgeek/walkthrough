@@ -83,7 +83,7 @@ samp,
   transform: scale(0.97);
 }
 
-/* A pressed choice is a recorded decision, so it stays grey (The Grey Verdict Rule). */
+/* A pressed choice is a button, so it stays grey; its decided tag carries the tone (The Toned Decision Rule). */
 .btn[aria-pressed='true'] {
   background: var(--surface-tint);
   font-weight: 600;
@@ -320,7 +320,27 @@ select:disabled {
   white-space: nowrap;
 }
 
-/* State is a dot and a word, never a pill: hollow undecided, filled grey decided, dashed amber reopened. */
+/* A step's or decision's status colour for its icon, and for its words: green decided positive, amber needs you, grey decided without tone, ink where you are. */
+[data-state='ok'] {
+  --status: var(--ok);
+  --status-words: var(--ok);
+}
+
+:is([data-state='flag'], [data-state='reo'], [data-state='find']) {
+  --status: var(--amber);
+  --status-words: var(--amber);
+}
+
+[data-state='neu'] {
+  --status: var(--neu);
+  --status-words: var(--ink-secondary);
+}
+
+[data-state='cur'] {
+  --status: var(--ink);
+}
+
+/* State is a dot and a word, never a pill: hollow undecided, a dot filled in its tone when decided, dashed amber reopened. */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -341,7 +361,7 @@ select:disabled {
 }
 
 .tag.decided {
-  color: var(--ink-secondary);
+  color: var(--status-words, var(--ink-secondary));
 }
 
 .tag.decided::before {

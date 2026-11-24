@@ -124,16 +124,12 @@
   color: var(--amber);
 }
 
-.queue-sub:has(> .icon) {
-  display: flex;
-  align-items: center;
-  gap: var(--s1);
+.queue-sub.ok {
+  color: var(--ok);
 }
 
-.queue-sub > .icon {
-  flex: none;
-  width: 13px;
-  height: 13px;
+.queue-sub.bad {
+  color: var(--bad);
 }
 
 .queue-item[aria-current] {
@@ -143,19 +139,7 @@
 }
 
 .queue-item[aria-current] > .icon {
-  color: var(--status, var(--accent));
-}
-
-.queue-item[data-state='read'] > .icon {
-  color: var(--accent);
-}
-
-.queue-item[data-state='reopened'] > .icon {
-  color: var(--amber);
-}
-
-.queue-item[data-state='folded'] .queue-title {
-  color: var(--muted);
+  color: var(--status, var(--ink));
 }
 
 /* A decided row on its way out of the rail, collapsing to nothing. */
@@ -218,11 +202,6 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.queue-decided .queue-item:not([aria-current]),
-.queue-decided .queue-item:not([aria-current]) > .icon {
-  color: var(--muted);
 }
 
 /* ---------- main pane ---------- */

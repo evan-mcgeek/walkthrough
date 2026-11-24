@@ -150,7 +150,7 @@ test('shows how many steps are decided and left, and approving moves on to the n
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('heading', { name: 'To review 2' })).toBeVisible();
   await rail.getByRole('button', { name: '1 decided' }).click();
-  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveText('Login checkDecided: Approve');
+  await expect(rail.getByRole('link', { name: 'Login check' })).toHaveText('Login checkApprove');
 
   await page.reload();
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', /^1 of 3 steps decided, 2 left/);
