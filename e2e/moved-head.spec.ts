@@ -91,6 +91,8 @@ test('changed files in no step yet are named until the session records steps for
   await fromSession.click();
   await expect(notice).toContainText('cart.ts');
   await expect(notice).not.toContainText('login.ts');
+  const [box, section] = await Promise.all([notice.boundingBox(), page.getByRole('region', { name: /Notes on removed code/ }).boundingBox()]);
+  expect(box?.width).toBe(section?.width);
 
   record(repo, [
     { title: 'Login check', explanation: 'Adds a login function.', files: ['login.ts'] },

@@ -60,6 +60,7 @@ test('inline code in an item stays on one line in the narrow panel', async ({ pa
   );
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   await page.reload();
+  await expect(page.locator('h1')).toBeAttached();
   await page.keyboard.press('2');
   const code = page.getByRole('complementary', { name: 'Checklist' }).locator('.item-text code');
   await expect(code).toBeVisible();
