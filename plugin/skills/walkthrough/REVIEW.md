@@ -45,6 +45,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - When the ticket or spec has acceptance criteria, record them as a checklist titled "Acceptance criteria", one item per criterion, linked to the steps that deliver it.
 - Statuses: "met", "partly met" or "not shown", marked "met", "partly" and "not-met".
+- An item's text is the criterion as the ticket words it, never its evidence; the reason for its status follows the status word in at most eight words, such as "partly met: the added segment counts as started".
 - Add one last item, "Serves no criterion", linked to every step that delivers none of them.
 
 ### Reviewers and findings
