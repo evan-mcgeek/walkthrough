@@ -11,4 +11,4 @@ Design: docs/design/HANDOFF.md first (it wins over the boards where they differ)
 
 **Blocked by:** 51 The Summary as a ledger (both edit src/page/app.ts)
 
-**Status:** ready-for-agent
+**Status:** done
