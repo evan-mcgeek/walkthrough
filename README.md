@@ -246,11 +246,8 @@ Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 `npm run release` builds the current commit and commits the result to the local `release` branch: the plugin folder with its built files, the marketplace manifest, `LICENSE` and this README.
 It needs a clean working tree, never touches the development history and doesn't push.
 
-To publish, push both branches:
-
-```sh
-git push origin main release
-```
+Every pull request to `main` runs `claude plugin validate --strict` on the plugin and the marketplace manifest.
+A pull request labelled `release` publishes when it merges: CI runs the lint and the tests in all three browsers, validates the plugin, runs `npm run release` and pushes the `release` branch.
 
 ## License
 
