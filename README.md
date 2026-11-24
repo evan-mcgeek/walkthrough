@@ -81,7 +81,7 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    Each step is a part of the change with its diff and the session's explanation, in reading order.
    What the session assumed rather than read is listed separately.
    Beside the explanation, "In this step" lists the step's files, counts its findings, notes and your comments, and shows the checklist items it touches.
-   Files nobody writes by hand go into a folded step, each with the reason it was folded.
+   Files nobody writes by hand go into a folded step of files to skim, each with the reason it was folded.
    Each file collapses from its header; large files start collapsed, and marking a file Viewed collapses it too, which is never a decision.
 2. **Notes.**
    The session pins findings, answers and drafts to a step or to lines in it.
@@ -107,7 +107,7 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: your decisions by label, flags with their notes, your comments, the comments the session drafted (`[AI]` drafts) you accepted, edited or dropped, the checklist, and what is still open, listed as undecided or changed since you decided.
+   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided), your flag notes and comments under their steps, the comments the session drafted (`[AI]` drafts) you accepted, edited or dropped, and beside it the verdict, the finishing actions and the checklist.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
    Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
@@ -200,6 +200,7 @@ The session runs the `walkthrough` CLI for you, so you rarely type it yourself.
 | `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page; `--kind <label>` names its kind for the page, and `--comments <text>` says what becomes of your comments. |
 | `files` | Lists the changed files. |
 | `steps`, `note`, `checklist`, `actions` | Record what the session wrote, from a file in the walkthrough's inbox (`--file`) or standard input. |
+| `checking` | Records the steps the session is still checking; the page holds their decisions until it is done. |
 | `listen` | Waits in the background for what you do on the page. |
 | `say` | Puts the session's answer, question or note on the page. |
 | `policy` | Says whether your review policy is missing, the unchanged template or your own; `show`, `init` and `save --file` print, create and replace it. |
