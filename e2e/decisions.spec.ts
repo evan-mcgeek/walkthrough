@@ -20,6 +20,24 @@ test.beforeEach(async ({ page, repo, url }) => {
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
 });
 
+test('the second click of a double click on Approve does not decide the step it moved to', async ({ page }) => {
+  const sent: string[] = [];
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/decide') sent.push(request.url());
+  });
+  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
+  const next = page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Approve' });
+  await next.hover();
+
+  await page.mouse.down({ clickCount: 2 });
+  await page.mouse.up({ clickCount: 2 });
+  // A click sends its decision as it is handled, so one frame later it would have gone.
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+
+  expect(sent).toHaveLength(1);
+  await expect(next).toBeVisible();
+});
+
 test('a step offers Approve, Flag and Ask; Flag takes a note before it reaches the session', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
   await expect(step.getByText('Undecided', { exact: true })).toBeVisible();

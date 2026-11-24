@@ -120,6 +120,19 @@ test('a request without the token is refused', async ({ request, url }) => {
   expect((await request.get(`${origin}/s/${'0'.repeat(48)}/`)).status()).toBe(404);
 });
 
+test('a step being marked read is not drawn again under the person reading it', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  const approve = page.getByRole('region', { name: 'Login' }).getByRole('button', { name: 'Approve' });
+  await expect(approve).toBeVisible();
+  const shown = await approve.elementHandle();
+
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '0 of 1 step decided, 1 left, 1 read');
+  await (await page.waitForRequest('**/data/walkthrough.json')).response();
+
+  expect(await shown.evaluate(node => node.isConnected)).toBe(true);
+});
+
 test('a step shows read before the server stores it, and storing it neither redraws nor clears an alert', async ({
   page,
   repo,
