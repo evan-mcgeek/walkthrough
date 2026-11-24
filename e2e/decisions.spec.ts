@@ -268,3 +268,34 @@ test('an empty Ask is not sent and says it needs words, while Flag sends with it
   await expect.poll(() => repo.run('decisions').stdout.split('\n')[0] ?? '').toContain('"action":"flag"');
   expect(repo.run('decisions').stdout.split('\n')[0]).not.toContain('"note"');
 });
+
+test('a decided note, draft or finishing action closes to one Change; the verdict locks once the review is sent', async ({ page, repo, url }) => {
+  const noteId = /([0-9a-f]{8})/.exec(record(repo, [{ step: '1', label: 'Finding', text: 'Everyone gets in.', finding: true }], 'note'))?.[1];
+  record(
+    repo,
+    [
+      { item: { type: 'note', id: noteId }, actions: [{ id: 'accept', label: 'Accept', tone: 'positive' }, { id: 'reject', label: 'Reject' }] },
+      { item: { type: 'verdict' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'comment', label: 'Comment' }] },
+      { item: { type: 'walkthrough' }, actions: [{ id: 'send', label: 'Send my review' }] },
+    ],
+    'actions',
+  );
+  const note = page.getByRole('region', { name: 'Login check' }).locator(`#note-${noteId ?? ''}`);
+  await note.getByRole('button', { name: 'Accept' }).click();
+  await expect(note.getByRole('button', { name: 'Accept' })).toHaveCount(0);
+  await expect(note.getByRole('button', { name: 'Reject' })).toHaveCount(0);
+  await expect(note.getByText('Decided: Accept', { exact: true })).toBeVisible();
+  await note.getByRole('button', { name: 'Change' }).click();
+  await expect(note.getByRole('button', { name: 'Reject' })).toBeVisible();
+
+  await page.goto(`${url}#summary`);
+  const summary = page.getByRole('region', { name: 'Summary' });
+  await summary.getByRole('radio', { name: 'Approve' }).click();
+  await summary.getByRole('button', { name: 'Send my review' }).click();
+  await expect(summary.getByRole('button', { name: 'Send my review' })).toHaveCount(0);
+  await expect(summary.getByRole('radio', { name: 'Approve' })).toHaveCount(0);
+  await expect(summary.getByText('Your verdict:')).toBeVisible();
+  await summary.getByRole('button', { name: 'Change' }).click();
+  await expect(summary.getByRole('button', { name: 'Send my review' })).toBeVisible();
+  await expect(summary.getByRole('radio', { name: 'Approve' })).toBeVisible();
+});

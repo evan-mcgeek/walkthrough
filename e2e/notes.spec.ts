@@ -168,7 +168,8 @@ test('a note shows its actions as buttons under its text beside Reply, and keeps
 
   expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'decision', item: { type: 'note', id }, action: 'dismiss' });
   await expect(note.getByText('Decided: Dismiss', { exact: true })).toBeVisible();
-  await expect(actions.getByRole('button', { name: 'Dismiss' })).toHaveAttribute('aria-pressed', 'true');
+  // Once decided the actions close to one Change, so the decision cannot be sent twice by accident.
+  await expect(actions.getByRole('button')).toHaveText(['Change']);
   await page.getByRole('status').getByRole('button', { name: 'Undo' }).click();
   await expect(note.getByText('Decided: Dismiss', { exact: true })).toHaveCount(0);
 });

@@ -878,7 +878,22 @@ function take(item: Item, action: Action): void {
   } else void decide(item, action.id);
 }
 
-function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false): HTMLElement {
+/** A decided item's actions close to one Change, which opens them again; its state tag already says what was done. */
+function changeButton(item: Item, small: boolean): HTMLElement {
+  const key = itemKey(item);
+  const change = keyed(el('button', { type: 'button', className: small ? 'btn small' : 'btn' }, 'Change'), `change:${key}`);
+  change.onclick = () => {
+    changing.add(key);
+    render();
+  };
+  const group = el('div', { className: 'choices' }, change);
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'Decide');
+  return group;
+}
+
+function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false, closes = true): HTMLElement {
+  if (closes && decisionOf(item) && !changing.has(itemKey(item))) return changeButton(item, small);
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   const group = el('div', { className: 'choices' }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
   group.setAttribute('role', 'group');
@@ -2443,14 +2458,14 @@ function otherOpenRows(): LedgerRow[] {
 const ledgerRows = () => [...walkthrough.steps.map(stepLedgerRow), ...otherOpenRows()];
 
 /** A Still open row's own actions, so the person decides it from the Summary; a step being checked waits. */
-function ledgerActions(item: Item, text = ''): HTMLElement[] {
+function ledgerActions(item: Item, text = '', closes = true): HTMLElement[] {
   const key = itemKey(item);
   const actions = walkthrough.actions[key] ?? [];
   const step = item.type === 'step' ? walkthrough.steps.find(one => one.id === item.id) : undefined;
   if (readOnly || !actions.length || (step && beingChecked(step))) return [];
   const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
   if (taken) return [takingForm(item, taken, text)];
-  return [el('div', { className: 'ledger-actions' }, actionGroup(item, () => 'secondary', true))];
+  return [el('div', { className: 'ledger-actions' }, actionGroup(item, () => 'secondary', true, closes))];
 }
 
 /** A row's title goes to the exact place: a step at its first open finding, a note on its lines with its file open. */
@@ -2550,7 +2565,7 @@ function verdictView(): HTMLElement {
     { className: 'verdict' },
     heading,
     now,
-    ...(options.length && !readOnly ? [group] : []),
+    ...(options.length && !readOnly && !(decisionOf(WHOLE) && !changing.has(itemKey(WHOLE))) ? [group] : []),
     ...(taken ? [takingForm(VERDICT, taken, '')] : []),
     ...(chosen ? decisionSaid(chosen) : []),
   );
@@ -2614,7 +2629,7 @@ function criteriaView(): HTMLElement[] {
     const mark: Mark | 'unchecked' = (decision && TONE_MARK[toneOf(actions, decision.action)]) || one.mark || 'unchecked';
     const words = plain(one.text);
     const link = el('a', { className: 'draft-line', href: `#checklist-${encodeURIComponent(one.id)}`, title: words }, words);
-    const own = actions.length && !readOnly ? ledgerActions(item, one.text) : [];
+    const own = actions.length && !readOnly ? ledgerActions(item, one.text, false) : [];
     if (!decision)
       for (const [at, button] of [...(own[0]?.querySelectorAll('button') ?? [])].entries())
         button.setAttribute('aria-pressed', String(actions[at] !== undefined && TONE_MARK[toneOf(actions, actions[at].id)] === one.mark));

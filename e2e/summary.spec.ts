@@ -112,8 +112,8 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   // A draft left alone goes out as drafted, all of them together, and none waits in Still open.
   await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 goes out · 1 edited · 1 dropped');
   await expect(drafts.getByRole('listitem')).toHaveText([
-    'cart.ts · 1Edited[AI] Name the items.EditDrop',
-    'Step 3Dropped[AI] Add a test.EditDrop',
+    'cart.ts · 1Edited[AI] Name the items.Change',
+    'Step 3Dropped[AI] Add a test.Change',
     'Step 3Goes out[AI] Check the total.EditDrop',
   ]);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
