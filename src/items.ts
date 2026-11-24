@@ -2,12 +2,15 @@
 
 /** The verdict is the person's decision on the whole walkthrough; the walkthrough's own actions finish it. */
 export type Item = { type: 'step' | 'note' | 'checklist'; id: string } | { type: 'verdict' } | { type: 'walkthrough' };
-export type Action = { id: string; label: string; note?: true; edit?: true };
+/** The colour a decision with the action shows in; the session picks it from the review policy, and left out it is none. */
+export type Tone = 'positive' | 'attention' | 'none';
+export const TONES: readonly Tone[] = ['positive', 'attention', 'none'];
+export type Action = { id: string; label: string; note?: true; edit?: true; tone?: Tone };
 
 /** What a step offers when the session records no actions on it. */
 export const STEP_ACTIONS: Action[] = [
-  { id: 'approve', label: 'Approve' },
-  { id: 'flag', label: 'Flag', note: true },
+  { id: 'approve', label: 'Approve', tone: 'positive' },
+  { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
 ];
 
 /** Whether `actions` are the built-in Approve and Flag, as opposed to actions the session chose. */
@@ -15,8 +18,24 @@ export const builtIn = (actions: Action[]) =>
   actions.length === STEP_ACTIONS.length &&
   actions.every((action, at) => {
     const own = STEP_ACTIONS[at];
-    return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit;
+    return (
+      own?.id === action.id &&
+      own.label === action.label &&
+      !own.note === !action.note &&
+      !own.edit === !action.edit &&
+      own.tone === (action.tone ?? 'none')
+    );
   });
+
+/**
+ * How a step shows in the header bar, To review, the Summary and Help: where the person is, decided in its action's tone,
+ * changed since decided, undecided with an open finding or problem, or undecided; whether it was read has no look.
+ */
+export type StepLook = 'cur' | 'ok' | 'flag' | 'neu' | 'reo' | 'find' | 'un';
+export const TONE_LOOK: Record<Tone, StepLook> = { positive: 'ok', attention: 'flag', none: 'neu' };
+
+/** The tone of the action taken on an item, none when the action is gone or has no tone. */
+export const toneOf = (actions: Action[] | undefined, id: string): Tone => actions?.find(one => one.id === id)?.tone ?? 'none';
 
 export const itemKey = (item: Item) => ('id' in item ? `${item.type}:${item.id}` : item.type);
 

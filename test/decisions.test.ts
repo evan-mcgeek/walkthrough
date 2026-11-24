@@ -34,15 +34,15 @@ function started(): string {
 }
 
 describe('deciding with the default step actions', () => {
-  test('a step with no actions defined offers Approve and Flag, Flag asking for a note', async () => {
+  test('a step with no actions defined offers Approve, positive, and Flag, attention and asking for a note', async () => {
     started();
 
     const { actions } = await shownAt(repo.url());
 
     expect(actions).toEqual({
       'step:1': [
-        { id: 'approve', label: 'Approve' },
-        { id: 'flag', label: 'Flag', note: true },
+        { id: 'approve', label: 'Approve', tone: 'positive' },
+        { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
       ],
     });
   });
@@ -70,14 +70,14 @@ describe('deciding with the default step actions', () => {
 });
 
 describe('walkthrough actions', () => {
-  test('the session defines the actions of steps, notes, checklist items and the whole walkthrough', async () => {
+  test('the session defines the actions of steps, notes, checklist items and the whole walkthrough, each with its tone', async () => {
     const noteId = started();
     const offered = [
-      { item: step1, actions: [{ id: 'ship', label: 'Ship it' }] },
+      { item: step1, actions: [{ id: 'ship', label: 'Ship it', tone: 'positive' }] },
       {
         item: { type: 'note', id: noteId },
         actions: [
-          { id: 'accept', label: 'Accept' },
+          { id: 'accept', label: 'Accept', tone: 'none' },
           { id: 'edit', label: 'Edit', edit: true },
           { id: 'drop', label: 'Drop', note: true },
         ],
@@ -91,7 +91,7 @@ describe('walkthrough actions', () => {
     expect(recorded.stderr).toBe('');
     expect(recorded.stdout).toBe('Recorded the actions of 4 items.\n');
     expect((await shownAt(repo.url())).actions).toEqual({
-      'step:1': [{ id: 'ship', label: 'Ship it' }],
+      'step:1': [{ id: 'ship', label: 'Ship it', tone: 'positive' }],
       [`note:${noteId}`]: offered[1]?.actions,
       'checklist:1': [{ id: 'check', label: 'Checked' }],
       walkthrough: [{ id: 'post', label: 'Post my comments' }],
@@ -114,7 +114,10 @@ describe('walkthrough actions', () => {
 
     repo.record([{ item: step1, actions: [] }], 'actions');
 
-    expect((await shownAt(repo.url())).actions['step:1']?.map(action => action.id)).toEqual(['approve', 'flag']);
+    expect((await shownAt(repo.url())).actions['step:1']).toEqual([
+      { id: 'approve', label: 'Approve', tone: 'positive' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+    ]);
   });
 
   test('recording the steps or the checklist again keeps the actions of items that keep their id', async () => {
@@ -161,6 +164,7 @@ describe('walkthrough actions', () => {
       [action({ label: '' }), 'entry 2: action 1 needs a label'],
       [action({ note: 'yes' }), 'entry 2: action 1: note must be true or false'],
       [action({ edit: true }), 'entry 2: action 1: only a note or a checklist item has text to edit'],
+      [action({ tone: 'green' }), 'entry 2: action 1: tone must be positive, attention or none'],
       [
         {
           item: step1,

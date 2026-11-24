@@ -74,7 +74,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Actions
 
-- A step: Approve, and Flag (asks for a note).
+- An action's tone is the colour my decision shows in on the page: positive is green, attention is amber, and none is grey; an action I give no tone here has none.
+- A step: Approve, positive, and Flag, attention (asks for a note).
 - A finding: Accept, and Reject (asks for a note with the reason).
 - A draft: Post (lets me edit the text first), and Drop.
 - The rest of the actions are in the part for this walkthrough.
@@ -90,7 +91,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Fix list
 
-- Offer my verdict on the verdict, "Ready for colleagues" or "Needs fixes", with the hint "Shown to colleagues with the fix list."
+- Offer my verdict on the verdict, "Ready for colleagues", positive, or "Needs fixes", attention, with the hint "Shown to colleagues with the fix list."
 - Offer "Send the fix list to the session" first on the whole walkthrough, with a hint saying it gives me the fix list in the chat.
 - Flagged steps, accepted findings and my own line comments go on a fix list: for each, the step, the file and lines, my note, the finding or my comment.
 - When I take Send the fix list to the session, give me the fix list in the chat as one message, ready to paste into an author session, headed by my verdict.
@@ -121,7 +122,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Turn each flagged step and accepted finding into a draft comment on its lines.
 - My own line comments go into the review as line comments, as I wrote them.
-- Offer my verdict on the verdict, "Approve", "Request changes" or "Comment", with the hint "Sent with the review."
+- Offer my verdict on the verdict, "Approve", positive, "Request changes", attention, or "Comment", with no tone, with the hint "Sent with the review."
 - Offer "Send my review" first on the whole walkthrough, with a hint saying it goes into a pending review I submit myself.
 - When I take Send my review, put the posted drafts and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
 - The author's branch and the change's description stay as they are.

@@ -7,7 +7,7 @@ import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, 
 import { anchorOf } from './notes';
 import { parseDiff } from './diff';
 import { fieldsOf, filled, parseList } from './input';
-import { type Action, type Item, itemKey, STEP_ACTIONS } from './items';
+import { type Action, type Item, itemKey, STEP_ACTIONS, type Tone, TONES } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
@@ -122,16 +122,23 @@ export function parseActions(
       item: found,
       actions: actions.map((fields: unknown, number) => {
         const name = `action ${String(number + 1)}`;
-        const { id, label, note = false, edit = false } = fieldsOf(fields);
+        const { id, label, note = false, edit = false, tone } = fieldsOf(fields);
         if (!filled(id)) throw fail(`${name} needs an id`);
         if (!filled(label)) throw fail(`${name} needs a label`);
         if (typeof note !== 'boolean') throw fail(`${name}: note must be true or false`);
         if (typeof edit !== 'boolean') throw fail(`${name}: edit must be true or false`);
+        if (tone !== undefined && !TONES.includes(tone as Tone)) throw fail(`${name}: tone must be positive, attention or none`);
         if (edit && found.type !== 'note' && found.type !== 'checklist')
           throw fail(`${name}: only a note or a checklist item has text to edit`);
         if (ids.has(id)) throw fail(`two actions have the id ${id}`);
         ids.add(id);
-        return { id, label, ...(note && { note: true as const }), ...(edit && { edit: true as const }) };
+        return {
+          id,
+          label,
+          ...(note && { note: true as const }),
+          ...(edit && { edit: true as const }),
+          ...(tone !== undefined && { tone: tone as Tone }),
+        };
       }),
       ...(hint !== undefined && { hint: hint.trim() }),
     };
