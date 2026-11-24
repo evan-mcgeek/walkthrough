@@ -151,7 +151,7 @@ test('a redraw waits while the person composes with an input method, and comes a
     input.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
   });
 
-  const polled = page.waitForResponse(answer => answer.url().includes('data/session.json') && answer.status() === 200);
+  const polled = page.waitForResponse(async answer => answer.url().includes('data/session.json') && (await answer.text()).includes('"listening"'));
   repo.background('listen');
   await polled;
   await page.waitForResponse(answer => answer.url().includes('data/session.json'));

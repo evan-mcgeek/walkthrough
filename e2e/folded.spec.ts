@@ -2,7 +2,12 @@ import type { Locator } from '@playwright/test';
 import type { Repo } from '../test/helpers';
 import { expect, test } from './walkthrough';
 
-const REASONS = ['Screenshot of the built page for the README.', 'Copied in from the design board as it was drawn, and not edited by hand since.', 'Recorded test output.'];
+// Longer than the summary is wide in any font, so the one line is always cut.
+const REASONS = [
+  'Screenshot of the built page for the README.',
+  'Copied in from the design board as it was drawn, and not edited by hand since, so its spacing, colours and type sizes are the board’s own, which the page as built may have moved away from in the weeks since, and which nobody has checked against the running page or the parts it is made of.',
+  'Recorded test output.',
+];
 const shots = Array.from({ length: 18 }, (_, at) => ({ path: `shots/shot-${String(at + 1).padStart(2, '0')}.txt`, reason: REASONS[at % 3] ?? '' }));
 const lines = Array.from({ length: 6 }, (_, at) => `Line ${String(at + 1)}.`).join('\n');
 test.use({ files: { ...Object.fromEntries(shots.map(shot => [shot.path, `${shot.path}\n`])), 'notes.md': `${lines}\n` } });
