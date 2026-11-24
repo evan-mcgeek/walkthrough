@@ -278,18 +278,15 @@
 }
 
 .verdict-now {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 13.5px;
 }
 
 .verdict-now > strong {
   color: var(--status-words, var(--ink));
-}
-
-.verdict-now.reopened {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .verdict-now.reopened,

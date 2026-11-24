@@ -98,7 +98,7 @@ test('checklist marks and To review states are named for screen readers and in t
 
   await expect(rail.getByRole('link', { name: 'App version' }).getByRole('img')).toHaveAccessibleName('Not decided yet');
   await expect(rail.getByRole('link', { name: 'App version' })).toHaveAttribute('title', 'Not decided yet');
-  await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('The step you are on');
+  await expect(rail.getByRole('link', { name: 'Login check' }).getByRole('img')).toHaveAccessibleName('Where you are');
   await at(page, 'checklist-2');
   const items = page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
   for (const [at, mark] of ['Not checked yet', 'Not met', 'Not checked yet'].entries())
@@ -147,8 +147,8 @@ test('a checklist status wears its colour everywhere it shows: met green, partly
   }
 
   await page.keyboard.press('?');
-  const help = page.getByRole('dialog', { name: 'Help: what things mean' });
-  for (const words of ['Met (green)', 'Partly met (amber)', 'Not met (red)', 'Not checked yet (grey)'])
+  const help = page.getByRole('dialog', { name: 'Help' });
+  for (const words of ['Met (green)', 'Partly (amber)', 'Not met (red)', 'Not checked yet (grey)'])
     await expect(help.getByRole('row').filter({ hasText: words })).toHaveCount(1);
 });
 
@@ -187,8 +187,8 @@ test('criteria never sit in To review; the Summary lists them prefilled with the
 
   await page.goto(`${url}#summary`);
   const summary = page.getByRole('region', { name: 'Summary' });
-  await expect(summary.getByText('Nothing still open', { exact: true }).or(summary.getByText(/still open$/))).toBeVisible();
-  await expect(summary.getByRole('table', { name: 'Every step and what you decided' }).locator('[href^="#checklist-"]')).toHaveCount(0);
+  await expect(summary.getByText('Nothing left.', { exact: true }).or(summary.getByText(/still open$/))).toBeVisible();
+  await expect(summary.locator('table.ledger').locator('[href^="#checklist-"]')).toHaveCount(0);
   const criteria = summary.getByRole('region', { name: 'Acceptance criteria' });
   const item = (text: string) => criteria.getByRole('listitem').filter({ hasText: text });
   const pressed = (text: string) => item(text).getByRole('button', { pressed: true });

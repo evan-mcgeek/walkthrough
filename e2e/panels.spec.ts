@@ -62,7 +62,7 @@ test('by default the queue is open and every other panel waits on its edge', asy
 
   await expect(edge(page, 'left').getByRole('button')).toHaveText(['Explanation']);
   await expect(edge(page, 'left').getByRole('button', { name: 'Explanation' })).toHaveAttribute('title', 'Show Explanation (3)');
-  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1 of 2 met']);
+  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1/2']);
   await expect(edge(page, 'right').getByRole('button')).toHaveAttribute('title', 'Show Checklist (2)');
   await expect(page.getByRole('toolbar')).toHaveCount(2);
   await expect(checklistPanel(page)).toBeHidden();
@@ -137,16 +137,16 @@ for (const [name, setUp] of [
     expect(await heard(deciding)).toMatchObject({ kind: 'decision', item: { type: 'step', id: '1' }, action: 'approve' });
     const second = step(page, 'App version');
     await expect(second).toBeVisible();
-    await expect(page.getByRole('banner').getByText('Step 2 of 2 · 1 decided', { exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').locator('.progress-count')).toHaveText('Step 2 of 2');
     const asking = repo.background('listen');
     await second.getByRole('textbox', { name: 'Ask about this step' }).fill('Why bump it?');
     await second.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
     expect(await heard(asking)).toMatchObject({ kind: 'ask', step: '2', text: 'Why bump it?' });
-    await expect(second.getByText('Waiting for the session to answer.')).toBeVisible();
+    await expect(second.getByText('Waiting for an answer')).toBeVisible();
 
     await second.locator('tr[data-line="1"] .line-num2').click();
-    await second.getByRole('button', { name: 'Ask about lines' }).click();
-    await expect(second.getByRole('textbox', { name: 'Ask about app.ts line 1' })).toBeFocused();
+    await second.getByRole('button', { name: 'Ask', exact: true }).click();
+    await expect(second.getByRole('textbox', { name: 'Ask about line 1' })).toBeFocused();
     await page.keyboard.press('Escape');
 
     await second.getByRole('button', { name: 'Flag' }).click();
@@ -157,7 +157,7 @@ for (const [name, setUp] of [
     // The Summary keeps the criteria within reach, whichever panels are shown.
     await expect(page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' })).toBeVisible();
     await page.keyboard.press('k');
-    await expect(second.getByText('Decided: Flag', { exact: true })).toBeVisible();
+    await expect(second.getByText('Flagged', { exact: true })).toBeVisible();
     await expect(second.getByText('Too early.', { exact: true })).toBeVisible();
   });
 
@@ -167,7 +167,7 @@ test('with every panel shown the Undo toast sits over the main pane, clear of th
 
   await step(page, 'Login check').getByRole('button', { name: 'Approve' }).click();
 
-  const toast = page.getByRole('status').filter({ hasText: 'Decided step 1: Approve' });
+  const toast = page.getByRole('status').filter({ hasText: 'Approved' });
   await expect(toast).toBeVisible();
   const shown = await toast.boundingBox();
   const pane = await page.getByRole('main').boundingBox();
@@ -230,7 +230,7 @@ test('with no tool panel, notes stay on their lines and what the session said wa
 
   await messages.click();
   await expect(page.getByRole('heading', { name: 'Session messages', level: 2 })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'From the session' })).toContainText('The lockfile is in no step.');
+  await expect(page.locator('.messages-section.from-session')).toContainText('The lockfile is in no step.');
 });
 
 test.describe('with a long file', () => {

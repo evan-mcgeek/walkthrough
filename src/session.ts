@@ -139,11 +139,14 @@ export async function starting(dir: string): Promise<void> {
 
 type Fields<T> = T extends unknown ? Omit<T, 'id' | 'from' | 'at'> : never;
 
+// The person's comments wait for the finishing action, which reads them all with `walkthrough comments`; they wake no one.
+const KEPT_FOR_LATER = new Set<PageRequest['kind']>(['comment', 'edit-comment', 'delete-comment']);
+
 export function request(dir: string, fields: Fields<PageRequest>): Promise<SessionView> {
   const entry = { id: newId(), from: 'page', at: stamp(), ...fields } as PageRequest;
   return hold(dir, () => {
     append(files(dir).conversation, entry);
-    append(files(dir).inbox, entry);
+    if (!KEPT_FOR_LATER.has(entry.kind)) append(files(dir).inbox, entry);
     return sessionView(dir);
   });
 }

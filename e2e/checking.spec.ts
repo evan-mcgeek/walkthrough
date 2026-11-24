@@ -30,34 +30,34 @@ test('a step being checked says so and holds its actions, while the person can s
   const step = page.getByRole('region', { name: 'Login' });
   const rail = page.getByRole('navigation', { name: 'To review' });
 
-  await expect(step.getByText('The session is still checking this step. Findings may still arrive.')).toBeVisible();
+  await expect(step.getByText('Still checking this step. Findings may arrive.')).toBeVisible();
   await expect(rail.getByRole('link', { name: /Login/ })).toContainText('Being checked');
   await expect(rail.getByRole('link', { name: /Cart/ })).not.toContainText('Being checked');
   await expect(step.getByRole('button', { name: 'Approve' })).toBeDisabled();
   await expect(step.getByRole('button', { name: 'Flag' })).toBeDisabled();
-  await expect(step.getByText('Decide once the session has checked this step.')).toBeVisible();
+  await expect(step.getByText('Decide after the check', { exact: true })).toBeVisible();
   await page.keyboard.press('a');
   await page.keyboard.press('f');
   await expect(step.getByRole('textbox', { name: 'Note' })).toHaveCount(0);
-  await expect(step.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(step.locator('.tag.decided')).toHaveCount(0);
 
   await step.getByRole('textbox', { name: 'Ask about this step' }).fill('Why login?');
   await step.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
-  await expect(step.getByText('Waiting for the session to answer.')).toBeVisible();
+  await expect(step.getByText('Waiting for an answer')).toBeVisible();
   await rail.getByRole('link', { name: 'Summary' }).click();
   await expect(page.getByText('0 of 3 steps decided · 2 being checked', { exact: true })).toBeVisible();
-  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const ledger = page.locator('table.ledger');
   await expect(ledger.getByRole('row')).toHaveText([
     'Still open3',
-    '1LoginFindings may still arrive.Being checked',
-    '2AppFindings may still arrive.Being checked',
-    '3CartApproveFlagUndecided',
+    '1LoginBeing checked',
+    '2AppBeing checked',
+    '3CartApproveFlag',
   ]);
-  await expect(ledger.locator('.ledger-decision.muted')).toHaveText(['Being checked', 'Being checked', 'Undecided']);
+  await expect(ledger.locator('.ledger-decision.muted')).toHaveText(['Being checked', 'Being checked', '']);
 
   run(repo, 'checking', '2');
   await rail.getByRole('link', { name: /Login/ }).click();
-  await expect(step.getByText('The session is still checking this step.', { exact: false })).toHaveCount(0);
+  await expect(step.getByText('Still checking this step.', { exact: false })).toHaveCount(0);
   await step.getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App' })).toBeVisible();
   await expect(rail.getByRole('button', { name: '1 decided' })).toBeVisible();
@@ -74,21 +74,21 @@ test('a finding pinned after the person decided the step brings it back with a b
 
   record(repo, [{ ...finding('1', 'Everyone gets in.'), file: 'login.ts', lines: [1, 1] }], 'note');
 
-  await expect(banner).toHaveText('New finding on step 1, Login, which you approved.Go to step');
+  await expect(banner).toHaveText('New finding on step 1, which you approved.Go to step');
   await expect(rail.locator(':scope > .queue-item').filter({ hasText: 'Login' })).toContainText('New finding');
   await banner.getByRole('button', { name: 'Go to step' }).click();
   const step = page.getByRole('region', { name: 'Login' });
   await expect(step).toBeVisible();
-  await expect(step.getByText('Decided: Approve', { exact: true })).toBeVisible();
+  await expect(step.getByText('Approved', { exact: true })).toBeVisible();
   await expect(banner).toBeHidden();
-  await expect(step.getByText('A finding arrived after you approved. Your decision stays; change it if the finding matters.', { exact: true })).toBeVisible();
+  await expect(step.getByText('New finding after you approved.', { exact: true })).toBeVisible();
   await expect(step.getByRole('article', { name: 'Finding' }).getByText('line 1 · new since you approved', { exact: true })).toBeVisible();
-  await expect(step.getByRole('button', { name: 'Change decision' })).toBeVisible();
+  await expect(step.getByRole('button', { name: 'Change', exact: true })).toBeVisible();
   await expect(step.getByRole('button', { name: 'Approve' })).toHaveCount(0);
   await expect(step.locator('.open-findings')).toHaveText('1 new finding');
   await rail.getByRole('link', { name: 'Summary' }).click();
-  await expect(page.getByRole('table', { name: 'Every step and what you decided' }).getByRole('row', { name: /Login/ })).toHaveText(
-    '1Login1 new finding since you approved.Approve',
+  await expect(page.locator('table.ledger').getByRole('row', { name: /Login/ })).toHaveText(
+    '1Login1 new finding since you approved.Approved',
   );
   await rail.locator(':scope > .queue-item').filter({ hasText: 'Login' }).click();
 

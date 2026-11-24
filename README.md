@@ -58,7 +58,8 @@ To review a change someone asked you to review, run `/walkthrough:pr` with its n
 
 The session fetches the change as your policy says, without checking it out.
 Right after it starts, it asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need; you may skip the question.
-The session's comments become drafts marked `[AI]` that you can edit or drop on the page.
+Each finding the session confirms arrives as the comment itself, a draft marked `[AI]` that you can edit or drop on the page; doubtful ones are notes for you to read.
+Your own comments wait quietly until you send; the session never replies to them.
 When you send your review, every draft you kept goes out with your own comments, all together in one pending review that you submit yourself.
 Open the same change again after its author replied or pushed, and the walkthrough goes on where you left it.
 
@@ -109,10 +110,10 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
+   The last entry of the queue, or Finish in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
    Criteria never wait in To review.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
-   Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
+   Until then the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
 9. **The change moves.**
    When you push fixes, the same walkthrough goes on.
@@ -127,7 +128,7 @@ Around the step sit three panels, shown or hidden on their own: "To review" (the
 Each panel hides from the button in its title bar and waits as a labelled button on its edge, so nothing is ever out of reach; the keys `1` to `3` show and hide them too.
 Notes stay on their lines; what the session said outside the steps, and notes whose code was removed, wait on the Session messages page in the queue.
 By default only the queue is open.
-Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu.
+Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu, with Help and End session.
 
 | | |
 | --- | --- |
@@ -154,7 +155,7 @@ Keys do nothing while you type, inside a menu or while a popover is open.
 | `v` | Mark the file the focus is in as viewed, or else the step's first file not viewed yet |
 | `1` to `3` | Show or hide the queue, the checklist or the explanation column |
 | `g` then `s` | Go to the end of the walkthrough |
-| `?` | Help: what things mean, and these keys |
+| `?` | Help: the icons, and these keys |
 
 To pick lines, click a line number and Shift-click another, or press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
 The picked lines then offer Ask about lines and Comment.
@@ -236,7 +237,7 @@ The decisions behind the tool are in [`docs/adr/`](docs/adr/), and the domain la
 npm install
 npx playwright install chromium firefox webkit
 npm test                # CLI tests (vitest) and page tests (Playwright) in Chromium
-npm run test:browsers   # the same in Chromium, Firefox and WebKit, before a release
+npm run test:browsers   # the same in Chromium, Firefox and WebKit, when you ask for it
 npm run lint            # type check and ESLint
 ```
 
@@ -250,7 +251,7 @@ Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 It needs a clean working tree, never touches the development history and doesn't push.
 
 Every pull request to `main` runs `claude plugin validate --strict` on the plugin and the marketplace manifest.
-A pull request labelled `release` publishes when it merges: CI runs the lint and the tests in all three browsers, validates the plugin, runs `npm run release` and pushes the `release` branch.
+A pull request labelled `release` publishes when it merges: CI runs the lint, the command-line tests and the page tests in Chromium, validates the plugin, runs `npm run release` and pushes the `release` branch.
 
 ## License
 

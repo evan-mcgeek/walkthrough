@@ -99,7 +99,7 @@ test('a step with open findings says how many in To review beside one triangle, 
     { step: '1', file: 'cart.ts', lines: [90, 90], label: 'Bug', text: 'Overdue todos sort last.', finding: true },
     { step: '1', file: 'cart.ts', lines: [60, 60], label: 'Bug', text: 'A due date of today reads as overdue.', finding: true },
   ]);
-  await page.getByRole('button', { name: 'Mark cart.ts as viewed' }).click();
+  await page.getByRole('button', { name: 'Viewed cart.ts' }).click();
   const row = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: /Cart/ });
   const sub = row.locator('.queue-sub');
   await expect(sub).toHaveText('2 open findings');
@@ -132,9 +132,9 @@ test('a file header counts its findings, notes and your comments, and each count
   const cart = page.locator('.d2h-file-wrapper[data-file="cart.ts"]');
   const marks = cart.locator('.d2h-file-header .file-stats + .file-marks').getByRole('button');
   await expect(marks).toHaveText(['1 finding', '2 notes', '1 yours']);
-  await expect(marks.first()).toHaveAttribute('title', 'Go to the first finding in this file');
+  await expect(marks.first()).toHaveAttribute('title', 'First finding here');
   await expect(page.locator('.d2h-file-wrapper[data-file="login.ts"] .file-marks')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Mark cart.ts as viewed' }).click();
+  await page.getByRole('button', { name: 'Viewed cart.ts' }).click();
   await expect(cart.locator('.d2h-file-diff')).toBeHidden();
 
   await marks.filter({ hasText: '1 finding' }).click();
@@ -150,8 +150,8 @@ test('a file header counts its findings, notes and your comments, and each count
   await expect(page.getByRole('article', { name: 'Your comment' })).toBeInViewport();
 
   await page.keyboard.press('?');
-  const help = page.getByRole('dialog', { name: 'Help: what things mean' });
-  for (const words of ['1 findingOn a file: go to its first finding', '2 notesOn a file: go to its first note', '1 yoursOn a file: go to your first comment on it', '2 open findingsUnder a step: go to the next open finding', 'Open findings, as "2 open findings": opens the step at the first'])
+  const help = page.getByRole('dialog', { name: 'Help' });
+  for (const words of ['1 findingFirst finding in this file', '2 notesFirst note in this file', '1 yoursYour first comment here', '2 open findingsNext finding', 'NOpens the first finding'])
     await expect(help.getByRole('row').filter({ hasText: words })).toHaveCount(1);
 });
 
@@ -162,7 +162,7 @@ test('the action bar’s open findings go to the next one at each press, wrappin
     { step: '1', file: 'cart.ts', lines: [50, 50], label: 'Nit', text: 'Name the due date.' },
   ]);
   const count = page.getByRole('region', { name: 'Cart' }).locator('.action-bar').getByRole('button', { name: '2 open findings' });
-  await expect(count).toHaveAttribute('title', 'Go to the next open finding');
+  await expect(count).toHaveAttribute('title', 'Next finding');
 
   for (const text of ['A due date of today reads as overdue.', 'Overdue todos sort last.', 'A due date of today reads as overdue.']) {
     await count.click();

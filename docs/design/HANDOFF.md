@@ -71,8 +71,8 @@ Replace the stacked sections (Still open / Verdict / Decided table / Flagged / Y
 - **Being checked:** neutral notice under the title with the dashed not-checked icon (`The session is still checking this step. Findings may still arrive.`); queue sub-line `Being checked` (muted, never amber); Approve and Flag disabled with hint `Decide once the session has checked this step.` (Ask and line comments stay live; A, F and swipe decide nothing); Summary lists it as `Being checked`.
 - **Late finding:** amber banner under the header (`New finding on step 8, <title>, which you approved.` / `3 new findings on steps 3 and 8.`) with `Go to step` and a dismiss; the decided step returns to the queue with its decided icon and amber `New finding`. On the step itself (new): an amber-wash line under the title (`A finding arrived after you approved. Your decision stays; change it if the finding matters.`), the note labelled `line N · new since you approved`, and an action bar of `Change decision`, Ask, and amber `1 new finding`.
 - **Files to skim** (folded step): collapsed summary line (chevron, `18 files` never wrapping, distinct reasons joined by ` · ` with one ellipsis, problem tag); problems shown under it even when collapsed; opened, a grid of path (max 45%) / reason (wraps) / Show diff; at 390px the reason goes under the path. Insert `<wbr>` after `/` in paths so they break cleanly. Export lists every file open with path, reason and diff; images read `Binary image · W × H · replaced`.
-- **File headers:** on surface tint under a control-edge rule, each file after the first 32px below the one before it, opened or collapsed (this replaced the flush headers first drawn here; DESIGN.md has it).
-- **Notes:** the note block is `max-width: 66ch`; its actions are buttons under its text beside Reply on step notes, line notes and notes on Files to skim (this replaced the `…` menu first drawn here; DESIGN.md has it).
+- **File headers:** flush, no margin between files, opened or collapsed.
+- **Notes:** the note block is `max-width: 66ch`, so its `…` menu (`right:0`) opens at the end of the text column on step notes, line notes and notes on Files to skim.
 
 ### 7. Motion (see `prototype.html`; specs in `DESIGN.md` → Motion)
 
@@ -126,6 +126,50 @@ The accent no longer carries status anywhere: remove it from progress segments, 
 - No status uses the accent; grep for `--acc` in status selectors.
 - Every coloured state also shows its icon and word; a greyscale screenshot still distinguishes every state, including the bar (solid, hatched, outlined, faint, taller ink).
 - Green appears only for decided-positive or met (plus diff washes); red only for not met.
+
+## Round 5: simple and short
+
+Boards: Screens → the ten "Round 5" sections at the top, each with Before (round 4) and After, light and dark, 1440 and 390. Every string change is in `COPY-round-5.md`; the caps and the session's slot shapes are in `DESIGN.md` → Words. The prototype is updated to the round 5 header, step, notes and action bar.
+
+### 1. Header
+Mark only; branch label (tooltip names the kind); bar; `Step 4 of 9` / `Summary`; verdict (once chosen); `Finish` with the flag icon; status dot (Listening is the dot alone, tooltip "Listening: questions reach the session now"; Working, Needs you, Session gone show their word); More holds Appearance, Help, End session.
+
+### 2. To review
+One line per row: icon, title, at most one badge (amber ⚠ + count for findings or problems, amber "new", grey count of unread on Session messages; "Being checked" is the only sub-line). Criteria are removed from the queue.
+
+### 3. A step
+No "Undecided" tag (a decided step shows its outcome tag: "Approved" green, "Flagged" amber, or the label). One-sentence explanation + `More`. Chips row replaces the facts rail (file chips with +/− and ⚠ count, notes count, criteria chips, `N assumption` chip that opens the assumptions). File headers carry ⚠ and 💬 counts that jump. Action bar: `Approve` and `Flag` with icons and key caps, Ask field with icon, `⚠ N open` link. Being checked: notice "Still checking this step. Findings may arrive." and hint "Decide after the check". Late finding: banner "New finding on step 8, which you approved." with `Go to step`.
+
+### 4. Note actions: what the session records
+For each action on a note, the session records:
+
+| Field | Type | Rule |
+|---|---|---|
+| `label` | string | ≤ 3 words, names the outcome ("Add to fixes", "Not an issue") |
+| `tone` | `"positive" \| "attention" \| "none"` | colours the outcome, never the button |
+| `consequence` | string, optional | ≤ 8 words, where it goes or what it costs ("Goes on the fix list.") |
+| `outcome` | string | ≤ 3 words, past tense, shown after deciding ("Added to fixes") |
+| `asks_reason` | boolean | opens "Why? (optional)"; empty is allowed |
+| `primary` | boolean | at most one per note; its consequence shows under the buttons |
+
+And for each note: `kind` (≤ 2 words) and `needs_decision` (boolean; false = no buttons, folds once read).
+Render: buttons neutral; the primary action's consequence as one muted line under the buttons (always, so it works without hover), every consequence in tooltips. After deciding: fold to one line with the outcome icon (check / cross / eye) in its tone, "Kind: text" muted, `Undo` and `Change`. Ignored notes stay, 75% opacity, counted nowhere. Drafts show `Edit` and `Drop`; no Post.
+
+### 5. Summary
+Count line "4 left · 8 go out". Sections: Still open (one row each with its own small buttons; click goes to the exact place), Goes out (your comments and drafts, one line each; tags only Edited/Dropped; Edit/Drop), Checklist (segmented Met/Partly/Not met; session's mark pressed; press to overrule), "N steps decided" fold. Rail: verdict, one send button, one hint. After sending: green-wash "Sent" box with one line of what went and a link. No session replies in the rail.
+
+### 6. Checklist, Session messages, Help, phone, list, export
+- Checklist page: same one-line rows with the segmented control; evidence opens under a row.
+- Session messages: unread first with an accent dot; a question opens with its answer buttons; read ones fold; "On removed code" and "Not in any step" groups.
+- Help: Icons and Keys only.
+- Phone: same trims; the swipe card shows title, one sentence, chips and the finding.
+- List page: one line per walkthrough (name, mini bar, "N left" or "Sent", verdict, time). Export: one line per step with its outcome, then flagged steps in full.
+
+### 7. Done when
+- No string exceeds its cap (DESIGN.md → Words); every "remove" in COPY-round-5.md is gone.
+- A draft, criterion, finding or message appears once per screen.
+- No list row wraps; each has its full text in a tooltip and on the item.
+- After any note action, the note shows its outcome icon and word without hover.
 
 ## Done when
 

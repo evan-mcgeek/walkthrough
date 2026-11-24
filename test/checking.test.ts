@@ -77,7 +77,7 @@ describe('walkthrough checking', () => {
 
     const refused = await decide({ item: { type: 'step', id: '2' }, action: 'approve' });
     expect(refused.status).toBe(409);
-    expect(await refused.json()).toEqual({ error: 'Decide once the session has checked this step.' });
+    expect(await refused.json()).toEqual({ error: 'Decide after the check.' });
     expect((await shownAt(repo.url())).decided['step:2']).toBeNull();
     expect((await decide({ item: { type: 'step', id: '1' }, action: 'approve' })).status).toBe(200);
 

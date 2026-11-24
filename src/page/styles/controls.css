@@ -454,15 +454,6 @@ select:disabled {
   background: var(--canvas);
 }
 
-.question-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  margin: 0;
-  color: var(--amber);
-  font: var(--text-label);
-}
-
 /* A menu of [role=menuitem] and [role=menuitemcheckbox] buttons, floating under the control that opened it. */
 .menu {
   position: absolute;

@@ -39,9 +39,9 @@ const actionsExample = [
   {
     item: { type: 'note', id: '5f0c2a9e' },
     actions: [
-      { id: 'accept', label: 'Accept', tone: 'positive' },
-      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive' },
-      { id: 'drop', label: 'Drop', note: true },
+      { id: 'accept', label: 'Accept', tone: 'positive', consequence: 'Goes on the fix list.', outcome: 'Added to fixes', primary: true },
+      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive', consequence: 'You reword it first.', outcome: 'Edited' },
+      { id: 'drop', label: 'Drop', note: true, consequence: 'The author never sees it.', outcome: 'Dropped' },
     ],
   },
   { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'fix', label: 'Needs a fix', note: true, tone: 'attention' }] },
@@ -143,10 +143,15 @@ walkthrough actions --file <file>
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
   An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone}, ...]}, ...]
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone,
+      "consequence": string, "outcome": string, "primary": boolean}, ...]}, ...]
   "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
   left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
-  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention"};
+  "consequence", at most 8 words, says where a decision with the action goes or what it costs, such as "Goes on the fix list.";
+  "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
+  "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
+  The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
+  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive", "outcome": "Approved"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention", "outcome": "Flagged"};
   an empty list brings these back.
   Other items offer nothing until actions are recorded on them.
   The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
@@ -178,13 +183,11 @@ walkthrough listen
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
     {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
-    {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
-    {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
-    {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Act on a clear as the review policy says, and answer it with say --answer like any decision.
-  A comment is the person's own words, never yours: act on it, its edits and its deletion as the review policy says, and answer each with say --answer.
+  The person's own line comments, their edits and their deletions never come through listen and need no answer:
+  read them all with walkthrough comments when the review policy acts on them, such as at the finishing action.
   Files the person collapses or marks viewed are their own reading marks and never reach the session.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 

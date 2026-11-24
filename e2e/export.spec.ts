@@ -39,7 +39,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   const read = async () => ((await (await page.request.get(stored)).json()) as { read: string[] }).read;
   await expect.poll(read).toEqual(['1', '2']);
   repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes' }] }], 'actions');
-  await page.getByRole('banner').getByRole('link', { name: 'Finish review' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Finish', exact: true }).click();
   await page.getByRole('radio', { name: 'Needs fixes' }).click();
   await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
   const out = path.join(path.dirname(repo.dir), 'login.html');
@@ -63,7 +63,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(exported.locator('.export-head').getByTitle('Your verdict')).toHaveText('Needs fixes');
   expect((await exported.getByRole('main').boundingBox())?.width).toBe(900);
   const shown = exported.getByRole('region', { name: 'Login check' });
-  await expect(shown.getByRole('heading', { level: 2 })).toHaveText('1Login checkDecided: Flag');
+  await expect(shown.getByRole('heading', { level: 2 })).toHaveText('1Login checkFlagged');
   await expect(shown.getByRole('strong')).toHaveText('login');
   await expect(shown.getByText('Check the password.')).toBeVisible();
   await expect(shown.getByText('Callers check the result.')).toBeVisible();
@@ -72,7 +72,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(shownNote.getByText('Everyone gets in.')).toBeVisible();
   await expect(shownNote.getByText('Is that on purpose?')).toBeVisible();
   const other = exported.getByRole('region', { name: 'App version' });
-  await expect(other.getByText('Undecided', { exact: true })).toBeVisible();
+  await expect(other.locator('.tag')).toHaveCount(0);
   await expect(other.locator('.d2h-del')).toContainText(['export const app = 1;']);
   await expect(other.locator('.d2h-file-wrapper[data-file="app.ts"] .file-explanation')).toHaveText('The version the app reports.');
   const folded = exported.getByRole('region', { name: 'Generated' });

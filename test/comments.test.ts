@@ -29,19 +29,18 @@ function started(...options: string[]) {
 }
 
 describe('the person’s own comments', () => {
-  test('a comment on lines reaches the session as the person wrote it, and so do its edit and its deletion', async () => {
+  test('a comment, its edit and its deletion wake no one: the session reads them with walkthrough comments when it acts on them', async () => {
     started();
 
     const id = await idOf(await comment('Name the user.', [1, 2]));
+    expect(lines(repo.run('comments').stdout)).toEqual([{ id, step: '1', file: 'login.ts', lines: [1, 2], text: 'Name the user.' }]);
     expect((await post('/comment', { comment: id, text: 'Name the user, please.' })).status).toBe(200);
+    expect(lines(repo.run('comments').stdout)).toEqual([expect.objectContaining({ id, text: 'Name the user, please.' })]);
     expect((await post('/comment', { comment: id, delete: true })).status).toBe(200);
+    expect(repo.run('comments').stdout.trim()).toBe('');
+    expect((await post('/ask', { step: '1', text: 'Why?' })).status).toBe(200);
 
-    const handed = lines((await repo.background('listen').ended).stdout);
-    expect(handed).toEqual([
-      { kind: 'comment', id, from: 'page', at: expect.any(String) as unknown, step: '1', file: 'login.ts', lines: [1, 2], text: 'Name the user.' },
-      { kind: 'edit-comment', id: expect.stringMatching(/^[0-9a-f]{8}$/) as unknown, from: 'page', at: expect.any(String) as unknown, comment: id, text: 'Name the user, please.' },
-      { kind: 'delete-comment', id: expect.stringMatching(/^[0-9a-f]{8}$/) as unknown, from: 'page', at: expect.any(String) as unknown, comment: id },
-    ]);
+    expect(lines((await repo.background('listen').ended).stdout)).toEqual([expect.objectContaining({ kind: 'ask', text: 'Why?' })]);
   });
 
   test('a comment keeps what its lines said when it was made, for when its code is removed', async () => {
@@ -85,15 +84,14 @@ describe('the person’s own comments', () => {
     expect(refused.stderr).toContain('the page sent no comment nope');
   });
 
-  test('walkthrough guide prints what listen hands over about comments, and the commands that list and mark them', () => {
+  test('walkthrough guide says comments never come through listen, and prints the commands that list and mark them', () => {
     repo = makeRepo();
 
     const { stdout } = repo.run('guide');
 
+    expect(stdout).not.toContain('"kind": "comment"');
     for (const shape of [
-      '{"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}',
-      '{"kind": "edit-comment", "id": string, "comment": string, "text": string}',
-      '{"kind": "delete-comment", "id": string, "comment": string}',
+      'line comments, their edits and their deletions never come through listen and need no answer',
       'walkthrough comments\n',
       'walkthrough posted <comment id>...\n',
       '"finding": true flags the note as a finding',

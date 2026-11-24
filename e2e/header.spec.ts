@@ -23,7 +23,7 @@ test('the progress bar has a segment per step coloured by its state, marks where
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '0 of 3 steps decided, 3 left, 1 read');
   await expect(progress(page)).toHaveAttribute('aria-valuenow', '0');
   await expect(progress(page)).toHaveAttribute('aria-valuemax', '3');
-  await expect(page.getByText('Step 1 of 3 · 0 decided', { exact: true })).toBeVisible();
+  await expect(page.locator('.progress-count')).toHaveText('Step 1 of 3');
   expect(await segments(page)).toEqual(['cur', 'un', 'un']);
   await expect(progress(page).locator('[data-state]').nth(1)).toHaveAttribute('title', '2 App version: not decided yet');
   await expect(progress(page).locator('[data-state]').nth(0)).toHaveAttribute('title', '1 Login check: you are here');
@@ -31,7 +31,7 @@ test('the progress bar has a segment per step coloured by its state, marks where
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '1 of 3 steps decided, 2 left, 2 read');
-  await expect(page.getByText('Step 2 of 3 · 1 decided', { exact: true })).toBeVisible();
+  await expect(page.locator('.progress-count')).toHaveText('Step 2 of 3');
   expect(await segments(page)).toEqual(['ok', 'cur', 'un']);
   await expect(progress(page).locator('[data-state]').nth(0)).toHaveAttribute('title', '1 Login check: Approve, decided');
 
@@ -64,7 +64,7 @@ test('the progress bar has a segment per step coloured by its state, marks where
 
   await page.keyboard.press('g');
   await page.keyboard.press('s');
-  await expect(page.getByText('Summary · 1 decided', { exact: true })).toBeVisible();
+  await expect(page.locator('.progress-count')).toHaveText('Summary');
   expect(await segments(page)).toEqual(['ok', 'un', 'un']);
   // On the Summary no step is where the person is, so the marker fades out.
   await expect(marker).toHaveClass(/\baway\b/);
@@ -120,14 +120,14 @@ test('the bar and To review draw one traffic-light set: green for a positive dec
   await rail.locator('[data-key="decided-toggle"]').click();
   const approved = rail.getByRole('link', { name: 'Login check' });
   await expect(approved.locator('svg').first()).toHaveCSS('color', await tokenColor(page, '--ok'));
-  await expect(approved.locator('.queue-sub')).toHaveText('Approve');
+  await expect(approved.locator('.queue-sub')).toHaveText('Approved');
   await expect(approved.locator('.queue-sub')).toHaveCSS('color', await tokenColor(page, '--ok'));
   const noted = rail.getByRole('link', { name: 'Cart' });
   await expect(noted.locator('svg').first()).toHaveCSS('color', await tokenColor(page, '--neu'));
   await expect(noted.locator('.queue-sub')).toHaveCSS('color', await tokenColor(page, '--muted'));
   for (const link of [approved, noted]) await expect(link.locator('svg').first()).not.toHaveCSS('color', await tokenColor(page, '--accent'));
   await approved.click();
-  await expect(page.getByRole('region', { name: 'Login check' }).getByText('Decided: Approve', { exact: true })).toHaveCSS('color', await tokenColor(page, '--ok'));
+  await expect(page.getByRole('region', { name: 'Login check' }).getByText('Approved', { exact: true })).toHaveCSS('color', await tokenColor(page, '--ok'));
 });
 
 test('the session status shows its state with a dot, or a spinning icon while the session works, Listening in secondary ink', async ({
@@ -144,6 +144,9 @@ test('the session status shows its state with a dot, or a spinning icon while th
   const listener = repo.background('listen');
   await expect(status).toHaveAttribute('data-state', 'listening');
   await expect(status).toHaveText('Listening');
+  await expect(status).toHaveAttribute('title', 'Listening: questions reach the session now');
+  // Listening is the dot alone: its word is there for screen readers only.
+  expect((await status.locator('.status-label').boundingBox())?.width).toBeLessThanOrEqual(1);
   await expect(status.locator('.dot')).toHaveCount(1);
   await expect(status.locator('svg')).toHaveCount(0);
   // Green means a positive decision, so Listening is in secondary ink.
@@ -151,7 +154,8 @@ test('the session status shows its state with a dot, or a spinning icon while th
 
   listener.child.kill('SIGTERM');
   await expect(status).toHaveAttribute('data-state', 'gone');
-  await expect(status).toHaveText('Gone');
+  await expect(status).toHaveText('Session gone');
+  expect((await status.locator('.status-label').boundingBox())?.width).toBeGreaterThan(1);
   await expect(status.locator('.dot')).toHaveCount(1);
 
   repo.run('say', '--question', 'Is the login meant to accept everyone?');
@@ -160,17 +164,16 @@ test('the session status shows its state with a dot, or a spinning icon while th
   await expect(status.locator('.dot')).toHaveCount(1);
 });
 
-test('the header names the walkthrough and its range, and End session stays at hand after the muted Session status', async ({ page, repo, url }) => {
+test('the header names the walkthrough and its range, and keeps End session in More with Appearance and Help', async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
   const label = page.getByRole('heading', { level: 1 });
   await expect(label).toHaveText('feature/login');
   const range = `${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`;
   await expect(label).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
-  await expect(page.getByRole('banner').getByRole('button', { name: 'End session' })).toBeVisible();
-  const prefix = page.getByRole('banner').getByText('Session', { exact: true });
-  await expect(prefix).toBeVisible();
-  const [said, status] = await Promise.all([prefix.boundingBox(), page.getByRole('status', { name: 'Session' }).boundingBox()]);
-  expect(said && status && said.x + said.width < status.x).toBe(true);
+  await expect(page.getByRole('banner').getByRole('button', { name: 'End session' })).toHaveCount(0);
+  await expect(page.getByRole('banner').getByText('Session', { exact: true })).toHaveCount(0);
+  await page.getByRole('banner').getByRole('button', { name: 'More' }).click();
+  await expect(page.getByRole('menu', { name: 'More' }).getByRole('menuitem')).toHaveText(['Appearance', 'Help', 'End session']);
 });
 
 test('the header shows the kind the session gave the walkthrough beside its name, in muted ink', async ({ page, repo, url }) => {

@@ -996,13 +996,6 @@
 
 /* ---------- Session messages ---------- */
 
-.page-about {
-  max-width: 68ch;
-  margin: 0 0 var(--s3);
-  color: var(--ink);
-  font: var(--text-body);
-}
-
 .messages > .notice {
   max-width: 860px;
   box-sizing: border-box;
@@ -1032,10 +1025,6 @@
   width: 15px;
   height: 15px;
   color: var(--muted);
-}
-
-.messages-section > .page-about {
-  margin: 0;
 }
 
 /* A message is a row beside its icon, not the quote that style.css draws for what the session said elsewhere. */

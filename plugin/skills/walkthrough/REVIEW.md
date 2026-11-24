@@ -17,6 +17,11 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Before recording anything, read the ticket or spec the change is for, from your tracker or from wherever the branch name, the commits, the change's description or I point.
 
+### Comments already on the change
+
+- Before recording the steps, find the change's open pull request on your code host, if it has one, and read its review threads.
+- Pin each unresolved thread from someone else as a note labelled "Thread" on its lines, never flagged as a finding, with the reviewer's check of whether it still holds at the head.
+
 ### Steps
 
 - A step is one idea rather than one file, and may span several files.
@@ -30,6 +35,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - An explanation says what changed and why, from the code and the ticket; the author session's own summary of the change is never a source.
 - Short sentences, one idea per step.
+- A step's explanation opens with one sentence of at most 25 words that stands on its own; at most three more sentences may follow it.
 - Give the why, and the alternative the change rejected when the code or the ticket shows one.
 - Describe what the code does; the verdict is mine, so verdict words such as "clean", "correct", "robust" or "good" stay out.
 - What you assumed rather than read goes in the step's assumptions, not in its explanation.
@@ -40,6 +46,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - When the ticket or spec has acceptance criteria, record them as a checklist titled "Acceptance criteria", one item per criterion, linked to the steps that deliver it.
 - Statuses: "met", "partly met" or "not shown", marked "met", "partly" and "not-met".
+- An item's text is the criterion as the ticket words it, in at most 12 words, never its evidence; the reason for its status follows the status word in at most eight words, such as "partly met: the added segment counts as started".
 - Add one last item, "Serves no criterion", linked to every step that delivers none of them.
 
 ### Reviewers and findings
@@ -58,10 +65,18 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 #### What happens to findings
 
-- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
+- A note's or finding's text opens with one sentence of at most 20 words: what is wrong and what it breaks.
+  Its evidence follows in at most three lines; a reviewer's or verifier's verdict on it never goes in the text.
+
+- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding, unless the part for this walkthrough says otherwise.
 - Pin the unconfirmed ones, and anything the reviewer calls a matter of taste or judgement, with the low-priority flag.
 - When the reviewer reports each acceptance criterion as met, partly met or not shown, use that for the checklist.
 - Check the steps in reading order: run the reviewers over the whole change, then confirm and pin each step's findings before the next, and keep every step marked as being checked until its findings are pinned with their actions.
+
+### Answers and messages
+
+- An answer to my question is at most two sentences, and the first answers it directly.
+- A message you put on the page outside the steps is at most two sentences and 30 words; a question ends with the answers it offers.
 
 ### My own comments
 
@@ -69,17 +84,19 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Drafts
 
-- Anything you draft to go out under my name, a comment or a reply, is one or two sentences.
+- Anything you draft to go out under my name, a comment or a reply, is one or two sentences, 40 words at most.
 - It starts with the marker "[AI]", and keeps it after I edit the text; put the marker back if my edit dropped it.
-- Pin each draft as a note labelled "Draft" on its lines.
+- Pin each draft as a note labelled "Draft" on its lines, never flagged as a finding, since it is not waiting for me.
 
 ### Actions
 
 - An action's tone is the colour my decision shows in on the page: positive is green, attention is amber, and none is grey; an action I give no tone here has none.
-- A step: Approve, positive, and Flag, attention (asks for a note).
-- A finding: Accept, positive, Reject (asks for a note with the reason, which I may leave out), and Ignore, with no tone.
-- A checklist item: Met, positive, and Not met, attention (asks for a note).
-- A draft: Edit (lets me edit the text first), and Drop; a draft I leave alone goes out as drafted, and drafts go out together, never one by one.
+- Each action carries a consequence, at most 8 words, saying where my decision goes or what it costs, and an outcome, at most 3 words in the past tense, which the page shows once I took it.
+  The action marked primary shows its consequence under the buttons, and an item has one primary action at most; record all three with the action.
+- A step: Approve, positive, primary, consequence "Nothing more to do here.", outcome "Approved"; and Flag, attention (asks for a note), consequence "Your note says what needs fixing.", outcome "Flagged".
+- A finding on my change: Accept, positive, primary, consequence "Goes on the fix list.", outcome "Added to fixes"; Reject (asks for a note with the reason, which I may leave out), consequence "Becomes a convention for the project.", outcome "Rejected"; and Ignore, with no tone, consequence "Nothing happens, and it is not raised again.", outcome "Ignored".
+- A checklist item: Met, positive, primary, consequence "Records it as met.", outcome "Marked met"; and Not met, attention (asks for a note), consequence "Records it as not met.", outcome "Marked not met".
+- A draft: Edit (lets me edit the text first), primary, consequence "Goes out reworded with the review.", outcome "Edited"; and Drop, consequence "Never goes out.", outcome "Dropped"; a draft I leave alone goes out as drafted, and drafts go out together, never one by one.
 - The rest of the actions are in the part for this walkthrough.
 - When I reject a finding, my note is the reason; the part for this walkthrough says what becomes of it.
 - When I ignore a finding, do nothing with it and do not raise it again in this walkthrough.
@@ -95,8 +112,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Fix list
 
-- Offer my verdict on the verdict, "Ready for colleagues", positive, or "Needs fixes", attention, with the hint "Shown to colleagues with the fix list."
-- Offer "Send the fix list to the session" first on the whole walkthrough, with a hint saying it gives me the fix list in the chat.
+- Offer my verdict on the verdict, "Ready for colleagues", positive, consequence "Says the change is ready.", outcome "Marked ready", or "Needs fixes", attention, consequence "Heads the fix list.", outcome "Marked for fixes", with the hint "Shown to colleagues with the fix list."; neither is primary.
+- Offer "Send the fix list to the session" first on the whole walkthrough, primary, consequence "Gives you the fix list in the chat.", outcome "Fix list sent", with a hint saying it gives me the fix list in the chat.
 - Flagged steps, accepted findings and my own line comments go on a fix list: for each, the step, the file and lines, my note, the finding or my comment.
 - When I take Send the fix list to the session, give me the fix list in the chat as one message, ready to paste into an author session, headed by my verdict.
 - The author session makes the fixes; the walkthrough session's work ends at the fix list.
@@ -109,10 +126,9 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### A review I received
 
-- When I name my own change that has unanswered review threads, walk through it and pin each such thread as a note labelled "Thread" on its lines.
-- The reviewer checks whether each comment holds at the head; add its verdict and evidence to the thread's note.
-- On each thread offer Accept (goes on the fix list) and Push back (you draft a reply).
-- Offer "Send my replies" on the whole walkthrough as well; replies go into a pending review on your code host that I submit myself.
+- The threads pinned as "Comments already on the change" says are the review I received.
+- On each thread offer Accept (goes on the fix list), primary, consequence "Goes on the fix list.", outcome "Added to fixes"; and Push back (you draft a reply), consequence "The session drafts a reply.", outcome "Reply drafted".
+- Offer "Send my replies" on the whole walkthrough as well, consequence "Replies go into a pending review.", outcome "Replies sent"; replies go into a pending review on your code host that I submit myself.
 
 ## Someone else's change
 
@@ -134,21 +150,23 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### My review
 
-- Turn each flagged step and accepted finding into a draft comment on its lines.
+- Pin each confirmed finding as a draft comment on its lines, worded for the author, in place of a "Finding" note: there is nothing to accept first, and a draft I leave alone goes out.
+- Pin the unconfirmed ones and matters of taste as low-priority notes with no actions; I write my own comment when I want one to go out.
+- Turn each flagged step into a draft comment on its lines.
 - My own line comments go into the review as line comments, as I wrote them.
-- Offer my verdict on the verdict, "Approve", positive, "Request changes", attention, or "Comment", with no tone, with the hint "Sent with the review."
-- Offer "Send my review" first on the whole walkthrough, with a hint saying it sends every draft I kept and my own comments at once, as a pending review I submit myself.
+- Offer my verdict on the verdict, "Approve", positive, consequence "Sent as an approval with the review.", outcome "Approved", "Request changes", attention, consequence "Sent as a change request with the review.", outcome "Changes requested", or "Comment", with no tone, consequence "Sent as a comment with the review.", outcome "Commented", with the hint "Sent with the review."; none is primary.
+- Offer "Send my review" first on the whole walkthrough, primary, consequence "Kept drafts and your comments go out.", outcome "Review sent", with a hint saying it sends every draft I kept and my own comments at once, as a pending review I submit myself.
 - When I take Send my review, put every draft I did not drop, as drafted or as I edited it, and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
 - The author's branch and the change's description stay as they are.
 
-### Rejected findings
+### Dropped drafts
 
-- Turn a rejected finding into a draft suggestion for the author, and leave the project's files as they are.
+- A draft I drop is gone; do not raise it again in this walkthrough, and leave the project's files as they are.
 
 ### Replies to my review
 
 - When I open a change I reviewed again after its author replied or pushed, fetch its new head and go on with the same walkthrough, under the same label: steps whose diff is unchanged keep my decisions, and changed ones reopen.
 - Pin only the threads with new activity, each with the reviewer's check of whether the replies or the new commits resolve my concern.
-- On each thread offer Resolve, Reply (you draft one) and Still blocking (asks for a note).
-- Offer "Send my replies" on the whole walkthrough; replies go into a pending review that I submit myself.
+- On each thread offer Resolve, primary, consequence "Resolved once your review is submitted.", outcome "Resolved"; Reply (you draft one), consequence "The session drafts a reply.", outcome "Reply drafted"; and Still blocking (asks for a note), consequence "Your note says what still blocks.", outcome "Marked blocking".
+- Offer "Send my replies" on the whole walkthrough, consequence "Replies go into a pending review.", outcome "Replies sent"; replies go into a pending review that I submit myself.
 - Resolve the threads I marked Resolve on your code host only after you have confirmed there that my review was submitted.

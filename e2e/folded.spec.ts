@@ -2,7 +2,12 @@ import type { Locator } from '@playwright/test';
 import type { Repo } from '../test/helpers';
 import { expect, test } from './walkthrough';
 
-const REASONS = ['Screenshot of the built page for the README.', 'Copied in from the design board as it was drawn, and not edited by hand since.', 'Recorded test output.'];
+// Longer than the summary is wide in any font, so the one line is always cut.
+const REASONS = [
+  'Screenshot of the built page for the README.',
+  'Copied in from the design board as it was drawn, and not edited by hand since, so its spacing, colours and type sizes are the board’s own, which the page as built may have moved away from in the weeks since, and which nobody has checked against the running page or the parts it is made of.',
+  'Recorded test output.',
+];
 const shots = Array.from({ length: 18 }, (_, at) => ({ path: `shots/shot-${String(at + 1).padStart(2, '0')}.txt`, reason: REASONS[at % 3] ?? '' }));
 const lines = Array.from({ length: 6 }, (_, at) => `Line ${String(at + 1)}.`).join('\n');
 test.use({ files: { ...Object.fromEntries(shots.map(shot => [shot.path, `${shot.path}\n`])), 'notes.md': `${lines}\n` } });
@@ -12,7 +17,12 @@ const record = (repo: Repo, input: unknown, command: string) => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   return [...recorded.stdout.matchAll(/([0-9a-f]{8})/g)].map(match => match[1] ?? '');
 };
-const left = async (locator: Locator) => (await locator.boundingBox())?.x ?? 0;
+/** How far a note's first action starts from its text, both measured in one frame, as a step's pane slides in. */
+const offset = (note: Locator) =>
+  note.evaluate(article => {
+    const left = (selector: string) => article.querySelector(selector)?.getBoundingClientRect().x ?? NaN;
+    return article.isConnected ? Math.abs(left('.note-foot .choices button') - left('.note-text')) : NaN;
+  });
 
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
@@ -41,7 +51,7 @@ test('collapsed, a folded step is one line of its distinct reasons, with its pro
   expect((await summary.boundingBox())?.height).toBeLessThan(44);
   const cut = await summary.locator('.fold-reasons').evaluate(box => box.scrollWidth > box.clientWidth && getComputedStyle(box).textOverflow === 'ellipsis');
   expect(cut).toBe(true);
-  await expect(step.getByRole('list', { name: 'Problems the session found' })).toHaveText('shot-07.txt is older than the page it shows.');
+  await expect(step.getByRole('list', { name: 'Problems' })).toHaveText('shot-07.txt is older than the page it shows.');
   await expect(step.getByRole('list', { name: 'Folded files' })).toHaveCount(0);
 });
 
@@ -76,7 +86,7 @@ test('opened, each folded file is a row with its reason as text that wraps', asy
   await expect(reason).toHaveCSS('white-space', 'normal');
   await expect(reason).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   expect((await reason.boundingBox())?.height).toBeGreaterThan(30);
-  await expect(step.getByRole('list', { name: 'Problems the session found' })).toBeVisible();
+  await expect(step.getByRole('list', { name: 'Problems' })).toBeVisible();
 });
 
 test('a note’s action buttons start where its text does, on a step, on lines and on a folded step', async ({ page, repo, url }) => {
@@ -97,6 +107,6 @@ test('a note’s action buttons start where its text does, on a step, on lines a
     const note = page.getByRole('article', { name: label });
     const accept = note.getByRole('button', { name: 'Accept' });
     await expect(accept).toBeVisible();
-    expect(Math.abs((await left(accept)) - (await left(note.locator('.note-text'))))).toBeLessThan(2);
+    expect(await offset(note)).toBeLessThan(2);
   }
 });

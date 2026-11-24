@@ -41,8 +41,8 @@ describe('deciding with the default step actions', () => {
 
     expect(actions).toEqual({
       'step:1': [
-        { id: 'approve', label: 'Approve', tone: 'positive' },
-        { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+        { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+        { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
       ],
     });
   });
@@ -77,9 +77,9 @@ describe('walkthrough actions', () => {
       {
         item: { type: 'note', id: noteId },
         actions: [
-          { id: 'accept', label: 'Accept', tone: 'none' },
+          { id: 'accept', label: 'Accept', tone: 'none', consequence: 'Goes on the fix list.', outcome: 'Added to fixes', primary: true },
           { id: 'edit', label: 'Edit', edit: true },
-          { id: 'drop', label: 'Drop', note: true },
+          { id: 'drop', label: 'Drop', note: true, outcome: 'Dropped' },
         ],
       },
       { item: { type: 'checklist', id: '1' }, actions: [{ id: 'check', label: 'Checked' }] },
@@ -115,12 +115,12 @@ describe('walkthrough actions', () => {
     repo.record([{ item: step1, actions: [] }], 'actions');
 
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'positive' },
-      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+      { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
     ]);
   });
 
-  test('a step action recorded as the built-in Approve or Flag with no tone takes the built-in tone, and a tone given wins', async () => {
+  test('a step action recorded as the built-in Approve or Flag takes the built-in tone and outcome it gives none of, and those given win', async () => {
     started();
     repo.record(
       [
@@ -135,8 +135,8 @@ describe('walkthrough actions', () => {
       'actions',
     );
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'positive' },
-      { id: 'flag', label: 'Flag', note: true, tone: 'attention' },
+      { id: 'approve', label: 'Approve', tone: 'positive', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Flagged' },
     ]);
 
     repo.record(
@@ -145,15 +145,17 @@ describe('walkthrough actions', () => {
           item: step1,
           actions: [
             { id: 'approve', label: 'Approve', tone: 'none' },
-            { id: 'flag', label: 'Flag' },
+            { id: 'flag', label: 'Flag', note: true, outcome: 'Sent back' },
+            { id: 'skip', label: 'Flag' },
           ],
         },
       ],
       'actions',
     );
     expect((await shownAt(repo.url())).actions['step:1']).toEqual([
-      { id: 'approve', label: 'Approve', tone: 'none' },
-      { id: 'flag', label: 'Flag' },
+      { id: 'approve', label: 'Approve', tone: 'none', outcome: 'Approved' },
+      { id: 'flag', label: 'Flag', note: true, tone: 'attention', outcome: 'Sent back' },
+      { id: 'skip', label: 'Flag' },
     ]);
   });
 
@@ -202,6 +204,22 @@ describe('walkthrough actions', () => {
       [action({ note: 'yes' }), 'entry 2: action 1: note must be true or false'],
       [action({ edit: true }), 'entry 2: action 1: only a note or a checklist item has text to edit'],
       [action({ tone: 'green' }), 'entry 2: action 1: tone must be positive, attention or none'],
+      [action({ consequence: ' ' }), 'entry 2: action 1: a consequence needs words'],
+      [action({ consequence: 'Goes on the fix list the author reads next week.' }), 'entry 2: action 1: a consequence is at most 8 words'],
+      [action({ outcome: 7 }), 'entry 2: action 1: an outcome needs words'],
+      [action({ outcome: 'Added to the fixes' }), 'entry 2: action 1: an outcome is at most 3 words'],
+      [action({ primary: 'yes' }), 'entry 2: action 1: primary must be true or false'],
+      [
+        {
+          item: step1,
+          actions: [
+            { id: 'a', label: 'A', primary: true },
+            { id: 'b', label: 'B', primary: false },
+            { id: 'c', label: 'C', primary: true },
+          ],
+        },
+        'entry 2: action 3: action 1 is already primary, and an item has one at most',
+      ],
       [
         {
           item: step1,
@@ -225,12 +243,17 @@ describe('walkthrough actions', () => {
     const noteId = started();
     const guide = repo.run('guide').stdout;
     expect(guide).toContain('walkthrough actions --file <file>');
+    expect(guide).toContain('"tone": tone,\n      "consequence": string, "outcome": string, "primary": boolean}');
+    expect(guide).toContain('"consequence", at most 8 words');
+    expect(guide).toContain('"outcome", at most 3 words in the past tense');
+    expect(guide).toContain('"primary": true marks the one action of an item');
     const example = /Example actions, for a note with the id 5f0c2a9e:\n(\[[\s\S]*?\n\])\n/.exec(guide)?.[1] ?? '';
 
     const recorded = repo.record(example.replace('5f0c2a9e', noteId), 'actions');
 
     expect(recorded.stderr).toBe('');
     expect(recorded.status).toBe(0);
+    expect(example).toContain('"consequence":"Goes on the fix list.","outcome":"Added to fixes","primary":true');
   });
 });
 

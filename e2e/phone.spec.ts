@@ -30,7 +30,7 @@ const openDeck = async (page: Page) => {
   await page.getByRole('menuitem', { name: 'Swipe to decide' }).click();
 };
 
-const card = (page: Page, number: number, title: string) => page.getByRole('link', { name: `Open step ${String(number)}, ${title}` });
+const card = (page: Page, number: number, title: string) => page.getByRole('link', { name: `Open step ${String(number)}`, exact: true }).filter({ hasText: title });
 
 /** Drags with the mouse from the middle of the card, `by` pixels sideways. */
 async function drag(page: Page, target: Locator, by: number): Promise<void> {
@@ -72,7 +72,7 @@ test('the header keeps End session in a More menu, which Escape closes', async (
 
   await more.click();
   const menu = page.getByRole('menu', { name: 'More' });
-  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Appearance', 'Help: what things mean', 'End session']);
+  await expect(menu.getByRole('menuitem')).toHaveText(['Swipe to decide', 'Appearance', 'Help', 'End session']);
   await expect(menu.getByRole('menuitem', { name: 'Swipe to decide' })).toBeFocused();
   await page.keyboard.press('ArrowUp');
   await expect(menu.getByRole('menuitem', { name: 'End session' })).toBeFocused();
@@ -106,7 +106,7 @@ test('the panels move into the More menu, where the explanation column waits for
   await expect(page.locator('.edge-stripe').getByRole('button')).toHaveCount(0);
   await page.getByRole('button', { name: 'More' }).click();
   const panels = page.getByRole('menu', { name: 'More' }).getByRole('menuitemcheckbox');
-  await expect(panels).toHaveText(['To review (1)', 'Checklist (2)', 'Explanation column (3)Wider screens']);
+  await expect(panels).toHaveText(['To review (1)', 'Checklist (2)', 'Explanation (3)Wider screens']);
   await expect(panels.nth(0)).toHaveAttribute('aria-checked', 'true');
   await expect(panels.nth(2)).toHaveAttribute('aria-disabled', 'true');
   // A rule sets the panels apart from Appearance, Help and End session.
@@ -120,7 +120,7 @@ test('the panels move into the More menu, where the explanation column waits for
   expect(main && stacked && stacked.y >= main.y + main.height - 1).toBe(true);
   await page.getByRole('button', { name: 'More' }).click();
   await expect(page.getByRole('menuitemcheckbox', { name: 'Checklist (2)' })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('menuitemcheckbox', { name: /^Explanation column/ })).toBeDisabled();
+  await expect(page.getByRole('menuitemcheckbox', { name: /^Explanation/ })).toBeDisabled();
 });
 
 test('the step decides from a bottom bar of touch-sized buttons, with Ask above it', async ({ page }) => {
@@ -142,7 +142,7 @@ test('the rail becomes a select of what is left, with decided steps and the Summ
   const rail = page.getByRole('navigation', { name: 'To review' });
   await expect(rail.getByRole('link')).toHaveCount(0);
   const select = rail.getByRole('combobox', { name: 'Step' });
-  await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
+  await expect(select.locator('option')).toHaveText(['Step 1 of 2', 'App version', 'Summary']);
   await expect(select).toHaveValue('1');
   await expect(rail.locator('.queue-count')).toHaveText('0 decided');
   await expect(rail.locator('.queue-count')).toBeVisible();
@@ -151,12 +151,12 @@ test('the rail becomes a select of what is left, with decided steps and the Summ
   await select.selectOption('2');
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   expect(new URL(page.url()).hash).toBe('#2');
-  await expect(select.locator('option:checked')).toHaveText('Step 2 of 2 · App version');
+  await expect(select.locator('option:checked')).toHaveText('Step 2 of 2');
 
   await page.getByRole('region', { name: 'App version' }).getByRole('button', { name: 'Approve' }).click();
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   await expect(select.locator('optgroup')).toHaveAttribute('label', '1 decided');
-  await expect(select.locator('option')).toHaveText(['Step 1 of 2 · Login check', 'App version', 'Summary']);
+  await expect(select.locator('option')).toHaveText(['Step 1 of 2', 'App version', 'Summary']);
   await expect(rail.locator('.queue-count')).toHaveText('1 decided');
   await select.selectOption('summary');
   await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
@@ -166,7 +166,7 @@ test('the rail becomes a select of what is left, with decided steps and the Summ
 test('a card swiped right approves its step, and the next card takes its place', async ({ page, repo }) => {
   await openDeck(page);
   expect(new URL(page.url()).hash).toBe('#deck');
-  await expect(page.getByText('Swipe right to approve, left to flag. Tap to open the step.')).toBeVisible();
+  await expect(page.getByText('Swipe right: approve. Left: flag.', { exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'To review' }).getByRole('combobox')).toBeHidden();
 
   await drag(page, card(page, 1, 'Login check'), 160);
@@ -243,7 +243,7 @@ test('a short swipe decides nothing, Cancel brings a flagged card back, and a ta
 test('a step whose actions are Approve and Flag recorded with no tone, as an older policy says, still swipes and shows green', async ({ page, repo }) => {
   record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'flag', label: 'Flag', note: true }] }], 'actions');
   await openDeck(page);
-  await expect(page.getByText('Swipe right to approve, left to flag. Tap to open the step.')).toBeVisible();
+  await expect(page.getByText('Swipe right: approve. Left: flag.', { exact: true })).toBeVisible();
 
   await drag(page, card(page, 1, 'Login check'), 160);
 
@@ -256,7 +256,7 @@ test('the deck offers no swipe on a step whose actions the session chose; its bu
   record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve' }, { id: 'fix', label: 'Needs a fix', note: true }] }], 'actions');
   await openDeck(page);
   const first = card(page, 1, 'Login check');
-  await expect(page.getByText("The session chose this step's actions; use the buttons. Tap to open the step.")).toBeVisible();
+  await expect(page.getByText("The session chose this step's actions; use the buttons.", { exact: true })).toBeVisible();
   await drag(page, first, 160);
   await swipe(first, -160);
   await expect(first).toBeVisible();
@@ -293,8 +293,8 @@ test('the deck ends when every step is decided', async ({ page }) => {
     await card(page, number, title).waitFor();
     await page.getByRole('group', { name: 'Decide' }).getByRole('button', { name: 'Approve' }).click();
   }
-  await expect(page.getByRole('region', { name: 'Swipe to decide' }).getByText('Everything is decided.')).toBeVisible();
-  await page.getByRole('link', { name: 'See the summary' }).click();
+  await expect(page.getByRole('region', { name: 'Swipe to decide' }).getByText('Nothing left.', { exact: true })).toBeVisible();
+  await page.getByRole('region', { name: 'Swipe to decide' }).getByRole('link', { name: 'Summary', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Summary', exact: true })).toBeVisible();
 });
 
@@ -325,7 +325,7 @@ test('a card swiped while the session changed its actions comes back undecided, 
   await page.mouse.down();
   await page.mouse.move(x + 60, y, { steps: 5 });
 
-  const polled = page.waitForResponse(answer => answer.url().includes('data/walkthrough.json') && answer.status() === 200);
+  const polled = page.waitForResponse(async answer => answer.url().includes('data/walkthrough.json') && answer.status() === 200 && (await answer.text()).includes('"Ship"'));
   record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Ship' }, { id: 'hold', label: 'Hold' }] }], 'actions');
   await polled;
   await page.mouse.move(x + 160, y, { steps: 5 });

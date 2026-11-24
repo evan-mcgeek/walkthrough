@@ -78,8 +78,8 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
 
   const header = page.getByRole('banner');
   await expect(header.getByText('No verdict yet')).toHaveCount(0);
-  const finish = header.getByRole('link', { name: 'Finish review' });
-  await expect(finish).toHaveAttribute('title', 'Finish review: go to the Summary (G S)');
+  const finish = header.getByRole('link', { name: 'Finish', exact: true });
+  await expect(finish).toHaveAttribute('title', 'Go to the Summary to send (G S)');
   await finish.click();
 
   const summary = page.getByRole('region', { name: 'Summary' });
@@ -88,16 +88,16 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(summary.getByText('2 still open', { exact: true })).toBeVisible();
   await expect(summary.getByText('1 of 3 steps decided · 1 flagged · 1 of your comments · checklist 1 of 2 met', { exact: true })).toBeVisible();
   const section = (name: string) => summary.getByRole('region', { name });
-  const ledger = summary.getByRole('table', { name: 'Every step and what you decided' });
+  const ledger = summary.locator('table.ledger');
   await expect(ledger.getByRole('row')).toHaveText([
     'Still open2',
-    '2App versionChanged since you chose Approve.ApproveFlagChanged',
-    '3CartApproveFlagUndecided',
+    '2App versionChanged since you approved.ApproveFlagChanged',
+    '3CartApproveFlag',
     'Decided1',
-    '1Login check“Everyone gets in.”login.ts:1 Say who may log in.Flag',
+    '1Login check“Everyone gets in.”login.ts:1 Say who may log in.Flagged',
   ]);
   await expect(ledger.locator('.ledger-decision.changed')).toHaveText('Changed');
-  await expect(ledger.locator('.ledger-decision.muted')).toHaveText('Undecided');
+  await expect(ledger.locator('.ledger-decision.muted')).toHaveText('');
   await expect(ledger.getByRole('row').last().getByRole('img', { name: 'Your comment' })).toBeVisible();
   await ledger.getByRole('link', { name: 'Cart' }).click();
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
@@ -108,18 +108,18 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
   await expect(summary.getByRole('region', { name: 'Criteria' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
   await expect(rail.getByRole('region', { name: 'Criteria' })).toHaveCount(0);
-  const drafts = section('Comments the session drafted');
+  const drafts = section('Goes out');
   // A draft left alone goes out as drafted, all of them together, and none waits in Still open.
-  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 goes out · 1 edited · 1 dropped');
+  await expect(drafts.getByRole('heading')).toHaveText('Goes out1 goes out · 1 edited · 1 dropped');
   await expect(drafts.getByRole('listitem')).toHaveText([
-    'cart.ts · 1Edited[AI] Name the items.EditDrop',
-    'Step 3Dropped[AI] Add a test.EditDrop',
-    'Step 3Goes out[AI] Check the total.EditDrop',
+    'cart.ts · 1Edited[AI] Name the items.Change',
+    'Step 3Dropped[AI] Add a test.Change',
+    'Step 3[AI] Check the total.EditDrop',
   ]);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
 
   const verdict = rail.getByRole('region', { name: 'Verdict' });
-  await expect(verdict.getByText('No verdict yet.', { exact: true })).toBeVisible();
+  await expect(verdict.locator('.verdict-now')).toHaveCount(0);
   const options = verdict.getByRole('radiogroup', { name: 'Verdict' }).getByRole('radio');
   await expect(options).toHaveText(['Ready for colleagues', 'Needs fixes']);
   await expect(options.nth(0)).toHaveAttribute('aria-checked', 'false');
@@ -128,7 +128,7 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(hand).toHaveClass(/primary/);
   await expect(summary.getByRole('button', { name: 'Ask the session to re-check' })).toBeEnabled();
   await expect(
-    rail.getByText('Choose a verdict first. Shown to colleagues with the fix list. Gives you the fix list in the chat.', { exact: true }),
+    rail.getByText('Shown to colleagues with the fix list. Gives you the fix list in the chat.', { exact: true }),
   ).toBeVisible();
   // What the page sent before goes to a first listener, so the next one hears only the verdict.
   await repo.background('listen').ended;
@@ -137,7 +137,6 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await verdict.getByRole('radio', { name: 'Needs fixes' }).click();
 
   expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'decision', item: { type: 'verdict' }, action: 'fixes' });
-  await expect(verdict.getByText('Your verdict: Needs fixes')).toBeVisible();
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('aria-checked', 'true');
   const status = header.getByTitle('Your verdict');
   await expect(status).toHaveText('Needs fixes');
@@ -149,7 +148,7 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(verdict.getByRole('radio', { name: 'Ready for colleagues' })).toBeFocused();
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('aria-checked', 'true');
   await hand.click();
-  await expect(summary.getByText('Decided: Send the fix list to the session', { exact: true })).toBeVisible();
+  await expect(summary.locator('.finish .tag.decided')).toHaveText('Send the fix list to the session');
 });
 
 const tokenColor = (page: Page, token: string) =>
@@ -183,7 +182,7 @@ test('the ledger and the verdict take their action\'s tone: Approve green, Flag 
     expect((await send(page, url, 'decide', body)).status()).toBe(200);
   await page.goto(`${url}#summary`);
 
-  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const ledger = page.locator('table.ledger');
   const row = (title: string) => ledger.getByRole('row').filter({ hasText: title });
   for (const [title, token, words] of [
     ['Login check', '--amber', '--amber'],
@@ -194,7 +193,7 @@ test('the ledger and the verdict take their action\'s tone: Approve green, Flag 
     await expect(row(title).locator('.ledger-decision')).toHaveCSS('color', await tokenColor(page, words));
   }
   const verdict = page.getByRole('region', { name: 'Verdict' });
-  await expect(verdict.getByText('Needs fixes', { exact: true }).first()).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('data-state', 'flag');
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' }).locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
   await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveCSS('color', await tokenColor(page, '--amber'));
   await expect(page.getByRole('banner').getByTitle('Your verdict').locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
@@ -208,7 +207,7 @@ test('G then S goes to the Summary from any step, and the Summary is the last ro
   await page.keyboard.press('s');
 
   await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Verdict' }).getByText('No verdict yet.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Verdict' }).locator('.verdict-now')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Verdict' }).getByRole('radio')).toHaveCount(0);
   await page.keyboard.press('k');
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
@@ -226,12 +225,12 @@ test('a Still open row offers its own actions, and its title goes to the exact p
     'actions',
   );
   await page.goto(`${url}#3`);
-  await page.getByRole('button', { name: 'Mark cart.ts as viewed' }).click();
+  await page.getByRole('button', { name: 'Viewed cart.ts' }).click();
   const note = page.locator(`#note-${noteId ?? ''}`);
   await expect(note).toBeHidden();
 
   await page.goto(`${url}#summary`);
-  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const ledger = page.locator('table.ledger');
   const row = (title: string) => ledger.getByRole('row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
   // The finding has a row of its own, so its step only counts it.
   await expect(row('Cart').locator('.ledger-sub')).toHaveText('1 open finding');
@@ -242,7 +241,7 @@ test('a Still open row offers its own actions, and its title goes to the exact p
 
   await page.goto(`${url}#summary`);
   await row('Login check').getByRole('button', { name: 'Approve' }).click();
-  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approve');
+  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approved');
   await expect(page).toHaveURL(`${url}#summary`);
 
   await row('Finding: The cart is never emptied.').getByRole('button', { name: 'Reject' }).click();

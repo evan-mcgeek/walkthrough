@@ -7,7 +7,7 @@ import { cleanText, type Cleared, conversationOf, type Entry, type PageRequest, 
 import { anchorOf } from './notes';
 import { parseDiff } from './diff';
 import { fieldsOf, filled, parseList } from './input';
-import { type Action, type Item, itemKey, STEP_ACTIONS, type Tone, TONES } from './items';
+import { type Action, CONSEQUENCE_WORDS, type Item, itemKey, OUTCOME_WORDS, STEP_ACTIONS, type Tone, TONES } from './items';
 import { readWalkthrough, type Walkthrough } from './walkthrough';
 
 export type Decision = PageRequest & Taken;
@@ -50,11 +50,10 @@ function itemsOf({ steps, checklist, base, head }: Walkthrough, conversation: En
   return items.map(one => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
 }
 
-// A step action recorded as a built-in one with no tone, as a policy written before tones says, takes the built-in's tone.
+// A step action recorded as a built-in one takes the built-in's tone and outcome where it gives none, as a policy written before them says.
 const toned = (action: Action): Action => {
-  if (action.tone !== undefined) return action;
   const own = STEP_ACTIONS.find(one => one.id === action.id && one.label === action.label && !one.note === !action.note);
-  return own?.tone ? { ...action, tone: own.tone } : action;
+  return own ? { ...own, ...action } : action;
 };
 
 const actionsOf = ({ actions }: Walkthrough, item: Item) => {
@@ -107,6 +106,7 @@ export function walkthroughView(dir: string): WalkthroughView | null {
 }
 
 const ITEM_TYPES = new Set(['step', 'note', 'checklist', 'verdict', 'walkthrough']);
+const wordCount = (text: string) => text.trim().split(/\s+/).length;
 const nameOfItem = (item: Item) =>
   'id' in item ? `${item.type === 'checklist' ? 'checklist item' : item.type} ${item.id}` : `the ${item.type}`;
 
@@ -127,16 +127,26 @@ export function parseActions(
     if (hint !== undefined && !filled(hint)) throw fail('a hint needs words');
     if (hint !== undefined && 'id' in found) throw fail('only the verdict and the walkthrough take a hint');
     const ids = new Set<string>();
+    let primaryName: string | undefined;
     return {
       item: found,
       actions: actions.map((fields: unknown, number) => {
         const name = `action ${String(number + 1)}`;
-        const { id, label, note = false, edit = false, tone } = fieldsOf(fields);
+        const { id, label, note = false, edit = false, tone, consequence, outcome, primary = false } = fieldsOf(fields);
         if (!filled(id)) throw fail(`${name} needs an id`);
         if (!filled(label)) throw fail(`${name} needs a label`);
         if (typeof note !== 'boolean') throw fail(`${name}: note must be true or false`);
         if (typeof edit !== 'boolean') throw fail(`${name}: edit must be true or false`);
         if (tone !== undefined && !TONES.includes(tone as Tone)) throw fail(`${name}: tone must be positive, attention or none`);
+        if (consequence !== undefined && !filled(consequence)) throw fail(`${name}: a consequence needs words`);
+        if (consequence !== undefined && wordCount(consequence) > CONSEQUENCE_WORDS)
+          throw fail(`${name}: a consequence is at most ${String(CONSEQUENCE_WORDS)} words`);
+        if (outcome !== undefined && !filled(outcome)) throw fail(`${name}: an outcome needs words`);
+        if (outcome !== undefined && wordCount(outcome) > OUTCOME_WORDS)
+          throw fail(`${name}: an outcome is at most ${String(OUTCOME_WORDS)} words`);
+        if (typeof primary !== 'boolean') throw fail(`${name}: primary must be true or false`);
+        if (primary && primaryName) throw fail(`${name}: ${primaryName} is already primary, and an item has one at most`);
+        if (primary) primaryName = name;
         if (edit && found.type !== 'note' && found.type !== 'checklist')
           throw fail(`${name}: only a note or a checklist item has text to edit`);
         if (ids.has(id)) throw fail(`two actions have the id ${id}`);
@@ -147,6 +157,9 @@ export function parseActions(
           ...(note && { note: true as const }),
           ...(edit && { edit: true as const }),
           ...(tone !== undefined && { tone: tone as Tone }),
+          ...(consequence !== undefined && { consequence: consequence.trim() }),
+          ...(outcome !== undefined && { outcome: outcome.trim() }),
+          ...(primary && { primary: true as const }),
         };
       }),
       ...(hint !== undefined && { hint: hint.trim() }),

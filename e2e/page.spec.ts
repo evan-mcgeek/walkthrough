@@ -10,9 +10,9 @@ test('shows the session preparing until it records steps, then the steps without
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('feature/login');
   const range = `${repo.base.slice(0, 7)}..${repo.head.slice(0, 7)}`;
   await expect(page.getByRole('heading', { level: 1 })).toHaveAttribute('title', new RegExp(`^against \\S*main, ${range}$`));
-  const preparing = page.getByText('Preparing the steps');
+  const preparing = page.getByText('Preparing steps');
   await expect(preparing).toBeVisible();
-  await expect(page.getByText('They appear here as the session records them.')).toBeVisible();
+  await expect(page.getByText('They appear here as the session records them.')).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Preparing' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'To review' })).toContainText('No steps yet');
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveCount(0);
@@ -58,19 +58,21 @@ test('an approved step stays approved when the page is opened again', async ({ p
   await expect(reopened.getByRole('region', { name: 'Summary' })).toBeVisible();
   await reopened.getByRole('region', { name: 'Summary' }).getByRole('link', { name: 'Login', exact: true }).click();
   const again = reopened.getByRole('region', { name: 'Login' });
-  await expect(again.getByText('Decided: Approve', { exact: true })).toBeVisible();
-  await again.getByRole('button', { name: 'Change decision' }).click();
+  await expect(again.getByText('Approved', { exact: true })).toBeVisible();
+  await again.getByRole('button', { name: 'Change', exact: true }).click();
   await expect(again.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('the End session button ends the server', async ({ page, request, url }) => {
-  await page.getByRole('button', { name: 'End session' }).click();
+test('End session in the More menu ends the server', async ({ page, request, url }) => {
+  await page.getByRole('banner').getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'End session' }).click();
 
   await expect(page.getByText('Stopped. The walkthrough has stopped and your decisions are kept. You can close this tab.')).toBeVisible();
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Stopped');
-  await expect(page.getByRole('button', { name: 'End session' })).toHaveCount(0);
+  await page.getByRole('banner').getByRole('button', { name: 'More' }).click();
+  await expect(page.getByRole('menu', { name: 'More' }).getByRole('menuitem')).toHaveText(['Appearance', 'Help']);
   await expect(page.locator('#panes')).toHaveAttribute('inert', '');
-  await expect(page.getByText('Preparing the steps')).toBeVisible();
+  await expect(page.getByText('Preparing steps')).toBeVisible();
   await expect(request.get(url)).rejects.toThrow();
 });
 
@@ -84,7 +86,7 @@ test('an action after the server stopped says how to reopen the walkthrough', as
   await page.getByRole('button', { name: 'Approve' }).click();
 
   await expect(page.getByRole('alert')).toHaveText(
-    'Could not reach the walkthrough. Run /walkthrough again to reopen it.Retry now',
+    'Could not reach the walkthrough. Run /walkthrough to reopen.Retry now',
   );
   await expect(page.locator('body')).toHaveClass(/unreachable/);
 
@@ -118,6 +120,19 @@ test('a request without the token is refused', async ({ request, url }) => {
   const approve = { item: { type: 'step', id: '1' }, action: 'approve' };
   expect((await request.post(`${origin}/decide`, { data: approve })).status()).toBe(404);
   expect((await request.get(`${origin}/s/${'0'.repeat(48)}/`)).status()).toBe(404);
+});
+
+test('a step being marked read is not drawn again under the person reading it', async ({ page, repo, url }) => {
+  await expect(page).toHaveURL(url);
+  repo.record(ONE_STEP);
+  const approve = page.getByRole('region', { name: 'Login' }).getByRole('button', { name: 'Approve' });
+  await expect(approve).toBeVisible();
+  const shown = await approve.elementHandle();
+
+  await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '0 of 1 step decided, 1 left, 1 read');
+  await (await page.waitForRequest('**/data/walkthrough.json')).response();
+
+  expect(await shown.evaluate(node => node.isConnected)).toBe(true);
 });
 
 test('a step shows read before the server stores it, and storing it neither redraws nor clears an alert', async ({
