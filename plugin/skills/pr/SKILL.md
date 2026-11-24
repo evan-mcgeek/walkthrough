@@ -16,7 +16,9 @@ For their own change, `/walkthrough` is the procedure instead.
 3. Run `walkthrough start --kind requested --base <rev> --head <rev> --label <label>` in the repo, with a short label naming the change, such as its number.
    Give the same label whenever the person opens this change again, so the walkthrough goes on with their decisions; fetch its head again first.
    Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "Someone else's change" part, such as `--comments 'Posted with your review'`.
-4. Go on as "Walking through" says, until the walkthrough stops.
+4. When the policy has you ask how well the person knows the feature, ask it in the chat now, with your question tool when you have one so they pick rather than type, offering the policy's answers and saying they may skip.
+   Read the change while they answer; their answer sets how much your explanations say, as the policy says.
+5. Go on as "Walking through" says, until the walkthrough stops.
    Your comments are drafts marked "[AI]" that the person edits or drops on the page, apart from the person's own comments, which are never marked; every draft they keep goes out together with their own comments, as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
 
 ## Walking through

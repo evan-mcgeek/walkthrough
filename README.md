@@ -57,6 +57,7 @@ To review a change someone asked you to review, run `/walkthrough:pr` with its n
 ```
 
 The session fetches the change as your policy says, without checking it out.
+Right after it starts, it asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need; you may skip the question.
 The session's comments become drafts marked `[AI]` that you can edit or drop on the page.
 When you send your review, every draft you kept goes out with your own comments, all together in one pending review that you submit yourself.
 Open the same change again after its author replied or pushed, and the walkthrough goes on where you left it.
