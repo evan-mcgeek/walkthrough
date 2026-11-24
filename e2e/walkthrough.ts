@@ -20,7 +20,17 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
     if (started.status !== 0) throw new Error(started.stderr);
     // A script blocked by the CSP or a page that throws shows up here.
     const problems: string[] = [];
-    page.on('pageerror', error => problems.push(error.message));
+    // WebKit reports a poll that leaving the page cuts off as a page error, which says nothing about the page.
+    let leaving = false;
+    page.on('request', request => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) leaving = true;
+    });
+    page.on('load', () => {
+      leaving = false;
+    });
+    page.on('pageerror', error => {
+      if (!(leaving && /Fetch API cannot load \S+ due to access control checks/.test(error.stack ?? ''))) problems.push(error.message);
+    });
     page.on('console', message => {
       // The browser logs a 409, which the page answers by telling the person what changed.
       if (message.type() === 'error' && !message.text().includes('status of 409')) problems.push(message.text());

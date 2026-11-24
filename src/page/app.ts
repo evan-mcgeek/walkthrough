@@ -250,7 +250,9 @@ function markRead(step: Step): void {
     reading = null;
     if (currentStep()?.id !== step.id) return;
     readNow(step.id);
-    render();
+    // Being read changes only the header's count, so the step is not drawn again under the person reading it.
+    lastWalkthrough = JSON.stringify(walkthrough);
+    progressView(marker.classList.contains('waits'));
   }, READ_MS);
   reading = { step: step.id, timer };
 }
@@ -841,7 +843,9 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   const shortcut = item.type === 'step' && STEP_KEYS[action.id];
   const tip = [...(shortcut ? [withKey(shortcut.tip(action.label), shortcut.key)] : []), ...(action.consequence ? [action.consequence] : [])].join(' ');
   if (tip) button.title = tip;
-  button.onclick = () => {
+  button.onclick = event => {
+    // A double click decides once, though deciding may have moved the next step's button under its second click.
+    if (event.detail > 1) return;
     take(item, action);
   };
   return button;

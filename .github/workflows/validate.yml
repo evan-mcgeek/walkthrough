@@ -1,4 +1,4 @@
-# Every pull request to main checks the plugin, its skills and hooks, and the marketplace manifest the way Claude Code reads them.
+# Every pull request to main checks the plugin, its skills and hooks, and the marketplace manifest the way Claude Code reads them, and runs every test in every browser.
 name: Validate plugin
 
 on:
@@ -22,3 +22,25 @@ jobs:
       - run: npm run build
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict plugin
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict .
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # A policy test reads a template from an earlier commit.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run lint
+      - run: npm run test:browsers
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: test-results
+          path: test-results/
