@@ -511,12 +511,12 @@ Step state is an 8px dot plus a 12.5px 500 word, with no outline or fill around 
 - **Select:** native select with its own arrow removed, 30px right padding, and a muted drawn 16px chevron.
 
 ### Navigation
-- **Header (44px):** the 16px lockup, the kind label, the mono branch or pull-request label, segmented progress bar (180px) with "Step 4 of 9 · 3 decided" beside it ("Summary · 7 decided" on the Summary), then at the right: verdict status (once chosen), Finish review, session status, End session, and a More (…) icon button for Appearance and Help. No panel controls live in the header.
-- **Kind label:** the session's own words for the kind (for example "Your change" or "Review request") in 12.5px muted text, set off by a 1px rule on its left with 12px padding; no icon, since the tool knows only the session's free text (ADR 0005). At 390px the kind takes the label's place next to the logo, the label stays for screen readers only, the count is dropped, and the progress bar runs full width under the header.
+- **Header (44px):** the 18px mark alone (the wordmark lives in the favicon, export and brand sheet), the mono branch or pull-request label (its tooltip names the kind: "Your change", "Review request"), the segmented progress bar (180px) with "Step 4 of 9" ("Summary" on the Summary), then at the right: verdict status (once chosen), Finish (flag icon + word, a secondary button), the session status, and More (…), which holds Appearance, Help and End session. The decided count lives in the bar, not in words. No panel controls live in the header.
+- **Kind label:** not shown in the header; the session's words for the kind are the branch label's tooltip and the list page's column, with no icon, since the tool knows only the session's free text (ADR 0005).
 - **Progress bar:** one segment per step: decided-positive green, needs-you amber drawn hatched (135°, 3px amber and 2px amber at 45%) so it differs from green in greyscale, decided-without-tone an outlined segment (no fill, 1.5px inset `neu` edge), not decided a faint rule-tone fill (read or not). Every state differs by shape as well as colour, so the bar reads in greyscale: solid (approved), hatched (needs you), outlined (no tone), faint (not decided), taller ink (where you are). Red never appears in the bar: it is the checklist's colour, shown on the Checklist edge and rows. The current step's segment is solid ink and taller (9px against 5px, 2px corners), whatever its state, so it reads at a glance in light and dark on any accent; it walks to the new segment on navigation. At 390px the bar runs full width under the header and "N decided" sits beside the step picker. Every segment has a tooltip naming the step and its state in words ("6 Overdue styling: not read yet").
 - **Diff-Preview switch:** joined segmented control, 1px control edge, 6px group corners; pressed is surface tint with ink, never the accent.
 - **Verdict status:** a flag icon plus the chosen verdict in 12.5px 500, both in the verdict's tone (green, amber, or secondary ink for no tone), here and on the list page.
-- **Session status:** a muted "Session" prefix (dropped at 390px), then a 7px dot plus 13px 600 label: Listening (secondary ink), Working (accent text with a spinning icon), Needs you (amber dot with a 3px amber-wash ring), Offline · retrying (amber, with an offline icon, when the server is unreachable), Gone and Stopped (muted hollow dot).
+- **Session status:** quiet when all is well: Listening is a 7px secondary-ink dot alone, its words in the tooltip ("Listening: questions reach the session now") and for screen readers. Any other state shows its 13px 600 label beside the dot: Working (accent text with a spinning icon), Needs you (amber dot with a 3px amber-wash ring), Offline · retrying (amber, with an offline icon, when the server is unreachable), Session gone and Stopped (muted hollow dot).
 - **Step nav:** previous and next icon buttons plus "Step 4" in 13px, shown above the title only when the queue is hidden.
 - **More menu:** on desktop, Appearance and Help; at 390px, Swipe to decide, the panels as menu-item checkboxes, then a rule separator above Appearance, Help and End session.
 
@@ -527,31 +527,27 @@ The IDE pattern, played straight.
 - **No tool panel:** there is no bottom panel or strip. Notes live on their lines (counted in "In this step"); session messages and notes on removed code live on the Session messages page, whose row in To review counts both ("1 file not in a step · 2 on removed code"). Keys 1 to 3 toggle To review, Checklist and Explanation.
 
 ### Queue ("To review")
-The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. Icons and sub-lines take the traffic-light set: the current step is an ink ring with a centre dot; not decided (read or not) a muted hollow ring; an open finding an amber triangle with the amber sub-line "N open finding(s)"; changed since you decided the amber return arrow with that sub-line; a checklist row red (not met) or amber (partly met) with "Checklist · not met"; a checklist item's row holds its text to two lines, cut with an ellipsis, with all of it in the text's tooltip, and the item's own page shows all of it. Inside "N decided": Approve a green filled check with a green "Approve" sub-line, Flag an amber filled flag with "Flag", a tone-less action a grey filled dash with its label in muted. Session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
-A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding", which fits the rail on one line; its decision stays.
-A step with open findings has the amber sub-line "1 open finding" or "N open findings" beside its amber triangle, and choosing its row opens the step at its first open finding, focused in the middle of the pane; the phone's step picker names it the same way ("Overdue styling · 2 open findings").
-One sub-line shows, the first that holds: "New finding", "Being checked", "Changed since you decided", the open findings, then a folded step's problems.
+The signature rail, headed "To review" with a counter. Rows are a 16px state icon, the 13.5px title and at most one right-aligned badge; status lives in the icon, and its words are in the row's tooltip and in Help. Badges: an amber warning with a count (open findings, problems; tooltip "1 open finding"), amber "new" (a finding after you decided), a grey count on Session messages. "Being checked" is the only sub-line. Icons take the traffic-light set: the current step an ink ring with a centre dot; not decided (read or not) a muted hollow ring; an open finding an amber triangle; changed since you decided the amber return arrow. Inside "N decided": Approve a green filled check, Flag an amber filled flag, a tone-less action a grey filled dash, each with its outcome in its tone in the tooltip. Session messages muted. Criteria never appear here; they live on the Checklist. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
+A step the session is still checking keeps its state icon with the muted sub-line "Being checked", led by the being-checked spinner. A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber "new" badge; its decision stays.
+Choosing a row with open findings opens the step at its first open finding, focused in the middle of the pane; the phone's step picker names it the same way ("Overdue styling · 2 open findings").
+A row that would hold more than one badge shows the first that holds: "new", the open findings, then a folded step's problems.
 
-### In This Step (facts rail)
-Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons in their status colours, each icon on its criterion's first line.
+### In This Step (chips)
+Under the one-sentence explanation, one row of 26px pill chips (1px rule, 13px corners), wrapping: each file (file icon, mono name, green `+N`, red `−N`, an amber warning badge with the count of open findings; a click jumps to the file), the session's notes as a speech-bubble chip with a count, your own comments as an accent person chip with a count, a 16px divider, then the linked checklist criteria (status icon in its colour plus the criterion), and an "N assumption" chip (tooltip "Assumed without reading the code") that opens the assumptions. Every chip's tooltip says it in words. No separate facts rail.
 
 ### Checklist
-The same item layout in the 288px panel, on the checklist's own page and in the Summary's Checklist section.
-The title carries a counter that says what it counts, "15 of 21 met", in the same words for a screen reader; the edge stripe keeps the short "15/21".
+A page and a panel (288px), one line per criterion: its status icon, the ticket's sentence cut with an ellipsis, its linked step numbers, and a segmented control (Met, Partly, Not met) in which the session's mark is pressed; pressing another overrules it; none pressed is not checked yet. The session's evidence opens under the row on click (surface fill, 7px corners, 72ch). Criteria never appear in To review; the right edge button reads "Checklist 2/5".
 The session's optional description sits under the title as one 13px muted line, such as "Each acceptance criterion from the tickets, and the steps that deliver it."
-Each item reads down: the state icon and the item's text (Body UI) at the full width, then one 12px muted line with the session's status and the steps it links to, "partly met: V still runs after Stop · Steps 4, 10, 13" ("Step 2" for one, nothing for none).
 The step numbers are plain accent-text links, underlined on hover, each with its step's title as its tooltip; "Steps" and its numbers wrap as one piece.
 The status words and the icon take the status's colour: met in `ok` green with a circle with a check, partly met in amber with a circle with a minus, not met in `bad` red with a circle with a cross, not checked yet muted with a dashed ring.
-A checklist row in To review has the same icon and a sub-line in the same colour ("Checklist · not met", "Checklist · partly met").
-The same colours mark the item's icon wherever it shows: the panel, its page, the Summary's rail, "In this step" and To review.
+The same colours mark the item's icon wherever it shows: the panel, its page, the Summary and the step's chips.
 Inline code in an item's text never breaks inside the code.
-On the checklist page an item's actions follow under its line.
 
 ### Diff, Markers and Overview Stripe
 diff2html line-by-line, restyled through classes: 46px number columns in muted ink, 12.5/21px mono code with 16px right padding, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink.
 - **Gutter markers:** a line that carries a note shows a 13px icon in a 16px box at the left of its new-line number: amber warning triangle for a finding, accent person for your own comment, marker-note speech bubble for any other note.
 - **Overview stripe:** a 10px column at the right edge of each file's diff, on the surface tone behind a soft rule: added and removed runs as 6px-wide stripe-add and stripe-del bars, and each note as a 3px full-width tick in its marker colour. It maps the whole file at a glance and never scrolls with the code.
-- **Notes:** a note row spans the table in UI sans, label in 12.5px (a finding's label in amber with its icon), body 14/1.55 in primary ink, replies indented behind a 2px rule. The actions the session offers on a note are small secondary buttons under its text, starting where the text does, then Reply, 8px apart; they wrap at 390px. The chosen one shows pressed, and a decided note keeps its decided tag in its head and the Undo toast; the same holds for notes on a step and on a folded step. "N more notes" is an accent-text link on a row with no fill. The Ask-about-lines composer is a row in the accent wash with accent-line rules.
+- **Notes:** one row under the line, spanning the table in UI sans: the kind label in 12.5px (a finding's in amber with its icon; its tooltip carries the line), the body at 14/1.55 in primary ink up to 66ch, and the actions at the right (see Note Actions and Outcomes). Replies indent under the body behind a 2px rule. At 390px the row stacks. The same holds for notes on a step and on a folded step. A file header carries the same counts: an amber warning with the open findings, a muted bubble with the notes, each jumping to the first. "N more notes" is an accent-text link on a row with no fill. The Ask-about-lines composer is a row in the accent wash with accent-line rules.
 
 ### Files to Skim (the folded step)
 The step is titled "Files to skim" on the page. A session writes a sentence per file, so the step reads reasons as text.
@@ -570,25 +566,38 @@ At 390px the counts take a row of their own under the name, lined up with it. Vi
 The reviewer's own comment is an accent-wash box with a 1px accent-line border, 8px corners and 12px 16px padding, up to 70ch: a "Your comment" heading in 650 accent text with a person icon, edit and delete icon buttons in accent text, the 14/1.55 body in primary ink, and a 12.5px destination hint (for example "Joins the fix list"). On hover or focus of a line number, a 20px accent "+" square appears in the gutter to start a comment; a picked range offers "Ask about lines" and "Comment".
 
 ### Action Bar
-Docked at the foot of the step: Approve, Flag, any session offers, the Ask box. While the step has open findings, Approve is a secondary button and an amber "N open finding(s)" with a warning icon closes the row.
-That count is a button with the tooltip "Go to the next open finding": each press scrolls to and focuses the next open finding in the step, in the page's order, wrapping to the first; it hovers to the amber wash. A decided step's "1 new finding" does the same with its new findings.
-While the session is still checking the step, its actions are held: drawn disabled, followed by the muted 12.5px hint "Decide once the session has checked this step.", and the A and F keys and the swipe deck decide nothing. The Ask box stays live.
+Docked at the foot of the step: Approve (check-circle icon, word, key cap A) and Flag (flag icon, word, key cap F), 34px tall; any session offers; then the Ask field with a question icon filling the row; and, while findings are open, an amber "⚠ N open" link with a warning icon that closes the row. While findings are open Approve is a secondary button.
+That count is a button with the tooltip "Next finding": each press scrolls to and focuses the next open finding in the step, in the page's order, wrapping to the first; it hovers to the amber wash. A decided step's "1 new finding" does the same with its new findings.
+While the session is still checking the step, its actions are held: drawn disabled, followed by the muted 12.5px hint "Decide after the check", and the A and F keys and the swipe deck decide nothing. The Ask box stays live.
 
 ### Summary Step
-The title with an "N still open" state and one plain 14.5px count line in secondary ink ("7 of 9 steps decided · 2 being checked · 2 flagged · 2 of your comments · checklist 2 of 5 met"; no big-number tiles). Below, two columns, 32px apart, up to 1080px:
-- **The walk (ledger):** every step in one table, grouped "Still open N" first, then "Decided N", each group under a 12px 600 muted heading on a rule. A row is the step number (12.5px tabular, muted), its state icon in its status colour, the title (13.5px 500 ink, a link to the step) and, at the right, the decision in words in the same colour (Approve green, Flag and Changed amber, a tone-less label in secondary ink, Undecided and Being checked muted). Under the title, at 13px: a flag's note in quotes (secondary ink), the person's own comments in accent text with the person icon and a muted mono "file:line", or why the step is open ("Changed since you chose Approve.", "Findings may still arrive."); open findings and problems are amber sub-lines with the triangle; a decided step with a finding that arrived after the decision stays under Decided with an amber "1 new finding since you approved.". Notes and checklist items that offer actions not yet taken are rows of Still open too, with no number, their own icon and Undecided or Changed, so the count in the title matches the group. Rows sit on soft rules with 8px padding. No separate Decided, Flagged or Your comments sections: the ledger carries them. A review request adds "Comments the session drafted" under the ledger (status word Accepted, Edited or Dropped on surface tint; a dropped draft is struck through and muted).
-- **Finish rail (288px):** sticky, behind a 1px rule with 24px left padding, like the "In this step" rail. Verdict heading, "No verdict yet." or "Your verdict: <label>" with the label in the verdict's tone, the session's verdict options stacked full width (radio buttons: canvas, 1px control edge, 4px corners; chosen = secondary-ink border, surface tint, 600, filled icon in the verdict's tone), then the finishing action full width (primary, disabled until a verdict is chosen) and any secondary action, one 12.5px hint naming what goes where ("Choose a verdict first." while the finishing action waits, then the session's hints for the verdict and for finishing, such as "Fix list: 2 flags and 2 of your comments."), then the checklist, compact: "Checklist 2 of 5 met", each item its mark and text, its status in the row's tooltip. At 390px the rail drops under the ledger behind a top rule.
+Reads in ten seconds: how much is left, what goes out, the one button that sends. Title "Summary", then one plain 14.5px count line in secondary ink ("4 left · 8 go out"; after sending "Sent · 8 went out"; no big-number tiles). Two columns, 32px apart, up to 1080px:
+- **Still open:** one 36px row per step, finding or note that needs the person, on soft rules: its status icon in its status colour, title (13.5px ink, a link to the exact place with its file unfolded) and, after " · ", the one-line reason in secondary ink, cut with an ellipsis; its own small buttons at the right (a finding's actions, or Approve and Flag). A step being checked shows the being-checked spinner and "Being checked" in muted. No "Undecided": the group heading and the icon say it.
+- **Goes out:** your comments (accent text with the person icon) and the session's drafts, one line each with a muted mono "file:line", the text cut with an ellipsis, a tag only when it differs (Edited, Dropped on surface tint; a dropped draft struck through and muted) and Edit and Drop icon buttons. Every kept draft goes out with the final send. The count in the heading is what goes out.
+- **Checklist:** one line per criterion, the ticket's sentence and a segmented control (Met, Partly, Not met); the session's mark is the pressed button, another press overrules it; none pressed means not checked yet.
+- **Decided:** decided steps fold into one line, "5 steps decided", which opens them; each row's icon and outcome take its tone (Approve green, Flag and Changed amber, a tone-less label in secondary ink).
+- **Finish rail (288px):** sticky, behind a 1px rule with 24px left padding. The session's verdict options stacked full width (radio buttons: canvas, 1px control edge, 4px corners; chosen = secondary-ink border, surface tint, 600, filled icon in the verdict's tone), the one send button ("Send review", "Send fix list") with the finish icon, disabled until a verdict is chosen, and one 12.5px hint ("2 comments and 6 drafts go out."). After sending the rail is a green-wash box: check icon, "Sent", one line saying what went ("2 comments and 6 drafts, as a pending review."), then a link to it. The session's replies never sit here: they go to Session messages. At 390px the rail drops under the list behind a top rule.
 
-### Help: what things mean
-Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: every step and checklist state with its icon, colour and word, the progress-bar fills (green, hatched amber, grey, light) and the ink current-step marker, the note labels (Finding, Note, Thread, Your comment), the counts that go to notes (the queue's "2 open findings", a file's "1 finding", "2 notes" and "1 yours", the action bar's "2 open findings"), the session statuses: then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
+### Help
+Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding). Buttons and badges say what they do, so Help keeps two columns only: **Icons**: every step and checklist state with its icon, colour and word (where you are, approved, flagged, needs you, changed, decided with no tone, not decided yet; met, partly, not met), the progress-bar fills (green, hatched amber, outlined grey, faint) and the ink current-step marker; then **Keys**. Every icon and colour on the page is said in words here and in its tooltip.
 
 ### Popovers: Appearance and Help
 Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Help** (1040px, 60px from the top, one column at 390px): two-column tables, rows on soft rules; its key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
 
+### Note Actions and Outcomes
+- **Kind:** the head shows the session's kind word, its label ("Finding", "Question", "Nit", "Draft"). A note with actions needs a decision and carries its icon and its actions; one without (a Question with its answer, a Note) has no buttons and folds once read.
+- **Actions:** named by the session for what happens, at most 3 words ("Add to fixes", "Not an issue"). Each may carry a consequence of at most 8 words; the primary action's shows as one muted line under the buttons ("Add to fixes: goes on the fix list."), every action's in its tooltip. At 390px the line stays, since there is no hover. Buttons are neutral; status colour belongs to the outcome.
+- **Optional reason:** an action that asks why (a rejection, Flag) opens an inline field with the placeholder "Why? (optional)" and its own button; sending it empty is fine.
+- **After deciding:** the note folds to one line: the outcome icon and word in its tone (green check "Added to fixes"; grey cross "Not an issue"; grey eye "Ignored"), then "Kind: text" muted and cut, then Undo and Change. Ignored notes stay in place, at 75% opacity, and count nowhere.
+- **Drafts:** a draft in the files shows Edit and Drop, never Post; every kept draft goes out with the final send, as the Summary's Goes out list says.
+
+### Session Messages
+The only place the session speaks outside the steps. One line per message, unread first with an 8px accent dot; a question opens in place with its answer buttons and a Reply field; read messages fold to one line in secondary ink. Groups below, each one line per item: "On removed code" (notes and your comments whose lines are gone, with "was on file:line") and "Not in any step" (changed files). The To review row counts unread messages. The session's answers to comments and decisions are not shown, and comments never wake the session.
+
 ### Notices
 - **Neutral:** surface fill, 1px rule, 7px radius, muted icon.
 - **Attention:** amber wash, no border, amber icon. Full-width banners use the same pair under the header.
-- **Being checked:** a neutral notice under the step title, with the dashed not-checked icon: "The session is still checking this step. Findings may still arrive."
+- **Being checked:** a neutral notice under the step title, led by the being-checked spinner: "Still checking this step. Findings may arrive."
 - **New finding banner:** the attention banner under the header names a finding that lands on a step the person read or decided ("New finding on step 8, Ultramarine, accents and Appearance, which you approved."; several read as one, "3 new findings on steps 8 and 10."), with a small "Go to step" button and a close icon button to dismiss it. It is for the open page only; after a reload the queue sub-line carries it.
 - **Late finding on the step:** opening a decided step that got a finding after the decision shows an amber-wash line under the title ("A finding arrived after you approved. Your decision stays; change it if the finding matters."), the note labelled "line N · new since you approved", and an action bar of Change decision, the Ask box and "1 new finding" in amber. "approved" is the person's own decision: Approve and Flag read "approved" and "flagged", another label "chose <label in lower case>"; several findings read "2 findings arrived … if the findings matter.". At 390px the step picker names the step "· New finding". The export, read by others too, leaves the line and the "new since" words out.
 - **Session question:** canvas fill, 1px amber border, 8px radius, amber 650 heading.
@@ -602,7 +611,7 @@ Changed images get the same Diff / Preview switch. Preview shows Before and Afte
 At 390px a step can be decided by swiping its card: right approves, left flags (and opens the Flag note). Cards are canvas with a 1px rule, 12px corners and 16px padding, holding the title, explanation, a three-line mini diff and any finding in an amber-wash callout. Mid-drag, a decision chip fades in at the top corner (green wash and text for Approve, amber for Flag: it previews the state it will record) and edge labels appear. The next card waits beneath at scale .95, 14px lower and 60% opacity, growing to full as the top card leaves; its text stays hidden until the top card has cleared.
 
 ### Motion
-One family (the Preparing state's pulsing mark and the Working spinner are the only loops): `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or settling, `ease-in` cubic-bezier(0.7, 0, 0.84, 0) for things leaving, at 120ms (fast), 200ms (base) and 320ms (slow).
+One family (the Preparing state's pulsing mark, the Working spinner and the being-checked spinner are the only loops): `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or settling, `ease-in` cubic-bezier(0.7, 0, 0.84, 0) for things leaving, at 120ms (fast), 200ms (base) and 320ms (slow).
 A click takes effect at once and the motion follows: every animation starts in the task that changed the state, a leaving element stays drawn, inert and hidden from assistive technology until its exit ends, and the exit's own end, never a timer, takes it away.
 The swipe card is the one exception: it decides once its flight ends.
 A redraw from polling continues what is playing and starts nothing new.
@@ -616,6 +625,7 @@ A redraw from polling continues what is playing and starts nothing new.
   The step's action bar leaves with its pane, Finish review included.
 - **Reveal:** assumptions open by grid rows (320ms) with the chevron turning 90° (120ms); extra notes rise 4px (200ms, 40ms stagger).
 - **Attention:** "Needs you" pulses its amber ring twice (1.2s) and then holds still.
+- **Being checked:** the faded dashed ring with a solid quarter-arc turning once every 1.2 seconds, in front of "Being checked" in To review, on the "Still checking this step" notice and on the step's Summary row.
 - **Swipe:** the card follows the finger, rotating 0.025° per pixel of travel; on release it flies out (200ms ease-in) with its fade held back until late (80ms after 120ms).
 - **Verdict (the one authored moment):** choosing a verdict lifts the chosen label off its option as a chip, its text laid exactly on the option's, and docks it onto the label in the header's verdict slot: transform 440ms ease-out, opacity held to 62% then out (linear) while the slot's label fades in over the same window, so the label never drops out.
   The slot opens by width (320ms ease-out); on a change the old label, kept in the slot, fades out (200ms) under the arriving chip and the slot's width eases to the new label.
@@ -636,6 +646,44 @@ A redraw from polling continues what is playing and starts nothing new.
   The verdict chip is skipped: the header slot fades in (200ms), and on a change the old label fades out (100ms) before the new one fades in (100ms).
   Popovers only fade.
   The accent still cross-fades, as colour.
+  The being-checked arc stops and its words stay.
+
+## Words
+
+The page's own words have caps; the session's words have shapes, written into the review-policy template the session follows.
+
+### Caps for the page
+| Slot | Cap |
+|---|---|
+| Button | 3 words |
+| Badge or queue sub-line | 4 words (prefer an icon and a count) |
+| Tag | 2 words |
+| Hint | 8 words, only for a consequence a label hides |
+| Notice or banner | 12 words |
+| Empty state | 8 words |
+| Tooltip | 12 words |
+| Chip | 4 words |
+
+Rules: one place per thing (elsewhere at most a count that leads to it); one line per row, cut with an ellipsis, the whole text on the item and in its tooltip; say what happens, not the state machine ("Changed since you approved", not "Reopened"); no word a shape already says.
+
+### Shapes for the session's words
+| Slot | Shape | Good | Bad |
+|---|---|---|---|
+| Step explanation | 1 sentence, 25 words max, shown; up to 3 more behind More | "Both handlers accept an optional dueDate and store it as a Date or null." | "This step teaches the API to accept a due date on create and update. Both handlers read an optional…" (6 sentences up front) |
+| Note or finding | 1 sentence, 20 words: what is wrong and what it breaks; evidence behind Why, 3 lines max; no verifier verdicts inline | "A typo in the date becomes null and clears it, instead of a 400." | "Verifier: WEAKENED to a taste call. parseDueDate returns null when…" (12 lines) |
+| Criterion | The ticket's own sentence, 12 words max; status one of Met, Partly, Not met, plus 6 words why | "Invalid dates rejected with a clear error" · "Not met: bad dates become null" | The evidence paragraph as the criterion text |
+| Answer to an ask | 2 sentences, the first answers directly | "No: 30 February rolls over to 2 March. isNaN won't catch it." | "Great question! Let's look at how Date parsing works…" |
+| Session message | 2 sentences, 30 words; a question ends with its answer options | "Is 30 February a 400 or a rollover? Your rules don't say." | A status report of what the session did, step by step |
+| Draft comment | 2 sentences, 40 words, starts with [AI] | "[AI] Return 400 for an invalid dueDate, with the field name." | A paragraph restating the finding and the policy |
+| Action label and consequence | Label 3 words naming the outcome; consequence 8 words; outcome 3 words, past tense | "Add to fixes" · "Goes on the fix list." · "Added to fixes" | "Accept" with no consequence |
+
+### Rules retired in round 5
+- The header's kind label, the "Session" prefix on Listening, the decided count in words, and End session in the header.
+- The "In this step" facts rail (now chips).
+- Accept and Reject as default note action names (actions are named for their outcome).
+- Help as a full glossary of every status in words (now icons and keys only; tooltips carry the rest).
+- Criteria rows in To review (they live on the Checklist).
+- Per-draft Post (drafts go out with the final send).
 
 ## Do's and Don'ts
 
