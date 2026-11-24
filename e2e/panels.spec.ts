@@ -188,10 +188,13 @@ test('the checklist panel says what it counts and what it is for, and each item 
   await expect(met.locator('.item-line')).toHaveText('met · Steps 1, 2');
   await expect(notMet.locator('.item-line')).toHaveText('not yet · Step 2');
   await expect(met.getByRole('link', { name: 'Step 2' })).toHaveAttribute('title', 'App version');
-  const text = await met.locator('.item-text').boundingBox();
-  const line = await met.locator('.item-line').boundingBox();
-  expect(line?.y).toBeGreaterThanOrEqual((text?.y ?? 0) + (text?.height ?? 0));
-  expect(line?.x).toBe(text?.x);
+  // Read in one frame, as the panel is still sliding in.
+  const { text, line } = await met.evaluate(item => {
+    const box = (selector: string) => item.querySelector(selector)?.getBoundingClientRect() ?? new DOMRect(NaN, NaN);
+    return { text: box('.item-text').toJSON() as DOMRect, line: box('.item-line').toJSON() as DOMRect };
+  });
+  expect(line.y).toBeGreaterThanOrEqual(text.bottom);
+  expect(line.x).toBe(text.x);
   await expect(met.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--muted'));
   await expect(notMet.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--amber'));
 

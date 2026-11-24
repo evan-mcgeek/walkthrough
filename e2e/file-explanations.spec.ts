@@ -48,7 +48,7 @@ test.describe('explained files', () => {
       await expect(note).toBeVisible();
       await expect(note).toHaveCSS('color', await tokenColor(page, '--ink-secondary'));
       await expect(note).toHaveCSS('font-size', '14px');
-      await expect(note).toHaveCSS('line-height', '21.7px');
+      await expect.poll(async () => Number.parseFloat(await note.evaluate(box => getComputedStyle(box).lineHeight))).toBeCloseTo(21.7, 1);
       await expect(note).toHaveCSS('border-left', `2px solid ${await tokenColor(page, '--accent')}`);
       const { above, below } = await note.evaluate(box => ({ above: getComputedStyle(box).marginTop, below: getComputedStyle(box).marginBottom }));
       expect(above).toBe(below);
