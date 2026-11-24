@@ -939,7 +939,8 @@ function takingForm(item: Item, action: Action, text: string): HTMLFormElement {
     ...(action.edit ? [draftArea(draft('text'), 'Text', text, 3)] : []),
     ...(action.note ? [draftArea(draft('note'), 'Note', '', 3)] : []),
   ];
-  for (const box of boxes) box.required = true;
+  // Edited text cannot be empty; the note is the person's to leave out.
+  for (const box of boxes) box.required = box.dataset['draft'] === draft('text');
   const form = el(
     'form',
     { className: 'taking' },
@@ -2390,6 +2391,8 @@ type LedgerRow = {
   tone: 'decided' | 'muted' | 'changed';
   subs: HTMLElement[];
   open: boolean;
+  /** What an action that edits text starts from. */
+  text?: string;
 };
 
 const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim() }, text);
@@ -2427,23 +2430,26 @@ function stepLedgerRow(step: Step): LedgerRow {
   }
   const state = shownOf(step);
   const listed = (count: number, what: string, texts: string[]) =>
-    count ? [ledgerSub(`${plural(count, what)}: ${texts.join(' · ')}`, 'changed finding')] : [];
+    count ? [ledgerSub(texts.length ? `${plural(count, what)}: ${texts.join(' · ')}` : plural(count, what), 'changed finding')] : [];
   const findings = openFindings(step);
   const problems = step.kind === 'folded' ? step.problems : [];
-  const open = [...listed(findings.length, 'open finding', findings.map(note => plain(note.text))), ...listed(problems.length, 'problem', problems)];
+  // A finding with actions has a row of its own, so the step only counts it.
+  const unlisted = findings.filter(note => !(walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? []).length);
+  const open = [...listed(findings.length, 'open finding', unlisted.map(note => plain(note.text))), ...listed(problems.length, 'problem', problems)];
   for (const sub of open) sub.prepend(icon('warn'));
   return { ...row, mark: SHOWN_ICON[state], state, words: 'Undecided', tone: 'muted', subs: [...open, ...own], open: true };
 }
 
 /** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
 function otherOpenRows(): LedgerRow[] {
-  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'state' | 'title'>;
+  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'state' | 'title' | 'text'>;
   const notes = session.conversation.filter(isNote).map((note): Open => ({
     item: { type: 'note', id: note.id },
     address: anchorOf(note) ?? 'session',
     mark: note.note.finding ? 'warn' : 'message',
     state: note.note.finding ? 'find' : 'note',
     title: `${note.note.label}: ${plain(note.text)}`,
+    text: note.text,
   }));
   const items = (walkthrough.checklist?.items ?? []).map((one): Open => ({
     item: { type: 'checklist', id: one.id },
@@ -2451,6 +2457,7 @@ function otherOpenRows(): LedgerRow[] {
     mark: one.mark ?? 'unchecked',
     state: one.mark ?? 'unchecked',
     title: plain(one.text),
+    text: one.text,
   }));
   return [...notes, ...items]
     .filter(one => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0)
@@ -2462,6 +2469,31 @@ function otherOpenRows(): LedgerRow[] {
 }
 
 const ledgerRows = () => [...walkthrough.steps.map(stepLedgerRow), ...otherOpenRows()];
+
+/** A Still open row's own actions, so the person decides it from the Summary; a step being checked waits. */
+function ledgerActions(item: Item, text = ''): HTMLElement[] {
+  const key = itemKey(item);
+  const actions = walkthrough.actions[key] ?? [];
+  const step = item.type === 'step' ? walkthrough.steps.find(one => one.id === item.id) : undefined;
+  if (readOnly || !actions.length || (step && beingChecked(step))) return [];
+  const taken = taking?.key === key ? actions.find(action => action.id === taking?.action) : undefined;
+  if (taken) return [takingForm(item, taken, text)];
+  return [el('div', { className: 'ledger-actions' }, actionGroup(item, () => 'secondary', true))];
+}
+
+/** A row's title goes to the exact place: a step at its first open finding, a note on its lines with its file open. */
+function ledgerGo(item: Item, address: string): ((event: MouseEvent) => void) | null {
+  const step = walkthrough.steps.find(one => one.id === address);
+  if (!step) return null;
+  const note = item.type === 'note' ? session.conversation.filter(isNote).find(one => one.id === item.id) : undefined;
+  if (item.type === 'step' ? !openFindings(step).length : !note) return null;
+  return event => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (note) openAtNote(step, note);
+    else openAtFinding(step);
+  };
+}
 
 /** Every step in one table, still open first, then decided; undecided never reads as decided. */
 function ledgerView(rows: LedgerRow[]): HTMLElement {
@@ -2477,14 +2509,17 @@ function ledgerView(rows: LedgerRow[]): HTMLElement {
         'tbody',
         {},
         el('tr', { className: 'ledger-group' }, head),
-        ...group.map(({ item, address, number, mark, state, title, words, tone, subs }) => {
+        ...group.map(({ item, address, number, mark, state, title, words, tone, subs, open, text }) => {
           const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
+          const going = ledgerGo(item, address);
+          if (going) link.onclick = going;
+          const actions = open ? ledgerActions(item, text) : [];
           const row = el(
             'tr',
             { className: 'ledger-row' },
             el('td', { className: 'ledger-number' }, number),
             el('td', { className: 'ledger-mark' }, icon(mark, stateName(mark))),
-            el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : [])),
+            el('td', { className: 'ledger-title' }, link, ...(subs.length ? [el('span', { className: 'ledger-subs' }, ...subs)] : []), ...actions),
             el('td', { className: `ledger-decision ${tone}` }, words),
           );
           row.dataset['state'] = state;
@@ -3118,14 +3153,23 @@ const revealNote = (step: Step, note: Note) => {
   reveal(step, note.note, `note-${note.id}`, note.note.low);
 };
 
-/** A step chosen from To review while it has open findings, opened at the first once its address has changed. */
-let seeking: string | null = null;
+/** The note to reveal once the page has moved to its step. */
+let seeking: { step: string; note: string } | null = null;
 
+function openAtNote(step: Step, note: Note): void {
+  if (decodeURIComponent(location.hash.slice(1)) === step.id) revealNote(step, note);
+  else {
+    seeking = { step: step.id, note: note.id };
+    go(step.id);
+  }
+}
+
+/** A step with open findings opens at the first of them. */
 function openAtFinding(step: Step): void {
   const [first] = inPageOrder(step, openFindings(step));
-  if (first && decodeURIComponent(location.hash.slice(1)) === step.id) revealNote(step, first);
+  if (first) openAtNote(step, first);
   else {
-    seeking = first ? step.id : null;
+    seeking = null;
     go(step.id);
   }
 }
@@ -3642,8 +3686,8 @@ window.addEventListener('hashchange', () => {
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
   const sought = seeking;
   seeking = null;
-  const [first] = view.kind === 'step' && view.step.id === sought ? inPageOrder(view.step, openFindings(view.step)) : [];
-  if (first && view.kind === 'step') revealNote(view.step, first);
+  const note = view.kind === 'step' && view.step.id === sought?.step ? session.conversation.filter(isNote).find(one => one.id === sought.note) : undefined;
+  if (note && view.kind === 'step') revealNote(view.step, note);
 });
 
 const POLL_MS = 1500;

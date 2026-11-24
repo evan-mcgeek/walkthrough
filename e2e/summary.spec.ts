@@ -90,8 +90,8 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   const ledger = summary.getByRole('table', { name: 'Every step and what you decided' });
   await expect(ledger.getByRole('row')).toHaveText([
     'Still open2',
-    '2App versionChanged since you chose Approve.Changed',
-    '3CartUndecided',
+    '2App versionChanged since you chose Approve.ApproveFlagChanged',
+    '3CartApproveFlagUndecided',
     'Decided1',
     '1Login check“Everyone gets in.”login.ts:1 Say who may log in.Flag',
   ]);
@@ -206,4 +206,40 @@ test('G then S goes to the Summary from any step, and the Summary is the last ro
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
   await page.keyboard.press('s');
   await expect(page.getByRole('region', { name: 'Cart' })).toBeVisible();
+});
+
+test('a Still open row offers its own actions, and its title goes to the exact place with its file open', async ({ page, repo, url }) => {
+  const noteId = /([0-9a-f]{8})/.exec(
+    record(repo, [{ step: '3', file: 'cart.ts', lines: [1, 1], label: 'Finding', text: 'The cart is never emptied.', finding: true }], 'note'),
+  )?.[1];
+  record(
+    repo,
+    [{ item: { type: 'note', id: noteId }, actions: [{ id: 'accept', label: 'Accept' }, { id: 'reject', label: 'Reject', note: true }] }],
+    'actions',
+  );
+  await page.goto(`${url}#3`);
+  await page.getByRole('button', { name: 'Mark cart.ts as viewed' }).click();
+  const note = page.locator(`#note-${noteId ?? ''}`);
+  await expect(note).toBeHidden();
+
+  await page.goto(`${url}#summary`);
+  const ledger = page.getByRole('table', { name: 'Every step and what you decided' });
+  const row = (title: string) => ledger.getByRole('row').filter({ has: page.getByRole('link', { name: title, exact: true }) });
+  // The finding has a row of its own, so its step only counts it.
+  await expect(row('Cart').locator('.ledger-sub')).toHaveText('1 open finding');
+  await row('Finding: The cart is never emptied.').getByRole('link').click();
+  await expect(page).toHaveURL(`${url}#3`);
+  await expect(note).toBeInViewport();
+  await expect(note).toBeFocused();
+
+  await page.goto(`${url}#summary`);
+  await row('Login check').getByRole('button', { name: 'Approve' }).click();
+  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approve');
+  await expect(page).toHaveURL(`${url}#summary`);
+
+  await row('Finding: The cart is never emptied.').getByRole('button', { name: 'Reject' }).click();
+  await ledger.getByRole('textbox', { name: 'Note' }).fill('Emptied on checkout.');
+  await ledger.getByRole('button', { name: 'Send' }).click();
+  await expect(row('Finding: The cart is never emptied.')).toHaveCount(0);
+  await expect.poll(() => repo.run('decisions').stdout).toContain('Emptied on checkout.');
 });

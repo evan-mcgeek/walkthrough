@@ -51,7 +51,7 @@ test('a step being checked says so and holds its actions, while the person can s
     'Still open3',
     '1LoginFindings may still arrive.Being checked',
     '2AppFindings may still arrive.Being checked',
-    '3CartUndecided',
+    '3CartApproveFlagUndecided',
   ]);
   await expect(ledger.locator('.ledger-decision.muted')).toHaveText(['Being checked', 'Being checked', 'Undecided']);
 

@@ -98,6 +98,14 @@
   text-underline-offset: 3px;
 }
 
+.ledger-actions {
+  margin-top: var(--s2);
+}
+
+.ledger-title > .taking {
+  margin-top: var(--s2);
+}
+
 .ledger-subs {
   display: flex;
   flex-direction: column;

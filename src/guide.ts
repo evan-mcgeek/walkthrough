@@ -142,7 +142,7 @@ walkthrough actions --file <file>
   The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
-  An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
+  An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
     [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone}, ...]}, ...]
   "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
   left out, it is "none". Pick it from the review policy; the page never guesses it from the label.

@@ -244,7 +244,7 @@ test('a step read and one not read look the same until decided, and decided step
   await expect(page.getByRole('progressbar', { name: 'Steps decided' })).toHaveAttribute('aria-valuetext', '1 of 2 steps decided, 1 left, 2 read');
 });
 
-test('an empty Ask or Flag note is not sent, and the box says it needs words', async ({ page }) => {
+test('an empty Ask is not sent and says it needs words, while Flag sends with its note left empty', async ({ page, repo }) => {
   const sent: string[] = [];
   page.on('request', request => {
     if (request.method() === 'POST') sent.push(new URL(request.url()).pathname);
@@ -256,12 +256,12 @@ test('an empty Ask or Flag note is not sent, and the box says it needs words', a
   await ask.press('Enter');
   await expect(ask).toHaveValue('');
   expect(await ask.evaluate((box: HTMLInputElement) => box.validity.valueMissing)).toBe(true);
-  await step.getByRole('button', { name: 'Flag' }).click();
-  await step.getByRole('button', { name: 'Send' }).click();
-
-  const note = step.getByRole('textbox', { name: 'Note' });
-  await expect(note).toBeFocused();
-  expect(await note.evaluate((box: HTMLTextAreaElement) => box.validity.valueMissing)).toBe(true);
   await expect(page.getByRole('alert')).toBeHidden();
   expect(sent.filter(route => route !== '/read')).toEqual([]);
+
+  await step.getByRole('button', { name: 'Flag' }).click();
+  await step.getByRole('textbox', { name: 'Note' }).fill('   ');
+  await step.getByRole('button', { name: 'Send' }).click();
+  await expect.poll(() => repo.run('decisions').stdout.split('\n')[0] ?? '').toContain('"action":"flag"');
+  expect(repo.run('decisions').stdout.split('\n')[0]).not.toContain('"note"');
 });

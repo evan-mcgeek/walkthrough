@@ -397,8 +397,7 @@ describe('decisions', () => {
       { item: { type: 'step', id: 'nope' }, action: 'approve' },
       { item: 'step:1', action: 'approve' },
       { item: step1, action: 'merge' },
-      { item: step1, action: 'flag' },
-      { item: step1, action: 'flag', note: '  ' },
+      { item: step1, action: 'flag', note: 42 },
       { item: step1, action: 'approve', note: 'Why not.' },
       { item: step1, action: 'approve', text: 'New text.' },
       { item: note, action: 'edit' },
@@ -407,6 +406,15 @@ describe('decisions', () => {
       expect((await decide(body)).status, JSON.stringify(body)).toBe(400);
 
     expect((await sessionAt(repo.url())).conversation.filter(entry => entry.from === 'page')).toEqual([]);
+  });
+
+  test('a note asked for may be left out or blank, and the decision goes without one', async () => {
+    started();
+    expect((await decide({ item: step1, action: 'flag' })).status).toBe(200);
+    expect((await decide({ item: step1, action: 'flag', note: '  ' })).status).toBe(200);
+    const sent = (await sessionAt(repo.url())).conversation.filter(entry => entry.from === 'page');
+    expect(sent).toEqual([expect.objectContaining({ action: 'flag' }), expect.objectContaining({ action: 'flag' })]);
+    expect(sent.some(entry => 'note' in entry)).toBe(false);
   });
 
   test('a decision stays with what it was about: a step recorded again with another diff is undecided', async () => {

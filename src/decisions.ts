@@ -185,13 +185,13 @@ export async function decide(
   const offered = actionsOf(walkthrough, found.item).find(one => one.id === action);
   if (!offered) return null;
   if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
-  if (offered.note ? !filled(note) : note !== undefined) return null;
+  if (offered.note ? note !== undefined && typeof note !== 'string' : note !== undefined) return null;
   if (offered.edit ? !filled(text) : text !== undefined) return null;
   const session = await request(dir, {
     kind: 'decision',
     item: found.item,
     action: offered.id,
-    ...(offered.note && { note: cleanText(note) }),
+    ...(offered.note && filled(note) && { note: cleanText(note) }),
     ...(offered.edit && { text: cleanText(text) }),
     on: found.on,
   });
