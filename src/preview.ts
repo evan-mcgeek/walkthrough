@@ -53,7 +53,7 @@ export const imagesIn = (markdownFile: string, text: string) =>
 
 export type PixelSize = { width: number; height: number };
 
-// ponytail: reads the headers of PNG, GIF, BMP, WebP and JPEG only; other images, SVG among them, show without a size.
+// Reads the headers of PNG, GIF, BMP, WebP and JPEG only; other images, SVG among them, show without a size.
 /** The pixel size an image's header gives, or null where it says none the page reads. */
 export function pixelSize(bytes: Buffer): PixelSize | null {
   const ascii = (from: number, to: number) => bytes.toString('latin1', from, to);
