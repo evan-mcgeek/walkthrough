@@ -79,6 +79,7 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(folded.getByRole('list', { name: 'Folded files' })).toContainText('gen.txt');
   await expect(folded.getByText('Made by a tool.')).toBeVisible();
   await expect(folded.getByText('Out of date.')).toBeVisible();
+  await expect(folded.getByText('2 files to skim, each with the session’s reason.', { exact: true })).toBeVisible();
   await expect(folded.getByText('Binary image · 1280 × 800 · added', { exact: true })).toBeVisible();
   await expect(folded.locator('.fold-path')).toHaveText(['gen.txt', 'docs/shot.gif']);
   await expect(folded.locator('.fold-path wbr')).toHaveCount(1);

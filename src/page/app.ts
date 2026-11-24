@@ -1524,7 +1524,7 @@ function addPreview(wrapper: Element, stepId: string, parsed: DiffFile): void {
   const diff = wrapper.querySelector<HTMLElement>('.diff-body');
   // An export has no server to load an image from, so it says what the image is in words.
   if (readOnly && image && parsed.isBinary && diff) {
-    const size = exported?.images?.[file];
+    const size = exported.images?.[file];
     const change = parsed.isNew ? 'added' : parsed.isDeleted ? 'deleted' : 'replaced';
     const words = ['Binary image', ...(size ? [`${String(size.width)} × ${String(size.height)}`] : []), change].join(' · ');
     diff.replaceChildren(el('p', { className: 'binary-image' }, icon('file'), words));
@@ -1655,7 +1655,7 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
     ...problems,
   ];
   const summary = readOnly
-    ? el('p', { className: 'fold-summary' }, icon('folded'), ...label)
+    ? el('p', { className: 'fold-lead' }, `${plural(step.files.length, 'file')} to skim, each with the session’s reason.`)
     : disclosure(label, open, () => { toggle(opened, key); }, 'fold-summary', key);
   summary.title = reasons.join('\n');
   // A problem wants the person, so it shows whether the files are open or not.
@@ -1681,12 +1681,13 @@ function foldedView(step: Step & { kind: 'folded' }, pinned: (Note | Ask)[]): HT
         {},
         el('code', { className: 'fold-path' }, ...breakable(file.path)),
         markdown(file.reason, 'fold-reason'),
-        ...(wrappers.has(file.path) && !readOnly ? [button] : []),
+        // An export lists every file open, its diff right under its path and reason; a copy, as the drawn diff is kept for the next render.
+        ...(readOnly ? [wrappers.get(file.path)?.cloneNode(true)].filter(wrapper => wrapper !== undefined).map(wrapper => el('div', { className: 'diff' }, wrapper)) : wrappers.has(file.path) ? [button] : []),
       );
     }),
   );
   files.setAttribute('aria-label', 'Folded files');
-  const anyShown = [...wrappers.values()].some(wrapper => !wrapper.hidden);
+  const anyShown = !readOnly && [...wrappers.values()].some(wrapper => !wrapper.hidden);
   return [el('div', { className: 'block' }, summary, ...found, files, ...(diff && anyShown ? [el('div', { className: 'fold-diff' }, diff)] : []))];
 }
 
@@ -1779,10 +1780,11 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
     : open
       ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))]
       : [];
-  if (!phone.matches) return [el('div', { className: 'action-bar' }, el('div', { className: 'action-row' }, choices, ...held, ...asking, ...count))];
+  const bar = held.length ? 'action-bar holding' : 'action-bar';
+  if (!phone.matches) return [el('div', { className: bar }, el('div', { className: 'action-row' }, choices, ...asking, ...held, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
-  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: 'action-bar' }, ...held, ...count, choices)];
+  return [...asking.map(box => el('div', { className: 'step-ask' }, box)), el('div', { className: bar }, ...held, ...count, choices)];
 }
 
 /** Asks about the whole step, as threads under it. */
@@ -2112,7 +2114,6 @@ const verdictStatus = (): HTMLElement[] => {
 const finishWaits = () => (walkthrough.actions[itemKey(VERDICT)] ?? []).length > 0 && !decisionOf(VERDICT);
 
 const linesShort = ([first, last]: Lines) => (first === last ? String(first) : `${String(first)}–${String(last)}`);
-const stepName = (step: Step) => `${String(stepNumber(step.id))} ${step.title}`;
 
 function summarySection(name: string, count: string | null, ...body: HTMLElement[]): HTMLElement {
   const id = `summary-${name.toLowerCase().replace(/[^a-z]+/g, '-')}`;
@@ -2153,14 +2154,15 @@ function stepLedgerRow(step: Step): LedgerRow {
   const reopened = stepReopened(step);
   const row = { item, address: step.id, number: String(stepNumber(step.id)), title: step.title };
   const own = ownSubs(step);
-  if (beingChecked(step))
-    return { ...row, mark: 'unchecked', words: 'Being checked', tone: 'muted', subs: [ledgerSub('Findings may still arrive.'), ...own], open: true };
+  const checking = beingChecked(step) ? [ledgerSub('Findings may still arrive.', decision ? 'muted' : '')] : [];
+  // A step decided before the session held it keeps its decision, so the groups add up to the count of decided steps.
   if (decision) {
     const said = [decision.note, decision.text].flatMap(text => (text ? [ledgerSub(`“${plain(text)}”`)] : []));
     const late = lateFindings(step).length;
     const arrived = late ? [ledgerSub(`${plural(late, 'new finding')} since you ${doneWith(step)}.`, 'changed')] : [];
-    return { ...row, mark: 'decided', words: labelOf(item, decision.action), tone: 'decided', subs: [...said, ...arrived, ...own], open: false };
+    return { ...row, mark: 'decided', words: labelOf(item, decision.action), tone: 'decided', subs: [...said, ...arrived, ...checking, ...own], open: false };
   }
+  if (checking.length) return { ...row, mark: 'unchecked', words: 'Being checked', tone: 'muted', subs: [...checking, ...own], open: true };
   if (reopened) {
     const since = ledgerSub(`Changed since you chose ${labelOf(item, reopened.action)}.`, 'muted');
     return { ...row, mark: 'reopened', words: 'Changed', tone: 'changed', subs: [since, ...own], open: true };
@@ -2171,16 +2173,17 @@ function stepLedgerRow(step: Step): LedgerRow {
 
 /** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
 function otherOpenRows(): LedgerRow[] {
-  const notes = session.conversation.filter(isNote).map(note => ({
-    item: { type: 'note' as const, id: note.id },
+  type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'title'>;
+  const notes = session.conversation.filter(isNote).map((note): Open => ({
+    item: { type: 'note', id: note.id },
     address: anchorOf(note) ?? 'session',
-    mark: (note.note.finding ? 'warn' : 'message') as IconName,
+    mark: note.note.finding ? 'warn' : 'message',
     title: `${note.note.label}: ${plain(note.text)}`,
   }));
-  const items = (walkthrough.checklist?.items ?? []).map(one => ({
-    item: { type: 'checklist' as const, id: one.id },
+  const items = (walkthrough.checklist?.items ?? []).map((one): Open => ({
+    item: { type: 'checklist', id: one.id },
     address: `checklist-${one.id}`,
-    mark: (one.mark ?? 'unchecked') as IconName,
+    mark: one.mark ?? 'unchecked',
     title: plain(one.text),
   }));
   return [...notes, ...items]
