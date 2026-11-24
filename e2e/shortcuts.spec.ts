@@ -99,3 +99,12 @@ test('G then S goes to the Summary, and G alone does nothing', async ({ page }) 
 
   await expect(page.getByRole('region', { name: 'Summary' })).toBeVisible();
 });
+
+test('a key pressed before the page has drawn the walkthrough does nothing', async ({ page }) => {
+  await page.route('**/data/walkthrough.json', async route => {
+    await page.keyboard.press('1');
+    await route.continue();
+  }, { times: 1 });
+  await page.reload();
+  await expect(page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Login check' })).toBeVisible();
+});

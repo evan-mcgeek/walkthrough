@@ -26,6 +26,8 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
       if (message.type() === 'error' && !message.text().includes('status of 409')) problems.push(message.text());
     });
     await page.goto(repo.url());
+    // The page takes keys once it has drawn the walkthrough.
+    await expect(page.locator('h1')).toBeAttached();
     await use(repo.url());
     expect(problems).toEqual([]);
   },

@@ -3434,6 +3434,32 @@ function stepBy(delta: number): void {
   if (to) go(to);
 }
 
+if (exported) {
+  document.body.classList.add('exported');
+  header.remove();
+  queue.remove();
+  main.className = 'export';
+  document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
+}
+
+if (exported?.viewer) {
+  showViewer(exported.viewer);
+  Object.assign(panels, exported.viewer.panels);
+} else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
+
+({ walkthrough, session } = exported
+  ? exported
+  : await Promise.all(
+      ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
+    ).then(([shownWalkthrough, shownSession]) => ({
+      walkthrough: shownWalkthrough as WalkthroughView,
+      session: shownSession as SessionView,
+    })));
+render();
+// The browser looked for the address before the export drew its steps.
+if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+
+// Wired once the page is drawn, so nothing acts on a walkthrough not loaded yet.
 document.addEventListener('keydown', event => {
   if (readOnly || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
   if (event.key === 'Escape' && picked) {
@@ -3510,31 +3536,6 @@ window.addEventListener('hashchange', () => {
   const view = currentView();
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
 });
-
-if (exported) {
-  document.body.classList.add('exported');
-  header.remove();
-  queue.remove();
-  main.className = 'export';
-  document.title = `${nameOf(exported.walkthrough)} · Walkthrough`;
-}
-
-if (exported?.viewer) {
-  showViewer(exported.viewer);
-  Object.assign(panels, exported.viewer.panels);
-} else if (!exported) Object.assign(panels, (await loadViewer())?.panels);
-
-({ walkthrough, session } = exported
-  ? exported
-  : await Promise.all(
-      ['data/walkthrough.json', 'data/session.json'].map(async data => (await fetch(data)).json() as Promise<unknown>),
-    ).then(([shownWalkthrough, shownSession]) => ({
-      walkthrough: shownWalkthrough as WalkthroughView,
-      session: shownSession as SessionView,
-    })));
-render();
-// The browser looked for the address before the export drew its steps.
-if (readOnly && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 
 const POLL_MS = 1500;
 let polling = false;
