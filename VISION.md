@@ -51,14 +51,15 @@ If it does neither, it does not ship, however well it is drawn.
 3. The AI reads the ticket, splits the change into steps, and gives each step "Look at" pointers to what matters and a short explanation.
 4. The AI reviews and leaves its comments on the lines as pending review comments marked `[AI]`; colleagues' existing threads show on their lines.
 5. You read step by step, mark files Viewed, comment on lines, edit or delete the AI's comments, reply in threads, and ask the AI in a thread.
-6. You finish with one review: a summary, then Comment, Approve or Request changes, then Submit. On a pull request it goes to GitHub as one review that you submit there; on your own change, your comments go back to the agent to fix.
+6. You finish on the Summary, GitHub's "Finish your review" made visible: every comment that will go out, yours and the AI's, one line each with Edit, Delete and a link to its line, so you can dismiss what you do not want; unresolved threads and files not yet viewed, as counts; the acceptance criteria as the AI assessed them; then a summary, Comment, Approve or Request changes, and Submit.
+   On a pull request it goes to GitHub as one review that you submit there; on your own change, your comments go back to the agent to fix.
 
 ## Not in the tool
 
 Kept out on purpose, so they are not added back:
 
 - Approving or flagging steps, a decided count or a progress bar of decisions: GitHub has Viewed per file and one review at the end.
-- A separate verdict, a summary ledger, "still open" or "decided" states.
+- A separate verdict, or a Summary of step decisions with "still open" and "decided" states: the Summary shows what will go out, not what was decided.
 - AI findings as their own object to accept or reject: an AI comment is a comment.
 - A chat with the session on the page, session status words, a session messages page, replies to the human's comments.
 - Buttons, labels or tones invented by the session.
