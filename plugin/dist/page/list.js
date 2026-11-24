@@ -70,6 +70,7 @@ var ICONS = {
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
   minus: [line("M3.5 8h9", 1.6)],
+  close: [line("M4.5 4.5l7 7M11.5 4.5l-7 7", 1.6)],
   keyboard: [
     ["rect", { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
     line("M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6", 1.4)
@@ -82,8 +83,7 @@ var ICONS = {
   /** Panels, as a window with the panel's part filled. */
   "panel-queue": [frame, block(2.6, 3.6, 3.4, 8.8)],
   "panel-checklist": [frame, block(10, 3.6, 3.4, 8.8)],
-  "panel-explanation": [frame, block(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]],
-  "panel-tools": [frame, block(2.6, 9.4, 10.8, 3)]
+  "panel-explanation": [frame, block(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -103,6 +103,9 @@ function icon(name, label) {
   return svg;
 }
 
+// src/page/motion.ts
+var root = getComputedStyle(document.documentElement);
+
 // src/page/dom.ts
 function el(tag, props = {}, ...children) {
   const node = Object.assign(document.createElement(tag), props);
@@ -118,6 +121,11 @@ function region(id) {
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
   const box = region("alert");
+  if (message === null && box.dataset["kind"] === "own") {
+    document.body.classList.remove("unreachable");
+    return;
+  }
+  box.dataset["kind"] = "error";
   box.className = "banner attention";
   box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
   box.hidden = message === null;
@@ -126,6 +134,7 @@ function showAlert(message) {
 function showUnreachable({ name, reopen, retry }) {
   if (document.body.classList.contains("unreachable")) return;
   const box = region("alert");
+  box.dataset["kind"] = "error";
   box.className = "banner attention";
   box.replaceChildren(
     icon("offline"),
@@ -176,6 +185,10 @@ async function loadViewer() {
     return null;
   }
 }
+var root2 = document.documentElement;
+root2.addEventListener("transitionend", (event) => {
+  if (event.target === root2 && event.propertyName === "--accent") root2.classList.remove("accent-fade");
+});
 
 // src/page/list.ts
 var header = region("header");

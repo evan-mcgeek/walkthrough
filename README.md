@@ -4,7 +4,7 @@
 
 Walkthrough is a Claude Code plugin that walks you through a code change on a local page, one step at a time.
 Your own Claude Code session reads the change, splits it into steps, explains each one and answers your questions right on the page.
-How it reviews comes from your own rules in `REVIEWER.md` and from the project's instructions for agents.
+How it reviews comes from your own rules in `REVIEW.md` and from the project's instructions for agents.
 Nothing about your language, team or code host is hardcoded in the tool.
 
 I built it for two jobs: understanding what an agent wrote before it goes to colleagues, and reviewing a colleague's pull request.
@@ -64,7 +64,7 @@ These are the two kinds of walkthrough, your own change and a review request.
 The page header and the list of walkthroughs show which kind each one is.
 
 The first time, the session finds no review policy and offers one.
-Your policy lives at `~/.config/walkthrough/REVIEWER.md` (or under `$XDG_CONFIG_HOME`), outside every project, and starts as a copy of [the template](plugin/skills/walkthrough/REVIEWER.md).
+Your policy lives at `~/.config/walkthrough/REVIEW.md` (or under `$XDG_CONFIG_HOME`), outside every project, and starts as a copy of [the template](plugin/skills/walkthrough/REVIEW.md).
 
 1. Say "later" and the template's defaults apply to this walkthrough.
 2. Say "now" and the session goes through the policy section by section, asks how you actually review that part, and edits your copy to match.
@@ -81,7 +81,7 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    Each step is a part of the change with its diff and the session's explanation, in reading order.
    What the session assumed rather than read is listed separately.
    Beside the explanation, "In this step" lists the step's files, counts its findings, notes and your comments, and shows the checklist items it touches.
-   Files nobody writes by hand go into a folded step, each with the reason it was folded.
+   Files nobody writes by hand go into a folded step of files to skim, each with the reason it was folded.
    Each file collapses from its header; large files start collapsed, and marking a file Viewed collapses it too, which is never a decision.
 2. **Notes.**
    The session pins findings, answers and drafts to a step or to lines in it.
@@ -107,28 +107,29 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: your decisions by label, flags with their notes, your comments, the `[AI]` drafts you accepted, edited or dropped, the checklist, and what is still open, listed as undecided or reopened.
+   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided), your flag notes and comments under their steps, the comments the session drafted (`[AI]` drafts) you accepted, edited or dropped, and beside it the verdict, the finishing actions and the checklist.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
-   Until then the walkthrough reads "No verdict yet", and the finishing action, such as handing over fixes or sending your review, waits for it.
+   Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
 9. **The change moves.**
    When you push fixes, the same walkthrough goes on.
    Steps whose diff didn't change keep your decisions, changed steps reopen, and new files go into new steps.
-   Notes whose lines changed stay on the page as detached, never dropped.
+   Notes whose lines changed stay on the Session messages page as notes on removed code, never dropped.
 
 Changed Markdown and image files get a Diff / Preview switch, with Before and After for images.
 
 ### Panels
 
-Around the step sit four panels, shown or hidden on their own: "To review" (the queue of what still needs you), the checklist with the whole walkthrough's actions, the explanation column (the step's explanation beside its code) and the tool panel (the step's notes, what the session said and what is detached, in tabs under the step).
-Each panel hides from the button in its title bar and waits as a labelled button on its edge, so nothing is ever out of reach; the keys `1` to `4` show and hide them too.
+Around the step sit three panels, shown or hidden on their own: "To review" (the queue of what still needs you), the checklist with the whole walkthrough's actions, and the explanation column (the step's explanation beside its code).
+Each panel hides from the button in its title bar and waits as a labelled button on its edge, so nothing is ever out of reach; the keys `1` to `3` show and hide them too.
+Notes stay on their lines; what the session said outside the steps, and notes whose code was removed, wait on the Session messages page in the queue.
 By default only the queue is open.
 Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu.
 
 | | |
 | --- | --- |
 | ![The default panels: the queue and the step](docs/images/layout-queue.png) | ![The checklist panel at the right](docs/images/layout-three.png) |
-| ![The explanation column beside the code](docs/images/layout-split.png) | ![The tool panel under the step](docs/images/layout-panel.png) |
+| ![The explanation column beside the code](docs/images/layout-split.png) | |
 
 It works on a phone as well.
 At 390px the actions move to a bottom bar, the panels stack under the step and their switches move into the More menu, and "Swipe to decide" there lets you swipe a step right to approve or left to flag.
@@ -137,7 +138,7 @@ At 390px the actions move to a bottom bar, the panels stack under the step and t
 
 ### Keyboard
 
-Press `?` for the shortcut sheet; every tooltip names its key too.
+Press `?` for Help: what every icon, colour and status means, then the keyboard shortcuts; every tooltip names its key too.
 Keys do nothing while you type, inside a menu or while a popover is open.
 
 | Key | Does |
@@ -148,9 +149,9 @@ Keys do nothing while you type, inside a menu or while a popover is open.
 | `/` | Ask about this step |
 | `c` | Comment on the picked lines, or on the line whose number has the focus |
 | `v` | Mark the file the focus is in as viewed, or else the step's first file not viewed yet |
-| `1` to `4` | Show or hide the queue, the checklist, the explanation column or the tool panel |
+| `1` to `3` | Show or hide the queue, the checklist or the explanation column |
 | `g` then `s` | Go to the end of the walkthrough |
-| `?` | The shortcut sheet |
+| `?` | Help: what things mean, and these keys |
 
 To pick lines, click a line number and Shift-click another, or press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
 The picked lines then offer Ask about lines and Comment.
@@ -171,7 +172,7 @@ Ask which walkthroughs you have open, and it opens a page with this repo's walkt
 
 Everything the session does follows two sources:
 
-1. **Your review policy**, `REVIEWER.md`, outside every project.
+1. **Your review policy**, `REVIEW.md`, outside every project.
    It covers how to split and order steps, how to write explanations, what the checklist tracks, which reviewers run and how their findings are checked, how drafts for colleagues are written, and which actions each kind of walkthrough offers.
    It has shared rules and a part for each kind of walkthrough, "My change" and "Someone else's change"; each command follows the shared rules and its own part.
    Every rule in it is a default you can edit.
@@ -199,6 +200,7 @@ The session runs the `walkthrough` CLI for you, so you rarely type it yourself.
 | `start` | Starts or resumes a walkthrough of the current branch, or of `--base <rev> --head <rev> --label <text>`, and opens its page; `--kind <label>` names its kind for the page, and `--comments <text>` says what becomes of your comments. |
 | `files` | Lists the changed files. |
 | `steps`, `note`, `checklist`, `actions` | Record what the session wrote, from a file in the walkthrough's inbox (`--file`) or standard input. |
+| `checking` | Records the steps the session is still checking; the page holds their decisions until it is done. |
 | `listen` | Waits in the background for what you do on the page. |
 | `say` | Puts the session's answer, question or note on the page. |
 | `policy` | Says whether your review policy is missing, the unchanged template or your own; `show`, `init` and `save --file` print, create and replace it. |

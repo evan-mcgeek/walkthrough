@@ -2154,11 +2154,22 @@ function setSteps(walkthrough, steps2) {
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps2.map((step) => Number(step.id)));
   const kept = new Set(steps2.map((step) => itemKey({ type: "step", id: step.id })));
   walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("step:") || kept.has(key));
+  if (walkthrough.checking) walkthrough.checking = steps2.map((step) => step.id).filter((id) => walkthrough.checking?.includes(id));
 }
 function recordSteps(dir, build) {
   return update(dir, async (walkthrough) => {
     setSteps(walkthrough, await build(walkthrough));
     return walkthrough;
+  });
+}
+function recordChecking(dir, ids) {
+  return update(dir, (walkthrough) => {
+    const known = walkthrough.steps.map((step) => step.id);
+    const unknown = [...new Set(ids.filter((id) => !known.includes(id)))];
+    if (unknown.length)
+      throw new Error(`the walkthrough has no ${unknown.length === 1 ? "step" : "steps"} ${unknown.join(", ")}; nothing was recorded`);
+    walkthrough.checking = known.filter((id) => ids.includes(id));
+    return walkthrough.checking;
   });
 }
 function recordChecklist(dir, build) {
@@ -2189,8 +2200,9 @@ function recordActions(dir, build) {
 
 // src/checklist.ts
 function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastChecklistItem = 0 }) {
-  const { title, items } = parseObject(text2, "the checklist");
+  const { title, description, items } = parseObject(text2, "the checklist");
   if (!filled(title)) throw new Error("the checklist needs a title");
+  if (description !== void 0 && !filled(description)) throw new Error("the checklist: description must be text");
   if (!Array.isArray(items)) throw new Error("the checklist: items must be a list");
   const before = checklist2?.items ?? [];
   const known = new Set(steps2.map((step) => step.id));
@@ -2217,6 +2229,7 @@ function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastCheck
   let next = Math.max(lastChecklistItem, ...before.map((old) => Number(old.id)));
   return {
     title,
+    ...description !== void 0 && { description },
     items: checked.map(({ id, ...item }) => {
       const same = id ?? before.find((old) => old.text === item.text && !kept.has(old.id))?.id ?? String(++next);
       kept.add(same);
@@ -7335,6 +7348,29 @@ function imagePath(markdownFile, src) {
 }
 var parser = new MarkdownItCallable();
 var imagesIn = (markdownFile, text2) => parser.parse(text2, {}).flatMap((token) => token.children ?? []).filter((token) => token.type === "image").map((token) => imagePath(markdownFile, String(token.attrGet("src") ?? "")));
+function pixelSize(bytes) {
+  const ascii = (from, to) => bytes.toString("latin1", from, to);
+  if (bytes.length >= 24 && ascii(1, 4) === "PNG") return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  if (bytes.length >= 10 && ascii(0, 3) === "GIF") return { width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8) };
+  if (bytes.length >= 26 && ascii(0, 2) === "BM") return { width: bytes.readInt32LE(18), height: Math.abs(bytes.readInt32LE(22)) };
+  if (bytes.length >= 30 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") {
+    const chunk = ascii(12, 16);
+    if (chunk === "VP8X") return { width: 1 + bytes.readUIntLE(24, 3), height: 1 + bytes.readUIntLE(27, 3) };
+    if (chunk === "VP8 ") return { width: bytes.readUInt16LE(26) & 16383, height: bytes.readUInt16LE(28) & 16383 };
+    if (chunk === "VP8L") {
+      const bits = bytes.readUInt32LE(21);
+      return { width: 1 + (bits & 16383), height: 1 + (bits >>> 14 & 16383) };
+    }
+    return null;
+  }
+  if (bytes[0] !== 255 || bytes[1] !== 216) return null;
+  for (let at = 2; at + 9 <= bytes.length && bytes[at] === 255; at += 2 + bytes.readUInt16BE(at + 2)) {
+    const marker = bytes[at + 1] ?? 0;
+    if (marker >= 192 && marker <= 207 && ![196, 200, 204].includes(marker))
+      return { width: bytes.readUInt16BE(at + 7), height: bytes.readUInt16BE(at + 5) };
+  }
+  return null;
+}
 
 // src/processes.ts
 import { spawnSync as spawnSync2 } from "node:child_process";
@@ -7809,11 +7845,12 @@ async function carrySteps(cwd, { base, head, steps: steps2 }) {
 }
 
 // src/notes.ts
-var placeOnly = ({ step, file: file2, lines, linesHash }) => ({
+var placeOnly = ({ step, file: file2, lines, linesHash, linesText }) => ({
   step,
   ...file2 !== void 0 && { file: file2 },
   ...lines && { lines },
-  ...linesHash !== void 0 && { linesHash }
+  ...linesHash !== void 0 && { linesHash },
+  ...linesText && { linesText }
 });
 var isLines = (value) => Array.isArray(value) && value.length === 2 && value.every((line) => Number.isInteger(line) && line >= 1) && value[0] <= value[1];
 var parsed2 = /* @__PURE__ */ new WeakMap();
@@ -7825,10 +7862,8 @@ function shownLines(step, file2) {
   const lines = shown.blocks.flatMap((block2) => block2.lines);
   return new Map(lines.flatMap((line) => line.newNumber === void 0 ? [] : [[line.newNumber, line.content.slice(1)]]));
 }
-function hashOf(shown, [first, last]) {
-  const text2 = [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
-  return crypto2.createHash("sha256").update(JSON.stringify(text2)).digest("hex").slice(0, 16);
-}
+var textOf = (shown, [first, last]) => [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
+var hashOf = (shown, lines) => crypto2.createHash("sha256").update(JSON.stringify(textOf(shown, lines))).digest("hex").slice(0, 16);
 function anchorOf({ steps: steps2 }, { step, file: file2, lines, linesHash }) {
   if (file2 === void 0 || !lines) return steps2.some((one) => one.id === step) ? step : null;
   const found = steps2.find((one) => pathsOf(one).includes(file2));
@@ -7848,7 +7883,7 @@ function placeIn(walkthrough, { step, file: file2, lines }) {
   const [first, last] = lines;
   if (!numbers.has(first) || !numbers.has(last))
     throw new Error(`lines ${String(first)}-${String(last)} of ${file2} are not in the diff of step ${found.id}`);
-  return { step: found.id, file: file2, lines: [first, last], linesHash: hashOf(numbers, [first, last]) };
+  return { step: found.id, file: file2, lines: [first, last], linesHash: hashOf(numbers, [first, last]), linesText: textOf(numbers, [first, last]) };
 }
 function parseNotes(text2, walkthrough) {
   return parseList(text2, "the notes", (note2, number) => {
@@ -7874,8 +7909,8 @@ function commentsOf(conversation) {
   for (const entry of conversation) {
     if (entry.from !== "page") continue;
     if (entry.kind === "comment" && entry.file !== void 0 && entry.lines) {
-      const { id, step, file: file2, lines, linesHash, text: text2 } = entry;
-      comments2.set(id, { id, step, file: file2, lines, ...linesHash !== void 0 && { linesHash }, text: text2 });
+      const { id, step, file: file2, lines, linesHash, linesText, text: text2 } = entry;
+      comments2.set(id, { id, step, file: file2, lines, ...linesHash !== void 0 && { linesHash }, ...linesText && { linesText }, text: text2 });
     }
     const kept = "comment" in entry ? comments2.get(entry.comment) : void 0;
     if (kept && entry.kind === "edit-comment") kept.text = entry.text;
@@ -8172,12 +8207,14 @@ function waitsForVerdict(walkthrough, conversation, item) {
   return !decisionsOf(walkthrough, conversation).find((one) => one.item.type === "verdict")?.decision;
 }
 var CHANGED = "changed";
+var CHECKING = "checking";
 async function decide(dir, { item, action, note: note2, text: text2, clear, on }) {
   const walkthrough = readWalkthrough(dir);
   const conversation = conversationOf(dir);
   const found = walkthrough && itemsOf(walkthrough, conversation).find((one) => one.key === keyOf(item));
   if (!found) return null;
   if (on !== void 0 && on !== found.on) return CHANGED;
+  if (found.item.type === "step" && walkthrough.checking?.includes(found.item.id)) return CHECKING;
   if (clear !== void 0) {
     const decided = decisionsOf(walkthrough, conversation).find((one) => one.key === found.key)?.decision;
     if (clear !== true || !decided || action !== void 0 || note2 !== void 0 || text2 !== void 0) return null;
@@ -8281,11 +8318,11 @@ var CHOICES = {
   accent: ["ultramarine", "petrol", "berry"],
   theme: ["system", "light", "dark"]
 };
-var PANELS = ["queue", "checklist", "explanation", "tools"];
+var PANELS = ["queue", "checklist", "explanation"];
 var DEFAULT_VIEWER = {
   accent: "ultramarine",
   theme: "system",
-  panels: { queue: true, checklist: false, explanation: false, tools: false }
+  panels: { queue: true, checklist: false, explanation: false }
 };
 var fields = (value) => typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
 function mergeViewer(base, change) {
@@ -8442,7 +8479,7 @@ function serve(dir, list3 = false) {
     writeJson(recordFile(dir), record);
   });
 }
-var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view ? { status: 200, body: view } : { status: 400 };
+var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view === CHECKING ? { status: 409, body: { error: "Decide once the session has checked this step." } } : view ? { status: 200, body: view } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
   return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
@@ -8630,11 +8667,24 @@ function inline2(html, tag, replacement) {
   if (!html.includes(tag)) throw new Error(`the page has no ${tag} to inline`);
   return html.replace(tag, () => replacement);
 }
+function imageSizes(dir) {
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) return {};
+  const sizes = {};
+  for (const file2 of walkthrough.steps.flatMap((step) => parseDiff(step.diff))) {
+    const [name2, rev] = file2.isDeleted ? [file2.oldName, walkthrough.base] : [file2.newName, walkthrough.head];
+    if (!file2.isBinary || !previewType(name2)?.startsWith("image/")) continue;
+    const bytes = fileAt(process.cwd(), rev, name2);
+    const size = bytes && pixelSize(bytes);
+    if (size) sizes[name2] = size;
+  }
+  return sizes;
+}
 function exportPage(dir) {
   const read2 = (file2) => fs10.readFileSync(path10.join(PAGE, file2), "utf8");
   const script = read2("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
   const style = read2("style.css");
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString(), viewer: readViewer() };
+  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString(), viewer: readViewer(), images: imageSizes(dir) };
   const data = JSON.stringify(state).replaceAll("<", "\\u003c");
   const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   let html = read2("index.html");
@@ -8687,6 +8737,7 @@ var notesExample = [
 ];
 var checklistExample = {
   title: "Acceptance criteria",
+  description: "Each acceptance criterion from the tickets, and the steps that deliver it.",
   items: [
     { status: "met", mark: "met", text: "Sessions survive a restart.", steps: ["1"] },
     { status: "not shown", mark: "not-met", text: "Expired sessions are removed.", steps: [] }
@@ -8753,6 +8804,14 @@ walkthrough steps --file <file>
   Example:
 ${JSON.stringify(example, null, 2)}
 
+walkthrough checking [<step id>...]
+  Records the steps you are still checking, such as with the review policy's reviewers, replacing those recorded before; with no ids, none.
+  It prints the set, such as "Checking 3 steps: 4, 5, 6." or "Checking no steps."; an id that names no step is refused, and nothing is recorded.
+  Recording the steps again keeps the ids that still name a step and drops the rest.
+  Why a step is being checked is yours to say; the CLI only stores the ids.
+  While a step is being checked, the page says so on the step, lists it as being checked in what is left and on the Summary, and holds its actions:
+  the person can read it, ask about it and comment on its lines, but cannot decide it, and a decision sent on it is refused, until you record the set again without it.
+
 walkthrough note --file <file>
   Pins notes to the page, after those pinned before, and prints each note's id.
   The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
@@ -8763,6 +8822,8 @@ walkthrough note --file <file>
   "low": true puts the note behind a count of low-priority notes; it may be left out.
   "finding": true flags the note as a finding, whatever its label; it may be left out.
   The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
+  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding"; the step's decision stays as it was.
+  When a finding lands on a step the person has read or decided, the open page also raises a banner naming it.
   When a note does not fit the walkthrough, nothing is recorded and the problem is named.
   A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
   Example:
@@ -8773,12 +8834,12 @@ walkthrough checklist --file <file>
   The file is a JSON object with a title and items in reading order.
   An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
   To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
-  Title, status and text are the session's own words.
+  Title, description, status and text are the session's own words; "description" is one optional line under the title saying what the list is for.
   "mark" picks the icon beside the status: "met", "partly", "not-met" or "unchecked" ("mark" may be left out, which shows "unchecked").
   An item marked "not-met", or offering actions the person has not taken, is listed with the steps left, as something that still needs the person.
   An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
   A link to a step that is later gone shows as gone.
-    {"title": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
+    {"title": string, "description": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
     {"id": string, "status": string, "mark": mark, "text": string, "steps": [step id, ...]}   an item kept under a new text
   Example checklist:
 ${JSON.stringify(checklistExample, null, 2)}
@@ -8873,18 +8934,21 @@ import fs11 from "node:fs";
 import os2 from "node:os";
 import path11 from "node:path";
 import { parseArgs } from "node:util";
-var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEWER.md");
-var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os2.homedir(), ".config"), "walkthrough", "REVIEWER.md");
+var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
+var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os2.homedir(), ".config"), "walkthrough", "REVIEW.md");
 var read = (file2) => fs11.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
   "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
   "26442e1d66028540ef4b778ed9edec79a2bab15ba84c543fa584a4d7d611d6fc",
   "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
   "407a443dbc1b85beedb76b2c9d910b508486f37bbb04c9d77804d35ec4d516e0",
+  "861b6dbfccfb2976660872d1ffa1357c0ac3d831ab8609dded6e2504f923a92c",
   "92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359",
   "9af98052435443bb10e4fca9dabe52f60de24564bf55ba7909423b37cd663303",
+  "9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813",
   "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
-  "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b"
+  "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b",
+  "fa351c4cb56f4fe0ad000357808efc82b9fcba626735b816258cc285d508487d"
 ]);
 function stateOf(policy) {
   if (!fs11.existsSync(policy)) return "none";
@@ -9013,6 +9077,11 @@ async function steps(args) {
   const ids = recorded.map((step) => `${step.id} (${step.title})`).join(", ");
   console.log(`Recorded ${plural(recorded.length, "step")}${folded ? `, ${String(folded)} of them folded` : ""}: ${ids}.`);
 }
+async function checking(args) {
+  const { dir, positionals } = located(args, { allowPositionals: true });
+  const ids = await recordChecking(dir, positionals);
+  console.log(ids.length ? `Checking ${plural(ids.length, "step")}: ${ids.join(", ")}.` : "Checking no steps.");
+}
 async function notes(args) {
   const { dir, walkthrough, values } = current(args, FILE_OPTION);
   const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
@@ -9075,6 +9144,7 @@ async function listenCommand(args) {
           ...request2,
           on: void 0,
           linesHash: void 0,
+          linesText: void 0,
           ...request2.kind === "reply" && { about: about(request2.to) }
         })
       );
@@ -9104,6 +9174,7 @@ var COMMANDS = {
   start,
   files: files2,
   steps,
+  checking,
   note: notes,
   checklist,
   actions,
@@ -9150,7 +9221,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checklist --file <file> | note --file <file>\n    | actions --file <file> | decisions | comments | posted <comment id>... | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checking [<step id>...]\n    | checklist --file <file> | note --file <file> | actions --file <file> | decisions | comments | posted <comment id>... | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {
