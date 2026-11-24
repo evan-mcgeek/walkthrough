@@ -50,8 +50,9 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
   To hand the reviewing to your own agent, write its name here and the runs it needs, and the rest of "Who reviews" no longer applies.
 - Run reviewers in a fresh context that sees only the change at the pinned head, the project and this policy.
 - Run one reviewer for the project's own rules, which quotes the rule behind each finding, and one for each of these concerns: contracts, error handling, state, tests.
+- For a change of fewer than 300 changed lines, run one reviewer that covers the project's rules and all four concerns.
 - A finding states a concrete failure: what input or state leads to what wrong result, at which file and lines.
-- Give each finding to a second fresh-context agent, which confirms or refutes it against the code at the head.
+- Give all the findings at once to a second fresh-context agent, which confirms or refutes each against the code at the head.
 - A finding that goes against a convention in the project's instructions is settled; leave it out.
 - "The reviewer" in this policy is the reviewer agent when one is named, and a fresh-context agent otherwise.
 
@@ -76,10 +77,13 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - An action's tone is the colour my decision shows in on the page: positive is green, attention is amber, and none is grey; an action I give no tone here has none.
 - A step: Approve, positive, and Flag, attention (asks for a note).
-- A finding: Accept, and Reject (asks for a note with the reason).
-- A draft: Post (lets me edit the text first), and Drop.
+- A finding: Accept, positive, Reject (asks for a note with the reason, which I may leave out), and Ignore, with no tone.
+- A checklist item: Met, positive, and Not met, attention (asks for a note).
+- A draft: Edit (lets me edit the text first), and Drop; a draft I leave alone goes out as drafted, and drafts go out together, never one by one.
 - The rest of the actions are in the part for this walkthrough.
 - When I reject a finding, my note is the reason; the part for this walkthrough says what becomes of it.
+- When I ignore a finding, do nothing with it and do not raise it again in this walkthrough.
+- When I mark a checklist item Met or Not met, record the checklist again with my mark as its status.
 - When I undo a decision, take back what you did for it, such as a fix list entry or a draft, and tell me when something already went out and cannot be taken back.
 
 ## My change
@@ -123,8 +127,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Turn each flagged step and accepted finding into a draft comment on its lines.
 - My own line comments go into the review as line comments, as I wrote them.
 - Offer my verdict on the verdict, "Approve", positive, "Request changes", attention, or "Comment", with no tone, with the hint "Sent with the review."
-- Offer "Send my review" first on the whole walkthrough, with a hint saying it goes into a pending review I submit myself.
-- When I take Send my review, put the posted drafts and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
+- Offer "Send my review" first on the whole walkthrough, with a hint saying it sends every draft I kept and my own comments at once, as a pending review I submit myself.
+- When I take Send my review, put every draft I did not drop, as drafted or as I edited it, and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
 - The author's branch and the change's description stay as they are.
 
 ### Rejected findings

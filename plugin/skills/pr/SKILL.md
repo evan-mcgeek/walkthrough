@@ -17,7 +17,7 @@ For their own change, `/walkthrough` is the procedure instead.
    Give the same label whenever the person opens this change again, so the walkthrough goes on with their decisions; fetch its head again first.
    Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "Someone else's change" part, such as `--comments 'Posted with your review'`.
 4. Go on as "Walking through" says, until the walkthrough stops.
-   Your comments are drafts marked "[AI]" that the person posts, edits or drops on the page, apart from the person's own comments, which are never marked; what they post goes out as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
+   Your comments are drafts marked "[AI]" that the person edits or drops on the page, apart from the person's own comments, which are never marked; every draft they keep goes out together with their own comments, as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
 
 ## Walking through
 

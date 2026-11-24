@@ -49,8 +49,9 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
     record(repo, [{ step: '3', file: 'cart.ts', lines: [1, 1], label: 'Draft', text: '[AI] Name the `cart`.' }], 'note'),
   )?.[1];
   const dropped = /([0-9a-f]{8})/.exec(record(repo, [{ step: '3', label: 'Draft', text: '[AI] Add a test.' }], 'note'))?.[1];
+  const kept = /([0-9a-f]{8})/.exec(record(repo, [{ step: '3', label: 'Draft', text: '[AI] Check the total.' }], 'note'))?.[1];
   const drafted = [
-    { id: 'post', label: 'Post', edit: true },
+    { id: 'edit', label: 'Edit', edit: true },
     { id: 'drop', label: 'Drop' },
   ];
   record(
@@ -60,13 +61,13 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   );
   record(
     repo,
-    [verdicts, finishing, { item: { type: 'note', id: draft }, actions: drafted }, { item: { type: 'note', id: dropped }, actions: drafted }],
+    [verdicts, finishing, { item: { type: 'note', id: draft }, actions: drafted }, { item: { type: 'note', id: dropped }, actions: drafted }, { item: { type: 'note', id: kept }, actions: drafted }],
     'actions',
   );
   for (const body of [
     { item: { type: 'step', id: '1' }, action: 'flag', note: 'Everyone gets in.' },
     { item: { type: 'step', id: '2' }, action: 'approve' },
-    { item: { type: 'note', id: draft }, action: 'post', text: '[AI] Name the `items`.' },
+    { item: { type: 'note', id: draft }, action: 'edit', text: '[AI] Name the `items`.' },
     { item: { type: 'note', id: dropped }, action: 'drop' },
   ])
     expect((await send(page, url, 'decide', body)).status()).toBe(200);
@@ -106,8 +107,13 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem')).toHaveText(['Logs in.', 'Has a cart.']);
   await expect(rail.getByRole('region', { name: 'Checklist' }).getByRole('listitem').last()).toHaveAttribute('title', 'not shown');
   const drafts = section('Comments the session drafted');
-  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 edited · 1 dropped');
-  await expect(drafts.getByRole('listitem')).toHaveText(['cart.ts · 1Edited[AI] Name the items.', 'Step 3Dropped[AI] Add a test.']);
+  // A draft left alone goes out as drafted, all of them together, and none waits in Still open.
+  await expect(drafts.getByRole('heading')).toHaveText('Comments the session drafted1 goes out · 1 edited · 1 dropped');
+  await expect(drafts.getByRole('listitem')).toHaveText([
+    'cart.ts · 1Edited[AI] Name the items.EditDrop',
+    'Step 3Dropped[AI] Add a test.EditDrop',
+    'Step 3Goes out[AI] Check the total.EditDrop',
+  ]);
   await expect(drafts.locator('.dropped s')).toHaveText('[AI] Add a test.');
 
   const verdict = rail.getByRole('region', { name: 'Verdict' });

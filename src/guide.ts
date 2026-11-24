@@ -153,7 +153,7 @@ walkthrough actions --file <file>
   The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status in its tone.
   The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
   "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
-  A note offering an action with "edit": true is a draft: the Summary lists it as accepted or edited when the person took that action, and dropped when they took another.
+  A note offering an action with "edit": true is a draft: it goes out as drafted, or as edited when the person takes that action, and any other action drops it; the Summary lists every draft and what goes out, and a draft is never still open.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:

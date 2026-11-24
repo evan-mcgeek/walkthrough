@@ -2395,7 +2395,7 @@ type LedgerRow = {
   text?: string;
 };
 
-const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim() }, text);
+const ledgerSub = (text: string, className = '') => el('span', { className: `ledger-sub ${className}`.trim(), title: text }, text);
 
 /** The person's own comments on a step, in the accent, each after its file's name and lines. */
 function ownSubs(step: Step): HTMLElement[] {
@@ -2403,7 +2403,7 @@ function ownSubs(step: Step): HTMLElement[] {
     .filter(comment => commentAnchor(comment) === step.id)
     .map(comment => {
       const where = el('span', { className: 'where', title: comment.file }, `${comment.file.split('/').at(-1) ?? comment.file}:${linesShort(comment.lines)}`);
-      return el('span', { className: 'ledger-sub own' }, icon('own', 'Your comment'), where, ' ', plain(comment.text));
+      return el('span', { className: 'ledger-sub own', title: plain(comment.text) }, icon('own', 'Your comment'), where, ' ', plain(comment.text));
     });
 }
 
@@ -2443,7 +2443,7 @@ function stepLedgerRow(step: Step): LedgerRow {
 /** Notes and checklist items offering actions the person has not taken, or that changed since they took one. */
 function otherOpenRows(): LedgerRow[] {
   type Open = Pick<LedgerRow, 'item' | 'address' | 'mark' | 'state' | 'title' | 'text'>;
-  const notes = session.conversation.filter(isNote).map((note): Open => ({
+  const notes = session.conversation.filter(isNote).filter(note => !isDraft(note)).map((note): Open => ({
     item: { type: 'note', id: note.id },
     address: anchorOf(note) ?? 'session',
     mark: note.note.finding ? 'warn' : 'message',
@@ -2510,7 +2510,7 @@ function ledgerView(rows: LedgerRow[]): HTMLElement {
         {},
         el('tr', { className: 'ledger-group' }, head),
         ...group.map(({ item, address, number, mark, state, title, words, tone, subs, open, text }) => {
-          const link = keyed(el('a', { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
+          const link = keyed(el('a', { href: `#${encodeURIComponent(address)}`, title }, title), `ledger:${itemKey(item)}`);
           const going = ledgerGo(item, address);
           if (going) link.onclick = going;
           const actions = open ? ledgerActions(item, text) : [];
@@ -2586,35 +2586,43 @@ function verdictView(): HTMLElement {
   return section;
 }
 
-const DRAFT_STATES = ['Accepted', 'Edited', 'Dropped', 'Undecided'] as const;
+const DRAFT_STATES = ['Goes out', 'Edited', 'Dropped'] as const;
+const draftCount = (count: number, state: (typeof DRAFT_STATES)[number]) =>
+  `${String(count)} ${state === 'Goes out' ? (count === 1 ? 'goes out' : 'go out') : state.toLowerCase()}`;
 
-/** A note the person can edit before taking it is a draft: taking that edit sends it, any other action drops it. */
+/** A note the person can edit before it goes is a draft: it goes out as drafted or edited, unless any other action drops it. */
+const isDraft = (note: Note) => (walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? []).some(action => action.edit);
+
+/** Every draft in one place, one line each, with its own actions; the whole text is on the note, one click away. */
 function draftsView(): HTMLElement[] {
-  const drafts = session.conversation.filter(isNote).flatMap(note => {
-    const actions = walkthrough.actions[itemKey({ type: 'note', id: note.id })] ?? [];
-    if (!actions.some(action => action.edit)) return [];
-    const decision = decisionOf({ type: 'note', id: note.id });
-    const sent = decision && actions.find(action => action.id === decision.action)?.edit;
-    const edited = sent && decision.text !== undefined && decision.text !== note.text ? decision.text : undefined;
-    const state: (typeof DRAFT_STATES)[number] = !decision ? 'Undecided' : !sent ? 'Dropped' : edited === undefined ? 'Accepted' : 'Edited';
-    return [{ note, state, text: edited ?? note.text }];
+  const drafts = session.conversation.filter(isNote).filter(isDraft).map(note => {
+    const item: Item = { type: 'note', id: note.id };
+    const decision = decisionOf(item);
+    const kept = !decision || walkthrough.actions[itemKey(item)]?.find(action => action.id === decision.action)?.edit;
+    const edited = kept && decision?.text !== undefined && decision.text !== note.text ? decision.text : undefined;
+    const state: (typeof DRAFT_STATES)[number] = !kept ? 'Dropped' : edited === undefined ? 'Goes out' : 'Edited';
+    return { note, item, state, text: edited ?? note.text };
   });
   if (!drafts.length) return [];
   const counts = DRAFT_STATES.flatMap(state => {
     const count = drafts.filter(one => one.state === state).length;
-    return count ? [`${String(count)} ${state.toLowerCase()}`] : [];
+    return count ? [draftCount(count, state)] : [];
   });
-  const rows = drafts.map(({ note, state, text }) => {
+  const rows = drafts.map(({ note, item, state, text }) => {
     const { file, lines } = note.note;
-    const step = walkthrough.steps.find(one => one.id === anchorOf(note));
+    const address = anchorOf(note) ?? 'session';
+    const step = walkthrough.steps.find(one => one.id === address);
     const where = file !== undefined && lines ? `${file} · ${linesShort(lines)}` : step ? `Step ${String(stepNumber(step.id))}` : 'On removed code';
-    const said = markdown(text, 'summary-text');
-    if (state === 'Dropped') said.replaceChildren(el('s', {}, ...said.childNodes));
+    const words = plain(text);
+    const link = keyed(el('a', { className: 'draft-line', href: `#${encodeURIComponent(address)}`, title: words }, state === 'Dropped' ? el('s', {}, words) : words), `draft:${note.id}`);
+    const going = ledgerGo(item, address);
+    if (going) link.onclick = going;
     return el(
       'li',
       { className: state === 'Dropped' ? 'dropped' : '' },
       el('span', { className: 'where' }, where),
-      el('span', { className: 'draft-text' }, el('span', { className: 'draft-state' }, state), said),
+      el('span', { className: 'draft-text' }, el('span', { className: 'draft-state' }, state), link),
+      ...ledgerActions(item, note.text),
     );
   });
   return [summarySection('Comments the session drafted', counts.join(' · '), el('ul', { className: 'summary-list' }, ...rows))];

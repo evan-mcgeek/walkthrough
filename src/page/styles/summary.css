@@ -83,11 +83,22 @@
 }
 
 .ledger-title {
+  /* With no width of its own the cell takes what is left, so its lines can stop at an ellipsis. */
+  max-width: 0;
   line-height: 20px;
-  overflow-wrap: anywhere;
+}
+
+/* One line per row and per sub-line; the whole text is in the tooltip and on the item itself. */
+.ledger-title > a,
+.ledger-sub,
+.draft-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ledger-title > a {
+  display: block;
   color: var(--ink);
   font-weight: 500;
   text-decoration: none;
@@ -117,7 +128,6 @@
   color: var(--ink-secondary);
   font-size: 13px;
   line-height: 1.45;
-  text-wrap: pretty;
 }
 
 .ledger-sub.muted {
@@ -138,17 +148,6 @@
   height: 13px;
   margin-right: 6px;
   vertical-align: -2px;
-}
-
-/* An open finding or problem hangs its words after the triangle, so a second line starts under the first word. */
-.ledger-sub.finding {
-  display: flex;
-  gap: 6px;
-}
-
-.ledger-sub.finding > .icon {
-  flex: none;
-  margin: 3px 0 0;
 }
 
 .ledger-sub > .where {
@@ -203,7 +202,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .summary-list .where {
@@ -224,6 +223,22 @@
   display: flex;
   align-items: baseline;
   gap: var(--s2);
+  min-width: 0;
+}
+
+.draft-line {
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.draft-line:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.summary-list li > .ledger-actions {
+  margin-top: var(--s1);
 }
 
 .draft-state {
