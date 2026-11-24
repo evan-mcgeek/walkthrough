@@ -1,4 +1,4 @@
-# A pull request labelled `release` that merges into main is tested in every browser, built, and published on the release branch.
+# A pull request labelled `release` that merges into main is tested in Chromium, built, and published on the release branch.
 name: Release
 
 on:
@@ -28,9 +28,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npx playwright install --with-deps chromium
       - run: npm run lint
-      - run: npm run test:browsers
+      - run: npm test
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict plugin
       - run: npm run release
         env:

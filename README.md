@@ -237,7 +237,7 @@ The decisions behind the tool are in [`docs/adr/`](docs/adr/), and the domain la
 npm install
 npx playwright install chromium firefox webkit
 npm test                # CLI tests (vitest) and page tests (Playwright) in Chromium
-npm run test:browsers   # the same in Chromium, Firefox and WebKit, before a release
+npm run test:browsers   # the same in Chromium, Firefox and WebKit, when you ask for it
 npm run lint            # type check and ESLint
 ```
 
@@ -251,7 +251,7 @@ Rules for working on the code are in [`AGENTS.md`](AGENTS.md).
 It needs a clean working tree, never touches the development history and doesn't push.
 
 Every pull request to `main` runs `claude plugin validate --strict` on the plugin and the marketplace manifest.
-A pull request labelled `release` publishes when it merges: CI runs the lint and the tests in all three browsers, validates the plugin, runs `npm run release` and pushes the `release` branch.
+A pull request labelled `release` publishes when it merges: CI runs the lint, the command-line tests and the page tests in Chromium, validates the plugin, runs `npm run release` and pushes the `release` branch.
 
 ## License
 
