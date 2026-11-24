@@ -62,7 +62,7 @@ test('by default the queue is open and every other panel waits on its edge', asy
 
   await expect(edge(page, 'left').getByRole('button')).toHaveText(['Explanation']);
   await expect(edge(page, 'left').getByRole('button', { name: 'Explanation' })).toHaveAttribute('title', 'Show Explanation (3)');
-  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1 of 2 met']);
+  await expect(edge(page, 'right').getByRole('button')).toHaveText(['Checklist1/2']);
   await expect(edge(page, 'right').getByRole('button')).toHaveAttribute('title', 'Show Checklist (2)');
   await expect(page.getByRole('toolbar')).toHaveCount(2);
   await expect(checklistPanel(page)).toBeHidden();

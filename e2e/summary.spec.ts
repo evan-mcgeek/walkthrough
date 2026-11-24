@@ -148,7 +148,7 @@ test('the Summary closes the queue: a ledger of every step, still open first, wi
   await expect(verdict.getByRole('radio', { name: 'Ready for colleagues' })).toBeFocused();
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('aria-checked', 'true');
   await hand.click();
-  await expect(summary.getByText('Decided: Send the fix list to the session', { exact: true })).toBeVisible();
+  await expect(summary.locator('.finish .tag.decided')).toHaveText('Send the fix list to the session');
 });
 
 const tokenColor = (page: Page, token: string) =>
@@ -193,7 +193,7 @@ test('the ledger and the verdict take their action\'s tone: Approve green, Flag 
     await expect(row(title).locator('.ledger-decision')).toHaveCSS('color', await tokenColor(page, words));
   }
   const verdict = page.getByRole('region', { name: 'Verdict' });
-  await expect(verdict.getByText('Needs fixes', { exact: true }).first()).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(verdict.getByRole('radio', { name: 'Needs fixes' })).toHaveAttribute('data-state', 'flag');
   await expect(verdict.getByRole('radio', { name: 'Needs fixes' }).locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
   await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveCSS('color', await tokenColor(page, '--amber'));
   await expect(page.getByRole('banner').getByTitle('Your verdict').locator('svg')).toHaveCSS('color', await tokenColor(page, '--amber'));
@@ -241,7 +241,7 @@ test('a Still open row offers its own actions, and its title goes to the exact p
 
   await page.goto(`${url}#summary`);
   await row('Login check').getByRole('button', { name: 'Approve' }).click();
-  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approve');
+  await expect(row('Login check').locator('.ledger-decision')).toHaveText('Approved');
   await expect(page).toHaveURL(`${url}#summary`);
 
   await row('Finding: The cart is never emptied.').getByRole('button', { name: 'Reject' }).click();

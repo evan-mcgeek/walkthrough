@@ -120,7 +120,7 @@ test('the bar and To review draw one traffic-light set: green for a positive dec
   await rail.locator('[data-key="decided-toggle"]').click();
   const approved = rail.getByRole('link', { name: 'Login check' });
   await expect(approved.locator('svg').first()).toHaveCSS('color', await tokenColor(page, '--ok'));
-  await expect(approved.locator('.queue-sub')).toHaveText('Approve');
+  await expect(approved.locator('.queue-sub')).toHaveText('Approved');
   await expect(approved.locator('.queue-sub')).toHaveCSS('color', await tokenColor(page, '--ok'));
   const noted = rail.getByRole('link', { name: 'Cart' });
   await expect(noted.locator('svg').first()).toHaveCSS('color', await tokenColor(page, '--neu'));

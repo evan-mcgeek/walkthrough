@@ -151,7 +151,7 @@ test('a file header counts its findings, notes and your comments, and each count
 
   await page.keyboard.press('?');
   const help = page.getByRole('dialog', { name: 'Help' });
-  for (const words of ['1 findingFirst finding in this file', '2 notesFirst note in this file', '1 yoursYour first comment here', '2 open findingsUnder a step: go to the next open finding', 'Open findings, as "2 open findings": opens the step at the first'])
+  for (const words of ['1 findingFirst finding in this file', '2 notesFirst note in this file', '1 yoursYour first comment here', '2 open findingsNext finding', 'NOpens the first finding'])
     await expect(help.getByRole('row').filter({ hasText: words })).toHaveCount(1);
 });
 
