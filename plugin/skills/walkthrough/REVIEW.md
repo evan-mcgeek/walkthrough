@@ -22,6 +22,16 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Before recording the steps, find the change's open pull request on your code host, if it has one, and read its review threads.
 - Pin each unresolved thread from someone else as a note labelled "Thread" on its lines, never flagged as a finding, with the reviewer's check of whether it still holds at the head.
 
+### How much to explain
+
+- Right after starting, ask me how well I know the feature this change belongs to, on my own change and on someone else's alike, offering these answers, and say I may skip:
+  "I know it well", "I know most of it", "I know a little", "It's new to me".
+- "I know it well": each step's explanation says only what changed, in one sentence; no background, no terms explained.
+- "I know most of it": a sentence or two per step, with background only for what this change adds to the feature.
+- "I know a little": open the first step's explanation with two or three sentences on what the feature does and why, then explain as the shared rules say.
+- "It's new to me": as "I know a little", and explain each of the feature's own terms the first time it appears.
+- When I skip, explain as for "I know a little".
+
 ### Steps
 
 - A step is one idea rather than one file, and may span several files.
@@ -137,16 +147,6 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - I name the change by its number or link on your code host.
 - Fetch its head from your code host into a local ref, without checking it out, and walk from its base to that ref with a label naming it, such as "PR 123".
 - Read the change's description and discussion as well as its ticket.
-
-### How much to explain
-
-- Right after starting, ask me how well I know the feature this change belongs to, offering these answers, and say I may skip:
-  "I know it well", "I know most of it", "I know a little", "It's new to me".
-- "I know it well": each step's explanation says only what changed, in one sentence; no background, no terms explained.
-- "I know most of it": a sentence or two per step, with background only for what this change adds to the feature.
-- "I know a little": open the first step's explanation with two or three sentences on what the feature does and why, then explain as the shared rules say.
-- "It's new to me": as "I know a little", and explain each of the feature's own terms the first time it appears.
-- When I skip, explain as for "I know a little".
 
 ### My review
 
