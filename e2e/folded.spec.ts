@@ -17,7 +17,12 @@ const record = (repo: Repo, input: unknown, command: string) => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   return [...recorded.stdout.matchAll(/([0-9a-f]{8})/g)].map(match => match[1] ?? '');
 };
-const left = async (locator: Locator) => (await locator.boundingBox())?.x ?? 0;
+/** How far a note's first action starts from its text, both measured in one frame, as a step's pane slides in. */
+const offset = (note: Locator) =>
+  note.evaluate(article => {
+    const left = (selector: string) => article.querySelector(selector)?.getBoundingClientRect().x ?? NaN;
+    return article.isConnected ? Math.abs(left('.note-foot .choices button') - left('.note-text')) : NaN;
+  });
 
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
@@ -102,6 +107,6 @@ test('a note’s action buttons start where its text does, on a step, on lines a
     const note = page.getByRole('article', { name: label });
     const accept = note.getByRole('button', { name: 'Accept' });
     await expect(accept).toBeVisible();
-    expect(Math.abs((await left(accept)) - (await left(note.locator('.note-text'))))).toBeLessThan(2);
+    expect(await offset(note)).toBeLessThan(2);
   }
 });
