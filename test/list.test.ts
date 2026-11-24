@@ -18,13 +18,12 @@ const post = (page: string, route: string, body: unknown, token = new URL(page).
     body: JSON.stringify(body),
   });
 
-/** The branch walkthrough with its one step approved and read, then a range one started after it; neither page runs. */
+/** The branch walkthrough with one of its files viewed, then a range one started after it; neither page runs. */
 async function twoWalkthroughs() {
   repo = makeRepo();
   repo.run('start');
   repo.record(ONE_STEP);
-  await post(repo.url(), '/read', { step: '1' });
-  await post(repo.url(), '/decide', { item: { type: 'step', id: '1' }, action: 'approve' });
+  await post(repo.url(), '/viewed', { file: 'app.ts', viewed: true });
   repo.run('start', ...RANGE);
   repo.run('stop', ...RANGE);
   repo.run('stop');
@@ -45,64 +44,10 @@ describe('walkthrough list', () => {
     const { repo: name, walkthroughs: list } = (await (await fetch(`${url.href}data/list.json`)).json()) as { repo: string; walkthroughs: { last: string }[] };
     expect(name).toBe('shop');
     expect(list).toEqual([
-      { id: 'range-Login%20change', name: 'Login change', target: 'origin/main', steps: 0, decided: 0, read: 0, segments: [], last: expect.any(String) as unknown },
-      { id: 'branch-feature~login', name: 'feature/login', target: 'origin/main', steps: 1, decided: 1, read: 1, segments: ['ok'], last: expect.any(String) as unknown },
+      { id: 'range-Login%20change', name: 'Login change', files: 0, viewed: 0, last: expect.any(String) as unknown },
+      { id: 'branch-feature~login', name: 'feature/login', files: 2, viewed: 1, last: expect.any(String) as unknown },
     ]);
     expect(Date.parse(list[0]?.last ?? '')).toBeGreaterThanOrEqual(Date.parse(list[1]?.last ?? ''));
-  });
-
-  test('gives each step a progress segment in step order, as the page shows it: decided in its tone, an open finding, or undecided, read or not', async () => {
-    repo = makeRepo({ feature: { 'cart.ts': 'export const cart = [];\n' } });
-    repo.run('start');
-    repo.record([
-      { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
-      { title: 'App', explanation: 'Bumps the app.', files: ['app.ts'] },
-      { title: 'Cart', explanation: 'Adds a cart.', files: ['cart.ts'] },
-    ]);
-    await post(repo.url(), '/decide', { item: { type: 'step', id: '1' }, action: 'flag', note: 'Who may log in?' });
-    await post(repo.url(), '/read', { step: '2' });
-    repo.record([{ step: '3', label: 'Finding', text: 'The cart is shared.', finding: true }], 'note');
-    repo.run('stop');
-    repo.run('list');
-
-    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { segments: string[] }[] };
-
-    expect(walkthroughs.map(one => one.segments)).toEqual([['flag', 'un', 'find']]);
-  });
-
-  test('gives the kind a walkthrough was started with, and none to one started without', async () => {
-    repo = makeRepo();
-    repo.run('start');
-    repo.run('start', ...RANGE, '--kind', 'requested');
-    repo.run('stop', ...RANGE);
-    repo.run('stop');
-    repo.run('list');
-
-    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; kind?: string }[] };
-
-    expect(walkthroughs.map(({ name, kind }) => ({ name, kind }))).toEqual([
-      { name: 'Login change', kind: 'requested' },
-      { name: 'feature/login', kind: undefined },
-    ]);
-  });
-
-  test('gives the label of the verdict the person chose and its tone, and none before', async () => {
-    repo = makeRepo();
-    repo.run('start');
-    repo.record(ONE_STEP);
-    repo.record([{ item: { type: 'verdict' }, actions: [{ id: 'fixes', label: 'Needs fixes', tone: 'attention' }] }], 'actions');
-    await post(repo.url(), '/decide', { item: { type: 'verdict' }, action: 'fixes' });
-    repo.run('start', ...RANGE);
-    repo.run('stop', ...RANGE);
-    repo.run('stop');
-    repo.run('list');
-
-    const { walkthroughs } = (await (await fetch(`${repo.url()}data/list.json`)).json()) as { walkthroughs: { name: string; verdict?: unknown }[] };
-
-    expect(walkthroughs.map(({ name, verdict }) => ({ name, verdict }))).toEqual([
-      { name: 'Login change', verdict: undefined },
-      { name: 'feature/login', verdict: { label: 'Needs fixes', shown: 'flag' } },
-    ]);
   });
 
   test('opens a walkthrough by starting its page server, and nothing outside the list', async () => {

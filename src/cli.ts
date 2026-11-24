@@ -3,29 +3,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
 import { changedFiles, changeOf, currentBranch, currentRepo, type Source } from './change';
-import { parseChecklist } from './checklist';
 import { prune, pruneDaily, pruneOne } from './prune';
 import { ensureServer, serve, serverRunning, stopServer } from './server';
-import { parseNotes } from './notes';
-import { commentsOf } from './comments';
-import { conversationOf, listen, markPosted, note, postedOf, say, starting } from './session';
-import { type Decision, decisionsOf, parseActions, walkthroughView } from './decisions';
 import { exportPage } from './export';
 import { listView } from './list';
 import { GUIDE } from './guide';
 import { policyCommand } from './policy';
 import { plural } from './words';
-import { nameOf, targetName } from './items';
 import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
+import { parseComments, parseCriteria, parseThreads } from './record';
+import { aiComments, answer, handedAsk, listen, markPosted, reviewComments } from './review';
 import {
+  nameOf,
   openWalkthrough,
   readWalkthrough,
-  recordActions,
-  recordChecking,
-  recordChecklist,
+  recordReviewing,
   recordSteps,
+  targetName,
+  updateWalkthrough,
   walkthroughDir,
 } from './walkthrough';
 
@@ -63,28 +60,21 @@ function located<T extends Options>(
 }
 
 async function start(args: string[]): Promise<void> {
-  const { cwd, source, dir, values } = located(args, { options: { kind: { type: 'string' }, comments: { type: 'string' } } });
-  const kind = values.kind?.trim();
-  if (kind === '') throw new Error('--kind needs a label that names the kind of walkthrough');
-  const hint = values.comments?.trim();
-  if (hint === '') throw new Error('--comments needs words that say what becomes of the person\'s comments');
-  const labelled = { ...(kind !== undefined && { kindLabel: kind }), ...(hint !== undefined && { commentHint: hint }) };
+  const { cwd, source, dir, values } = located(args, { options: { pr: { type: 'string' }, title: { type: 'string' } } });
+  const number = values.pr?.trim();
+  if (number === '') throw new Error('--pr needs the number of the pull request');
+  if (values.title !== undefined && number === undefined) throw new Error('--title goes with --pr');
+  const pr = number === undefined ? undefined : { number, title: values.title?.trim() || nameOf(source) };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = await openWalkthrough(dir, source, change, labelled, moved => carrySteps(cwd, moved));
-  await starting(dir);
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, pr, moved => carrySteps(cwd, moved));
   const inbox = makeInbox(dir);
   const { steps } = walkthrough;
   console.log(
     `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
-  const view = walkthroughView(dir);
-  const count = (of: Record<string, unknown> = {}) => String(steps.filter(step => of[`step:${step.id}`]).length);
-  if (opened === 'resumed') console.log(`Resumed: ${count(view?.decided)} of ${plural(steps.length, 'step')} decided.`);
   if (opened === 'moved' && steps.length > 0) {
-    console.log(
-      `The head moved: ${count(view?.decided)} of ${plural(steps.length, 'step')} still decided, ${count(view?.reopened)} reopened.`,
-    );
+    console.log(`The head moved: ${plural(steps.length, 'step')} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
     if (left.length > 0) console.log(`In no step yet: ${left.join(', ')}. Record the steps again with these in new steps.`);
   }
@@ -131,58 +121,48 @@ async function steps(args: string[]): Promise<void> {
   const { cwd, dir, values } = located(args, FILE_OPTION);
   const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
-  const folded = recorded.filter(step => step.kind === 'folded').length;
-  const ids = recorded.map(step => `${step.id} (${step.title})`).join(', ');
-  console.log(`Recorded ${plural(recorded.length, 'step')}${folded ? `, ${String(folded)} of them folded` : ''}: ${ids}.`);
+  console.log(`Recorded ${plural(recorded.length, 'step')}: ${recorded.map(step => `${step.id} (${step.title})`).join(', ')}.`);
 }
 
-async function checking(args: string[]): Promise<void> {
+async function reviewing(args: string[]): Promise<void> {
   const { dir, positionals } = located(args, { allowPositionals: true });
-  const ids = await recordChecking(dir, positionals);
-  console.log(ids.length ? `Checking ${plural(ids.length, 'step')}: ${ids.join(', ')}.` : 'Checking no steps.');
+  const ids = await recordReviewing(dir, positionals);
+  console.log(ids.length ? `Reviewing ${plural(ids.length, 'step')}: ${ids.join(', ')}.` : 'Reviewing no steps.');
 }
 
-async function notes(args: string[]): Promise<void> {
+async function commentCommand(args: string[]): Promise<void> {
   const { dir, walkthrough, values } = current(args, FILE_OPTION);
-  const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
-  const list = noted.map(entry => `${entry.id} (${entry.note.label})`).join(', ');
-  console.log(`Recorded ${plural(noted.length, 'note')}${noted.length ? `: ${list}` : ''}.`);
+  const recorded = await aiComments(dir, parseComments(readInput(values.file), walkthrough));
+  console.log(`Recorded ${plural(recorded.length, 'comment')}${recorded.length ? `: ${recorded.map(one => one.id).join(', ')}` : ''}.`);
 }
 
-async function checklist(args: string[]): Promise<void> {
+async function threads(args: string[]): Promise<void> {
   const { dir, values } = located(args, FILE_OPTION);
   const text = readInput(values.file);
-  const { title, items } = await recordChecklist(dir, walkthrough => parseChecklist(text, walkthrough));
-  const ids = items.map(item => item.id).join(', ');
-  console.log(`Recorded the checklist ${title} with ${plural(items.length, 'item')}${items.length ? `: ${ids}` : ''}.`);
+  const recorded = await updateWalkthrough(dir, walkthrough => (walkthrough.threads = parseThreads(text, walkthrough)));
+  console.log(`Recorded ${plural(recorded.length, 'thread')}.`);
 }
 
-async function actions(args: string[]): Promise<void> {
+async function criteria(args: string[]): Promise<void> {
   const { dir, values } = located(args, FILE_OPTION);
-  const text = readInput(values.file);
-  const recorded = await recordActions(dir, walkthrough => parseActions(text, walkthrough, conversationOf(dir)));
-  console.log(`Recorded the actions of ${plural(recorded.length, 'item')}.`);
-}
-
-function decisions(args: string[]): void {
-  const { dir, walkthrough } = current(args);
-  const shown = ({ id, at, action, note, text }: Decision) => ({ id, at, action, note, text });
-  for (const { item, decision, reopened } of decisionsOf(walkthrough, conversationOf(dir)))
-    console.log(JSON.stringify({ item, decision: decision && shown(decision), ...(reopened && { reopened: shown(reopened) }) }));
+  const recorded = parseCriteria(readInput(values.file));
+  await updateWalkthrough(dir, walkthrough => {
+    walkthrough.criteria = recorded;
+  });
+  console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? 'criterion' : 'criteria'}.`);
 }
 
 function comments(args: string[]): void {
   const { dir } = current(args);
-  const posted = postedOf(dir);
-  for (const { id, step, file, lines, text } of commentsOf(conversationOf(dir)))
-    console.log(JSON.stringify({ id, step, file, lines, text, ...(posted.includes(id) && { posted: true }) }));
+  for (const line of reviewComments(dir)) console.log(JSON.stringify(line));
 }
 
 async function posted(args: string[]): Promise<void> {
-  const { dir, positionals } = current(args, { allowPositionals: true });
-  if (!positionals.length) throw new Error('usage: walkthrough posted <comment id>...');
-  await markPosted(dir, positionals);
-  console.log(`Marked ${plural(positionals.length, 'comment')} posted.`);
+  const { dir, values } = current(args, { options: { address: { type: 'string' } } });
+  const address = values.address?.trim();
+  if (address !== undefined && !/^https?:\/\//.test(address)) throw new Error('--address must be a web address');
+  await markPosted(dir, address);
+  console.log(address ? `Recorded that the review went to ${address}.` : 'Recorded that the review went out.');
 }
 
 function exportCommand(args: string[]): void {
@@ -199,57 +179,35 @@ async function listenCommand(args: string[]): Promise<void> {
     console.error('walkthrough: another walkthrough listen took over; this one gets nothing more.');
     process.exitCode = 3;
   } else if (taken === 'stopped') console.log(JSON.stringify({ kind: 'stopped' }));
-  else {
-    const conversation = conversationOf(dir);
-    // A reply carries its note, so the session need not look it up.
-    const about = (to: string) => {
-      const noted = conversation.find(entry => entry.id === to && entry.from === 'session' && entry.note);
-      return noted?.from === 'session' && noted.note ? { label: noted.note.label, text: noted.text } : undefined;
-    };
-    for (const request of taken)
-      // Fingerprints only match a decision to its item and a question to its lines.
+  else
+    for (const event of taken)
       console.log(
-        JSON.stringify({
-          ...request,
-          on: undefined,
-          linesHash: undefined,
-          linesText: undefined,
-          ...(request.kind === 'reply' && { about: about(request.to) }),
-        }),
+        JSON.stringify(
+          event.kind === 'ask' ? handedAsk(dir, event) : event.kind === 'submit' ? { kind: 'submit', id: event.id, type: event.type, summary: event.summary } : event,
+        ),
       );
-  }
 }
 
 async function sayCommand(args: string[]): Promise<void> {
   const { values, positionals, dir } = current(args, {
-    options: {
-      answer: { type: 'string' },
-      as: { type: 'string' },
-      question: { type: 'boolean' },
-      choice: { type: 'string', multiple: true },
-      file: { type: 'string' },
-    },
+    options: { answer: { type: 'string' }, file: { type: 'string' } },
     allowPositionals: true,
   });
   if (values.file !== undefined && positionals.length > 0) throw new Error('say takes its text or a --file, not both');
   const text = (values.file === undefined ? positionals.join(' ') : readInput(values.file)).trim();
-  if (!text)
-    throw new Error(
-      'usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)',
-    );
-  const said = await say(dir, text, { ...values, label: values.as });
-  console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : 'Said on the page.');
+  if (!text || values.answer === undefined) throw new Error('usage: walkthrough say --answer <ask id> (<text> | --file <file>)');
+  await answer(dir, values.answer, text);
+  console.log('Answered on the page.');
 }
 
 const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
   steps,
-  checking,
-  note: notes,
-  checklist,
-  actions,
-  decisions,
+  reviewing,
+  comment: commentCommand,
+  threads,
+  criteria,
   comments,
   posted,
   list,
@@ -294,10 +252,10 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checking [<step id>...]\n' +
-        '    | checklist --file <file> | note --file <file> | actions --file <file> | decisions | comments | posted <comment id>... | listen\n' +
-        '    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n' +
-        '    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n' +
+        '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | reviewing [<step id>...]\n' +
+        '    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n' +
+        '    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
+        '    | policy [show | init | save --file <file>]\n' +
         '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',
     );
   await command(rest);

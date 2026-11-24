@@ -168,3 +168,21 @@ export function makeRepo({
     },
   };
 }
+
+/** Sends what the page sends, with the page's token unless another is given. */
+export const postTo = (page: string, route: string, body: unknown, token = new URL(page).pathname.split('/')[2] ?? '') =>
+  fetch(new URL(`${route}?token=${token}`, page), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+/** The view the page polls for. */
+export const viewAt = async (page: string) =>
+  (await (await fetch(`${page}data/walkthrough.json`)).json()) as import('../src/review').WalkthroughView;
+
+export async function until(what: string, done: () => Promise<boolean>, ms = 5000) {
+  for (const end = Date.now() + ms; Date.now() < end; await new Promise(resolve => setTimeout(resolve, 50)))
+    if (await done()) return;
+  throw new Error(`${what} did not happen within ${String(ms / 1000)}s`);
+}

@@ -1,228 +1,103 @@
 // What `walkthrough guide` prints: the format of every command the session records with or reads from.
-const example = [
+const steps = [
   {
-    title: 'Session store',
-    explanation: 'Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.',
-    assumptions: ['Sessions are only read by the login handler.'],
-    files: [{ path: 'src/session-store.ts', explanation: 'Keeps sessions in memory, keyed by their id.' }, 'test/session-store.test.ts'],
-  },
-  {
-    title: 'Regenerated API description',
-    folded: true,
-    files: [{ path: 'docs/api.json', reason: 'Regenerated from the session store.' }],
-    problems: [],
+    title: 'Parse due dates in the API',
+    explanation: 'Both handlers accept an optional dueDate and store it as a date or null.\n\nThe rest of the detail, shown behind More.',
+    files: ['src/api/tasks.ts', { path: 'src/api/generated/client.ts', folded: 'Generated from the schema' }],
+    look: [{ file: 'src/api/tasks.ts', start: 26, end: 29, label: 'parseDueDate' }],
   },
 ];
-
-const notesExample = [
-  { step: '1', label: 'Risk', text: 'Sessions never expire, so a stolen one works **forever**.', finding: true },
+const comments = [{ file: 'src/api/tasks.ts', lines: [29, 29], body: 'A typo in the date becomes null and clears it. Return 400 with the field name.' }];
+const threads = [
   {
-    step: '1',
-    file: 'src/session-store.ts',
-    lines: [1, 1],
-    label: 'Nit',
-    text: 'The name could say what is stored.',
-    low: true,
+    id: '1042',
+    file: 'src/api/tasks.ts',
+    lines: [22, 22],
+    author: 'dana-k',
+    at: '2026-11-23T09:30:00Z',
+    body: 'Does a PATCH without dueDate wipe the date?',
+    replies: [{ author: 'ryo-t', at: '2026-11-24T10:00:00Z', body: 'Yes. Fixing it in this PR.' }],
   },
 ];
-
-const checklistExample = {
-  title: 'Acceptance criteria',
-  description: 'Each acceptance criterion from the tickets, and the steps that deliver it.',
-  items: [
-    { status: 'met', mark: 'met', text: 'Sessions survive a restart.', steps: ['1'] },
-    { status: 'not shown', mark: 'not-met', text: 'Expired sessions are removed.', steps: [] },
-  ],
-};
-
-const actionsExample = [
-  {
-    item: { type: 'note', id: '5f0c2a9e' },
-    actions: [
-      { id: 'accept', label: 'Accept', tone: 'positive', consequence: 'Goes on the fix list.', outcome: 'Added to fixes', primary: true },
-      { id: 'edit', label: 'Edit first', edit: true, tone: 'positive', consequence: 'You reword it first.', outcome: 'Edited' },
-      { id: 'drop', label: 'Drop', note: true, consequence: 'The author never sees it.', outcome: 'Dropped' },
-    ],
-  },
-  { item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'fix', label: 'Needs a fix', note: true, tone: 'attention' }] },
-  {
-    item: { type: 'verdict' },
-    hint: 'Sent with the review.',
-    actions: [
-      { id: 'approve', label: 'Approve', tone: 'positive' },
-      { id: 'changes', label: 'Request changes', tone: 'attention' },
-      { id: 'comment', label: 'Comment' },
-    ],
-  },
-  { item: { type: 'walkthrough' }, hint: 'Posts your comments as one review.', actions: [{ id: 'post', label: 'Post my review' }] },
+const criteria = [
+  { text: 'Optional due date on create and edit', status: 'met' },
+  { text: 'Invalid dates rejected with a clear error', status: 'not-met' },
 ];
 
-export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>] [--comments <text>]
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
-  --kind gives the walkthrough the session's own label for what kind it is, such as "own" or "requested";
-  the page header and the list show it as given, nothing else reads it, and a later start keeps it unless it gives another.
-  --comments gives the session's own words for what becomes of the person's line comments, such as "Joins the fix list";
-  the page shows them under each comment, and a later start keeps them unless it gives others.
-  Both are start's alone: the other commands find the walkthrough without them.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
-  With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
-  Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
-  Every command below finds the walkthrough from the same options start was given, so pass them to each.
-  When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
-  and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
-  It prints the walkthrough's inbox, a folder for the files the session records from.
-  Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+  With --base and --head it is of that range, named by its --label.
+  --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
+  Every command below finds the walkthrough from the same source options start was given, so pass them to each.
+  When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
+  Comments on lines that changed stay in the review, detached from the diff.
+  It prints the walkthrough's inbox, the folder for the files the session records from.
 
 Recording from files
-  steps, checklist, note, actions and policy save read what they record from the file --file names, or from standard input without it; say takes its text on the command line or from --file.
-  Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
-  The command removes a file from the inbox once it has read it, so each recording is a new file there.
-  Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.
+  steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
+  Write each file with your file tool into the inbox start printed, then pass its path; the command removes it once read.
+  Lines are numbered as in the file at the head, and must be in the step's diff. Text is Markdown, shown without raw HTML or images.
 
 walkthrough files
-  Prints every changed file of the walkthrough, one path per line, at its head path.
+  Prints every changed file, one path per line.
 
 walkthrough steps --file <file>
-  Records the steps, replacing those recorded before, and prints each step's id and title in order.
-  A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, unless a step sharing more took it, or else a new id; its notes and checklist links follow the id.
-  A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
-  The file is a JSON array of steps in reading order; a step shows its files in the order given.
-  Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
-  A step, with what the session assumed rather than read ("assumptions" may be left out):
-    {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
-  A path in a step's files may be given with a short explanation of that file, shown just above its diff, under the step's explanation:
-    {"path": path, "explanation": string}
-  A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
-    {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
-  Example:
-${JSON.stringify(example, null, 2)}
+  Records the steps in reading order, replacing those recorded before, and prints each step's id and title.
+  Every changed file must be in exactly one step; otherwise nothing is recorded and every problem is named.
+  A file is a path, or {"path": path, "folded": reason} for a generated or copied file, which arrives folded with its one-line reason.
+  "look" holds one or two pointers to what to read first, each {"file": path, "start": line, "end": line, "label": 1 to 4 words}.
+  A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
+${JSON.stringify(steps, null, 2)}
 
-walkthrough checking [<step id>...]
-  Records the steps you are still checking, such as with the review policy's reviewers, replacing those recorded before; with no ids, none.
-  It prints the set, such as "Checking 3 steps: 4, 5, 6." or "Checking no steps."; an id that names no step is refused, and nothing is recorded.
-  Recording the steps again keeps the ids that still name a step and drops the rest.
-  Why a step is being checked is yours to say; the CLI only stores the ids.
-  While a step is being checked, the page says so on the step, lists it as being checked in what is left and on the Summary, and holds its actions:
-  the person can read it, ask about it and comment on its lines, but cannot decide it, and a decision sent on it is refused, until you record the set again without it.
+walkthrough reviewing [<step id>...]
+  Records the steps the AI is still reviewing, replacing the set before; with no ids, none, and the page's "AI reviewing" goes.
 
-walkthrough note --file <file>
-  Pins notes to the page, after those pinned before, and prints each note's id.
-  The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
-  "step" is a step id as walkthrough steps printed it.
-  A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
-    {"step": string, "label": string, "text": string, "low": boolean}
-    {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
-  "low": true puts the note behind a count of low-priority notes; it may be left out.
-  "finding": true flags the note as a finding, whatever its label; it may be left out.
-  The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
-  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding"; the step's decision stays as it was.
-  When a finding lands on a step the person has read or decided, the open page also raises a banner naming it.
-  When a note does not fit the walkthrough, nothing is recorded and the problem is named.
-  A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
-  Example:
-${JSON.stringify(notesExample, null, 2)}
+walkthrough comment --file <file>
+  Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
+  the person can edit them. Write the body without the [AI] prefix.
+${JSON.stringify(comments, null, 2)}
 
-walkthrough checklist --file <file>
-  Records the checklist the page shows, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
-  The file is a JSON object with a title and items in reading order.
-  An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
-  To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
-  Title, description, status and text are the session's own words; "description" is one optional line under the title saying what the list is for.
-  "mark" picks the icon beside the status: "met", "partly", "not-met" or "unchecked" ("mark" may be left out, which shows "unchecked").
-  An item marked "not-met", or offering actions the person has not taken, is listed with the steps left, as something that still needs the person.
-  An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
-  A link to a step that is later gone shows as gone.
-    {"title": string, "description": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
-    {"id": string, "status": string, "mark": mark, "text": string, "steps": [step id, ...]}   an item kept under a new text
-  Example checklist:
-${JSON.stringify(checklistExample, null, 2)}
+walkthrough threads --file <file>
+  Records colleagues' existing threads on lines, replacing those recorded before. "id" is yours, such as the code host's thread id;
+  replies and resolves the person adds come back with it. "resolved" may be given as true.
+${JSON.stringify(threads, null, 2)}
 
-walkthrough actions --file <file>
-  Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
-  The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
-    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
-  An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone,
-      "consequence": string, "outcome": string, "primary": boolean}, ...]}, ...]
-  "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
-  left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
-  "consequence", at most 8 words, says where a decision with the action goes or what it costs, such as "Goes on the fix list.";
-  "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
-  "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
-  The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
-  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive", "outcome": "Approved"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention", "outcome": "Flagged"};
-  an empty list brings these back.
-  Other items offer nothing until actions are recorded on them.
-  The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
-  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status in its tone.
-  The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
-  "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
-  A note offering an action with "edit": true is a draft: it goes out as drafted, or as edited when the person takes that action, and any other action drops it; the Summary lists every draft and what goes out, and a draft is never still open.
-  A step's or checklist item's actions last while its id does.
-  When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
-  Example actions, for a note with the id 5f0c2a9e:
-[
-${actionsExample.map(one => `  ${JSON.stringify(one)}`).join(',\n')}
-]
-
-walkthrough decisions
-  Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
-    {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
-  A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
-  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the verdict's and the walkthrough's base and head.
-  The verdict is the line with {"type": "verdict"}: its decision's action is the verdict the person chose, or null before they choose one.
-  A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
+walkthrough criteria --file <file>
+  Records the acceptance criteria as checked, replacing those before; read-only on the page. status: met, partly, not-met or not-checked.
+${JSON.stringify(criteria, null, 2)}
 
 walkthrough listen
-  Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
-    {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
-    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer is a note on those lines
-    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
-    {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
-    {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
-    {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
-    {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
-    {"kind": "stopped"}   the page was stopped or closed; nothing more will come
-  The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
-  Act on a clear as the review policy says, and answer it with say --answer like any decision.
-  The person's own line comments, their edits and their deletions never come through listen and need no answer:
-  read them all with walkthrough comments when the review policy acts on them, such as at the finishing action.
-  Files the person collapses or marks viewed are their own reading marks and never reach the session.
-  Exit code 3: another walkthrough listen took over; this one gets nothing more.
+  Waits for the person, then prints one JSON line per thing they sent and exits. Only these wake it:
+    {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
+      Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
+    {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
+      Submit review or Send to agent; read what goes out with walkthrough comments, act on it, then run walkthrough posted.
+    {"kind": "stopped"}   the page was stopped; nothing more will come
+  Comments, replies, edits, deletions, Resolve and Viewed never wake it.
+  Exit code 3: another walkthrough listen took over.
+
+walkthrough say --answer <ask id> (<text> | --file <file>)
+  Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
 
 walkthrough comments
-  Prints each of the person's comments as it is now, edits applied and deleted ones left out, one JSON line each:
-    {"id": string, "step": string, "file": path, "lines": [first, last], "text": string, "posted": true}   "posted" only once marked posted
+  Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
+    {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
+      a new thread; "outdated" only when its lines changed since
+    {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
+    {"kind": "resolve", "thread": id}   the person resolved a colleague's thread
+  An AI comment's body starts with [AI].
 
-walkthrough posted <comment id>...
-  Marks the person's comments posted, once they have gone out as the review policy says;
-  the page then shows them as posted and no longer lets the person edit or delete them.
-  An id that names no comment is refused, and nothing is marked.
-
-walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
-  Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
-  An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
-  the person can reply to it like any note, and you can record actions on it.
-  Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
-  Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
+walkthrough posted [--address <url>]
+  Records that the submitted review went out, and where; the page then links View review to the address.
 
 walkthrough export [--out <file>]
-  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist, decisions and the verdict.
-  The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
-  With --out the person approves the command, since it writes where it names.
+  Writes the walkthrough to one read-only HTML file: steps, explanations, diffs, comments and criteria.
 
 walkthrough policy [show | init | save --file <file>]
   The person's review policy; this compares and copies its bytes and never reads its rules.
-  With no action it prints its state and path on the first line, then the inbox to write a new version to:
-    none: there is no review policy at <path>, so the template applies.
-    template: the review policy at <path> is the unchanged template.
-    template: the review policy at <path> is an earlier unchanged template, so the current template applies.
-    yours: the review policy at <path> is the person's own.
-  show prints the policy, or the current template while it is none or a template; init copies the template there when there is none;
-  save --file <file> replaces the policy with the file, which you write in that inbox.
+  With no action it prints its state (none, template or yours) and path, then the inbox to write a new version to.
 
-walkthrough list
-  Opens a page of the repo's walkthroughs with their progress, verdict and last activity; opening one starts its page when it is not running.
-  It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
+walkthrough stop | list | stop --list | prune [<branch> | <id>]
+  stop ends the page; list opens the repo's walkthroughs; prune removes walkthroughs that are over, or the one named.
 `;

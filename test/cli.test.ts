@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import type { WalkthroughView } from '../src/decisions';
+import type { WalkthroughView } from '../src/review';
 import type { Walkthrough } from '../src/walkthrough';
 import { git, ONE_STEP, makeRepo, type Repo } from './helpers';
 
@@ -29,30 +29,17 @@ describe('walkthrough start', () => {
     expect(git(repo.dir, 'worktree', 'list').split('\n')).toHaveLength(1);
   });
 
-  test('keeps the kind the session gives as it is, until a later start gives another', async () => {
+  test('--pr makes it a pull request with its number and title, kept until a later start gives another', async () => {
     repo = makeRepo();
-    const kind = async () => ((await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough).kindLabel;
+    const pr = async () => ((await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough).pr;
 
-    expect(repo.run('start', '--kind', ' Team review ').stderr).toBe('');
-    expect(await kind()).toBe('Team review');
     repo.run('start');
-    expect(await kind()).toBe('Team review');
-    repo.run('start', '--kind', 'requested');
-    expect(await kind()).toBe('requested');
-
-    const blank = repo.run('start', '--kind', ' ');
-    expect(blank.status).toBe(1);
-    expect(blank.stderr).toContain('--kind needs a label');
-    expect(await kind()).toBe('requested');
-    expect(repo.run('guide').stdout).toContain(
-      'walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>]',
-    );
-  });
-
-  test('a walkthrough started without a kind has none', async () => {
-    repo = makeRepo();
+    expect(await pr()).toBeUndefined();
+    expect(repo.run('start', '--pr', '212', '--title', 'Due dates for tasks').stderr).toBe('');
+    expect(await pr()).toEqual({ number: '212', title: 'Due dates for tasks' });
     repo.run('start');
-    expect(((await (await fetch(`${repo.url()}data/walkthrough.json`)).json()) as Walkthrough).kindLabel).toBeUndefined();
+    expect(await pr()).toEqual({ number: '212', title: 'Due dates for tasks' });
+    expect(repo.run('start', '--title', 'Alone').stderr).toContain('--title goes with --pr');
   });
 
   test('a target with no remote branch of its name is the local branch', () => {
@@ -184,33 +171,6 @@ const post = (page: string, route: string, body: unknown, token = new URL(page).
     body: JSON.stringify(body),
   });
 const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as WalkthroughView;
-const approve = { item: { type: 'step', id: '1' }, action: 'approve' };
-
-describe('deciding on a step', () => {
-  test('an approve decision is saved and resumed after the page server restarts', async () => {
-    repo = makeRepo();
-    repo.run('start');
-    repo.record(ONE_STEP);
-
-    const answer = await post(repo.url(), '/decide', approve);
-    expect(answer.status).toBe(200);
-    repo.run('stop');
-    const again = repo.run('start');
-
-    expect(again.stdout).toContain('Resumed: 1 of 1 step decided.');
-    expect((await shownAt(repo.url())).decided['step:1']).toMatchObject({ action: 'approve' });
-  });
-
-  test('a decision on an unknown step or of an unknown action is refused', async () => {
-    repo = makeRepo();
-    repo.run('start');
-    repo.record(ONE_STEP);
-
-    expect((await post(repo.url(), '/decide', { ...approve, item: { type: 'step', id: 'nope' } })).status).toBe(400);
-    expect((await post(repo.url(), '/decide', { ...approve, action: 'merged' })).status).toBe(400);
-    expect((await shownAt(repo.url())).decided['step:1']).toBeNull();
-  });
-});
 
 /** The status the page server answers, with full control over the headers, which fetch does not allow for Host. */
 const statusOf = (page: string, target: string, method: string, headers: Record<string, string>) =>
@@ -237,14 +197,14 @@ describe('the page server', () => {
 
     expect(await statusOf(page, `/s/${wrong}/`, 'GET', {})).toBe(404);
     expect(await statusOf(page, `/s/${wrong}/data/walkthrough.json`, 'GET', {})).toBe(404);
-    expect(await statusOf(page, '/decide', 'POST', json)).toBe(404);
-    expect(await statusOf(page, `/decide?token=${wrong}`, 'POST', json)).toBe(404);
-    expect(await statusOf(page, `/decide?token=${token}`, 'POST', { 'content-type': 'text/plain' })).toBe(415);
+    expect(await statusOf(page, '/viewed', 'POST', json)).toBe(404);
+    expect(await statusOf(page, `/viewed?token=${wrong}`, 'POST', json)).toBe(404);
+    expect(await statusOf(page, `/viewed?token=${token}`, 'POST', { 'content-type': 'text/plain' })).toBe(415);
     expect(await statusOf(page, pathname, 'GET', { host: `attacker.example:${new URL(page).port}` })).toBe(403);
     expect(await statusOf(page, pathname, 'GET', { origin: 'http://attacker.example' })).toBe(403);
     expect(await statusOf(page, pathname, 'GET', { origin: `http://${host}` })).toBe(200);
-    expect((await post(page, '/decide', approve, wrong)).status).toBe(404);
-    expect((await shownAt(page)).decided['step:1']).toBeNull();
+    expect((await post(page, '/viewed', { file: 'app.ts', viewed: true }, wrong)).status).toBe(404);
+    expect((await shownAt(page)).viewed).toEqual([]);
   });
 });
 
@@ -282,11 +242,11 @@ describe('an unknown command', () => {
   test('prints a usage that records from files, as the plugin lets run without asking', () => {
     repo = makeRepo();
 
-    const usage = repo.run('notes');
+    const usage = repo.run('decisions');
 
     expect(usage.status).toBe(1);
     expect(usage.stderr).not.toMatch(/ < \S+\.json/);
-    for (const command of ['steps', 'checklist', 'note', 'actions']) expect(usage.stderr).toContain(`${command} --file <file>`);
+    for (const command of ['steps', 'comment', 'threads', 'criteria']) expect(usage.stderr).toContain(`${command} --file <file>`);
     expect(usage.stderr).toContain('(<text> | --file <file>)');
   });
 });
