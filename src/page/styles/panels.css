@@ -23,6 +23,11 @@
   display: none;
 }
 
+/* While a window's width opens or closes, what it holds keeps its open width, so nothing in it rewraps. */
+.sliding > * {
+  min-width: var(--open-width, auto);
+}
+
 /* ---------- title bars ---------- */
 
 .panel-head {

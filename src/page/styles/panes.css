@@ -147,6 +147,18 @@
   pointer-events: none;
 }
 
+/* The decided row lifted off the rail, on its way into "N decided". */
+.queue-chip {
+  position: fixed;
+  z-index: 20;
+  box-sizing: border-box;
+  margin: 0;
+  background: var(--canvas);
+  box-shadow: var(--shadow-float);
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .queue-foot {
   display: flex;
   flex-direction: column;
@@ -173,6 +185,11 @@
 
 .decided-toggle:hover {
   background: var(--surface-tint);
+}
+
+/* The count rises into place as the decided row's chip lands. */
+.decided-toggle [data-motion] {
+  display: inline-block;
 }
 
 .decided-toggle > .icon:last-child {

@@ -414,6 +414,34 @@
   color: var(--muted);
 }
 
+/* The chosen verdict on its way into the header, and the label it replaces fading in the slot. */
+.verdict-chip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--ink-secondary);
+  border-radius: var(--r-xs);
+  background: var(--surface-tint);
+  color: var(--ink);
+  font: 600 13px/1.4 var(--font-ui);
+  transform-origin: 0 0;
+}
+
+.verdict-status {
+  position: relative;
+}
+
+.verdict-old {
+  position: absolute;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .finish-review {
   text-decoration: none;
 }

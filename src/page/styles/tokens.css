@@ -89,6 +89,61 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
+/* Registered, so changing the accent cross-fades the family; a theme switch snaps. */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2433b8;
+}
+
+@property --accent-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b2896;
+}
+
+@property --accent-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2433b8;
+}
+
+@property --accent-wash {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eceefc;
+}
+
+@property --accent-line {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #d3d7f7;
+}
+
+@property --on-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+
+@property --line-pick {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eef0fd;
+}
+
+@property --line-pick-gutter {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #d9ddf8;
+}
+
+:root.accent-fade {
+  transition-property: --accent, --accent-hover, --accent-text, --accent-wash, --accent-line, --on-accent, --line-pick, --line-pick-gutter;
+  transition-duration: var(--slow);
+  transition-timing-function: linear;
+}
+
 :root[data-theme='light'] {
   color-scheme: light;
 }

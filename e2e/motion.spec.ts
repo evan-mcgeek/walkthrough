@@ -49,42 +49,190 @@ test.beforeEach(async ({ page, repo, url }) => {
 
 const DURATIONS = [120, 200, 320];
 const CURVES = ['cubic-bezier(0.16, 1, 0.3, 1)', 'cubic-bezier(0.7, 0, 0.84, 0)', 'linear'];
-// DESIGN.md's Motion names these beside the three durations: the row's slide, a leaving pane and the attention pulse.
-const NAMED = [160, 100, 1200];
+// DESIGN.md's Motion names these beside the three durations: the row hiding, a leaving pane, a closing popover, the verdict and the attention pulse.
+const NAMED = [60, 100, 80, 440, 1200];
+const verdicts = { item: { type: 'verdict' }, actions: [{ id: 'ready', label: 'Ready for colleagues' }, { id: 'fixes', label: 'Needs fixes' }] };
+/** Keyframe properties that only fade or recolour. */
+const FADES = ['opacity', 'offset', 'easing', 'composite', 'color', 'backgroundColor'];
 
-test('deciding slides the rail row out, fills the progress, ticks the counts and swaps the pane, on the design tokens', async ({
+test('deciding lifts the rail row as a chip into "N decided", closes the rows, ticks the counts and swaps the pane, on the design tokens', async ({
   page,
 }) => {
+  // The marker's classes as each redraw leaves them, however soon the next one comes.
+  await page.locator('.progress-marker').evaluate(marker => {
+    const seen: string[] = [];
+    (window as unknown as { seen: string[] }).seen = seen;
+    new MutationObserver(() => seen.push(marker.className)).observe(marker, { attributeFilter: ['class', 'style'] });
+  });
   await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
 
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
   await expect(rail(page).getByRole('link', { name: 'Login check' })).toHaveCount(0);
+  await expect(rail(page).getByRole('button', { name: '1 decided' })).toBeVisible();
+  // The marker waits for the fill before it walks on.
+  expect(await page.evaluate(() => (window as unknown as { seen: string[] }).seen)).toContain('progress-marker waits');
   await expect.poll(async () => new Set((await started(page)).map(one => one.id))).toEqual(
-    new Set(['row-slide', 'row-fade', 'row-collapse', 'fill', 'tick', 'pane-leave', 'pane-out', 'pane-enter', 'toast-in']),
+    new Set(['chip-travel', 'chip-fade', 'row-fade', 'row-collapse', 'decided-flash', 'count-land', 'tick', 'pane-leave', 'pane-out', 'pane-enter', 'toast-in']),
   );
   for (const one of await played(page)) {
     expect([...DURATIONS, ...NAMED], one.id).toContain(one.duration);
     expect(CURVES, one.id).toContain(one.easing);
   }
-  const slide = (await played(page)).find(one => one.id === 'row-slide');
-  expect(slide?.keyframes.at(-1)?.['transform']).toBe('translateX(-16px)');
+  const shown = await started(page);
+  expect(shown.find(one => one.id === 'chip-travel')?.keyframes.at(-1)?.['transform']).toMatch(/^translateY\(\d+(\.\d+)?px\) scale\(0\.92\)$/);
+  expect(shown.find(one => one.id === 'count-land')?.delay).toBe(240);
+  expect(shown.find(one => one.id === 'row-fade')?.duration).toBe(60);
+  // The chip and the row it left are gone once they have played; nothing is left half collapsed.
+  await expect(page.locator('.queue-chip')).toHaveCount(0);
+  await expect(rail(page).locator('.leaving')).toHaveCount(0);
 });
 
-test('reduced motion keeps opacity only', async ({ page, repo }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Assumed, not checked' }).click();
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: '1 thing assumed, not checked' }).click();
-  await page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' }).click();
+test('a double click, an undo or a turn back mid-motion leaves no ghost and nothing half closed', async ({ page, repo }) => {
+  const approve = page.getByRole('region', { name: 'Login check' }).getByRole('button', { name: 'Approve' });
+  await approve.dblclick();
   await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  await page.getByRole('status').filter({ hasText: 'Decided step 1: Approve' }).getByRole('button', { name: 'Undo' }).click();
+  await expect(rail(page).getByRole('link', { name: 'Login check' })).toHaveCount(1);
+  await expect(page.locator('.queue-chip')).toHaveCount(0);
+  await expect(rail(page).locator('.leaving')).toHaveCount(0);
+
+  // Hidden and shown again before the width has closed: the rail is back at its width.
+  await page.keyboard.press('1');
+  await page.keyboard.press('1');
+  await expect(rail(page)).toBeVisible();
+  await expect(rail(page)).not.toHaveClass(/\bsliding\b/);
+  await expect(rail(page)).toHaveCSS('width', '224px');
+
+  // A file closed and opened again at once is open, its code drawn.
+  await page.getByRole('link', { name: 'Login check' }).click();
+  const file = page.locator('.d2h-file-wrapper').first();
+  const toggle = file.getByRole('button', { name: /^(Collapse|Expand) login\.ts$/ });
+  await toggle.dblclick();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(file).not.toHaveClass(/\bclosing\b/);
+  await expect(file.locator('.d2h-file-diff')).toBeVisible();
+
+  // Two verdicts chosen in a row: one chip at most, and the header says the last.
+  record(repo, [verdicts], 'actions');
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
+  const options = page.getByRole('radiogroup', { name: 'Verdict' });
+  await options.getByRole('radio', { name: 'Needs fixes' }).click();
+  await options.getByRole('radio', { name: 'Ready for colleagues' }).click();
+  expect(await page.locator('.verdict-chip').count()).toBeLessThanOrEqual(1);
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Ready for colleagues');
+  await expect(page.locator('.verdict-chip, .verdict-old')).toHaveCount(0);
+});
+
+test('the verdict docks into the header, tool windows slide to their edge, files fold and popovers settle, on the design tokens', async ({
+  page,
+  repo,
+}) => {
+  await page.keyboard.press('1');
+  await expect(rail(page)).toBeHidden();
+  await expect(page.getByRole('button', { name: 'To review' })).toBeVisible();
+  await page.getByRole('button', { name: 'To review' }).click();
+  await expect(rail(page)).toBeVisible();
+  const file = page.locator('.d2h-file-wrapper').first();
+  await file.getByRole('button', { name: 'Collapse login.ts' }).click();
+  await expect(file.getByRole('button', { name: 'Expand login.ts' })).toHaveAttribute('aria-expanded', 'false');
+  await file.getByRole('button', { name: 'Mark login.ts as viewed' }).click();
+  await expect(file.getByRole('button', { name: 'Mark login.ts as viewed' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Appearance' }).click();
+  await expect(page.getByRole('dialog', { name: 'Appearance' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  // Closed at once, whatever is still fading.
+  await expect(page.getByRole('dialog', { name: 'Appearance' })).toBeHidden();
+  record(repo, [verdicts], 'actions');
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
+  await page.getByRole('radiogroup', { name: 'Verdict' }).getByRole('radio', { name: 'Needs fixes' }).click();
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
+
+  await expect.poll(async () => new Set((await started(page)).map(one => one.id))).toEqual(
+    new Set([
+      ...['panel-fade', 'panel-width', 'edge-in'],
+      ...['fold-turn', 'fold-fade', 'fold-rows', 'viewed-label', 'viewed-dim'],
+      ...['popover-in', 'popover-settle', 'popover-out'],
+      ...['pane-leave', 'pane-out', 'pane-enter'],
+      ...['verdict-width', 'verdict-land', 'verdict-chip', 'verdict-chip-fade', 'toast-in'],
+    ]),
+  );
+  for (const one of await played(page)) {
+    expect([...DURATIONS, ...NAMED], one.id).toContain(one.duration);
+    expect(CURVES, one.id).toContain(one.easing);
+  }
+  expect((await started(page)).find(one => one.id === 'verdict-land')?.keyframes).toEqual([
+    expect.objectContaining({ opacity: 0 }),
+    expect.objectContaining({ opacity: 0, offset: 0.62 }),
+    expect.objectContaining({ opacity: 1 }),
+  ]);
+  await expect(page.locator('.verdict-chip, .popover.leaving')).toHaveCount(0);
+});
+
+test('changing the accent cross-fades its colours, and a theme switch snaps', async ({ page }) => {
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Appearance' }).click();
+  const root = page.locator('html');
+  // What the root's transition was each time its accent or theme changed, however soon the fade ends.
+  await root.evaluate(html => {
+    const seen: string[] = [];
+    (window as unknown as { seen: string[] }).seen = seen;
+    new MutationObserver(() => seen.push(`${html.dataset['accent'] ?? ''} ${html.dataset['theme'] ?? ''} ${getComputedStyle(html).transitionProperty}`)).observe(html, {
+      attributeFilter: ['data-accent', 'data-theme'],
+    });
+  });
+  const seen = () => page.evaluate(() => (window as unknown as { seen: string[] }).seen);
+  await page.getByRole('radio', { name: 'Berry' }).click();
+  await expect(root).toHaveAttribute('data-accent', 'berry');
+  expect((await seen()).at(-1)).toMatch(/^berry .*--accent, --accent-hover/);
+  await page.getByRole('radio', { name: 'Dark' }).click();
+  expect((await seen()).at(-1)).toMatch(/^berry dark all$/);
+  await expect(root).not.toHaveClass(/\baccent-fade\b/);
+  // The registered accent still follows the theme: Berry's dark value.
+  await expect.poll(() => root.evaluate(html => getComputedStyle(html).getPropertyValue('--accent').trim())).toBe('rgb(240, 122, 180)');
+});
+
+test('reduced motion keeps opacity and colour only', async ({ page, repo }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const step = page.getByRole('region', { name: 'Login check' });
+  await step.getByRole('button', { name: 'Assumed, not checked' }).click();
+  await step.getByRole('button', { name: '1 thing assumed, not checked' }).click();
+  const file = page.locator('.d2h-file-wrapper').first();
+  await file.getByRole('button', { name: 'Collapse login.ts' }).click();
+  await file.getByRole('button', { name: 'Expand login.ts' }).click();
+  await file.getByRole('button', { name: 'Mark login.ts as viewed' }).click();
+  await expect(file.getByRole('button', { name: 'Mark login.ts as viewed' })).toHaveAttribute('aria-pressed', 'true');
+  // The rail's contents fade, then it is gone and its edge button is there for the focus.
+  await page.getByRole('button', { name: 'Hide To review' }).click();
+  await expect(page.getByRole('button', { name: 'To review' })).toBeFocused();
+  await page.getByRole('button', { name: 'To review' }).click();
+  await expect(rail(page)).toBeVisible();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Appearance' }).click();
+  await page.keyboard.press('Escape');
+  await step.getByRole('button', { name: 'Approve' }).click();
+  await expect(page.getByRole('region', { name: 'App version' })).toBeVisible();
+  record(repo, [verdicts], 'actions');
+  await page.keyboard.press('g');
+  await page.keyboard.press('s');
+  const options = page.getByRole('radiogroup', { name: 'Verdict' });
+  await options.getByRole('radio', { name: 'Needs fixes' }).click();
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Needs fixes');
+  await options.getByRole('radio', { name: 'Ready for colleagues' }).click();
+  await expect(page.getByRole('banner').getByTitle('Your verdict')).toHaveText('Ready for colleagues');
   repo.run('say', '--question', 'Is that right?');
   await expect(page.getByRole('status', { name: 'Session' })).toHaveText('Needs you');
 
-  await expect.poll(async () => (await played(page)).length).toBeGreaterThan(0);
-  const moved = (await played(page)).filter(one =>
-    one.keyframes.some(frame => Object.keys(frame).some(key => !['opacity', 'offset', 'easing', 'composite'].includes(key))),
-  );
+  const ids = new Set((await played(page)).map(one => one.id));
+  for (const id of ['row-fade', 'fold-fade', 'viewed-label', 'panel-fade', 'edge-in', 'popover-in', 'popover-out', 'pane-enter', 'verdict-in', 'verdict-old']) expect(ids, id).toContain(id);
+  for (const id of ['pulse', 'chip-travel', 'verdict-chip', 'verdict-width', 'panel-width', 'fold-rows', 'fold-turn', 'popover-settle']) expect(ids, id).not.toContain(id);
+  const moved = (await played(page)).filter(one => one.keyframes.some(frame => Object.keys(frame).some(key => !FADES.includes(key))));
   expect(moved.map(one => one.id)).toEqual([]);
-  expect((await played(page)).map(one => one.id)).not.toContain('pulse');
+  // What CSS moves, the stepper's marker and fills, only fades.
+  expect(await page.locator('.progress-marker').evaluate(marker => getComputedStyle(marker).transitionProperty)).toBe('opacity');
+  expect(await page.locator('.progress > .segment').first().evaluate(segment => getComputedStyle(segment, '::after').transitionProperty)).toBe('opacity');
   await expect(rail(page).locator('.leaving')).toHaveCount(0);
 });
 

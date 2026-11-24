@@ -1,5 +1,6 @@
 import { tooLong } from '../words';
 import { icon } from './icons';
+import { animate, FADE_IN, reduced } from './motion';
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -40,12 +41,19 @@ export function openDialog(label: string, returnTo: () => Element | null, ...con
     if (event.target === dialog) dialog.close();
   });
   dialog.addEventListener('close', () => {
-    dialog.remove();
     const back = returnTo();
     if (back instanceof HTMLElement) back.focus();
+    // Closed at once; what was open stays drawn, inert, while it fades.
+    dialog.inert = true;
+    dialog.setAttribute('aria-hidden', 'true');
+    dialog.classList.add('leaving');
+    const out = animate(dialog, 'popover-out', [{ opacity: 1 }, { opacity: 0 }], { ms: 80, curve: 'ease-in', fill: 'forwards' });
+    out.finished.then(() => { dialog.remove(); }, () => { dialog.remove(); });
   });
   document.body.append(dialog);
   dialog.showModal();
+  animate(dialog, 'popover-in', FADE_IN, { ms: 'fast', curve: 'linear' });
+  if (!reduced()) animate(dialog, 'popover-settle', [{ transform: 'translateY(-4px) scale(0.98)' }, { transform: 'none' }], { ms: 'base', curve: 'ease-out' });
   return dialog;
 }
 
