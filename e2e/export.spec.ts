@@ -83,6 +83,9 @@ test('the export shows the whole walkthrough as one read-only document, offline,
   await expect(folded.getByText('Binary image · 1280 × 800 · added', { exact: true })).toBeVisible();
   await expect(folded.locator('.fold-path')).toHaveText(['gen.txt', 'docs/shot.gif']);
   await expect(folded.locator('.fold-path wbr')).toHaveCount(1);
+  // Each skimmed file with its diff sits 32px below the one before it, as files in a step do.
+  const [first, second] = await Promise.all([0, 1].map(at => folded.getByRole('list', { name: 'Folded files' }).getByRole('listitem').nth(at).boundingBox()));
+  expect((second?.y ?? 0) - ((first?.y ?? 0) + (first?.height ?? 0))).toBe(32);
   await expect(exported.getByRole('region', { name: 'Criteria' }).getByText('A person can log in.')).toBeVisible();
   await expect(exported.getByRole('button')).toHaveCount(0);
   await expect(exported.getByRole('textbox')).toHaveCount(0);

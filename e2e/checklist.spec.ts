@@ -1,3 +1,4 @@
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './walkthrough';
 
 const steps = [
@@ -116,4 +117,72 @@ test('checklist marks and rail states are named for screen readers and in their 
   const items = page.getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
   for (const [at, mark] of ['Not checked yet', 'Not met', 'Not checked yet'].entries())
     await expect(items.nth(at).getByRole('img').first()).toHaveAccessibleName(mark);
+});
+
+/** A design token as the browser resolves it for colour, in the page's current theme. */
+const tokenColor = (page: Page, token: string) =>
+  page.evaluate(name => {
+    const probe = document.body.appendChild(document.createElement('span'));
+    probe.style.color = `var(${name})`;
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
+
+const marked = {
+  title: 'Acceptance criteria',
+  items: [
+    { status: 'met', mark: 'met', text: 'A todo can have a due date.', steps: ['1'] },
+    { status: 'partly met', mark: 'partly', text: 'Overdue todos show in red.', steps: ['1'] },
+    { status: 'not met', mark: 'not-met', text: 'Due dates sort the list.', steps: ['1'] },
+    { status: 'not checked', mark: 'unchecked', text: 'Due dates survive a reload.', steps: ['1'] },
+  ],
+};
+
+test('a checklist status wears its colour everywhere it shows: met green, partly amber, not met rust, not checked muted', async ({ page, repo }) => {
+  repo.record(marked, 'checklist');
+  const at = (address: string) => page.goto(`${page.url().split('#')[0] ?? ''}#${address}`);
+  const expectColours = async (shown: Locator) => {
+    await expect(shown).toHaveCount(4);
+    for (const [index, token] of ['--met', '--amber', '--rust', '--muted'].entries())
+      await expect(shown.nth(index)).toHaveCSS('color', await tokenColor(page, token));
+  };
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await at('1');
+    await expectColours(page.getByRole('complementary', { name: 'In this step' }).locator('li[data-mark] > .icon'));
+    const left = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Due dates sort the list.' });
+    await expect(left.locator('.icon')).toHaveCSS('color', await tokenColor(page, '--rust'));
+
+    await at('checklist');
+    const items = page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
+    await expectColours(items.locator('> .icon'));
+    await expectColours(items.locator('.item-status'));
+
+    await at('summary');
+    await expectColours(page.getByRole('complementary', { name: 'Finish' }).locator('.rail-checklist .icon'));
+  }
+
+  await page.keyboard.press('?');
+  const help = page.getByRole('dialog', { name: 'Help: what things mean' });
+  for (const words of ['Met, in green', 'Partly met, in amber', 'Not met, in rust', 'Not checked yet, in grey'])
+    await expect(help.getByRole('row').filter({ hasText: words })).toHaveCount(1);
+});
+
+test('a long checklist item holds to two lines in To review, with all of it in its tooltip and on its page', async ({ page, repo }) => {
+  const text = Array.from({ length: 6 }, () => 'A todo with a due date in the past shows as overdue in the list.').join(' ');
+  repo.record({ title: 'Acceptance criteria', items: [{ status: 'not met', mark: 'not-met', text }] }, 'checklist');
+  const row = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: text });
+  const name = row.locator('.queue-name');
+  await expect(name).toHaveAttribute('title', text);
+  const lines = (shown: Locator) =>
+    shown.evaluate(box => Math.round(box.getBoundingClientRect().height / parseFloat(getComputedStyle(box).lineHeight)));
+  expect(await lines(name)).toBe(2);
+  expect(await name.evaluate(box => box.scrollHeight > box.clientHeight)).toBe(true);
+
+  await row.click();
+
+  const full = page.getByRole('main').locator('.item-text');
+  await expect(full).toHaveText(text);
+  expect(await lines(full)).toBeGreaterThan(2);
 });

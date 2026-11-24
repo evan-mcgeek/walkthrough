@@ -79,7 +79,7 @@
 .ledger-mark > .icon {
   display: block;
   margin-top: 2px;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 .ledger-row[data-state='decided'] .ledger-mark > .icon {
@@ -368,11 +368,7 @@
 .rail-checklist .icon {
   flex: none;
   margin-top: 1px;
-  color: var(--muted);
-}
-
-.rail-checklist [data-mark='not-met'] > .icon {
-  color: var(--rust);
+  color: var(--status, var(--muted));
 }
 
 /* At phone width the rail drops under the ledger behind a rule. */

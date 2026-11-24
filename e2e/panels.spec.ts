@@ -195,8 +195,8 @@ test('the checklist panel says what it counts and what it is for, and each item 
   });
   expect(line.y).toBeGreaterThanOrEqual(text.bottom);
   expect(line.x).toBe(text.x);
-  await expect(met.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--muted'));
-  await expect(notMet.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--amber'));
+  await expect(met.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--met'));
+  await expect(notMet.locator('.item-status')).toHaveCSS('color', await tokenColor(page, '--rust'));
 
   await notMet.getByRole('link', { name: 'Step 2' }).click();
   await expect(step(page, 'App version')).toBeVisible();

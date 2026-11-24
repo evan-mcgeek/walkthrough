@@ -44,6 +44,13 @@ const STATUSES = [
   ['gone', 'Gone', 'The session stopped listening; what you send waits for it'],
 ] as const;
 
+const CHECKLIST_COLOURS = [
+  ['met', 'green'],
+  ['partly', 'amber'],
+  ['not-met', 'rust'],
+  ['unchecked', 'grey'],
+] as const;
+
 /** A legend table: what each mark shows, then what it means. */
 const legend = (rows: [Node, string][]) =>
   el('table', { className: 'keys legend' }, el('tbody', {}, ...rows.map(([mark, means]) => el('tr', {}, el('td', {}, mark), el('td', {}, means)))));
@@ -94,7 +101,7 @@ function meanings(): HTMLElement[] {
       group('Session status'),
       legend(statuses),
       group('Checklist items'),
-      legend((['met', 'partly', 'not-met', 'unchecked'] as const).map(means)),
+      legend(CHECKLIST_COLOURS.map(([name, colour]) => [rowIcon(name), `${MEANS[name] ?? ''}, in ${colour}`])),
     ),
   ];
 }

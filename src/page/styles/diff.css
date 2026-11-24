@@ -11,7 +11,7 @@
   --d2h-border-color: var(--rule);
   --d2h-dim-color: var(--muted);
   --d2h-line-border-color: transparent;
-  --d2h-file-header-bg-color: var(--canvas);
+  --d2h-file-header-bg-color: var(--surface-tint);
   --d2h-file-header-border-color: var(--rule-soft);
   --d2h-ins-bg-color: var(--diff-add);
   --d2h-ins-border-color: transparent;
@@ -34,11 +34,16 @@
 .diff .d2h-file-wrapper {
   margin: 0;
   border: 0;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--control-edge);
   border-radius: 0;
 }
 
-/* Files stack with no gap, opened or collapsed, so the list keeps its rhythm as a file opens; a collapsed file keeps only its header. */
+/* Each file after the first sits 32px below the one before it, opened or collapsed, so it reads as a file of its own. */
+.diff .d2h-file-wrapper:not([hidden]) ~ .d2h-file-wrapper:not([hidden]) {
+  margin-top: var(--s6);
+}
+
+/* A collapsed file keeps only its header. */
 .diff .d2h-file-wrapper.closed:not(.closing) > :not(.d2h-file-header) {
   display: none;
 }
@@ -142,6 +147,12 @@
 .viewed-toggle[aria-pressed='true'] {
   background: var(--surface-tint);
   color: var(--ink-secondary);
+}
+
+/* The header is on surface tint, so hover and pressed step to the canvas to still show. */
+.diff .d2h-file-header :is(.icon-button, .viewed-toggle):hover,
+.diff .d2h-file-header .viewed-toggle[aria-pressed='true'] {
+  background: var(--canvas);
 }
 
 .viewed-toggle[aria-pressed='false'] span {

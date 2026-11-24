@@ -99,11 +99,18 @@
 
 .queue-item > .icon {
   margin-top: 1px;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 .queue-title {
   min-width: 0;
+}
+
+.queue-name.clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .queue-sub {
@@ -123,17 +130,16 @@
   font-weight: 600;
 }
 
-.queue-item[aria-current] > .icon,
+.queue-item[aria-current] > .icon {
+  color: var(--status, var(--accent));
+}
+
 .queue-item[data-state='read'] > .icon {
   color: var(--accent);
 }
 
 .queue-item[data-state='reopened'] > .icon {
   color: var(--amber);
-}
-
-.queue-item[data-state='not-met'] > .icon {
-  color: var(--rust);
 }
 
 .queue-item[data-state='folded'] .queue-title {
@@ -305,7 +311,7 @@
   flex: none;
   width: 14px;
   height: 14px;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 .facts-file {
@@ -341,8 +347,13 @@
   color: var(--accent-text);
 }
 
-.facts [data-mark='not-met'] > .icon {
-  color: var(--rust);
+/* A criterion that wraps keeps its mark on its first line. */
+.facts li[data-mark] {
+  align-items: flex-start;
+}
+
+.facts li[data-mark] > .icon {
+  margin-top: 2px;
 }
 
 .title-row {
@@ -917,11 +928,7 @@
 
 .checklist li > .icon {
   margin-top: 2px;
-  color: var(--muted);
-}
-
-.checklist li[data-mark='not-met'] > .icon {
-  color: var(--rust);
+  color: var(--status, var(--muted));
 }
 
 .item-body {
@@ -943,8 +950,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.checklist li:is([data-mark='partly'], [data-mark='not-met']) .item-status {
-  color: var(--amber);
+.item-status {
+  color: var(--status, var(--muted));
 }
 
 .item-steps {

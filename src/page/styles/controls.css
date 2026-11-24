@@ -356,6 +356,19 @@ select:disabled {
   border-style: dashed;
 }
 
+/* A checklist status's colour, for its icon and words wherever it shows; not checked yet has none and stays muted. */
+:is([data-mark='met'], [data-state='met']) {
+  --status: var(--met);
+}
+
+:is([data-mark='partly'], [data-state='partly']) {
+  --status: var(--amber);
+}
+
+:is([data-mark='not-met'], [data-state='not-met']) {
+  --status: var(--rust);
+}
+
 .counter {
   background: var(--surface-tint);
   color: var(--muted);

@@ -192,7 +192,7 @@
 
 .help-mark {
   display: block;
-  color: var(--muted);
+  color: var(--status, var(--muted));
 }
 
 .help-mark:is([data-state='current'], [data-state='read']) {
@@ -205,10 +205,6 @@
 
 .help-mark[data-state='reopened'] {
   color: var(--amber);
-}
-
-.help-mark[data-state='not-met'] {
-  color: var(--rust);
 }
 
 .legend .segment {

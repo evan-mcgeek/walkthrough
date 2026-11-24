@@ -2083,12 +2083,15 @@ function queueRow(
   sub: { text: string; attention?: boolean } | null,
   // Only a step is one of a sequence; the session's messages and the checklist are pages of their own.
   current: false | 'step' | 'page',
+  // A long title holds to two lines, all of it in its tooltip.
+  clamped = false,
 ): HTMLElement {
+  const name = clamped ? el('span', { className: 'queue-name clamped', title }, title) : title;
   const row = el(
     'a',
     { href: `#${encodeURIComponent(address)}`, className: 'queue-item' },
     icon(mark, stateName(mark)),
-    el('span', { className: 'queue-title' }, title, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
+    el('span', { className: 'queue-title' }, name, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
   );
   row.dataset['state'] = state;
   row.dataset['key'] = `row:${address}`;
@@ -2201,7 +2204,7 @@ function queueView(view: View): HTMLElement[] {
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
-    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page'));
+    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? 'unchecked', item.mark ?? 'unchecked', plain(item.text), { text: 'Checklist' }, at && 'page', true));
     left.push([`checklist-${item.id}`, plain(item.text)]);
   }
   const counted = steps.length > 0 || rows.length > 0;

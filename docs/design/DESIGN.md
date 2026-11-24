@@ -25,6 +25,7 @@ colors:
   amber: "#8a5a00"
   amber-wash: "#fbf1dc"
   rust: "#9a3412"
+  met: "#1a7431"
   live: "#2b7a4b"
   diff-add: "#e8f6ec"
   diff-add-gutter: "#d3eedc"
@@ -57,6 +58,7 @@ colors:
   amber-dark: "#e3b260"
   amber-wash-dark: "#33280f"
   rust-dark: "#f0a083"
+  met-dark: "#7dd08b"
   live-dark: "#6fcf97"
   diff-add-dark: "#14281c"
   diff-add-gutter-dark: "#193423"
@@ -257,7 +259,7 @@ components:
     width: "280px"
     padding: "2px 0 2px 16px"
   file-header:
-    backgroundColor: "{colors.canvas}"
+    backgroundColor: "{colors.surface-tint}"
     height: "36px"
   viewed-toggle:
     textColor: "{colors.muted}"
@@ -367,7 +369,7 @@ It refuses two looks by name: the code-host pull-request page clone, and the ter
 
 ## Colors
 
-A cool grey neutral scale with a single, person-configurable accent and three narrowly scoped status hues, each token defined once as a light and dark pair (`light-dark()`); the theme follows the system unless the person picks one, and an accent class re-points the accent family.
+A cool grey neutral scale with a single, person-configurable accent and four narrowly scoped status hues, each token defined once as a light and dark pair (`light-dark()`); the theme follows the system unless the person picks one, and an accent class re-points the accent family.
 
 ### Primary (the accent)
 - **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, decided segments of the progress bar, the gutter "+" for a new comment, and the mark.
@@ -377,8 +379,9 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 - **Petrol and Berry** (`petrol`, `berry`, with dark pairs): alternative accent presets a person can pick in Appearance. Each re-points the whole accent family (fill, hover, text, wash, line, selection) together; the sidecar carries the full sets.
 
 ### Status
-- **Reopened Amber** (`amber`, `amber-wash`): findings (label, gutter marker, stripe tick, "N open findings" in the action bar), reopened steps and progress segments, "Needs you" and "Offline · retrying" statuses, attention notices and banners (wash fill, no border), folded-file problems, the Flag chip during a swipe, and the session's question box (1px amber border). Amber means "this changed, is wrong, or wants you".
-- **Not-met Rust** (`rust`): checklist items, facts-rail criteria and queue entries whose status is not met. Icon colour only; it never fills a surface.
+- **Reopened Amber** (`amber`, `amber-wash`): findings (label, gutter marker, stripe tick, "N open findings" in the action bar), reopened steps and progress segments, "Needs you" and "Offline · retrying" statuses, attention notices and banners (wash fill, no border), folded-file problems, the Flag chip during a swipe, the session's question box (1px amber border), and a partly met checklist item's icon and status words. Amber means "this changed, is wrong, or wants you".
+- **Not-met Rust** (`rust`): a not met checklist item's icon and status words, wherever the item shows. Icon and text colour only; it never fills a surface.
+- **Met Green** (`met`): a met checklist item's icon and status words, wherever the item shows (the checklist panel and page, the Summary's rail, "In this step" and To review). Its own token, AA on canvas and surface tint in both themes, apart from the Listening green and the diff's addition green. Icon and text colour only; it never marks a decision.
 - **Listening Green** (`live`): the Listening session status dot and label. It is session health, never a decision, nothing else.
 
 ### Diff
@@ -389,14 +392,14 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, the current queue item, verdict options and popovers.
 - **Surface** (`surface`): the queue rail, the edge stripes of hidden tool windows, secondary buttons, the code pane, the overview stripe, key caps, banners and the session-message rows.
-- **Surface Tint** (`surface-tint`): hover fill (including edge-stripe buttons) and every pressed or chosen neutral state (segmented controls, Viewed, the chosen verdict and accent option), counters, file chips, draft pills, inline code, skeleton bars.
-- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control.
+- **Surface Tint** (`surface-tint`): hover fill (including edge-stripe buttons) and every pressed or chosen neutral state (segmented controls, Viewed, the chosen verdict and accent option), counters, file chips, draft pills, inline code, skeleton bars, and the file header row.
+- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control and the rule above each file.
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text and all reading prose; secondary labels, decided state, verdict status, quotes and table values; the single secondary grey per theme, for metadata, counts, undecided state, status-gone, placeholders, line numbers, hunk headers and resting icons.
 - **Progress Read** (`progress-read`): read and current segments of the progress bar.
 - **Marker Note** (`marker-note`): the gutter marker and stripe tick for an agent note that is not a finding. A data mark, quieter than muted in light so findings outrank it.
 
 ### Named Rules
-**The Grey Verdict Rule.** A recorded decision or verdict is shown in neutral greys only: decided is a filled dot in secondary ink, the chosen verdict is an ink border on surface tint. Green appears in exactly two places, diff additions and the Listening status, and never next to a decision. (The swipe chip is gesture feedback, not recorded state: accent for Approve, amber for Flag.)
+**The Grey Verdict Rule.** A recorded decision or verdict is shown in neutral greys only: decided is a filled dot in secondary ink, the chosen verdict is an ink border on surface tint. Green appears in exactly three places, diff additions, the Listening status and a met checklist status, and never on a decision. (The swipe chip is gesture feedback, not recorded state: accent for Approve, amber for Flag.)
 
 **The One Accent Rule.** The accent marks the primary action, focus, the caret, links, decided progress, picked lines, the reviewer's own words and the rule beside a File Note or the current "Files" entry. It is never a heading colour, a pressed-control fill, a section fill or a decorative accent; the one surface it fills is the reviewer's own comment.
 
@@ -406,7 +409,7 @@ A cool grey neutral scale with a single, person-configurable accent and three na
 
 **The Three Greys Rule.** Text and interface icons use exactly three greys per theme: ink, secondary ink and muted. Data marks (progress-read, marker-note) are fills on the instrument, not text.
 
-**The Narrow Status Rule.** Amber is reopened, finding or attention; rust is not met; green is listening. If a new state does not mean one of those, it is grey.
+**The Narrow Status Rule.** Amber is reopened, finding, attention or partly met; rust is not met; the `met` green is met; the Listening green is listening. If a new state does not mean one of those, it is grey.
 
 ## Typography
 
@@ -441,7 +444,8 @@ The File Note takes the same shape with the rule in the accent, as the one colou
 ## Layout
 
 The desktop frame is a fixed 44px header over a row of panes arranged as JetBrains-style tool windows around the step. The queue ("To review", open by default) is a 224px rail on the surface tone at left; the open step fills the main pane (16px top and bottom, 24px sides). The explanation column splits a 420px prose column (24px padding, its own action bar at the foot) from the code, which moves to the surface tone. The checklist is a 288px column at the right that ends with a "Whole walkthrough" block above a rule. Each window has a title bar with a hide button (keys 1 to 3). A hidden queue or explanation column collapses into a 26px edge stripe at the left, and a hidden checklist into one at the right, so nothing disappears without leaving a handle. When the queue is hidden, previous and next step navigation sits above the title. Which windows are open is kept for the person with their Appearance, so every walkthrough opens the way they left the last one.
-The step head is a two-column grid: the title, state and explanation up to 68ch, and the "In this step" facts rail (220 to 280px) at the right, 32px apart. Below it come the files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on a hairline, and files stack with no gap between them, opened or collapsed, so every header sits on the rule that ends the file before it and opening a file moves nothing above it.
+The step head is a two-column grid: the title, state and explanation up to 68ch, and the "In this step" facts rail (220 to 280px) at the right, 32px apart. Below it come the files, then the action bar, docked to the bottom of the pane as a sticky row above a soft hairline. Diff files are not cards: each file opens with a full-bleed sticky header row on surface tint under a 1px control-edge rule, and each file after the first sits 32px below the one before it, opened or collapsed, so where one file ends reads at a glance and opening a file moves nothing above it.
+A folded step's shown diffs and the export keep the same rhythm.
 A file's own explanation, when the session gave one, has two places.
 With the explanation column hidden (the default) and at 390px, it is a File Note between the header and the diff: 14px secondary ink at 1.55, held to 68ch, its text starting where the note rows' does (116px in; on a phone the rule sits at the file's left edge) behind a 2px accent rule, 12px above and below.
 With the explanation column open, the code pane holds only code: under the step's overview the column lists the step's explained files, in the step's order, under the heading "Files" (Meta, muted), each as its path in Mono Label ink linking to the file and its explanation below in Body.
@@ -508,11 +512,12 @@ The IDE pattern, played straight.
 - **No tool panel:** there is no bottom panel or strip. Notes live on their lines (counted in "In this step"); session messages and notes on removed code live on the Session messages page, whose row in To review counts both ("1 file not in a step · 2 on removed code"). Keys 1 to 3 toggle To review, Checklist and Explanation.
 
 ### Queue ("To review")
-The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; changed-since-decided amber (sub-line "Changed since you decided"); not met rust; session messages muted. The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
+The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; changed-since-decided amber (sub-line "Changed since you decided"); not met rust; session messages muted. A checklist item's row holds its text to two lines, cut with an ellipsis, with all of it in the text's tooltip; the item's own page shows all of it.
+The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
 A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding", which fits the rail on one line; its decision stays.
 
 ### In This Step (facts rail)
-Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons.
+Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons in their status colours, each icon on its criterion's first line.
 
 ### Checklist
 The same item layout in the 288px panel, on the checklist's own page and in the Summary's Checklist section.
@@ -520,7 +525,8 @@ The title carries a counter that says what it counts, "15 of 21 met", in the sam
 The session's optional description sits under the title as one 13px muted line, such as "Each acceptance criterion from the tickets, and the steps that deliver it."
 Each item reads down: the state icon and the item's text (Body UI) at the full width, then one 12px muted line with the session's status and the steps it links to, "partly met: V still runs after Stop · Steps 4, 10, 13" ("Step 2" for one, nothing for none).
 The step numbers are plain accent-text links, underlined on hover, each with its step's title as its tooltip; "Steps" and its numbers wrap as one piece.
-A status marked partly or not met is amber text; met and unchecked stay muted.
+The status words and the icon take the status's colour: met in the `met` green, partly met in amber, not met in rust, not checked yet muted.
+The same colours mark the item's icon wherever it shows: the panel, its page, the Summary's rail, "In this step" and To review.
 Inline code in an item's text never breaks inside the code.
 On the checklist page an item's actions follow under its line.
 
@@ -535,10 +541,10 @@ The step is titled "Files to skim" on the page. A session writes a sentence per 
 - **Summary (collapsed):** one 40px line in a 1px rule box with 7px corners: the chevron, "18 files" (never wrapping), then each distinct reason once, joined by " · " in muted 13px text and cut with one ellipsis at the end of the line, then the problem count as a reopened tag. The summary's tooltip lists every distinct reason. Opened, the reasons leave the line.
 - **Problems:** the session's problems sit right under the summary, 8px below it, whether the files are open or not: amber-wash rows with 6px corners, a warning icon and the problem in ink.
 - **Files (opened):** a list under a rule, one row per file on soft rules with 12px padding: the mono path, the reason as 13px secondary-ink text that wraps, and a small Show diff button at the right; the three columns line up from row to row, the path column taking at most 45%. At 390px the reason moves under the path, full width, and Show diff stays beside the path.
-- **Export:** the files are listed open with their diffs, each headed by its path and reason in the same two columns, the problem above the list; no Show diff buttons. An image shows as "Binary image · W × H · replaced".
+- **Export:** the files are listed open with their diffs, each headed by its path and reason in the same two columns, each file after the first 32px below the one before it behind a control-edge rule, the problem above the list; no Show diff buttons. An image shows as "Binary image · W × H · replaced".
 
 ### File Header
-A 36px sticky row on the canvas: a chevron toggle (collapse/expand), the mono file name, tabular +/- counts, and a Viewed toggle at the right. Viewed is an eye icon button (4px corners, 4px 6px, muted); once pressed it shows the eye plus "Viewed" in secondary ink on surface tint. Viewed is a reading mark, not a decision, and never takes the accent.
+A 36px sticky row on surface tint under a 1px control-edge rule: a chevron toggle (collapse/expand), the mono file name, tabular +/- counts, and a Viewed toggle at the right. Viewed is an eye icon button (4px corners, 4px 6px, muted); once pressed it shows the eye plus "Viewed" in secondary ink. On the tinted row, hover and pressed step to the canvas so they still show. Viewed is a reading mark, not a decision, and never takes the accent.
 
 ### Your Comments
 The reviewer's own comment is an accent-wash box with a 1px accent-line border, 8px corners and 12px 16px padding, up to 70ch: a "Your comment" heading in 650 accent text with a person icon, edit and delete icon buttons in accent text, the 14/1.55 body in primary ink, and a 12.5px destination hint (for example "Joins the fix list"). On hover or focus of a line number, a 20px accent "+" square appears in the gutter to start a comment; a picked range offers "Ask about lines" and "Comment".
@@ -553,7 +559,7 @@ The title with an "N still open" state and one plain 14.5px count line in second
 - **Finish rail (288px):** sticky, behind a 1px rule with 24px left padding, like the "In this step" rail. Verdict heading, "No verdict yet." or "Your verdict: <label>", the session's verdict options stacked full width (radio buttons: canvas, 1px control edge, 4px corners; chosen = secondary-ink border, surface tint, 600, filled icon), then the finishing action full width (primary, disabled until a verdict is chosen) and any secondary action, one 12.5px hint naming what goes where ("Choose a verdict first." while the finishing action waits, then the session's hints for the verdict and for finishing, such as "Fix list: 2 flags and 2 of your comments."), then the checklist, compact: "Checklist 2 of 5 met", each item its mark and text, its status in the row's tooltip. At 390px the rail drops under the ledger behind a top rule.
 
 ### Help: what things mean
-Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), and the session statuses: then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
+Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), the session statuses, and the checklist statuses with their colours in words ("Met, in green", "Partly met, in amber", "Not met, in rust", "Not checked yet, in grey"): then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
 
 ### Popovers: Appearance and Help
 Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Help** (1040px, 60px from the top, one column at 390px): two-column tables, rows on soft rules; its key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
@@ -596,7 +602,7 @@ A redraw from polling continues what is playing and starts nothing new.
 - **Tool windows** (To review and Checklist): hiding one fades its contents (100ms linear), then its width closes (200ms ease-out after 60ms) while what it holds keeps its open width, and a new edge stripe opens by the same amount at the same time, so nothing beside it jumps; the edge button fades in after 200ms (120ms).
   Showing grows the width from the stripe's (320ms ease-out) with the contents fading in after 120ms (200ms).
   The explanation column, a layout of the step rather than a window beside it, snaps.
-- **Files:** a file closes by its height (200ms ease-out after an 80ms content fade) and opens by its height (320ms ease-out) with its contents fading in after 80ms (200ms); headers stay flush so nothing jumps, and the chevron turns 90° (120ms ease-out).
+- **Files:** a file closes by its height (200ms ease-out after an 80ms content fade) and opens by its height (320ms ease-out) with its contents fading in after 80ms (200ms); the files below move with it and nothing above it moves, and the chevron turns 90° (120ms ease-out).
   Viewed folds the file, dims its name (200ms colour) and reveals the "Viewed" label in its toggle (width and fade, 200ms).
   A file turned back mid-motion goes on from the height it has.
 - **Popovers** (Appearance, Help and the menus): open from the control that opened them, 120ms fade with a 200ms settle from 4px up at 98% scale.
@@ -628,7 +634,7 @@ A redraw from polling continues what is playing and starts nothing new.
 - **Do** self-host JetBrains Mono for the shipped app; a strict CSP will not load it from a font CDN.
 
 ### Don't:
-- **Don't** colour any decision or verdict green, or tint Approve green; green is reserved for diff additions and the Listening status.
+- **Don't** colour any decision or verdict green, or tint Approve green; green is reserved for diff additions, the Listening status and a met checklist status.
 - **Don't** imitate a code-host pull-request page (its header bands, tab strip, avatar-heavy timeline, its Viewed checkbox) or dress the page as a terminal (dark-only, all-mono, prompt glyphs).
 - **Don't** draw state as outlined or filled pills.
 - **Don't** fill pressed or selected controls (segmented controls, Viewed, verdict and accent options) with the accent; pressed is surface tint and ink.
@@ -640,5 +646,5 @@ A redraw from polling continues what is playing and starts nothing new.
 - **Don't** add shadows beyond the float shadow, the primary shade and the gutter lift.
 - **Don't** crossfade panes or bounce anything; motion leaves before it enters and settles without overshoot.
 - **Don't** add a fourth text grey.
-- **Don't** use the accent for headings or decoration, or use amber and rust for anything but findings, reopened, attention and not met.
+- **Don't** use the accent for headings or decoration, or use amber and rust for anything but findings, reopened, attention, partly met and not met.
 - **Don't** use text glyphs or emoji as status icons; use the drawn SVG set.
