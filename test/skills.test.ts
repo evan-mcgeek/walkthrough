@@ -25,7 +25,7 @@ describe('the skills', () => {
   });
 
   test('the policy template has the parts the skills name', () => {
-    const template = fs.readFileSync(path.join(SKILLS, 'walkthrough', 'REVIEWER.md'), 'utf8');
+    const template = fs.readFileSync(path.join(SKILLS, 'walkthrough', 'REVIEW.md'), 'utf8');
     const parts = [...template.matchAll(/^## (.+)$/gm)].map(match => match[1]);
 
     expect(parts).toEqual(['Shared rules', 'My change', "Someone else's change"]);

@@ -7,10 +7,10 @@ import { parseArgs } from 'node:util';
 import { readInput } from './input';
 import { makeInbox, stateDir } from './paths';
 
-const TEMPLATE = path.join(import.meta.dirname, '..', 'skills', 'walkthrough', 'REVIEWER.md');
+const TEMPLATE = path.join(import.meta.dirname, '..', 'skills', 'walkthrough', 'REVIEW.md');
 
 const policyPath = () =>
-  path.join(process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config'), 'walkthrough', 'REVIEWER.md');
+  path.join(process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config'), 'walkthrough', 'REVIEW.md');
 
 const read = (file: string) => fs.readFileSync(file);
 

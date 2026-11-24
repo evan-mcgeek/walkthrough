@@ -4,9 +4,9 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { inboxOf, makeRepo } from './helpers';
 
-const TEMPLATE = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'plugin', 'skills', 'walkthrough', 'REVIEWER.md'), 'utf8');
+const TEMPLATE = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'plugin', 'skills', 'walkthrough', 'REVIEW.md'), 'utf8');
 
-const policyIn = (config: string) => path.join(config, 'walkthrough', 'REVIEWER.md');
+const policyIn = (config: string) => path.join(config, 'walkthrough', 'REVIEW.md');
 
 describe('walkthrough policy', () => {
   test('goes from none to the template to the person own, comparing and copying bytes only', () => {
@@ -24,7 +24,7 @@ describe('walkthrough policy', () => {
     expect(repo.run('policy').stdout).toContain(`template: the review policy at ${policy} is the unchanged template.`);
     expect(repo.run('policy', 'init').stderr).toContain(`there is a review policy at ${policy} already`);
 
-    const draft = path.join(inboxOf(none), 'REVIEWER.md');
+    const draft = path.join(inboxOf(none), 'REVIEW.md');
     fs.writeFileSync(draft, `${TEMPLATE}\n- One more rule.\n`);
     expect(repo.run('policy', 'save', '--file', draft).stdout).toBe(`Saved the review policy at ${policy}.\n`);
     expect(fs.existsSync(draft)).toBe(false);
@@ -48,7 +48,7 @@ describe('walkthrough policy', () => {
     run('policy', 'init');
 
     const released = `${TEMPLATE}\n- A rule from the next release.\n`;
-    fs.writeFileSync(path.join(plugin, 'skills', 'walkthrough', 'REVIEWER.md'), released);
+    fs.writeFileSync(path.join(plugin, 'skills', 'walkthrough', 'REVIEW.md'), released);
 
     expect(run('policy').stdout).toContain(`template: the review policy at ${policy} is an earlier unchanged template`);
     expect(run('policy', 'show').stdout).toBe(released);

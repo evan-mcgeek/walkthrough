@@ -4,7 +4,7 @@
 
 Walkthrough is a Claude Code plugin that walks you through a code change on a local page, one step at a time.
 Your own Claude Code session reads the change, splits it into steps, explains each one and answers your questions right on the page.
-How it reviews comes from your own rules in `REVIEWER.md` and from the project's instructions for agents.
+How it reviews comes from your own rules in `REVIEW.md` and from the project's instructions for agents.
 Nothing about your language, team or code host is hardcoded in the tool.
 
 I built it for two jobs: understanding what an agent wrote before it goes to colleagues, and reviewing a colleague's pull request.
@@ -64,7 +64,7 @@ These are the two kinds of walkthrough, your own change and a review request.
 The page header and the list of walkthroughs show which kind each one is.
 
 The first time, the session finds no review policy and offers one.
-Your policy lives at `~/.config/walkthrough/REVIEWER.md` (or under `$XDG_CONFIG_HOME`), outside every project, and starts as a copy of [the template](plugin/skills/walkthrough/REVIEWER.md).
+Your policy lives at `~/.config/walkthrough/REVIEW.md` (or under `$XDG_CONFIG_HOME`), outside every project, and starts as a copy of [the template](plugin/skills/walkthrough/REVIEW.md).
 
 1. Say "later" and the template's defaults apply to this walkthrough.
 2. Say "now" and the session goes through the policy section by section, asks how you actually review that part, and edits your copy to match.
@@ -172,7 +172,7 @@ Ask which walkthroughs you have open, and it opens a page with this repo's walkt
 
 Everything the session does follows two sources:
 
-1. **Your review policy**, `REVIEWER.md`, outside every project.
+1. **Your review policy**, `REVIEW.md`, outside every project.
    It covers how to split and order steps, how to write explanations, what the checklist tracks, which reviewers run and how their findings are checked, how drafts for colleagues are written, and which actions each kind of walkthrough offers.
    It has shared rules and a part for each kind of walkthrough, "My change" and "Someone else's change"; each command follows the shared rules and its own part.
    Every rule in it is a default you can edit.
