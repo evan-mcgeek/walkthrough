@@ -325,7 +325,7 @@ test('a card swiped while the session changed its actions comes back undecided, 
   await page.mouse.down();
   await page.mouse.move(x + 60, y, { steps: 5 });
 
-  const polled = page.waitForResponse(async answer => answer.url().includes('data/walkthrough.json') && (await answer.text()).includes('"Ship"'));
+  const polled = page.waitForResponse(async answer => answer.url().includes('data/walkthrough.json') && answer.status() === 200 && (await answer.text()).includes('"Ship"'));
   record(repo, [{ item: { type: 'step', id: '1' }, actions: [{ id: 'approve', label: 'Ship' }, { id: 'hold', label: 'Hold' }] }], 'actions');
   await polled;
   await page.mouse.move(x + 160, y, { steps: 5 });
