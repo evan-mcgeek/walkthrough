@@ -2,6 +2,7 @@
 import { execFile, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -34,11 +35,9 @@ export function gitWith(cwd: string, input: string | undefined, ...args: string[
 const execGit = promisify(execFile);
 
 // Without blocking, so a lock held meanwhile is kept fresh.
-async function gitAsync(cwd: string, input: string, ...args: string[]): Promise<string> {
-  const running = execGit('git', args, { cwd, encoding: 'utf8', maxBuffer: MAX_BUFFER });
-  running.child.stdin?.end(input);
+async function gitAsync(cwd: string, ...args: string[]): Promise<string> {
   try {
-    return (await running).stdout;
+    return (await execGit('git', args, { cwd, encoding: 'utf8', maxBuffer: MAX_BUFFER })).stdout;
   } catch (error) {
     throw new Error((error as { stderr?: string }).stderr?.trim() || `git ${args.join(' ')} failed`);
   }
@@ -106,7 +105,7 @@ export async function changeOf(cwd: string, source: Source): Promise<Change> {
 export type ChangedFile = { path: string; from?: string };
 
 export async function changedFiles(cwd: string, base: string, head: string): Promise<ChangedFile[]> {
-  const fields = (await gitAsync(cwd, '', 'diff', '--name-status', '-z', '-M', '--no-ext-diff', base, head)).split('\0');
+  const fields = (await gitAsync(cwd, 'diff', '--name-status', '-z', '-M', '--no-ext-diff', base, head)).split('\0');
   const files: ChangedFile[] = [];
   for (let at = 0; at < fields.length - 1; ) {
     const status = fields[at++] ?? '';
@@ -121,23 +120,30 @@ export async function changedFiles(cwd: string, base: string, head: string): Pro
 const orderOf = (files: ChangedFile[]) => files.map(file => file.path.replace(/[\\*?[\]#!]/g, '\\$&')).join('\n');
 
 /** The diff of just these files, in their order; a renamed file needs its base path too for the rename to show. */
-export const diffOf = async (cwd: string, base: string, head: string, files: ChangedFile[]) =>
-  files.length === 0
-    ? ''
-    : gitAsync(
-        cwd,
-        orderOf(files),
-        'diff',
-        '--no-color',
-        '--no-ext-diff',
-        '-M',
-        '-O/dev/stdin',
-        base,
-        head,
-        '--',
-        // Paths are from the repo top and name only themselves, wherever the command runs.
-        ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])).map(one => `:(top,literal)${one}`),
-      );
+export async function diffOf(cwd: string, base: string, head: string, files: ChangedFile[]): Promise<string> {
+  if (files.length === 0) return '';
+  // A file, not /dev/stdin: on Linux a child's stdin is a socket, which git cannot open by path.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'walkthrough-order-'));
+  const order = path.join(dir, 'order');
+  fs.writeFileSync(order, orderOf(files), { mode: 0o600 });
+  try {
+    return await gitAsync(
+      cwd,
+      'diff',
+      '--no-color',
+      '--no-ext-diff',
+      '-M',
+      `-O${order}`,
+      base,
+      head,
+      '--',
+      // Paths are from the repo top and name only themselves, wherever the command runs.
+      ...files.flatMap(file => (file.from ? [file.from, file.path] : [file.path])).map(one => `:(top,literal)${one}`),
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
   const result = spawnSync('git', ['cat-file', 'blob', `${rev}:${file}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
