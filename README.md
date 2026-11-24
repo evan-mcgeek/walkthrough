@@ -110,10 +110,10 @@ Uncommitted edits are left out, with a warning, and nothing is ever checked out.
    After a decision, Undo takes it back, and the session gets that too.
    Any decision stays changeable until the end, and an undecided item never reads as approved.
 8. **Summary and verdict.**
-   The last entry of the queue, or Finish review in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
+   The last entry of the queue, or Finish in the header (G S), is the Summary: every step with what you decided, what is still open first (undecided, being checked or changed since you decided) with its actions on each row, your flag notes and comments under their steps, the acceptance criteria with the session's marks already chosen, which you change only to overrule it, the comments the session drafted (`[AI]` drafts) and whether each goes out as drafted, edited or dropped, and beside it the verdict and the finishing actions.
    Criteria never wait in To review.
    You choose your verdict there, from the choices your policy offers, such as Approve, Request changes or Comment on a review request.
-   Until then the walkthrough reads "No verdict yet", and the finishing action, such as sending the fix list to the session or sending your review, waits for it.
+   Until then the finishing action, such as sending the fix list to the session or sending your review, waits for it.
    Once chosen, the verdict shows quietly in the header, on the list of walkthroughs and in the export.
 9. **The change moves.**
    When you push fixes, the same walkthrough goes on.
@@ -128,7 +128,7 @@ Around the step sit three panels, shown or hidden on their own: "To review" (the
 Each panel hides from the button in its title bar and waits as a labelled button on its edge, so nothing is ever out of reach; the keys `1` to `3` show and hide them too.
 Notes stay on their lines; what the session said outside the steps, and notes whose code was removed, wait on the Session messages page in the queue.
 By default only the queue is open.
-Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu.
+Your choice of panels, accent (Ultramarine, Petrol or Berry) and theme (System, Light or Dark) is kept for you on this machine, for every walkthrough, the list and an export; Appearance is in the header's More menu, with Help and End session.
 
 | | |
 | --- | --- |
@@ -155,7 +155,7 @@ Keys do nothing while you type, inside a menu or while a popover is open.
 | `v` | Mark the file the focus is in as viewed, or else the step's first file not viewed yet |
 | `1` to `3` | Show or hide the queue, the checklist or the explanation column |
 | `g` then `s` | Go to the end of the walkthrough |
-| `?` | Help: what things mean, and these keys |
+| `?` | Help: the icons, and these keys |
 
 To pick lines, click a line number and Shift-click another, or press Enter on the first line number and Enter on the last; for one line, press Enter on it twice.
 The picked lines then offer Ask about lines and Comment.

@@ -839,7 +839,8 @@ function actionButton(item: Item, action: Action, look: Look, small: boolean): H
   button.setAttribute('aria-pressed', String(decisionOf(item)?.action === action.id));
   button.dataset['key'] = `action:${key}:${action.id}`;
   const shortcut = item.type === 'step' && STEP_KEYS[action.id];
-  if (shortcut) button.title = withKey(shortcut.tip(action.label), shortcut.key);
+  const tip = [...(shortcut ? [withKey(shortcut.tip(action.label), shortcut.key)] : []), ...(action.consequence ? [action.consequence] : [])].join(' ');
+  if (tip) button.title = tip;
   button.onclick = () => {
     take(item, action);
   };

@@ -274,17 +274,26 @@ test('a decided note, draft or finishing action closes to one Change; the verdic
   record(
     repo,
     [
-      { item: { type: 'note', id: noteId }, actions: [{ id: 'accept', label: 'Accept', tone: 'positive' }, { id: 'reject', label: 'Reject' }] },
+      {
+        item: { type: 'note', id: noteId },
+        actions: [
+          { id: 'accept', label: 'Accept', tone: 'positive', consequence: 'Goes on the fix list.', outcome: 'Added to fixes', primary: true },
+          { id: 'reject', label: 'Reject' },
+        ],
+      },
       { item: { type: 'verdict' }, actions: [{ id: 'approve', label: 'Approve', tone: 'positive' }, { id: 'comment', label: 'Comment' }] },
       { item: { type: 'walkthrough' }, actions: [{ id: 'send', label: 'Send my review' }] },
     ],
     'actions',
   );
   const note = page.getByRole('region', { name: 'Login check' }).locator(`#note-${noteId ?? ''}`);
+  await expect(note.getByRole('button', { name: 'Accept' })).toHaveAttribute('title', 'Goes on the fix list.');
+  await expect(note.getByRole('button', { name: 'Reject' })).not.toHaveAttribute('title');
   await note.getByRole('button', { name: 'Accept' }).click();
   await expect(note.getByRole('button', { name: 'Accept' })).toHaveCount(0);
   await expect(note.getByRole('button', { name: 'Reject' })).toHaveCount(0);
-  await expect(note.locator('.tag.decided')).toHaveText('Accept');
+  await expect(note.locator('.tag.decided')).toHaveText('Added to fixes');
+  await expect(page.getByRole('status').filter({ hasText: 'Added to fixes' })).toBeVisible();
   await note.getByRole('button', { name: 'Change' }).click();
   await expect(note.getByRole('button', { name: 'Reject' })).toBeVisible();
 
