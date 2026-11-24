@@ -15,7 +15,9 @@ When they ask instead to review a change someone else asked them to review, `/wa
    With no other options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
    For a range of commits, add `--base <rev> --head <rev>` and a short `--label` to name it.
    Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "My change" part, such as `--comments 'Joins the fix list'`.
-3. Go on as "Walking through" says, until the walkthrough stops.
+3. When the policy has you ask how well the person knows the feature, ask it in the chat now, with your question tool when you have one so they pick rather than type, offering the policy's answers and saying they may skip.
+   Read the change while they answer; their answer sets how much your explanations say, as the policy says.
+4. Go on as "Walking through" says, until the walkthrough stops.
    It ends as the policy's "My change" part says, such as with a fix list the person hands to an author session.
 
 ## Walking through
