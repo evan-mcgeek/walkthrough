@@ -235,6 +235,17 @@ describe('the session status', () => {
 
     expect(await stateAt()).toBe('gone');
   });
+
+  test('is gone once a listener that still runs stops polling, and listening again when it polls', async () => {
+    repo = makeRepo({ env: { WALKTHROUGH_HEARTBEAT_STALE_MS: '1000' } });
+    repo.run('start');
+    const listener = await listening();
+
+    listener.child.kill('SIGSTOP');
+    await until('the session is gone', async () => (await stateAt()) === 'gone');
+    listener.child.kill('SIGCONT');
+    await until('the session listens', async () => (await stateAt()) === 'listening');
+  });
 });
 
 describe('walkthrough say --question --choice', () => {
