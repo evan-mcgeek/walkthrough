@@ -17,10 +17,10 @@ Design: DESIGN.md's existing marks (the "In this step" counts, the queue's amber
 
 **Blocked by:** 53 Files set apart (both edit src/page/app.ts)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Queue rows show open findings and jump to the first.
-- [ ] File headers show finding, note and own-comment counts that jump to the note.
-- [ ] "N open findings" steps through the open findings.
-- [ ] Note actions are buttons on the note.
-- [ ] Checked in light and dark, 1440px and 390px; DESIGN.md and Help match.
+- [x] Queue rows show open findings and jump to the first.
+- [x] File headers show finding, note and own-comment counts that jump to the note.
+- [x] "N open findings" steps through the open findings.
+- [x] Note actions are buttons on the note.
+- [x] Checked in light and dark, 1440px and 390px; DESIGN.md and Help match.

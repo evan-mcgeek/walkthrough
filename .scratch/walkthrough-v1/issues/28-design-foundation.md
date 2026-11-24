@@ -9,10 +9,10 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every colour comes from a semantic token defined once per theme; no inline styles; the strict CSP is unchanged and no font or asset loads from a CDN.
-- [ ] JetBrains Mono is self-hosted from a mature package and used only for code, paths, identifiers and the session label.
-- [ ] Controls have hover, focus-visible (2px indigo, 2px offset) and disabled states as specified; decided states are neutral grey, never green.
-- [ ] The header matches the board's header in light and dark, including the segmented progress bar coloured by step state.
-- [ ] Existing page tests stay green; new e2e checks cover the progress segments and status states.
+- [x] Every colour comes from a semantic token defined once per theme; no inline styles; the strict CSP is unchanged and no font or asset loads from a CDN.
+- [x] JetBrains Mono is self-hosted from a mature package and used only for code, paths, identifiers and the session label.
+- [x] Controls have hover, focus-visible (2px indigo, 2px offset) and disabled states as specified; decided states are neutral grey, never green.
+- [x] The header matches the board's header in light and dark, including the segmented progress bar coloured by step state.
+- [x] Existing page tests stay green; new e2e checks cover the progress segments and status states.

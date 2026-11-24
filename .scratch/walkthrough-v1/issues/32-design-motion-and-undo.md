@@ -8,8 +8,8 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 29 "What's left" queue and the main pane
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every animation uses the duration and curve tokens and has its reduced-motion form.
-- [ ] Undo returns the item to undecided everywhere (page, `walkthrough decisions`, listen output) and the log keeps both entries.
-- [ ] No animation runs when the page redraws from polling without a change.
+- [x] Every animation uses the duration and curve tokens and has its reduced-motion form.
+- [x] Undo returns the item to undecided everywhere (page, `walkthrough decisions`, listen output) and the log keeps both entries.
+- [x] No animation runs when the page redraws from polling without a change.

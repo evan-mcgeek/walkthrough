@@ -9,8 +9,8 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 29 "What's left" queue and the main pane, 30 Diff, notes, asks and previews restyled
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The 390px states match the phone boards in light and dark.
-- [ ] Swipe works by touch and pointer, respects reduced motion, and never decides a step whose actions the session replaced.
-- [ ] e2e at 390px covers the More menu, the queue select and both swipe directions.
+- [x] The 390px states match the phone boards in light and dark.
+- [x] Swipe works by touch and pointer, respects reduced motion, and never decides a step whose actions the session replaced.
+- [x] e2e at 390px covers the More menu, the queue select and both swipe directions.

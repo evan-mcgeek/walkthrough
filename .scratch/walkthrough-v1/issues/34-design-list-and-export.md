@@ -7,7 +7,7 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 28 Design foundation
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The list and the export match their boards.
-- [ ] The export opens offline from one file with the self-hosted font inlined and no network request.
+- [x] The list and the export match their boards.
+- [x] The export opens offline from one file with the self-hosted font inlined and no network request.

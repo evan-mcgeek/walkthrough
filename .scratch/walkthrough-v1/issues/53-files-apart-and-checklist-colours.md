@@ -16,9 +16,9 @@ Design: DESIGN.md's existing tokens and components; round 4 (BRIEF-round-4.md on
 
 **Blocked by:** none
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Files after the first sit 32px apart, with a stronger rule and a tinted header, on the page and in the export.
-- [ ] Met green, partly amber, not met rust, unchecked muted, in every place a checklist status shows.
-- [ ] A checklist item's queue row holds to two lines, full text in its tooltip.
-- [ ] Checked in light and dark, 1440px and 390px; DESIGN.md and Help match.
+- [x] Files after the first sit 32px apart, with a stronger rule and a tinted header, on the page and in the export.
+- [x] Met green, partly amber, not met rust, unchecked muted, in every place a checklist status shows.
+- [x] A checklist item's queue row holds to two lines, full text in its tooltip.
+- [x] Checked in light and dark, 1440px and 390px; DESIGN.md and Help match.

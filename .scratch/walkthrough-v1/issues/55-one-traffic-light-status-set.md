@@ -17,10 +17,10 @@ Design: round 4 on the canvas (HANDOFF.md "Round 4", DESIGN.md Colors → Status
 
 **Blocked by:** 54 Findings you can reach (both edit src/page/app.ts)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Tokens added; no status selector uses the accent.
-- [ ] `tone` recorded, validated, documented; defaults on Approve and Flag.
-- [ ] Bar, queue, Summary, verdict, checklist, swipe and Help match the round 4 boards in light and dark, 1440px and 390px.
-- [ ] A greyscale screenshot still tells every state apart.
-- [ ] Template tones and hash; design files in docs/design.
+- [x] Tokens added; no status selector uses the accent.
+- [x] `tone` recorded, validated, documented; defaults on Approve and Flag.
+- [x] Bar, queue, Summary, verdict, checklist, swipe and Help match the round 4 boards in light and dark, 1440px and 390px.
+- [x] A greyscale screenshot still tells every state apart.
+- [x] Template tones and hash; design files in docs/design.

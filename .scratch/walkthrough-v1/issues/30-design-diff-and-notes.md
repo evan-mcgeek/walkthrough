@@ -9,8 +9,8 @@ Design source: `docs/design/DESIGN.md` (tokens, rules, components, motion), `doc
 
 **Blocked by:** 28 Design foundation
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The diff, notes, composer and previews match the boards in light and dark.
-- [ ] The image preview shows Before (base) and After (head) side by side with pixel sizes, read from git through the server's file route.
-- [ ] Line picking by mouse and keyboard keeps working and shows the picked-line tone.
+- [x] The diff, notes, composer and previews match the boards in light and dark.
+- [x] The image preview shows Before (base) and After (head) side by side with pixel sizes, read from git through the server's file route.
+- [x] Line picking by mouse and keyboard keeps working and shows the picked-line tone.
