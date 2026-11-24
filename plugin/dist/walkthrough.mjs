@@ -994,21 +994,21 @@ var require_retry = __commonJS({
       timeout = Math.min(timeout, opts.maxTimeout);
       return timeout;
     };
-    exports.wrap = function(obj, options, methods) {
+    exports.wrap = function(obj, options, methods2) {
       if (options instanceof Array) {
-        methods = options;
+        methods2 = options;
         options = null;
       }
-      if (!methods) {
-        methods = [];
+      if (!methods2) {
+        methods2 = [];
         for (var key in obj) {
           if (typeof obj[key] === "function") {
-            methods.push(key);
+            methods2.push(key);
           }
         }
       }
-      for (var i = 0; i < methods.length; i++) {
-        var method = methods[i];
+      for (var i = 0; i < methods2.length; i++) {
+        var method = methods2[i];
         var original = obj[method];
         obj[method] = function retryWrapper(original2) {
           var op = exports.operation(options);
@@ -1521,9 +1521,9 @@ var require_adapter = __commonJS({
     "use strict";
     var fs13 = require_graceful_fs();
     function createSyncFs(fs14) {
-      const methods = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
+      const methods2 = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
       const newFs = { ...fs14 };
-      methods.forEach((method) => {
+      methods2.forEach((method) => {
         newFs[method] = (...args) => {
           const callback = args.pop();
           let ret;
@@ -1865,6 +1865,7 @@ import { parseArgs as parseArgs2 } from "node:util";
 import { execFile, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 function git(cwd, ...args) {
@@ -1878,11 +1879,9 @@ function gitWith(cwd, input, ...args) {
   return result.stdout;
 }
 var execGit = promisify(execFile);
-async function gitAsync(cwd, input, ...args) {
-  const running = execGit("git", args, { cwd, encoding: "utf8", maxBuffer: MAX_BUFFER });
-  running.child.stdin?.end(input);
+async function gitAsync(cwd, ...args) {
   try {
-    return (await running).stdout;
+    return (await execGit("git", args, { cwd, encoding: "utf8", maxBuffer: MAX_BUFFER })).stdout;
   } catch (error) {
     throw new Error(error.stderr?.trim() || `git ${args.join(" ")} failed`);
   }
@@ -1935,7 +1934,7 @@ async function changeOf(cwd, source) {
   };
 }
 async function changedFiles(cwd, base, head) {
-  const fields2 = (await gitAsync(cwd, "", "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
+  const fields2 = (await gitAsync(cwd, "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
   const files3 = [];
   for (let at = 0; at < fields2.length - 1; ) {
     const status2 = fields2[at++] ?? "";
@@ -1946,19 +1945,28 @@ async function changedFiles(cwd, base, head) {
   return files3;
 }
 var orderOf = (files3) => files3.map((file2) => file2.path.replace(/[\\*?[\]#!]/g, "\\$&")).join("\n");
-var diffOf = async (cwd, base, head, files3) => files3.length === 0 ? "" : gitAsync(
-  cwd,
-  orderOf(files3),
-  "diff",
-  "--no-color",
-  "--no-ext-diff",
-  "-M",
-  "-O/dev/stdin",
-  base,
-  head,
-  "--",
-  ...files3.flatMap((file2) => file2.from ? [file2.from, file2.path] : [file2.path]).map((one) => `:(top,literal)${one}`)
-);
+async function diffOf(cwd, base, head, files3) {
+  if (files3.length === 0) return "";
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "walkthrough-order-"));
+  const order = path.join(dir, "order");
+  fs.writeFileSync(order, orderOf(files3), { mode: 384 });
+  try {
+    return await gitAsync(
+      cwd,
+      "diff",
+      "--no-color",
+      "--no-ext-diff",
+      "-M",
+      `-O${order}`,
+      base,
+      head,
+      "--",
+      ...files3.flatMap((file2) => file2.from ? [file2.from, file2.path] : [file2.path]).map((one) => `:(top,literal)${one}`)
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
 function fileAt(cwd, rev, file2) {
   const result = spawnSync("git", ["cat-file", "blob", `${rev}:${file2}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
   return result.status === 0 ? result.stdout : null;
@@ -1977,17 +1985,17 @@ import fs3 from "node:fs";
 
 // src/paths.ts
 import fs2 from "node:fs";
-import os from "node:os";
+import os2 from "node:os";
 import path2 from "node:path";
 var outsideOwn = (dir) => {
   if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
-  const own = path2.join(os.userInfo().homedir, ".local", "state", "walkthrough");
+  const own = path2.join(os2.userInfo().homedir, ".local", "state", "walkthrough");
   const full = path2.resolve(dir);
   if (full === own || full.startsWith(own + path2.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
   return dir;
 };
 var stateDir = () => outsideOwn(
-  process.env["WALKTHROUGH_STATE"] || path2.join(process.env["XDG_STATE_HOME"] || path2.join(os.homedir(), ".local", "state"), "walkthrough")
+  process.env["WALKTHROUGH_STATE"] || path2.join(process.env["XDG_STATE_HOME"] || path2.join(os2.homedir(), ".local", "state"), "walkthrough")
 );
 var INBOX = "inbox";
 function makeInbox(dir) {
@@ -2045,10 +2053,22 @@ function parseObject(text2, what) {
 import path4 from "node:path";
 
 // src/items.ts
+var TONES = ["positive", "attention", "none"];
+var CONSEQUENCE_WORDS = 8;
+var OUTCOME_WORDS = 3;
 var STEP_ACTIONS = [
-  { id: "approve", label: "Approve" },
-  { id: "flag", label: "Flag", note: true }
+  { id: "approve", label: "Approve", tone: "positive", outcome: "Approved" },
+  { id: "flag", label: "Flag", note: true, tone: "attention", outcome: "Flagged" }
 ];
+var TONE_SHOWN = { positive: "ok", attention: "flag", none: "neu" };
+var toneOf = (actions2, id) => actions2?.find((one) => one.id === id)?.tone ?? "none";
+function stepShown(view, step, findings) {
+  const key = itemKey({ type: "step", id: step.id });
+  const decision = view.decided[key];
+  if (decision) return TONE_SHOWN[toneOf(view.actions[key], decision.action)];
+  if (view.reopened[key]) return "reo";
+  return findings > 0 || step.kind === "folded" && step.problems.length > 0 ? "find" : "un";
+}
 var itemKey = (item) => "id" in item ? `${item.type}:${item.id}` : item.type;
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
@@ -2250,6 +2270,1042 @@ import fs8 from "node:fs";
 import http from "node:http";
 import path8 from "node:path";
 import { fileURLToPath } from "node:url";
+
+// node_modules/image-size/dist/esm/types/utils.js
+var decoder = new TextDecoder();
+var toUTF8String = (input, start2 = 0, end = input.length) => decoder.decode(input.slice(start2, end));
+var toHexString = (input, start2 = 0, end = input.length) => input.slice(start2, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
+var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
+var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
+var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
+var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
+var readUInt24LE = (input, offset = 0) => {
+  const view = getView(input, offset);
+  return view.getUint16(0, true) + (view.getUint8(2) << 16);
+};
+var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
+var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
+var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
+var methods = {
+  readUInt16BE,
+  readUInt16LE,
+  readUInt32BE,
+  readUInt32LE
+};
+function readUInt(input, bits, offset = 0, isBigEndian = false) {
+  const endian = isBigEndian ? "BE" : "LE";
+  const methodName = `readUInt${bits}${endian}`;
+  return methods[methodName](input, offset);
+}
+var BOX_HEADER_SIZE = 8;
+function readBox(input, view, base, offset, boxCode) {
+  if (input.length - offset < BOX_HEADER_SIZE)
+    return void 0;
+  const boxSize = view.getUint32(base + offset, false);
+  if (input.length - offset < boxSize)
+    return void 0;
+  return {
+    offset,
+    size: boxSize,
+    matches: view.getUint32(base + 4 + offset, false) === boxCode
+  };
+}
+var boxViews = /* @__PURE__ */ new WeakMap();
+function getBoxView(input) {
+  let view = boxViews.get(input.buffer);
+  if (!view) {
+    view = new DataView(input.buffer);
+    boxViews.set(input.buffer, view);
+  }
+  return view;
+}
+function findBox(input, boxName, startOffset) {
+  const view = getBoxView(input);
+  const boxCode = boxName.charCodeAt(0) << 24 | boxName.charCodeAt(1) << 16 | boxName.charCodeAt(2) << 8 | boxName.charCodeAt(3);
+  const base = input.byteOffset;
+  let currentOffset = startOffset;
+  while (currentOffset < input.length) {
+    if (input.length - currentOffset < 4)
+      break;
+    if (view.getUint32(base + currentOffset, false) < BOX_HEADER_SIZE) {
+      currentOffset += BOX_HEADER_SIZE;
+      continue;
+    }
+    const box = readBox(input, view, base, currentOffset, boxCode);
+    if (!box)
+      break;
+    if (box.matches) {
+      return { name: boxName, offset: box.offset, size: box.size };
+    }
+    currentOffset += box.size;
+  }
+  return void 0;
+}
+
+// node_modules/image-size/dist/esm/types/bmp.js
+var BMP = {
+  validate: (input) => toUTF8String(input, 0, 2) === "BM",
+  calculate: (input) => ({
+    height: Math.abs(readInt32LE(input, 22)),
+    width: readUInt32LE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/ico.js
+var TYPE_ICON = 1;
+var SIZE_HEADER = 2 + 2 + 2;
+var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
+function getSizeFromOffset(input, offset) {
+  const value = input[offset];
+  return value === 0 ? 256 : value;
+}
+function getImageSize(input, imageIndex) {
+  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
+  return {
+    height: getSizeFromOffset(input, offset + 1),
+    width: getSizeFromOffset(input, offset)
+  };
+}
+var ICO = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_ICON;
+  },
+  calculate(input) {
+    const nbImages = readUInt16LE(input, 4);
+    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
+      throw new TypeError("Invalid ICO");
+    }
+    const imageSize2 = getImageSize(input, 0);
+    if (nbImages === 1)
+      return imageSize2;
+    const images = [];
+    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
+      images.push(getImageSize(input, imageIndex));
+    }
+    return {
+      width: imageSize2.width,
+      height: imageSize2.height,
+      images
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/cur.js
+var TYPE_CURSOR = 2;
+var CUR = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_CURSOR;
+  },
+  calculate: (input) => ICO.calculate(input)
+};
+
+// node_modules/image-size/dist/esm/types/dds.js
+var DDS = {
+  validate: (input) => readUInt32LE(input, 0) === 542327876,
+  calculate: (input) => ({
+    height: readUInt32LE(input, 12),
+    width: readUInt32LE(input, 16)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/gif.js
+var gifRegexp = /^GIF8[79]a/;
+var GIF = {
+  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
+  calculate: (input) => ({
+    height: readUInt16LE(input, 8),
+    width: readUInt16LE(input, 6)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/heif.js
+var brandMap = {
+  avif: "avif",
+  mif1: "heif",
+  msf1: "heif",
+  heic: "heic",
+  heix: "heic",
+  hevc: "heic",
+  hevx: "heic"
+};
+var HEIF = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "ftyp")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand in brandMap;
+  },
+  calculate(input) {
+    const metaBox = findBox(input, "meta", 0);
+    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
+    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
+    if (!ipcoBox) {
+      throw new TypeError("Invalid HEIF, no ipco box found");
+    }
+    const type = toUTF8String(input, 8, 12);
+    const images = [];
+    let currentOffset = ipcoBox.offset + 8;
+    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
+      const ispeBox = findBox(input, "ispe", currentOffset);
+      if (!ispeBox)
+        break;
+      if (ispeBox.size < 20) {
+        throw new TypeError("Invalid HEIF");
+      }
+      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
+      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
+      const clapBox = findBox(input, "clap", currentOffset);
+      let width = rawWidth;
+      const height = rawHeight;
+      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
+        const cropRight = readUInt32BE(input, clapBox.offset + 12);
+        width = rawWidth - cropRight;
+      }
+      images.push({ height, width });
+      const nextOffset = ispeBox.offset + ispeBox.size;
+      if (nextOffset <= currentOffset) {
+        throw new TypeError("Invalid HEIF");
+      }
+      currentOffset = nextOffset;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid HEIF, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      type,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/icns.js
+var SIZE_HEADER2 = 4 + 4;
+var FILE_LENGTH_OFFSET = 4;
+var ENTRY_LENGTH_OFFSET = 4;
+var ICON_TYPE_SIZE = {
+  ICON: 32,
+  "ICN#": 32,
+  "icm#": 16,
+  icm4: 16,
+  icm8: 16,
+  "ics#": 16,
+  ics4: 16,
+  ics8: 16,
+  is32: 16,
+  s8mk: 16,
+  icp4: 16,
+  icl4: 32,
+  icl8: 32,
+  il32: 32,
+  l8mk: 32,
+  icp5: 32,
+  ic11: 32,
+  ich4: 48,
+  ich8: 48,
+  ih32: 48,
+  h8mk: 48,
+  icp6: 64,
+  ic12: 32,
+  it32: 128,
+  t8mk: 128,
+  ic07: 128,
+  ic08: 256,
+  ic13: 256,
+  ic09: 512,
+  ic14: 512,
+  ic10: 1024
+};
+function readImageHeader(input, imageOffset) {
+  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
+  if (imageLengthOffset + 4 > input.length) {
+    throw new TypeError("Invalid ICNS");
+  }
+  return [
+    toUTF8String(input, imageOffset, imageLengthOffset),
+    readUInt32BE(input, imageLengthOffset)
+  ];
+}
+function getImageSize2(type) {
+  const size = ICON_TYPE_SIZE[type];
+  return { width: size, height: size, type };
+}
+var ICNS = {
+  validate: (input) => toUTF8String(input, 0, 4) === "icns",
+  calculate(input) {
+    const inputLength = input.length;
+    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
+    let imageOffset = SIZE_HEADER2;
+    const images = [];
+    while (imageOffset < fileLength && imageOffset < inputLength) {
+      const imageHeader = readImageHeader(input, imageOffset);
+      const entryLength = imageHeader[1];
+      if (entryLength < 8) {
+        throw new TypeError("Invalid ICNS");
+      }
+      const imageSize2 = getImageSize2(imageHeader[0]);
+      images.push(imageSize2);
+      imageOffset += entryLength;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid ICNS, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/j2c.js
+var J2C = {
+  validate: (input) => readUInt32BE(input, 0) === 4283432785,
+  calculate: (input) => ({
+    height: readUInt32BE(input, 12),
+    width: readUInt32BE(input, 8)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/jp2.js
+var JP2 = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "jP  ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jp2 ";
+  },
+  calculate(input) {
+    const jp2hBox = findBox(input, "jp2h", 0);
+    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
+    if (ihdrBox) {
+      return {
+        height: readUInt32BE(input, ihdrBox.offset + 8),
+        width: readUInt32BE(input, ihdrBox.offset + 12)
+      };
+    }
+    throw new TypeError("Unsupported JPEG 2000 format");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jpg.js
+var EXIF_MARKER = "45786966";
+var APP1_DATA_SIZE_BYTES = 2;
+var EXIF_HEADER_BYTES = 6;
+var TIFF_BYTE_ALIGN_BYTES = 2;
+var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
+var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
+var IDF_ENTRY_BYTES = 12;
+var NUM_DIRECTORY_ENTRIES_BYTES = 2;
+function isEXIF(input) {
+  return toHexString(input, 2, 6) === EXIF_MARKER;
+}
+function extractSize(input, index) {
+  return {
+    height: readUInt16BE(input, index),
+    width: readUInt16BE(input, index + 2)
+  };
+}
+function extractOrientation(exifBlock, isBigEndian) {
+  const idfOffset = 8;
+  const offset = EXIF_HEADER_BYTES + idfOffset;
+  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
+  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
+    const start2 = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start2 + IDF_ENTRY_BYTES;
+    if (start2 > exifBlock.length) {
+      return;
+    }
+    const block2 = exifBlock.slice(start2, end);
+    const tagNumber = readUInt(block2, 16, 0, isBigEndian);
+    if (tagNumber === 274) {
+      const dataFormat = readUInt(block2, 16, 2, isBigEndian);
+      if (dataFormat !== 3) {
+        return;
+      }
+      const numberOfComponents = readUInt(block2, 32, 4, isBigEndian);
+      if (numberOfComponents !== 1) {
+        return;
+      }
+      return readUInt(block2, 16, 8, isBigEndian);
+    }
+  }
+}
+function validateExifBlock(input, index) {
+  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
+  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
+  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
+  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
+  if (isBigEndian || isLittleEndian) {
+    return extractOrientation(exifBlock, isBigEndian);
+  }
+}
+function validateInput(input, index) {
+  if (index > input.length) {
+    throw new TypeError("Corrupt JPG, exceeded buffer limits");
+  }
+}
+var JPG = {
+  validate: (input) => toHexString(input, 0, 2) === "ffd8",
+  calculate(_input) {
+    let input = _input.slice(4);
+    let orientation;
+    let next;
+    while (input.length) {
+      const i = readUInt16BE(input, 0);
+      validateInput(input, i);
+      if (input[i] !== 255) {
+        input = input.subarray(1);
+        continue;
+      }
+      if (isEXIF(input)) {
+        orientation = validateExifBlock(input, i);
+      }
+      next = input[i + 1];
+      if (next === 192 || next === 193 || next === 194) {
+        const size = extractSize(input, i + 5);
+        if (!orientation) {
+          return size;
+        }
+        return {
+          height: size.height,
+          orientation,
+          width: size.width
+        };
+      }
+      input = input.subarray(i + 2);
+    }
+    throw new TypeError("Invalid JPG, no size found");
+  }
+};
+
+// node_modules/image-size/dist/esm/utils/bit-reader.js
+var BitReader = class {
+  input;
+  endianness;
+  byteOffset = 2;
+  bitOffset = 0;
+  constructor(input, endianness) {
+    this.input = input;
+    this.endianness = endianness;
+  }
+  getBits(length = 1) {
+    let result = 0;
+    let bitsRead = 0;
+    while (bitsRead < length) {
+      if (this.byteOffset >= this.input.length) {
+        throw new Error("Reached end of input");
+      }
+      const currentByte = this.input[this.byteOffset];
+      const bitsLeft = 8 - this.bitOffset;
+      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
+      if (this.endianness === "little-endian") {
+        const mask = (1 << bitsToRead) - 1;
+        const bits = currentByte >> this.bitOffset & mask;
+        result |= bits << bitsRead;
+      } else {
+        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
+        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
+        result = result << bitsToRead | bits;
+      }
+      bitsRead += bitsToRead;
+      this.bitOffset += bitsToRead;
+      if (this.bitOffset === 8) {
+        this.byteOffset++;
+        this.bitOffset = 0;
+      }
+    }
+    return result;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl-stream.js
+function calculateImageDimension(reader, isSmallImage) {
+  if (isSmallImage) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  const sizeClass = reader.getBits(2);
+  const extraBits = [9, 13, 18, 30][sizeClass];
+  return 1 + reader.getBits(extraBits);
+}
+function calculateImageWidth(reader, isSmallImage, widthMode, height) {
+  if (isSmallImage && widthMode === 0) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  if (widthMode === 0) {
+    return calculateImageDimension(reader, false);
+  }
+  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
+  return Math.floor(height * aspectRatios[widthMode - 1]);
+}
+var JXLStream = {
+  validate: (input) => {
+    return toHexString(input, 0, 2) === "ff0a";
+  },
+  calculate(input) {
+    const reader = new BitReader(input, "little-endian");
+    const isSmallImage = reader.getBits(1) === 1;
+    const height = calculateImageDimension(reader, isSmallImage);
+    const widthMode = reader.getBits(3);
+    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
+    return { width, height };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl.js
+function extractCodestream(input) {
+  const jxlcBox = findBox(input, "jxlc", 0);
+  if (jxlcBox) {
+    return input.subarray(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
+  }
+  const partialStreams = extractPartialStreams(input);
+  if (partialStreams.length > 0) {
+    return concatenateCodestreams(partialStreams);
+  }
+  return void 0;
+}
+function extractPartialStreams(input) {
+  const partialStreams = [];
+  let offset = 0;
+  while (offset < input.length) {
+    const jxlpBox = findBox(input, "jxlp", offset);
+    if (!jxlpBox)
+      break;
+    if (jxlpBox.size < 12) {
+      throw new TypeError("Invalid JXL");
+    }
+    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+    offset = jxlpBox.offset + jxlpBox.size;
+  }
+  return partialStreams;
+}
+function concatenateCodestreams(partialCodestreams) {
+  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
+  const codestream = new Uint8Array(Math.min(16, totalLength));
+  let position = 0;
+  for (const partial of partialCodestreams) {
+    if (position >= codestream.length)
+      break;
+    const byteCount = Math.min(partial.length, codestream.length - position);
+    codestream.set(partial.subarray(0, byteCount), position);
+    position += byteCount;
+  }
+  return codestream;
+}
+var JXL = {
+  validate: (input) => {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "JXL ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jxl ";
+  },
+  calculate(input) {
+    const codestream = extractCodestream(input);
+    if (codestream)
+      return JXLStream.calculate(codestream);
+    throw new TypeError("Invalid JXL");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/ktx.js
+var KTX = {
+  validate: (input) => {
+    const signature = toUTF8String(input, 1, 7);
+    return ["KTX 11", "KTX 20"].includes(signature);
+  },
+  calculate: (input) => {
+    const type = input[5] === 49 ? "ktx" : "ktx2";
+    const offset = type === "ktx" ? 36 : 20;
+    return {
+      height: readUInt32LE(input, offset + 4),
+      width: readUInt32LE(input, offset),
+      type
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/png.js
+var pngSignature = "PNG\r\n\n";
+var pngImageHeaderChunkName = "IHDR";
+var pngFriedChunkName = "CgBI";
+var PNG = {
+  validate(input) {
+    if (pngSignature === toUTF8String(input, 1, 8)) {
+      let chunkName = toUTF8String(input, 12, 16);
+      if (chunkName === pngFriedChunkName) {
+        chunkName = toUTF8String(input, 28, 32);
+      }
+      if (chunkName !== pngImageHeaderChunkName) {
+        throw new TypeError("Invalid PNG");
+      }
+      return true;
+    }
+    return false;
+  },
+  calculate(input) {
+    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
+      return {
+        height: readUInt32BE(input, 36),
+        width: readUInt32BE(input, 32)
+      };
+    }
+    return {
+      height: readUInt32BE(input, 20),
+      width: readUInt32BE(input, 16)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/pnm.js
+var PNMTypes = {
+  P1: "pbm/ascii",
+  P2: "pgm/ascii",
+  P3: "ppm/ascii",
+  P4: "pbm",
+  P5: "pgm",
+  P6: "ppm",
+  P7: "pam",
+  PF: "pfm"
+};
+var HEADER_SCAN_LIMIT = 64;
+var PAM_HEADER_LIMIT = 256;
+var isWhitespace = (byte) => byte === 32 || byte === 9 || byte === 10 || byte === 13;
+var isEndOfLine = (byte) => byte === 10 || byte === 13;
+var handlers = {
+  default: (input) => {
+    const end = Math.min(input.length, HEADER_SCAN_LIMIT);
+    const tokens = [];
+    let token = "";
+    let inComment = false;
+    for (let i = 2; i < end && tokens.length < 2; i++) {
+      const byte = input[i];
+      if (inComment) {
+        inComment = !isEndOfLine(byte);
+      } else if (byte === 35) {
+        inComment = true;
+      } else if (isWhitespace(byte)) {
+        if (token) {
+          tokens.push(token);
+          token = "";
+        }
+      } else {
+        token += String.fromCharCode(byte);
+      }
+    }
+    if (token && tokens.length < 2)
+      tokens.push(token);
+    if (tokens.length < 2) {
+      throw new TypeError("Invalid PNM");
+    }
+    return {
+      width: Number.parseInt(tokens[0], 10),
+      height: Number.parseInt(tokens[1], 10)
+    };
+  },
+  pam: (input) => {
+    const header = toUTF8String(input, 0, Math.min(input.length, PAM_HEADER_LIMIT));
+    const size = {};
+    for (const line of header.split(/[\r\n]+/)) {
+      if (line.length > 16 || line.charCodeAt(0) > 128) {
+        continue;
+      }
+      const [key, value] = line.split(" ");
+      if (key && value) {
+        size[key.toLowerCase()] = Number.parseInt(value, 10);
+      }
+      if (size.height && size.width) {
+        break;
+      }
+    }
+    if (size.height && size.width) {
+      return {
+        height: size.height,
+        width: size.width
+      };
+    }
+    throw new TypeError("Invalid PAM");
+  }
+};
+var PNM = {
+  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
+  calculate(input) {
+    const signature = toUTF8String(input, 0, 2);
+    const type = PNMTypes[signature];
+    const handler = handlers[type] || handlers.default;
+    return handler(input);
+  }
+};
+
+// node_modules/image-size/dist/esm/types/psd.js
+var PSD = {
+  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
+  calculate: (input) => ({
+    height: readUInt32BE(input, 14),
+    width: readUInt32BE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/svg.js
+var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
+var extractorRegExps = {
+  height: /\sheight=(['"])([^%]+?)\1/,
+  root: svgReg,
+  viewbox: /\sviewBox=(['"])(.+?)\1/i,
+  width: /\swidth=(['"])([^%]+?)\1/
+};
+var INCH_CM = 2.54;
+var units = {
+  in: 96,
+  cm: 96 / INCH_CM,
+  em: 16,
+  ex: 8,
+  m: 96 / INCH_CM * 100,
+  mm: 96 / INCH_CM / 10,
+  pc: 96 / 72 / 12,
+  pt: 96 / 72,
+  px: 1
+};
+var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
+function parseLength(len) {
+  const m = unitsReg.exec(len);
+  if (!m) {
+    return void 0;
+  }
+  return Math.round(Number(m[1]) * (units[m[2]] || 1));
+}
+function parseViewbox(viewbox) {
+  const bounds = viewbox.split(" ");
+  return {
+    height: parseLength(bounds[3]),
+    width: parseLength(bounds[2])
+  };
+}
+function parseAttributes(root) {
+  const width = root.match(extractorRegExps.width);
+  const height = root.match(extractorRegExps.height);
+  const viewbox = root.match(extractorRegExps.viewbox);
+  return {
+    height: height && parseLength(height[2]),
+    viewbox: viewbox && parseViewbox(viewbox[2]),
+    width: width && parseLength(width[2])
+  };
+}
+function calculateByDimensions(attrs) {
+  return {
+    height: attrs.height,
+    width: attrs.width
+  };
+}
+function calculateByViewbox(attrs, viewbox) {
+  const ratio = viewbox.width / viewbox.height;
+  if (attrs.width) {
+    return {
+      height: Math.floor(attrs.width / ratio),
+      width: attrs.width
+    };
+  }
+  if (attrs.height) {
+    return {
+      height: attrs.height,
+      width: Math.floor(attrs.height * ratio)
+    };
+  }
+  return {
+    height: viewbox.height,
+    width: viewbox.width
+  };
+}
+var SVG = {
+  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
+  calculate(input) {
+    const root = toUTF8String(input).match(extractorRegExps.root);
+    if (root) {
+      const attrs = parseAttributes(root[0]);
+      if (attrs.width && attrs.height) {
+        return calculateByDimensions(attrs);
+      }
+      if (attrs.viewbox) {
+        return calculateByViewbox(attrs, attrs.viewbox);
+      }
+    }
+    throw new TypeError("Invalid SVG");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tga.js
+var TGA = {
+  validate(input) {
+    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
+  },
+  calculate(input) {
+    return {
+      height: readUInt16LE(input, 14),
+      width: readUInt16LE(input, 12)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tiff.js
+var CONSTANTS = {
+  TAG: {
+    WIDTH: 256,
+    HEIGHT: 257,
+    COMPRESSION: 259
+  },
+  TYPE: {
+    SHORT: 3,
+    LONG: 4,
+    LONG8: 16
+  },
+  ENTRY_SIZE: {
+    STANDARD: 12,
+    BIG: 20
+  },
+  COUNT_SIZE: {
+    STANDARD: 2,
+    BIG: 8
+  }
+};
+function readIFD(input, { isBigEndian, isBigTiff }) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const ifdOffset = isBigTiff ? Number(view.getBigUint64(8, le)) : view.getUint32(4, le);
+  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
+  return input.slice(ifdOffset + entryCountSize);
+}
+function readTagValue(view, type, offset, le) {
+  switch (type) {
+    case CONSTANTS.TYPE.SHORT:
+      return view.getUint16(offset, le);
+    case CONSTANTS.TYPE.LONG:
+      return view.getUint32(offset, le);
+    case CONSTANTS.TYPE.LONG8: {
+      const value = Number(view.getBigUint64(offset, le));
+      if (value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError("Value too large");
+      }
+      return value;
+    }
+    default:
+      return 0;
+  }
+}
+function extractTags(input, { isBigEndian, isBigTiff }) {
+  const tags = {};
+  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
+  const valueOffset = isBigTiff ? 12 : 8;
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  for (let offset = 0; offset + entrySize < input.length; offset += entrySize) {
+    const code2 = view.getUint16(offset, le);
+    const type = view.getUint16(offset + 2, le);
+    const length = isBigTiff ? Number(view.getBigUint64(offset + 4, le)) : view.getUint32(offset + 4, le);
+    if (code2 === 0)
+      break;
+    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
+      tags[code2] = readTagValue(view, type, offset + valueOffset, le);
+    }
+  }
+  return tags;
+}
+function determineFormat(input) {
+  const signature = toUTF8String(input, 0, 2);
+  const isBigEndian = signature === "MM";
+  const view = new DataView(input.buffer, input.byteOffset);
+  const version = view.getUint16(2, !isBigEndian);
+  return {
+    isBigEndian,
+    isBigTiff: version === 43
+  };
+}
+function validateBigTIFFHeader(input, isBigEndian) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const byteSize = view.getUint16(4, le);
+  const reserved = view.getUint16(6, le);
+  if (byteSize !== 8 || reserved !== 0) {
+    throw new TypeError("Invalid BigTIFF header");
+  }
+}
+var signatures = /* @__PURE__ */ new Set([
+  "49492a00",
+  "4d4d002a",
+  "49492b00",
+  "4d4d002b"
+]);
+var TIFF = {
+  validate: (input) => {
+    const signature = toHexString(input, 0, 4);
+    return signatures.has(signature);
+  },
+  calculate(input) {
+    const format2 = determineFormat(input);
+    if (format2.isBigTiff) {
+      validateBigTIFFHeader(input, format2.isBigEndian);
+    }
+    const ifdBuffer = readIFD(input, format2);
+    const tags = extractTags(ifdBuffer, format2);
+    const info = {
+      height: tags[CONSTANTS.TAG.HEIGHT],
+      width: tags[CONSTANTS.TAG.WIDTH],
+      type: format2.isBigTiff ? "bigtiff" : "tiff"
+    };
+    if (tags[CONSTANTS.TAG.COMPRESSION]) {
+      info.compression = tags[CONSTANTS.TAG.COMPRESSION];
+    }
+    if (!info.width || !info.height) {
+      throw new TypeError("Invalid Tiff. Missing tags");
+    }
+    return info;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/webp.js
+function calculateExtended(input) {
+  return {
+    height: 1 + readUInt24LE(input, 7),
+    width: 1 + readUInt24LE(input, 4)
+  };
+}
+function calculateLossless(input) {
+  return {
+    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
+    width: 1 + ((input[2] & 63) << 8 | input[1])
+  };
+}
+function calculateLossy(input) {
+  return {
+    height: readInt16LE(input, 8) & 16383,
+    width: readInt16LE(input, 6) & 16383
+  };
+}
+var WEBP = {
+  validate(input) {
+    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
+    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
+    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
+    return riffHeader && webpHeader && vp8Header;
+  },
+  calculate(_input) {
+    const chunkHeader = toUTF8String(_input, 12, 16);
+    const input = _input.slice(20, 30);
+    if (chunkHeader === "VP8X") {
+      const extendedHeader = input[0];
+      const validStart = (extendedHeader & 192) === 0;
+      const validEnd = (extendedHeader & 1) === 0;
+      if (validStart && validEnd) {
+        return calculateExtended(input);
+      }
+      throw new TypeError("Invalid WebP");
+    }
+    if (chunkHeader === "VP8 " && input[0] !== 47) {
+      return calculateLossy(input);
+    }
+    const signature = toHexString(input, 3, 6);
+    if (chunkHeader === "VP8L" && signature !== "9d012a") {
+      return calculateLossless(input);
+    }
+    throw new TypeError("Invalid WebP");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/index.js
+var typeHandlers = /* @__PURE__ */ new Map([
+  ["bmp", BMP],
+  ["cur", CUR],
+  ["dds", DDS],
+  ["gif", GIF],
+  ["heif", HEIF],
+  ["icns", ICNS],
+  ["ico", ICO],
+  ["j2c", J2C],
+  ["jp2", JP2],
+  ["jpg", JPG],
+  ["jxl", JXL],
+  ["jxl-stream", JXLStream],
+  ["ktx", KTX],
+  ["png", PNG],
+  ["pnm", PNM],
+  ["psd", PSD],
+  ["svg", SVG],
+  ["tga", TGA],
+  ["tiff", TIFF],
+  ["webp", WEBP]
+]);
+var types = Array.from(typeHandlers.keys());
+
+// node_modules/image-size/dist/esm/detector.js
+var firstBytes = /* @__PURE__ */ new Map([
+  [0, ["cur", "heif", "ico", "jp2", "jxl", "tga"]],
+  [56, ["psd"]],
+  [60, ["svg"]],
+  [66, ["bmp"]],
+  [68, ["dds"]],
+  [71, ["gif"]],
+  [73, ["tiff"]],
+  [77, ["tiff"]],
+  [80, ["pnm"]],
+  [82, ["webp"]],
+  [105, ["icns"]],
+  [137, ["png"]],
+  [171, ["ktx"]],
+  [255, ["j2c", "jpg", "jxl-stream"]]
+]);
+function detector(input) {
+  const byte = input[0];
+  const candidates = firstBytes.get(byte);
+  const predicate = (type) => typeHandlers.get(type)?.validate(input);
+  return candidates?.find(predicate) || types.find(predicate);
+}
+
+// node_modules/image-size/dist/esm/lookup.js
+var globalOptions = {
+  disabledTypes: []
+};
+function imageSize(input) {
+  const type = detector(input);
+  if (typeof type !== "undefined") {
+    if (globalOptions.disabledTypes.indexOf(type) > -1) {
+      throw new TypeError(`disabled file type: ${type}`);
+    }
+    const size = typeHandlers.get(type)?.calculate(input);
+    if (size !== void 0) {
+      size.type = size.type ?? type;
+      if (size.images && size.images.length > 1) {
+        const largestImage = size.images.reduce((largest, current2) => {
+          return current2.width * current2.height > largest.width * largest.height ? current2 : largest;
+        }, size.images[0]);
+        size.width = largestImage.width;
+        size.height = largestImage.height;
+      }
+      return size;
+    }
+  }
+  throw new TypeError(`unsupported file type: ${type}`);
+}
 
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
@@ -7349,27 +8405,12 @@ function imagePath(markdownFile, src) {
 var parser = new MarkdownItCallable();
 var imagesIn = (markdownFile, text2) => parser.parse(text2, {}).flatMap((token) => token.children ?? []).filter((token) => token.type === "image").map((token) => imagePath(markdownFile, String(token.attrGet("src") ?? "")));
 function pixelSize(bytes) {
-  const ascii = (from, to) => bytes.toString("latin1", from, to);
-  if (bytes.length >= 24 && ascii(1, 4) === "PNG") return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
-  if (bytes.length >= 10 && ascii(0, 3) === "GIF") return { width: bytes.readUInt16LE(6), height: bytes.readUInt16LE(8) };
-  if (bytes.length >= 26 && ascii(0, 2) === "BM") return { width: bytes.readInt32LE(18), height: Math.abs(bytes.readInt32LE(22)) };
-  if (bytes.length >= 30 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") {
-    const chunk = ascii(12, 16);
-    if (chunk === "VP8X") return { width: 1 + bytes.readUIntLE(24, 3), height: 1 + bytes.readUIntLE(27, 3) };
-    if (chunk === "VP8 ") return { width: bytes.readUInt16LE(26) & 16383, height: bytes.readUInt16LE(28) & 16383 };
-    if (chunk === "VP8L") {
-      const bits = bytes.readUInt32LE(21);
-      return { width: 1 + (bits & 16383), height: 1 + (bits >>> 14 & 16383) };
-    }
+  try {
+    const { width, height } = imageSize(bytes);
+    return { width, height };
+  } catch {
     return null;
   }
-  if (bytes[0] !== 255 || bytes[1] !== 216) return null;
-  for (let at = 2; at + 9 <= bytes.length && bytes[at] === 255; at += 2 + bytes.readUInt16BE(at + 2)) {
-    const marker = bytes[at + 1] ?? 0;
-    if (marker >= 192 && marker <= 207 && ![196, 200, 204].includes(marker))
-      return { width: bytes.readUInt16BE(at + 7), height: bytes.readUInt16BE(at + 5) };
-  }
-  return null;
 }
 
 // src/processes.ts
@@ -7922,6 +8963,7 @@ function commentsOf(conversation) {
 // src/session.ts
 var BACK_WITHIN_MS = 60 * 1e3;
 var LISTEN_EVERY_MS = 500;
+var HEARTBEAT_STALE_MS = 10 * 1e3;
 var files = (dir) => ({
   conversation: path5.join(dir, "conversation.jsonl"),
   posted: path5.join(dir, "posted.json"),
@@ -7954,12 +8996,21 @@ var cleanText = (text2) => typeof text2 === "string" ? text2.trim() : "";
 var openQuestions = (conversation) => conversation.filter(
   (entry) => entry.from === "session" && entry.question && !conversation.some((reply2) => reply2.from === "page" && reply2.kind === "reply" && reply2.to === entry.id)
 );
-function presence(listener, conversation) {
+function listens(file2, listener) {
+  try {
+    process.kill(listener.pid, 0);
+    const staleAfter = Number(process.env["WALKTHROUGH_HEARTBEAT_STALE_MS"]) || HEARTBEAT_STALE_MS;
+    return Date.now() - fs5.statSync(file2).mtimeMs < staleAfter;
+  } catch {
+    return false;
+  }
+}
+function presence(file2, listener, conversation) {
   switch (listener?.state) {
     case "starting":
       return "working";
     case "listening":
-      return alive(listener) ? "listening" : "gone";
+      return listens(file2, listener) ? "listening" : "gone";
     case "handed": {
       const answered2 = listener.requests.map(
         (id) => conversation.find((entry) => entry.from === "session" && entry.answer === id)
@@ -7977,21 +9028,22 @@ var conversationOf = (dir) => readLines(files(dir).conversation);
 function sessionView(dir) {
   const conversation = conversationOf(dir);
   const { listener } = files(dir);
-  const state = openQuestions(conversation).length ? "needs-you" : presence(readJson(listener, null), conversation);
+  const state = openQuestions(conversation).length ? "needs-you" : presence(listener, readJson(listener, null), conversation);
   return { state, conversation };
 }
 async function starting(dir) {
   await hold(dir, () => {
     const { listener } = files(dir);
     const now = readJson(listener, null);
-    if (now?.state !== "listening" || !alive(now)) writeJson(listener, { state: "starting" });
+    if (now?.state !== "listening" || !listens(listener, now)) writeJson(listener, { state: "starting" });
   });
 }
+var KEPT_FOR_LATER = /* @__PURE__ */ new Set(["comment", "edit-comment", "delete-comment"]);
 function request(dir, fields2) {
   const entry = { id: newId(), from: "page", at: stamp(), ...fields2 };
   return hold(dir, () => {
     append(files(dir).conversation, entry);
-    append(files(dir).inbox, entry);
+    if (!KEPT_FOR_LATER.has(entry.kind)) append(files(dir).inbox, entry);
     return sessionView(dir);
   });
 }
@@ -8082,7 +9134,7 @@ async function listen(dir, pageRunning) {
     return now?.state === "listening" && now.pid === process.pid;
   };
   await hold(dir, () => {
-    writeJson(listener, { state: "listening", pid: process.pid, started: psStart(process.pid) });
+    writeJson(listener, { state: "listening", pid: process.pid });
   });
   const release = () => hold(dir, () => {
     if (mine()) writeJson(listener, { state: "stopped" });
@@ -8095,7 +9147,11 @@ async function listen(dir, pageRunning) {
     const taken2 = await hold(dir, () => {
       if (!mine()) return "replaced";
       const requests = readLines(inbox);
-      if (!requests.length) return null;
+      if (!requests.length) {
+        const now = /* @__PURE__ */ new Date();
+        fs5.utimesSync(listener, now, now);
+        return null;
+      }
       fs5.rmSync(inbox, { force: true });
       writeJson(listener, { state: "handed", requests: requests.map((one) => one.id) });
       return requests;
@@ -8128,7 +9184,14 @@ function itemsOf({ steps: steps2, checklist: checklist2, base, head }, conversat
   ];
   return items.map((one) => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
 }
-var actionsOf = ({ actions: actions2 }, item) => actions2?.[itemKey(item)] ?? (item.type === "step" ? STEP_ACTIONS : []);
+var toned = (action) => {
+  const own = STEP_ACTIONS.find((one) => one.id === action.id && one.label === action.label && !one.note === !action.note);
+  return own ? { ...own, ...action } : action;
+};
+var actionsOf = ({ actions: actions2 }, item) => {
+  if (item.type !== "step") return actions2?.[itemKey(item)] ?? [];
+  return actions2?.[itemKey(item)]?.map(toned) ?? STEP_ACTIONS;
+};
 function decisionsOf(walkthrough, conversation) {
   const choices = conversation.filter(isChoice);
   return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
@@ -8169,6 +9232,7 @@ function walkthroughView(dir) {
   };
 }
 var ITEM_TYPES = /* @__PURE__ */ new Set(["step", "note", "checklist", "verdict", "walkthrough"]);
+var wordCount = (text2) => text2.trim().split(/\s+/).length;
 var nameOfItem = (item) => "id" in item ? `${item.type === "checklist" ? "checklist item" : item.type} ${item.id}` : `the ${item.type}`;
 function parseActions(text2, walkthrough, conversation) {
   const known = new Map(itemsOf(walkthrough, conversation).map((one) => [one.key, one.item]));
@@ -8183,20 +9247,40 @@ function parseActions(text2, walkthrough, conversation) {
     if (hint !== void 0 && !filled(hint)) throw fail("a hint needs words");
     if (hint !== void 0 && "id" in found) throw fail("only the verdict and the walkthrough take a hint");
     const ids = /* @__PURE__ */ new Set();
+    let primaryName;
     return {
       item: found,
       actions: actions2.map((fields2, number2) => {
         const name2 = `action ${String(number2 + 1)}`;
-        const { id, label, note: note2 = false, edit = false } = fieldsOf(fields2);
+        const { id, label, note: note2 = false, edit = false, tone, consequence, outcome, primary = false } = fieldsOf(fields2);
         if (!filled(id)) throw fail(`${name2} needs an id`);
         if (!filled(label)) throw fail(`${name2} needs a label`);
         if (typeof note2 !== "boolean") throw fail(`${name2}: note must be true or false`);
         if (typeof edit !== "boolean") throw fail(`${name2}: edit must be true or false`);
+        if (tone !== void 0 && !TONES.includes(tone)) throw fail(`${name2}: tone must be positive, attention or none`);
+        if (consequence !== void 0 && !filled(consequence)) throw fail(`${name2}: a consequence needs words`);
+        if (consequence !== void 0 && wordCount(consequence) > CONSEQUENCE_WORDS)
+          throw fail(`${name2}: a consequence is at most ${String(CONSEQUENCE_WORDS)} words`);
+        if (outcome !== void 0 && !filled(outcome)) throw fail(`${name2}: an outcome needs words`);
+        if (outcome !== void 0 && wordCount(outcome) > OUTCOME_WORDS)
+          throw fail(`${name2}: an outcome is at most ${String(OUTCOME_WORDS)} words`);
+        if (typeof primary !== "boolean") throw fail(`${name2}: primary must be true or false`);
+        if (primary && primaryName) throw fail(`${name2}: ${primaryName} is already primary, and an item has one at most`);
+        if (primary) primaryName = name2;
         if (edit && found.type !== "note" && found.type !== "checklist")
           throw fail(`${name2}: only a note or a checklist item has text to edit`);
         if (ids.has(id)) throw fail(`two actions have the id ${id}`);
         ids.add(id);
-        return { id, label, ...note2 && { note: true }, ...edit && { edit: true } };
+        return {
+          id,
+          label,
+          ...note2 && { note: true },
+          ...edit && { edit: true },
+          ...tone !== void 0 && { tone },
+          ...consequence !== void 0 && { consequence: consequence.trim() },
+          ...outcome !== void 0 && { outcome: outcome.trim() },
+          ...primary && { primary: true }
+        };
       }),
       ...hint !== void 0 && { hint: hint.trim() }
     };
@@ -8224,13 +9308,13 @@ async function decide(dir, { item, action, note: note2, text: text2, clear, on }
   const offered = actionsOf(walkthrough, found.item).find((one) => one.id === action);
   if (!offered) return null;
   if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
-  if (offered.note ? !filled(note2) : note2 !== void 0) return null;
+  if (offered.note ? note2 !== void 0 && typeof note2 !== "string" : note2 !== void 0) return null;
   if (offered.edit ? !filled(text2) : text2 !== void 0) return null;
   const session = await request(dir, {
     kind: "decision",
     item: found.item,
     action: offered.id,
-    ...offered.note && { note: cleanText(note2) },
+    ...offered.note && filled(note2) && { note: cleanText(note2) },
     ...offered.edit && { text: cleanText(text2) },
     on: found.on
   });
@@ -8283,12 +9367,11 @@ function listView(repoDir2) {
     const dir = path7.join(repoDir2, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
-    const segments = view.steps.map((step) => {
-      const key = itemKey({ type: "step", id: step.id });
-      if (view.decided[key]) return "decided";
-      if (view.reopened[key]) return "reopened";
-      return view.read.includes(step.id) ? "read" : "unread";
-    });
+    const conversation = conversationOf(dir);
+    const findings = (id) => conversation.filter(
+      (entry2) => entry2.from === "session" && entry2.note?.finding && entry2.answer === void 0 && view.anchored[entry2.id] === id && !view.decided[itemKey({ type: "note", id: entry2.id })]
+    ).length;
+    const segments = view.steps.map((step) => stepShown(view, step, findings(step.id)));
     const verdict = view.decided["verdict"];
     const changed = ACTIVITY.map((file2) => fs7.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
@@ -8296,10 +9379,15 @@ function listView(repoDir2) {
         id: entry.name,
         name: nameOf(view),
         ...view.kindLabel !== void 0 && { kind: view.kindLabel },
-        ...verdict && { verdict: view.actions["verdict"]?.find((one) => one.id === verdict.action)?.label ?? verdict.action },
+        ...verdict && {
+          verdict: {
+            label: view.actions["verdict"]?.find((one) => one.id === verdict.action)?.label ?? verdict.action,
+            shown: TONE_SHOWN[toneOf(view.actions["verdict"], verdict.action)]
+          }
+        },
         target: view.target,
         steps: view.steps.length,
-        decided: segments.filter((segment) => segment === "decided").length,
+        decided: view.steps.filter((step) => view.decided[itemKey({ type: "step", id: step.id })]).length,
         read: view.read.length,
         segments,
         last: new Date(Math.max(...changed)).toISOString()
@@ -8479,7 +9567,7 @@ function serve(dir, list3 = false) {
     writeJson(recordFile(dir), record);
   });
 }
-var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view === CHECKING ? { status: 409, body: { error: "Decide once the session has checked this step." } } : view ? { status: 200, body: view } : { status: 400 };
+var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view === CHECKING ? { status: 409, body: { error: "Decide after the check." } } : view ? { status: 200, body: view } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
   return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
@@ -8747,18 +9835,18 @@ var actionsExample = [
   {
     item: { type: "note", id: "5f0c2a9e" },
     actions: [
-      { id: "accept", label: "Accept" },
-      { id: "edit", label: "Edit first", edit: true },
-      { id: "drop", label: "Drop", note: true }
+      { id: "accept", label: "Accept", tone: "positive", consequence: "Goes on the fix list.", outcome: "Added to fixes", primary: true },
+      { id: "edit", label: "Edit first", edit: true, tone: "positive", consequence: "You reword it first.", outcome: "Edited" },
+      { id: "drop", label: "Drop", note: true, consequence: "The author never sees it.", outcome: "Dropped" }
     ]
   },
-  { item: { type: "step", id: "1" }, actions: [{ id: "approve", label: "Approve" }, { id: "fix", label: "Needs a fix", note: true }] },
+  { item: { type: "step", id: "1" }, actions: [{ id: "approve", label: "Approve", tone: "positive" }, { id: "fix", label: "Needs a fix", note: true, tone: "attention" }] },
   {
     item: { type: "verdict" },
     hint: "Sent with the review.",
     actions: [
-      { id: "approve", label: "Approve" },
-      { id: "changes", label: "Request changes" },
+      { id: "approve", label: "Approve", tone: "positive" },
+      { id: "changes", label: "Request changes", tone: "attention" },
       { id: "comment", label: "Comment" }
     ]
   },
@@ -8849,15 +9937,23 @@ walkthrough actions --file <file>
   The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
   An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
     {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
-  An action asks the person for a note with "note": true, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean}, ...]}, ...]
-  A step with no actions offers {"id": "approve", "label": "Approve"} and {"id": "flag", "label": "Flag", "note": true}; an empty list brings these back.
+  An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
+    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone,
+      "consequence": string, "outcome": string, "primary": boolean}, ...]}, ...]
+  "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
+  left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
+  "consequence", at most 8 words, says where a decision with the action goes or what it costs, such as "Goes on the fix list.";
+  "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
+  "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
+  The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
+  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive", "outcome": "Approved"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention", "outcome": "Flagged"};
+  an empty list brings these back.
   Other items offer nothing until actions are recorded on them.
   The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
-  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status.
+  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status in its tone.
   The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
   "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
-  A note offering an action with "edit": true is a draft: the Summary lists it as accepted or edited when the person took that action, and dropped when they took another.
+  A note offering an action with "edit": true is a draft: it goes out as drafted, or as edited when the person takes that action, and any other action drops it; the Summary lists every draft and what goes out, and a draft is never still open.
   A step's or checklist item's actions last while its id does.
   When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
   Example actions, for a note with the id 5f0c2a9e:
@@ -8882,13 +9978,11 @@ walkthrough listen
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
     {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
-    {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
-    {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
-    {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Act on a clear as the review policy says, and answer it with say --answer like any decision.
-  A comment is the person's own words, never yours: act on it, its edits and its deletion as the review policy says, and answer each with say --answer.
+  The person's own line comments, their edits and their deletions never come through listen and need no answer:
+  read them all with walkthrough comments when the review policy acts on them, such as at the finishing action.
   Files the person collapses or marks viewed are their own reading marks and never reach the session.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
@@ -8931,22 +10025,29 @@ walkthrough list
 // src/policy.ts
 import crypto7 from "node:crypto";
 import fs11 from "node:fs";
-import os2 from "node:os";
+import os3 from "node:os";
 import path11 from "node:path";
 import { parseArgs } from "node:util";
 var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
-var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os2.homedir(), ".config"), "walkthrough", "REVIEW.md");
+var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
 var read = (file2) => fs11.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
   "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
+  "17882fa4836cd26b1cc3772e80b262d559d3f5dd15b6449798961d3222a607c2",
   "26442e1d66028540ef4b778ed9edec79a2bab15ba84c543fa584a4d7d611d6fc",
   "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
   "407a443dbc1b85beedb76b2c9d910b508486f37bbb04c9d77804d35ec4d516e0",
+  "44b36f903158e8452655817542e95335695b8abac7d437d9aa4be5aacec50ffb",
+  "45ae6552e2e54e8b7f2382e1479a5a7fd868b1767b6ddcf490b9388c87110907",
+  "6cd73d656df167adb620983b8a3984e2b03cf002c72f7a6b72147db3dcc22ac9",
   "861b6dbfccfb2976660872d1ffa1357c0ac3d831ab8609dded6e2504f923a92c",
   "92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359",
   "9af98052435443bb10e4fca9dabe52f60de24564bf55ba7909423b37cd663303",
   "9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813",
   "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
+  "c89e17025c15f4a8a307dfe9592ada903dbe8aa8d2853b04a4c591b8ad31c124",
+  "e6d323edff72a83d70cc1cd901d1b1ec6d5a07530bd4d8f63194db09b8a23571",
+  "f19c5bc5ed0114e350a43a510d0edbcdfa071fade96a6d0c1caace5cf192dccf",
   "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b",
   "fa351c4cb56f4fe0ad000357808efc82b9fcba626735b816258cc285d508487d"
 ]);

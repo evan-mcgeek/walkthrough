@@ -15,12 +15,19 @@ var frame = ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none
 var ICONS = {
   /** Queue and step states. */
   unread: [ring()],
-  read: [ring(), ["path", { d: "M8 1.8a6.2 6.2 0 0 1 0 12.4z", fill: "currentColor" }]],
   current: [ring(), ["circle", { cx: 8, cy: 8, r: 2.8, fill: "currentColor" }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
     ["path", { d: "M4.8 8.2l2.1 2.1 4.3-4.6", ...round, "stroke-width": 1.8, class: "knockout" }]
+  ],
+  flagged: [
+    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
+    ["path", { d: "M6 11.6V4.6h4.6l-1 1.6 1 1.6H6", ...round, "stroke-width": 1.5, class: "knockout" }]
+  ],
+  "no-tone": [
+    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
+    ["path", { d: "M5.2 8h5.6", ...round, "stroke-width": 1.8, class: "knockout" }]
   ],
   reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
   folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],
@@ -193,7 +200,7 @@ root2.addEventListener("transitionend", (event) => {
 // src/page/list.ts
 var header = region("header");
 var main = region("main");
-var PAGE = { name: "list", reopen: "Run walkthrough list again to reopen it." };
+var PAGE = { name: "list", reopen: "Run walkthrough list to reopen." };
 var post2 = (route, body) => post(PAGE, route, body);
 async function open(one) {
   const answer = await post2("open", { id: one.id });
@@ -205,7 +212,7 @@ async function stop() {
   header.querySelector(".header-end")?.remove();
   const banner = region("alert");
   banner.className = "banner";
-  banner.replaceChildren(el("span", { className: "banner-text" }, el("strong", {}, "The list has stopped."), " You can close this tab."));
+  banner.replaceChildren(el("span", { className: "banner-text" }, el("strong", {}, "List stopped."), " You can close this tab."));
   banner.hidden = false;
   main.classList.add("stopped");
   main.inert = true;
@@ -227,13 +234,18 @@ function progress(one) {
     "span",
     { className: "list-bar" },
     ...one.segments.map((state) => {
-      const segment = el("span", { className: "segment" }, ...state === "decided" ? [el("span", { className: "segment-fill" })] : []);
+      const segment = el("span", { className: "segment" });
       segment.dataset["state"] = state;
       return segment;
     })
   );
   bar.setAttribute("aria-hidden", "true");
   return el("span", { className: "list-progress" }, bar, `${String(one.decided)} of ${plural(one.steps, "step")} decided, ${String(one.read)} read`);
+}
+function verdictStatus({ label, shown: shown2 }) {
+  const status = el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), label);
+  status.dataset["state"] = shown2;
+  return status;
 }
 function row(one) {
   const name = el("button", { type: "button", className: "list-open", onclick: () => void open(one) }, one.name);
@@ -244,11 +256,7 @@ function row(one) {
     // The id is what walkthrough prune takes to remove this one.
     el("td", { role: "cell" }, el("div", { className: "list-name" }, name, ...kindView(one.kind)), el("code", { className: "list-id" }, one.id)),
     el("td", { role: "cell" }, progress(one)),
-    el(
-      "td",
-      { role: "cell" },
-      one.verdict === void 0 ? el("span", { className: "muted" }, "No verdict yet") : el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), one.verdict)
-    ),
+    el("td", { role: "cell" }, ...one.verdict === void 0 ? [] : [verdictStatus(one.verdict)]),
     el("td", { role: "cell", className: "muted" }, el("time", { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last)))
   );
 }
@@ -267,13 +275,12 @@ function render(page) {
   );
   main.replaceChildren(
     el("h1", { className: "list-title" }, "Walkthroughs"),
-    el("p", { className: "muted list-sub" }, "In this repository"),
     page.walkthroughs.length ? el(
       "table",
       { className: "walkthroughs", role: "table" },
       el("thead", { role: "rowgroup" }, head),
       el("tbody", { role: "rowgroup" }, ...page.walkthroughs.map(row))
-    ) : el("p", { className: "list-empty" }, "This repo has no walkthroughs; run /walkthrough to start one.")
+    ) : el("p", { className: "list-empty" }, "No walkthroughs. Run /walkthrough.")
   );
   if (focused !== void 0) document.querySelector(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }

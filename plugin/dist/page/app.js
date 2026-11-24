@@ -20609,6 +20609,992 @@ function pathOf(name) {
 }
 var parseDiff = (diff2) => parse(diff2).map((file) => ({ ...file, oldName: pathOf(file.oldName), newName: pathOf(file.newName) }));
 
+// node_modules/image-size/dist/esm/types/utils.js
+var decoder = new TextDecoder();
+var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
+var toHexString = (input, start = 0, end = input.length) => input.slice(start, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
+var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
+var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
+var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
+var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
+var readUInt24LE = (input, offset = 0) => {
+  const view = getView(input, offset);
+  return view.getUint16(0, true) + (view.getUint8(2) << 16);
+};
+var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
+var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
+var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
+var methods = {
+  readUInt16BE,
+  readUInt16LE,
+  readUInt32BE,
+  readUInt32LE
+};
+function readUInt(input, bits, offset = 0, isBigEndian = false) {
+  const endian = isBigEndian ? "BE" : "LE";
+  const methodName = `readUInt${bits}${endian}`;
+  return methods[methodName](input, offset);
+}
+var BOX_HEADER_SIZE = 8;
+function readBox(input, view, base2, offset, boxCode) {
+  if (input.length - offset < BOX_HEADER_SIZE)
+    return void 0;
+  const boxSize = view.getUint32(base2 + offset, false);
+  if (input.length - offset < boxSize)
+    return void 0;
+  return {
+    offset,
+    size: boxSize,
+    matches: view.getUint32(base2 + 4 + offset, false) === boxCode
+  };
+}
+var boxViews = /* @__PURE__ */ new WeakMap();
+function getBoxView(input) {
+  let view = boxViews.get(input.buffer);
+  if (!view) {
+    view = new DataView(input.buffer);
+    boxViews.set(input.buffer, view);
+  }
+  return view;
+}
+function findBox(input, boxName, startOffset) {
+  const view = getBoxView(input);
+  const boxCode = boxName.charCodeAt(0) << 24 | boxName.charCodeAt(1) << 16 | boxName.charCodeAt(2) << 8 | boxName.charCodeAt(3);
+  const base2 = input.byteOffset;
+  let currentOffset = startOffset;
+  while (currentOffset < input.length) {
+    if (input.length - currentOffset < 4)
+      break;
+    if (view.getUint32(base2 + currentOffset, false) < BOX_HEADER_SIZE) {
+      currentOffset += BOX_HEADER_SIZE;
+      continue;
+    }
+    const box = readBox(input, view, base2, currentOffset, boxCode);
+    if (!box)
+      break;
+    if (box.matches) {
+      return { name: boxName, offset: box.offset, size: box.size };
+    }
+    currentOffset += box.size;
+  }
+  return void 0;
+}
+
+// node_modules/image-size/dist/esm/types/bmp.js
+var BMP = {
+  validate: (input) => toUTF8String(input, 0, 2) === "BM",
+  calculate: (input) => ({
+    height: Math.abs(readInt32LE(input, 22)),
+    width: readUInt32LE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/ico.js
+var TYPE_ICON = 1;
+var SIZE_HEADER = 2 + 2 + 2;
+var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
+function getSizeFromOffset(input, offset) {
+  const value = input[offset];
+  return value === 0 ? 256 : value;
+}
+function getImageSize(input, imageIndex) {
+  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
+  return {
+    height: getSizeFromOffset(input, offset + 1),
+    width: getSizeFromOffset(input, offset)
+  };
+}
+var ICO = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_ICON;
+  },
+  calculate(input) {
+    const nbImages = readUInt16LE(input, 4);
+    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
+      throw new TypeError("Invalid ICO");
+    }
+    const imageSize2 = getImageSize(input, 0);
+    if (nbImages === 1)
+      return imageSize2;
+    const images = [];
+    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
+      images.push(getImageSize(input, imageIndex));
+    }
+    return {
+      width: imageSize2.width,
+      height: imageSize2.height,
+      images
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/cur.js
+var TYPE_CURSOR = 2;
+var CUR = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_CURSOR;
+  },
+  calculate: (input) => ICO.calculate(input)
+};
+
+// node_modules/image-size/dist/esm/types/dds.js
+var DDS = {
+  validate: (input) => readUInt32LE(input, 0) === 542327876,
+  calculate: (input) => ({
+    height: readUInt32LE(input, 12),
+    width: readUInt32LE(input, 16)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/gif.js
+var gifRegexp = /^GIF8[79]a/;
+var GIF = {
+  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
+  calculate: (input) => ({
+    height: readUInt16LE(input, 8),
+    width: readUInt16LE(input, 6)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/heif.js
+var brandMap = {
+  avif: "avif",
+  mif1: "heif",
+  msf1: "heif",
+  heic: "heic",
+  heix: "heic",
+  hevc: "heic",
+  hevx: "heic"
+};
+var HEIF = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "ftyp")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand in brandMap;
+  },
+  calculate(input) {
+    const metaBox = findBox(input, "meta", 0);
+    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
+    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
+    if (!ipcoBox) {
+      throw new TypeError("Invalid HEIF, no ipco box found");
+    }
+    const type = toUTF8String(input, 8, 12);
+    const images = [];
+    let currentOffset = ipcoBox.offset + 8;
+    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
+      const ispeBox = findBox(input, "ispe", currentOffset);
+      if (!ispeBox)
+        break;
+      if (ispeBox.size < 20) {
+        throw new TypeError("Invalid HEIF");
+      }
+      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
+      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
+      const clapBox = findBox(input, "clap", currentOffset);
+      let width = rawWidth;
+      const height = rawHeight;
+      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
+        const cropRight = readUInt32BE(input, clapBox.offset + 12);
+        width = rawWidth - cropRight;
+      }
+      images.push({ height, width });
+      const nextOffset = ispeBox.offset + ispeBox.size;
+      if (nextOffset <= currentOffset) {
+        throw new TypeError("Invalid HEIF");
+      }
+      currentOffset = nextOffset;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid HEIF, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      type,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/icns.js
+var SIZE_HEADER2 = 4 + 4;
+var FILE_LENGTH_OFFSET = 4;
+var ENTRY_LENGTH_OFFSET = 4;
+var ICON_TYPE_SIZE = {
+  ICON: 32,
+  "ICN#": 32,
+  "icm#": 16,
+  icm4: 16,
+  icm8: 16,
+  "ics#": 16,
+  ics4: 16,
+  ics8: 16,
+  is32: 16,
+  s8mk: 16,
+  icp4: 16,
+  icl4: 32,
+  icl8: 32,
+  il32: 32,
+  l8mk: 32,
+  icp5: 32,
+  ic11: 32,
+  ich4: 48,
+  ich8: 48,
+  ih32: 48,
+  h8mk: 48,
+  icp6: 64,
+  ic12: 32,
+  it32: 128,
+  t8mk: 128,
+  ic07: 128,
+  ic08: 256,
+  ic13: 256,
+  ic09: 512,
+  ic14: 512,
+  ic10: 1024
+};
+function readImageHeader(input, imageOffset) {
+  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
+  if (imageLengthOffset + 4 > input.length) {
+    throw new TypeError("Invalid ICNS");
+  }
+  return [
+    toUTF8String(input, imageOffset, imageLengthOffset),
+    readUInt32BE(input, imageLengthOffset)
+  ];
+}
+function getImageSize2(type) {
+  const size = ICON_TYPE_SIZE[type];
+  return { width: size, height: size, type };
+}
+var ICNS = {
+  validate: (input) => toUTF8String(input, 0, 4) === "icns",
+  calculate(input) {
+    const inputLength = input.length;
+    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
+    let imageOffset = SIZE_HEADER2;
+    const images = [];
+    while (imageOffset < fileLength && imageOffset < inputLength) {
+      const imageHeader = readImageHeader(input, imageOffset);
+      const entryLength = imageHeader[1];
+      if (entryLength < 8) {
+        throw new TypeError("Invalid ICNS");
+      }
+      const imageSize2 = getImageSize2(imageHeader[0]);
+      images.push(imageSize2);
+      imageOffset += entryLength;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid ICNS, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/j2c.js
+var J2C = {
+  validate: (input) => readUInt32BE(input, 0) === 4283432785,
+  calculate: (input) => ({
+    height: readUInt32BE(input, 12),
+    width: readUInt32BE(input, 8)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/jp2.js
+var JP2 = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "jP  ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jp2 ";
+  },
+  calculate(input) {
+    const jp2hBox = findBox(input, "jp2h", 0);
+    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
+    if (ihdrBox) {
+      return {
+        height: readUInt32BE(input, ihdrBox.offset + 8),
+        width: readUInt32BE(input, ihdrBox.offset + 12)
+      };
+    }
+    throw new TypeError("Unsupported JPEG 2000 format");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jpg.js
+var EXIF_MARKER = "45786966";
+var APP1_DATA_SIZE_BYTES = 2;
+var EXIF_HEADER_BYTES = 6;
+var TIFF_BYTE_ALIGN_BYTES = 2;
+var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
+var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
+var IDF_ENTRY_BYTES = 12;
+var NUM_DIRECTORY_ENTRIES_BYTES = 2;
+function isEXIF(input) {
+  return toHexString(input, 2, 6) === EXIF_MARKER;
+}
+function extractSize(input, index) {
+  return {
+    height: readUInt16BE(input, index),
+    width: readUInt16BE(input, index + 2)
+  };
+}
+function extractOrientation(exifBlock, isBigEndian) {
+  const idfOffset = 8;
+  const offset = EXIF_HEADER_BYTES + idfOffset;
+  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
+  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
+    const start = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start + IDF_ENTRY_BYTES;
+    if (start > exifBlock.length) {
+      return;
+    }
+    const block3 = exifBlock.slice(start, end);
+    const tagNumber = readUInt(block3, 16, 0, isBigEndian);
+    if (tagNumber === 274) {
+      const dataFormat = readUInt(block3, 16, 2, isBigEndian);
+      if (dataFormat !== 3) {
+        return;
+      }
+      const numberOfComponents = readUInt(block3, 32, 4, isBigEndian);
+      if (numberOfComponents !== 1) {
+        return;
+      }
+      return readUInt(block3, 16, 8, isBigEndian);
+    }
+  }
+}
+function validateExifBlock(input, index) {
+  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
+  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
+  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
+  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
+  if (isBigEndian || isLittleEndian) {
+    return extractOrientation(exifBlock, isBigEndian);
+  }
+}
+function validateInput(input, index) {
+  if (index > input.length) {
+    throw new TypeError("Corrupt JPG, exceeded buffer limits");
+  }
+}
+var JPG = {
+  validate: (input) => toHexString(input, 0, 2) === "ffd8",
+  calculate(_input) {
+    let input = _input.slice(4);
+    let orientation;
+    let next;
+    while (input.length) {
+      const i = readUInt16BE(input, 0);
+      validateInput(input, i);
+      if (input[i] !== 255) {
+        input = input.subarray(1);
+        continue;
+      }
+      if (isEXIF(input)) {
+        orientation = validateExifBlock(input, i);
+      }
+      next = input[i + 1];
+      if (next === 192 || next === 193 || next === 194) {
+        const size = extractSize(input, i + 5);
+        if (!orientation) {
+          return size;
+        }
+        return {
+          height: size.height,
+          orientation,
+          width: size.width
+        };
+      }
+      input = input.subarray(i + 2);
+    }
+    throw new TypeError("Invalid JPG, no size found");
+  }
+};
+
+// node_modules/image-size/dist/esm/utils/bit-reader.js
+var BitReader = class {
+  input;
+  endianness;
+  byteOffset = 2;
+  bitOffset = 0;
+  constructor(input, endianness) {
+    this.input = input;
+    this.endianness = endianness;
+  }
+  getBits(length = 1) {
+    let result = 0;
+    let bitsRead = 0;
+    while (bitsRead < length) {
+      if (this.byteOffset >= this.input.length) {
+        throw new Error("Reached end of input");
+      }
+      const currentByte = this.input[this.byteOffset];
+      const bitsLeft = 8 - this.bitOffset;
+      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
+      if (this.endianness === "little-endian") {
+        const mask = (1 << bitsToRead) - 1;
+        const bits = currentByte >> this.bitOffset & mask;
+        result |= bits << bitsRead;
+      } else {
+        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
+        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
+        result = result << bitsToRead | bits;
+      }
+      bitsRead += bitsToRead;
+      this.bitOffset += bitsToRead;
+      if (this.bitOffset === 8) {
+        this.byteOffset++;
+        this.bitOffset = 0;
+      }
+    }
+    return result;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl-stream.js
+function calculateImageDimension(reader, isSmallImage) {
+  if (isSmallImage) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  const sizeClass = reader.getBits(2);
+  const extraBits = [9, 13, 18, 30][sizeClass];
+  return 1 + reader.getBits(extraBits);
+}
+function calculateImageWidth(reader, isSmallImage, widthMode, height) {
+  if (isSmallImage && widthMode === 0) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  if (widthMode === 0) {
+    return calculateImageDimension(reader, false);
+  }
+  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
+  return Math.floor(height * aspectRatios[widthMode - 1]);
+}
+var JXLStream = {
+  validate: (input) => {
+    return toHexString(input, 0, 2) === "ff0a";
+  },
+  calculate(input) {
+    const reader = new BitReader(input, "little-endian");
+    const isSmallImage = reader.getBits(1) === 1;
+    const height = calculateImageDimension(reader, isSmallImage);
+    const widthMode = reader.getBits(3);
+    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
+    return { width, height };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl.js
+function extractCodestream(input) {
+  const jxlcBox = findBox(input, "jxlc", 0);
+  if (jxlcBox) {
+    return input.subarray(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
+  }
+  const partialStreams = extractPartialStreams(input);
+  if (partialStreams.length > 0) {
+    return concatenateCodestreams(partialStreams);
+  }
+  return void 0;
+}
+function extractPartialStreams(input) {
+  const partialStreams = [];
+  let offset = 0;
+  while (offset < input.length) {
+    const jxlpBox = findBox(input, "jxlp", offset);
+    if (!jxlpBox)
+      break;
+    if (jxlpBox.size < 12) {
+      throw new TypeError("Invalid JXL");
+    }
+    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+    offset = jxlpBox.offset + jxlpBox.size;
+  }
+  return partialStreams;
+}
+function concatenateCodestreams(partialCodestreams) {
+  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
+  const codestream = new Uint8Array(Math.min(16, totalLength));
+  let position = 0;
+  for (const partial of partialCodestreams) {
+    if (position >= codestream.length)
+      break;
+    const byteCount = Math.min(partial.length, codestream.length - position);
+    codestream.set(partial.subarray(0, byteCount), position);
+    position += byteCount;
+  }
+  return codestream;
+}
+var JXL = {
+  validate: (input) => {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "JXL ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jxl ";
+  },
+  calculate(input) {
+    const codestream = extractCodestream(input);
+    if (codestream)
+      return JXLStream.calculate(codestream);
+    throw new TypeError("Invalid JXL");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/ktx.js
+var KTX = {
+  validate: (input) => {
+    const signature = toUTF8String(input, 1, 7);
+    return ["KTX 11", "KTX 20"].includes(signature);
+  },
+  calculate: (input) => {
+    const type = input[5] === 49 ? "ktx" : "ktx2";
+    const offset = type === "ktx" ? 36 : 20;
+    return {
+      height: readUInt32LE(input, offset + 4),
+      width: readUInt32LE(input, offset),
+      type
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/png.js
+var pngSignature = "PNG\r\n\n";
+var pngImageHeaderChunkName = "IHDR";
+var pngFriedChunkName = "CgBI";
+var PNG = {
+  validate(input) {
+    if (pngSignature === toUTF8String(input, 1, 8)) {
+      let chunkName = toUTF8String(input, 12, 16);
+      if (chunkName === pngFriedChunkName) {
+        chunkName = toUTF8String(input, 28, 32);
+      }
+      if (chunkName !== pngImageHeaderChunkName) {
+        throw new TypeError("Invalid PNG");
+      }
+      return true;
+    }
+    return false;
+  },
+  calculate(input) {
+    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
+      return {
+        height: readUInt32BE(input, 36),
+        width: readUInt32BE(input, 32)
+      };
+    }
+    return {
+      height: readUInt32BE(input, 20),
+      width: readUInt32BE(input, 16)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/pnm.js
+var PNMTypes = {
+  P1: "pbm/ascii",
+  P2: "pgm/ascii",
+  P3: "ppm/ascii",
+  P4: "pbm",
+  P5: "pgm",
+  P6: "ppm",
+  P7: "pam",
+  PF: "pfm"
+};
+var HEADER_SCAN_LIMIT = 64;
+var PAM_HEADER_LIMIT = 256;
+var isWhitespace = (byte) => byte === 32 || byte === 9 || byte === 10 || byte === 13;
+var isEndOfLine = (byte) => byte === 10 || byte === 13;
+var handlers = {
+  default: (input) => {
+    const end = Math.min(input.length, HEADER_SCAN_LIMIT);
+    const tokens = [];
+    let token3 = "";
+    let inComment = false;
+    for (let i = 2; i < end && tokens.length < 2; i++) {
+      const byte = input[i];
+      if (inComment) {
+        inComment = !isEndOfLine(byte);
+      } else if (byte === 35) {
+        inComment = true;
+      } else if (isWhitespace(byte)) {
+        if (token3) {
+          tokens.push(token3);
+          token3 = "";
+        }
+      } else {
+        token3 += String.fromCharCode(byte);
+      }
+    }
+    if (token3 && tokens.length < 2)
+      tokens.push(token3);
+    if (tokens.length < 2) {
+      throw new TypeError("Invalid PNM");
+    }
+    return {
+      width: Number.parseInt(tokens[0], 10),
+      height: Number.parseInt(tokens[1], 10)
+    };
+  },
+  pam: (input) => {
+    const header2 = toUTF8String(input, 0, Math.min(input.length, PAM_HEADER_LIMIT));
+    const size = {};
+    for (const line2 of header2.split(/[\r\n]+/)) {
+      if (line2.length > 16 || line2.charCodeAt(0) > 128) {
+        continue;
+      }
+      const [key2, value] = line2.split(" ");
+      if (key2 && value) {
+        size[key2.toLowerCase()] = Number.parseInt(value, 10);
+      }
+      if (size.height && size.width) {
+        break;
+      }
+    }
+    if (size.height && size.width) {
+      return {
+        height: size.height,
+        width: size.width
+      };
+    }
+    throw new TypeError("Invalid PAM");
+  }
+};
+var PNM = {
+  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
+  calculate(input) {
+    const signature = toUTF8String(input, 0, 2);
+    const type = PNMTypes[signature];
+    const handler = handlers[type] || handlers.default;
+    return handler(input);
+  }
+};
+
+// node_modules/image-size/dist/esm/types/psd.js
+var PSD = {
+  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
+  calculate: (input) => ({
+    height: readUInt32BE(input, 14),
+    width: readUInt32BE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/svg.js
+var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
+var extractorRegExps = {
+  height: /\sheight=(['"])([^%]+?)\1/,
+  root: svgReg,
+  viewbox: /\sviewBox=(['"])(.+?)\1/i,
+  width: /\swidth=(['"])([^%]+?)\1/
+};
+var INCH_CM = 2.54;
+var units = {
+  in: 96,
+  cm: 96 / INCH_CM,
+  em: 16,
+  ex: 8,
+  m: 96 / INCH_CM * 100,
+  mm: 96 / INCH_CM / 10,
+  pc: 96 / 72 / 12,
+  pt: 96 / 72,
+  px: 1
+};
+var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
+function parseLength(len) {
+  const m = unitsReg.exec(len);
+  if (!m) {
+    return void 0;
+  }
+  return Math.round(Number(m[1]) * (units[m[2]] || 1));
+}
+function parseViewbox(viewbox) {
+  const bounds = viewbox.split(" ");
+  return {
+    height: parseLength(bounds[3]),
+    width: parseLength(bounds[2])
+  };
+}
+function parseAttributes(root3) {
+  const width = root3.match(extractorRegExps.width);
+  const height = root3.match(extractorRegExps.height);
+  const viewbox = root3.match(extractorRegExps.viewbox);
+  return {
+    height: height && parseLength(height[2]),
+    viewbox: viewbox && parseViewbox(viewbox[2]),
+    width: width && parseLength(width[2])
+  };
+}
+function calculateByDimensions(attrs) {
+  return {
+    height: attrs.height,
+    width: attrs.width
+  };
+}
+function calculateByViewbox(attrs, viewbox) {
+  const ratio = viewbox.width / viewbox.height;
+  if (attrs.width) {
+    return {
+      height: Math.floor(attrs.width / ratio),
+      width: attrs.width
+    };
+  }
+  if (attrs.height) {
+    return {
+      height: attrs.height,
+      width: Math.floor(attrs.height * ratio)
+    };
+  }
+  return {
+    height: viewbox.height,
+    width: viewbox.width
+  };
+}
+var SVG = {
+  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
+  calculate(input) {
+    const root3 = toUTF8String(input).match(extractorRegExps.root);
+    if (root3) {
+      const attrs = parseAttributes(root3[0]);
+      if (attrs.width && attrs.height) {
+        return calculateByDimensions(attrs);
+      }
+      if (attrs.viewbox) {
+        return calculateByViewbox(attrs, attrs.viewbox);
+      }
+    }
+    throw new TypeError("Invalid SVG");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tga.js
+var TGA = {
+  validate(input) {
+    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
+  },
+  calculate(input) {
+    return {
+      height: readUInt16LE(input, 14),
+      width: readUInt16LE(input, 12)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tiff.js
+var CONSTANTS = {
+  TAG: {
+    WIDTH: 256,
+    HEIGHT: 257,
+    COMPRESSION: 259
+  },
+  TYPE: {
+    SHORT: 3,
+    LONG: 4,
+    LONG8: 16
+  },
+  ENTRY_SIZE: {
+    STANDARD: 12,
+    BIG: 20
+  },
+  COUNT_SIZE: {
+    STANDARD: 2,
+    BIG: 8
+  }
+};
+function readIFD(input, { isBigEndian, isBigTiff }) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const ifdOffset = isBigTiff ? Number(view.getBigUint64(8, le)) : view.getUint32(4, le);
+  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
+  return input.slice(ifdOffset + entryCountSize);
+}
+function readTagValue(view, type, offset, le) {
+  switch (type) {
+    case CONSTANTS.TYPE.SHORT:
+      return view.getUint16(offset, le);
+    case CONSTANTS.TYPE.LONG:
+      return view.getUint32(offset, le);
+    case CONSTANTS.TYPE.LONG8: {
+      const value = Number(view.getBigUint64(offset, le));
+      if (value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError("Value too large");
+      }
+      return value;
+    }
+    default:
+      return 0;
+  }
+}
+function extractTags(input, { isBigEndian, isBigTiff }) {
+  const tags = {};
+  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
+  const valueOffset = isBigTiff ? 12 : 8;
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  for (let offset = 0; offset + entrySize < input.length; offset += entrySize) {
+    const code2 = view.getUint16(offset, le);
+    const type = view.getUint16(offset + 2, le);
+    const length = isBigTiff ? Number(view.getBigUint64(offset + 4, le)) : view.getUint32(offset + 4, le);
+    if (code2 === 0)
+      break;
+    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
+      tags[code2] = readTagValue(view, type, offset + valueOffset, le);
+    }
+  }
+  return tags;
+}
+function determineFormat(input) {
+  const signature = toUTF8String(input, 0, 2);
+  const isBigEndian = signature === "MM";
+  const view = new DataView(input.buffer, input.byteOffset);
+  const version = view.getUint16(2, !isBigEndian);
+  return {
+    isBigEndian,
+    isBigTiff: version === 43
+  };
+}
+function validateBigTIFFHeader(input, isBigEndian) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const byteSize = view.getUint16(4, le);
+  const reserved = view.getUint16(6, le);
+  if (byteSize !== 8 || reserved !== 0) {
+    throw new TypeError("Invalid BigTIFF header");
+  }
+}
+var signatures = /* @__PURE__ */ new Set([
+  "49492a00",
+  "4d4d002a",
+  "49492b00",
+  "4d4d002b"
+]);
+var TIFF = {
+  validate: (input) => {
+    const signature = toHexString(input, 0, 4);
+    return signatures.has(signature);
+  },
+  calculate(input) {
+    const format2 = determineFormat(input);
+    if (format2.isBigTiff) {
+      validateBigTIFFHeader(input, format2.isBigEndian);
+    }
+    const ifdBuffer = readIFD(input, format2);
+    const tags = extractTags(ifdBuffer, format2);
+    const info = {
+      height: tags[CONSTANTS.TAG.HEIGHT],
+      width: tags[CONSTANTS.TAG.WIDTH],
+      type: format2.isBigTiff ? "bigtiff" : "tiff"
+    };
+    if (tags[CONSTANTS.TAG.COMPRESSION]) {
+      info.compression = tags[CONSTANTS.TAG.COMPRESSION];
+    }
+    if (!info.width || !info.height) {
+      throw new TypeError("Invalid Tiff. Missing tags");
+    }
+    return info;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/webp.js
+function calculateExtended(input) {
+  return {
+    height: 1 + readUInt24LE(input, 7),
+    width: 1 + readUInt24LE(input, 4)
+  };
+}
+function calculateLossless(input) {
+  return {
+    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
+    width: 1 + ((input[2] & 63) << 8 | input[1])
+  };
+}
+function calculateLossy(input) {
+  return {
+    height: readInt16LE(input, 8) & 16383,
+    width: readInt16LE(input, 6) & 16383
+  };
+}
+var WEBP = {
+  validate(input) {
+    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
+    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
+    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
+    return riffHeader && webpHeader && vp8Header;
+  },
+  calculate(_input) {
+    const chunkHeader = toUTF8String(_input, 12, 16);
+    const input = _input.slice(20, 30);
+    if (chunkHeader === "VP8X") {
+      const extendedHeader = input[0];
+      const validStart = (extendedHeader & 192) === 0;
+      const validEnd = (extendedHeader & 1) === 0;
+      if (validStart && validEnd) {
+        return calculateExtended(input);
+      }
+      throw new TypeError("Invalid WebP");
+    }
+    if (chunkHeader === "VP8 " && input[0] !== 47) {
+      return calculateLossy(input);
+    }
+    const signature = toHexString(input, 3, 6);
+    if (chunkHeader === "VP8L" && signature !== "9d012a") {
+      return calculateLossless(input);
+    }
+    throw new TypeError("Invalid WebP");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/index.js
+var typeHandlers = /* @__PURE__ */ new Map([
+  ["bmp", BMP],
+  ["cur", CUR],
+  ["dds", DDS],
+  ["gif", GIF],
+  ["heif", HEIF],
+  ["icns", ICNS],
+  ["ico", ICO],
+  ["j2c", J2C],
+  ["jp2", JP2],
+  ["jpg", JPG],
+  ["jxl", JXL],
+  ["jxl-stream", JXLStream],
+  ["ktx", KTX],
+  ["png", PNG],
+  ["pnm", PNM],
+  ["psd", PSD],
+  ["svg", SVG],
+  ["tga", TGA],
+  ["tiff", TIFF],
+  ["webp", WEBP]
+]);
+var types = Array.from(typeHandlers.keys());
+
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
 __export(mdurl_exports, {
@@ -25941,13 +26927,22 @@ var parser = new MarkdownItCallable();
 
 // src/items.ts
 var STEP_ACTIONS = [
-  { id: "approve", label: "Approve" },
-  { id: "flag", label: "Flag", note: true }
+  { id: "approve", label: "Approve", tone: "positive", outcome: "Approved" },
+  { id: "flag", label: "Flag", note: true, tone: "attention", outcome: "Flagged" }
 ];
 var builtIn = (actions) => actions.length === STEP_ACTIONS.length && actions.every((action, at) => {
   const own = STEP_ACTIONS[at];
-  return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit;
+  return own?.id === action.id && own.label === action.label && !own.note === !action.note && !own.edit === !action.edit && (action.tone === void 0 || own.tone === action.tone);
 });
+var TONE_SHOWN = { positive: "ok", attention: "flag", none: "neu" };
+var toneOf = (actions, id) => actions?.find((one) => one.id === id)?.tone ?? "none";
+function stepShown(view, step, findings) {
+  const key2 = itemKey({ type: "step", id: step.id });
+  const decision = view.decided[key2];
+  if (decision) return TONE_SHOWN[toneOf(view.actions[key2], decision.action)];
+  if (view.reopened[key2]) return "reo";
+  return findings > 0 || step.kind === "folded" && step.problems.length > 0 ? "find" : "un";
+}
 var itemKey = (item) => "id" in item ? `${item.type}:${item.id}` : item.type;
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
@@ -25977,12 +26972,19 @@ var frame = ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none
 var ICONS = {
   /** Queue and step states. */
   unread: [ring()],
-  read: [ring(), ["path", { d: "M8 1.8a6.2 6.2 0 0 1 0 12.4z", fill: "currentColor" }]],
   current: [ring(), ["circle", { cx: 8, cy: 8, r: 2.8, fill: "currentColor" }]],
   // The tick is cut out of the disc in the canvas colour.
   decided: [
     ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
     ["path", { d: "M4.8 8.2l2.1 2.1 4.3-4.6", ...round, "stroke-width": 1.8, class: "knockout" }]
+  ],
+  flagged: [
+    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
+    ["path", { d: "M6 11.6V4.6h4.6l-1 1.6 1 1.6H6", ...round, "stroke-width": 1.5, class: "knockout" }]
+  ],
+  "no-tone": [
+    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
+    ["path", { d: "M5.2 8h5.6", ...round, "stroke-width": 1.8, class: "knockout" }]
   ],
   reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
   folded: [block2(2, 3, 12, 3), block2(2, 8, 12, 2, 0.55), block2(2, 12, 12, 2, 0.3)],
@@ -26047,9 +27049,9 @@ var ICONS = {
   "panel-checklist": [frame, block2(10, 3.6, 3.4, 8.8)],
   "panel-explanation": [frame, block2(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]]
 };
-var SVG = "http://www.w3.org/2000/svg";
+var SVG2 = "http://www.w3.org/2000/svg";
 function icon(name, label) {
-  const svg = document.createElementNS(SVG, "svg");
+  const svg = document.createElementNS(SVG2, "svg");
   for (const [key2, value] of Object.entries({ viewBox: "0 0 16 16", width: 16, height: 16, focusable: "false" }))
     svg.setAttribute(key2, String(value));
   svg.classList.add("icon", `icon-${name}`);
@@ -26058,7 +27060,7 @@ function icon(name, label) {
     svg.setAttribute("aria-label", label);
   } else svg.setAttribute("aria-hidden", "true");
   for (const [tag2, attributes] of ICONS[name]) {
-    const shape = document.createElementNS(SVG, tag2);
+    const shape = document.createElementNS(SVG2, tag2);
     for (const [key2, value] of Object.entries(attributes)) shape.setAttribute(key2, String(value));
     svg.append(shape);
   }
@@ -26339,63 +27341,85 @@ var renderMarkdown = (text2, file, added) => file === void 0 ? withoutImages.ren
 // src/page/shortcuts.ts
 var SHORTCUTS = [
   { caps: "J / K", does: "Next / previous step" },
-  { caps: "A", does: "Approve and go to the next step" },
-  { caps: "F", does: "Flag (asks for a note)" },
+  { caps: "A", does: "Approve" },
+  { caps: "F", does: "Flag" },
   { caps: "/", does: "Ask about this step" },
-  { caps: "Click, Shift-click a line", does: "Pick lines" },
-  { caps: "C", does: "Comment on picked lines" },
-  { caps: "V", does: "Mark the file as viewed" },
+  { caps: "Click, Shift-click", does: "Pick lines" },
+  { caps: "C", does: "Comment" },
+  { caps: "V", does: "Viewed" },
   { caps: "1 \u2013 3", does: "Show or hide a panel" },
-  { caps: "G then S", does: "Go to the Summary" },
+  { caps: "G then S", does: "Summary" },
   { caps: "?", does: "This sheet" }
 ];
 var MEANS = {
-  current: "The step you are on",
-  read: "Read, not decided yet",
-  unread: "Not read yet",
-  decided: "Decided: you chose Approve or Flag",
+  current: "Where you are",
+  decided: "Approved",
+  flagged: "Flagged",
+  "no-tone": "Decided, no tone",
+  warn: "Needs you",
   reopened: "Changed since you decided",
-  folded: "Files to skim: the session says why",
+  unread: "Not decided yet",
+  folded: "Files to skim",
   met: "Met",
-  partly: "Partly met",
+  partly: "Partly",
   "not-met": "Not met",
   unchecked: "Not checked yet"
 };
+var COLOURS = {
+  current: "ink",
+  decided: "green",
+  flagged: "amber",
+  "no-tone": "grey",
+  warn: "amber",
+  reopened: "amber",
+  unread: "grey",
+  met: "green",
+  partly: "amber",
+  "not-met": "red",
+  unchecked: "grey"
+};
+var STEP_MARKS = ["current", "decided", "flagged", "warn", "reopened", "no-tone", "unread"];
+var CHECKLIST_MARKS = ["met", "partly", "not-met", "unchecked"];
+var STATE_OF = { current: "cur", decided: "ok", flagged: "flag", "no-tone": "neu", warn: "find", reopened: "reo", unread: "un" };
 var SEGMENTS = [
-  ["decided", "Decided"],
-  ["read", "Read"],
-  ["unread", "Not read yet"],
-  ["reopened", "Changed since you decided"],
-  ["current", "Where you are: solid ink, taller"]
+  ["ok", "Approved"],
+  ["flag", "Needs you"],
+  ["neu", "Decided, no tone"],
+  ["un", "Not decided yet"],
+  ["cur", "Where you are"]
 ];
 var STATUSES = [
-  ["listening", "Listening", "The session is ready for your questions"],
-  ["working", "Working", "The session is busy on something you asked"],
-  ["needs-you", "Needs you", "The session asked you a question"],
-  ["gone", "Gone", "The session stopped listening; what you send waits for it"]
+  ["listening", "Listening", "Listening: questions reach the session now"],
+  ["working", "Working", "Working on your question"],
+  ["needs-you", "Needs you", "Needs you"],
+  ["gone", "Session gone", "Session gone: what you send waits"]
 ];
 var legend = (rows) => el("table", { className: "keys legend" }, el("tbody", {}, ...rows.map(([mark, means]) => el("tr", {}, el("td", {}, mark), el("td", {}, means)))));
 var group = (name) => el("p", { className: "popover-label" }, name);
 function meanings() {
   const rowIcon = (name) => {
     const mark = el("span", { className: "help-mark" }, icon(name));
-    mark.dataset["state"] = name;
+    mark.dataset["state"] = STATE_OF[name] ?? name;
     return mark;
   };
-  const means = (name) => [rowIcon(name), MEANS[name] ?? ""];
-  const steps = ["current", "read", "unread", "decided", "reopened"].map(means);
+  const means = (name) => [rowIcon(name), `${MEANS[name] ?? ""} (${COLOURS[name] ?? ""})`];
   const checking = el("span", { className: "help-mark" }, icon("unchecked"));
   const segments = SEGMENTS.map(([state, means2]) => {
-    const segment2 = el("span", { className: "segment" }, ...state === "decided" ? [el("span", { className: "segment-fill" })] : []);
+    const segment2 = el("span", { className: "segment" });
     segment2.dataset["state"] = state;
     return [segment2, means2];
   });
   const notes = [
-    [el("span", { className: "help-label finding" }, icon("warn"), "Finding"), "A problem the session found"],
-    [el("span", { className: "help-label" }, icon("message"), "Note"), "A remark from the session"],
-    [el("span", { className: "help-label" }, "You asked"), "Your question and its answer"],
-    [el("span", { className: "help-label own" }, icon("own"), "Your comment"), "Yours: the session gets it with your decisions"]
+    [el("span", { className: "help-label finding" }, icon("warn"), "Finding"), "Needs you"],
+    [el("span", { className: "help-label" }, icon("message"), "Note"), ""],
+    [el("span", { className: "help-label" }, "You asked"), "Question"],
+    [el("span", { className: "help-label own" }, icon("own"), "Your comment"), "Yours: goes out with your review"],
+    [el("span", { className: "help-label finding" }, icon("warn"), "1 finding"), "First finding in this file"],
+    [el("span", { className: "help-label" }, icon("message"), "2 notes"), "First note in this file"],
+    [el("span", { className: "help-label own" }, icon("own"), "1 yours"), "Your first comment here"],
+    [el("span", { className: "help-label finding" }, icon("warn"), "2 open findings"), "Next finding"]
   ];
+  const findings = el("span", { className: "help-label finding" }, icon("warn"), "N");
   const statuses = STATUSES.map(([state, name, means2]) => {
     const status2 = el("span", { className: "status" }, state === "working" ? icon("spinner") : el("span", { className: "dot" }), name);
     status2.dataset["state"] = state;
@@ -26405,22 +27429,25 @@ function meanings() {
     el(
       "div",
       { className: "help-column" },
-      el("h2", { className: "popover-head", id: "help-head" }, "What things mean"),
-      group("Steps in To review"),
-      legend([...steps, [checking, "The session is still checking it"], means("folded")]),
-      group("The progress bar"),
+      el("h2", { className: "popover-head", id: "help-head" }, "Icons"),
+      legend([
+        ...STEP_MARKS.map(means),
+        [checking, "Being checked"],
+        [rowIcon("folded"), MEANS.folded ?? ""],
+        [findings, "Opens the first finding"]
+      ]),
+      group("Checklist"),
+      legend(CHECKLIST_MARKS.map(means)),
       legend(segments)
     ),
     el(
       "div",
       { className: "help-column" },
       el("span", { className: "popover-head" }),
-      group("Notes on the code"),
+      group("Notes"),
       legend(notes),
       group("Session status"),
-      legend(statuses),
-      group("Checklist items"),
-      legend(["met", "partly", "not-met", "unchecked"].map(means))
+      legend(statuses)
     )
   ];
 }
@@ -26429,10 +27456,10 @@ function helpSheet(returnTo) {
   const keys = el(
     "div",
     { className: "help-column" },
-    el("h2", { className: "popover-head", id: "help-keys" }, icon("keyboard"), "Keyboard shortcuts"),
+    el("h2", { className: "popover-head", id: "help-keys" }, icon("keyboard"), "Keys"),
     el("table", { className: "keys" }, el("tbody", {}, ...rows))
   );
-  const dialog = openDialog("Help: what things mean", returnTo, ...meanings(), keys);
+  const dialog = openDialog("Help", returnTo, ...meanings(), keys);
   dialog.classList.add("help");
   return dialog;
 }
@@ -26479,7 +27506,7 @@ var leftEdge = region("left-edge");
 var rightEdge = region("right-edge");
 var panels = { ...DEFAULT_VIEWER.panels };
 var posted = 0;
-var PAGE = { name: "walkthrough", reopen: "Run /walkthrough again to reopen it.", retry: () => {
+var PAGE = { name: "walkthrough", reopen: "Run /walkthrough to reopen.", retry: () => {
   poll();
 } };
 var post2 = (route, body) => {
@@ -26493,8 +27520,16 @@ var decisionOf = (item) => walkthrough.decided[itemKey(item)] ?? null;
 var stepDecided = (step) => decisionOf({ type: "step", id: step.id }) !== null;
 var stepReopened = (step) => walkthrough.reopened[itemKey({ type: "step", id: step.id })];
 var beingChecked = (step) => (walkthrough.checking ?? []).includes(step.id);
-var HELD = "Decide once the session has checked this step.";
-var labelOf = (item, id) => walkthrough.actions[itemKey(item)]?.find((action) => action.id === id)?.label ?? id;
+var HELD = "Decide after the check";
+var actionOf = (item, id) => walkthrough.actions[itemKey(item)]?.find((action) => action.id === id);
+var labelOf = (item, id) => actionOf(item, id)?.label ?? id;
+var outcomeOf = (item, id) => actionOf(item, id)?.outcome ?? labelOf(item, id);
+var toned = (element, state) => {
+  element.dataset["state"] = state;
+  return element;
+};
+var decidedShown = (item, decision) => TONE_SHOWN[toneOf(walkthrough.actions[itemKey(item)], decision.action)];
+var shownOf = (step, current) => step === current ? "cur" : stepShown(walkthrough, step, openFindings(step).length);
 var CHECKLIST_ITEM = /^checklist-(.+)$/;
 function currentView() {
   const named = decodeURIComponent(location.hash.slice(1));
@@ -26575,24 +27610,9 @@ toast.addEventListener("focusin", () => {
 toast.addEventListener("focusout", () => {
   holdToast({ focus: false });
 });
-function itemName(item) {
-  switch (item.type) {
-    case "step":
-      return `step ${String(stepNumber(item.id))}`;
-    case "checklist":
-      return `checklist item ${String((walkthrough.checklist?.items.findIndex((one) => one.id === item.id) ?? -1) + 1)}`;
-    case "note": {
-      const noted = session.conversation.find((entry) => entry.id === item.id);
-      return noted && isNote(noted) ? `the ${noted.note.label} note` : "the note";
-    }
-    case "verdict":
-    case "walkthrough":
-      return `the ${item.type}`;
-  }
-}
 function offerUndo(item, action, moved) {
   undoable = { item, landed: moved ? location.hash : null };
-  toastText.textContent = `Decided ${itemName(item)}: ${labelOf(item, action)}`;
+  toastText.textContent = outcomeOf(item, action);
   for (const leaving of toast.getAnimations()) leaving.cancel();
   if (!toast.isConnected) {
     toastHeld = { pointer: false, focus: false };
@@ -26647,7 +27667,8 @@ function markRead(step) {
     reading = null;
     if (currentStep()?.id !== step.id) return;
     readNow(step.id);
-    render();
+    lastWalkthrough = JSON.stringify(walkthrough);
+    progressView(marker.classList.contains("waits"));
   }, READ_MS);
   reading = { step: step.id, timer };
 }
@@ -26688,10 +27709,10 @@ async function stop() {
   panes.inert = true;
 }
 var SESSION = {
-  listening: ["Listening", "The session is listening: what you ask reaches it right away."],
-  working: ["Working", "The session is working; what you send now waits until it listens again."],
-  "needs-you": ["Needs you", "The session asked you something; reply to it below."],
-  gone: ["Gone", "The session stopped listening and has not come back. What you send waits; run /walkthrough in Claude Code."]
+  listening: ["Listening", "Listening: questions reach the session now"],
+  working: ["Working", "Working: what you send waits"],
+  "needs-you": ["Needs you", "The session asked you something."],
+  gone: ["Session gone", "Session gone. Run /walkthrough to bring it back."]
 };
 var status = el("span", { className: "status" });
 status.setAttribute("role", "status");
@@ -26699,35 +27720,38 @@ status.setAttribute("aria-label", "Session");
 var headerEnd = el("div", { className: "header-end" });
 function statusView() {
   const state = stopped ? "gone" : session.state;
-  const [label, about] = stopped ? ["Stopped", "The walkthrough has stopped."] : SESSION[state];
+  const [label, about] = stopped ? ["Stopped", "Walkthrough stopped."] : SESSION[state];
   if (status.dataset["state"] === state && status.textContent === label) return status;
   const mark = state === "working" ? icon("spinner") : el("span", { className: "dot" });
   if (state === "needs-you") mark.dataset["motion"] = "pulse";
-  status.replaceChildren(mark, label);
+  status.replaceChildren(mark, el("span", { className: "status-label" }, label));
   status.title = about;
   status.dataset["state"] = state;
   return status;
 }
-function segmentState(step, current) {
-  if (step === current) return "current";
-  if (stepDecided(step)) return "decided";
-  if (stepReopened(step)) return "reopened";
-  return walkthrough.read.includes(step.id) ? "read" : "unread";
+function segmentWords(step, shown2) {
+  const item = { type: "step", id: step.id };
+  const decision = decisionOf(item);
+  const label = decision ? labelOf(item, decision.action) : "";
+  const open = openFindings(step).length;
+  const words = {
+    cur: "you are here",
+    ok: `${label}, decided`,
+    flag: `${label}, needs you`,
+    neu: `${label}, decided`,
+    reo: "changed since you decided, needs you",
+    find: `${open ? plural(open, "open finding") : plural(step.kind === "folded" ? step.problems.length : 0, "problem")}, needs you`,
+    un: "not decided yet"
+  };
+  return words[shown2];
 }
-var SEGMENT_WORDS = {
-  current: "you are here",
-  decided: "decided",
-  reopened: "changed since you decided",
-  read: "read",
-  unread: "not read yet"
-};
 var headerStep = () => currentView().kind === "deck" ? deckTop() : currentStep();
 function progressWords() {
   const { steps } = walkthrough;
   const decided = String(steps.filter(stepDecided).length);
   const step = headerStep();
-  if (step) return `Step ${String(stepNumber(step.id))} of ${String(steps.length)} \xB7 ${decided} decided`;
-  return currentView().kind === "summary" ? `Summary \xB7 ${decided} decided` : `${decided} of ${String(steps.length)} decided`;
+  if (step) return `Step ${String(stepNumber(step.id))} of ${String(steps.length)}`;
+  return currentView().kind === "summary" ? "Summary" : `${decided} of ${String(steps.length)} decided`;
 }
 var bar = el("div", { className: "progress" });
 var marker = el("span", { className: "progress-marker" });
@@ -26744,12 +27768,12 @@ function progressView(waits) {
   while (segments.length > steps.length) segments.pop()?.remove();
   while (segments.length < steps.length) segments.push(bar.insertBefore(el("span", { className: "segment" }), marker.parentNode ? marker : null));
   steps.forEach((step, at) => {
-    const state = segmentState(step, current);
+    const state = shownOf(step, current);
     const segment2 = segments[at];
     if (!segment2) return;
-    segment2.title = `${String(at + 1)} ${step.title}: ${SEGMENT_WORDS[state]}`;
+    segment2.title = `${String(at + 1)} ${step.title}: ${segmentWords(step, state)}`;
     segment2.dataset["state"] = state;
-    segment2.dataset["fill"] = segmentState(step, void 0);
+    segment2.dataset["fill"] = shownOf(step);
   });
   const here = current ? steps.indexOf(current) : -1;
   if (steps.length) {
@@ -26771,7 +27795,7 @@ function progressView(waits) {
 var PANEL = {
   queue: { title: "To review", menu: "To review", key: "1" },
   checklist: { title: "Checklist", menu: "Checklist", key: "2" },
-  explanation: { title: "Explanation", menu: "Explanation column", key: "3" }
+  explanation: { title: "Explanation", menu: "Explanation", key: "3" }
 };
 var shows = (panel) => panels[panel] && (panel !== "explanation" || !phone.matches);
 var SLIDES = { queue: { box: queue, edge: leftEdge }, checklist: { box: side, edge: rightEdge } };
@@ -26879,7 +27903,7 @@ function panelItems(item) {
     return made;
   });
 }
-var HELP = "Help: what things mean";
+var HELP = "Help";
 var END = "End session";
 var menuOpen = null;
 function closeMenu(refocus = false) {
@@ -26896,7 +27920,7 @@ function openMenu(key2) {
   replay();
 }
 document.addEventListener("click", (event) => {
-  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest(".menu, .more-menu, .menu-button"))) closeMenu();
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest(".menu, .more-menu"))) closeMenu();
 });
 var moreButton = () => document.querySelector('[data-key="more"]');
 function moreMenu() {
@@ -26931,7 +27955,7 @@ function moreMenu() {
     item(HELP, () => {
       helpSheet(moreButton);
     }),
-    ...phone.matches && !stopped ? [item(END, () => void stop())] : []
+    ...stopped ? [] : [item(END, () => void stop())]
   ];
   const items = [...swipe, ...toggles, ...after];
   const separator2 = el("div", { className: "menu-separator" });
@@ -26964,8 +27988,10 @@ var verdictText = el("span", { className: "verdict-text" });
 var verdictSlot = el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), verdictText);
 function headerVerdict() {
   const label = verdictLabel();
-  if (label === null) return [];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
   if (verdictText.textContent !== label) verdictText.textContent = label;
+  verdictSlot.dataset["state"] = decidedShown(VERDICT, chosen);
   return [verdictSlot];
 }
 function verdictChip(label) {
@@ -27026,17 +28052,13 @@ function dockVerdict(was) {
   const fade = [{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0, borderColor: "transparent", backgroundColor: "transparent" }];
   removeWhenDone(animate(chip, "verdict-chip-fade", fade, { ms: 440, curve: "linear", fill: "forwards" }), chip);
 }
-var finishReview = () => walkthrough.steps.length ? [keyed(el("a", { href: "#summary", className: "btn small ghost finish-review", title: "Finish review: go to the Summary (G S)" }, "Finish review"), "finish-review")] : [];
+var finishReview = () => walkthrough.steps.length ? [keyed(el("a", { href: "#summary", className: "btn small ghost finish-review", title: "Go to the Summary to send (G S)" }, "Finish"), "finish-review")] : [];
 function drawHeader(waits) {
   const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
-  const prefix = el("span", { className: "status-prefix" }, "Session");
-  prefix.setAttribute("aria-hidden", "true");
   place(headerEnd, [
     ...headerVerdict(),
     ...finishReview(),
-    prefix,
     statusView(),
-    ...stopped ? [] : [el("button", { type: "button", className: "btn small stop", onclick: () => void stop() }, END)],
     moreMenu()
   ]);
   place(header, [
@@ -27112,7 +28134,7 @@ function askThread(asked) {
       { className: "note asked" },
       el("div", { className: "note-head" }, el("span", { className: "label" }, "You asked"), ...linesOf(asked.lines)),
       said(asked),
-      ...answers.length ? replies(rest) : [el("p", { className: "muted" }, "Waiting for the session to answer.")]
+      ...answers.length ? replies(rest) : [el("p", { className: "muted" }, "Waiting for an answer")]
     )
   ];
   return el("div", { className: "ask-thread" }, ...own, ...notes.map((note) => noteView(note, asked)));
@@ -27126,14 +28148,16 @@ function actionButton(item, action, look, small) {
   button.setAttribute("aria-pressed", String(decisionOf(item)?.action === action.id));
   button.dataset["key"] = `action:${key2}:${action.id}`;
   const shortcut = item.type === "step" && STEP_KEYS[action.id];
-  if (shortcut) button.title = withKey(shortcut.tip(action.label), shortcut.key);
-  button.onclick = () => {
+  const tip = [...shortcut ? [withKey(shortcut.tip(action.label), shortcut.key)] : [], ...action.consequence ? [action.consequence] : []].join(" ");
+  if (tip) button.title = tip;
+  button.onclick = (event) => {
+    if (event.detail > 1) return;
     take(item, action);
   };
   return button;
 }
 var STEP_KEYS = {
-  approve: { key: "A", tip: (label) => `${label} and go to the next step` },
+  approve: { key: "A", tip: (label) => label },
   flag: { key: "F", tip: (label) => label }
 };
 function take(item, action) {
@@ -27143,62 +28167,20 @@ function take(item, action) {
     document.querySelector(".taking textarea")?.focus();
   } else void decide(item, action.id);
 }
-function actionsMenu(item, label) {
+function changeButton(item, small) {
   const key2 = itemKey(item);
-  const actions = walkthrough.actions[key2] ?? [];
-  if (readOnly || !actions.length) return [];
-  const opener = `menu:${key2}`;
-  const open = menuOpen === opener;
-  const button = el("button", { type: "button", className: "icon-button menu-button" }, icon("more"));
-  button.setAttribute("aria-label", "Note actions");
-  button.setAttribute("aria-haspopup", "menu");
-  button.setAttribute("aria-expanded", String(open));
-  button.dataset["key"] = opener;
-  button.onclick = () => {
-    if (open) {
-      closeMenu();
-      return;
-    }
-    openMenu(opener);
-    document.querySelector('.menu [role="menuitem"]')?.focus();
+  const change = keyed(el("button", { type: "button", className: small ? "btn small" : "btn" }, "Change"), `change:${key2}`);
+  change.onclick = () => {
+    changing.add(key2);
+    render();
   };
-  if (!open) return [button];
-  const choices = actions.map((action) => {
-    const choice = el("button", { type: "button", tabIndex: -1 }, action.label);
-    choice.setAttribute("role", "menuitem");
-    choice.dataset["key"] = `menu-item:${key2}:${action.id}`;
-    choice.onclick = () => {
-      menuOpen = null;
-      render();
-      take(item, action);
-    };
-    return choice;
-  });
-  const menu = el("div", { className: "menu", popover: "manual" }, ...choices);
-  menu.setAttribute("role", "menu");
-  menu.dataset["motion"] = "menu";
-  menu.setAttribute("aria-label", `${label} actions`);
-  menu.onkeydown = (event) => {
-    const at = choices.findIndex((choice) => choice === document.activeElement);
-    const moves2 = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: choices.length - 1 };
-    const to = moves2[event.key];
-    if (to !== void 0) {
-      event.preventDefault();
-      choices[(to + choices.length) % choices.length]?.focus();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      closeMenu(true);
-    } else if (event.key === "Tab") {
-      menuOpen = null;
-      setTimeout(render, 0);
-    }
-  };
-  queueMicrotask(() => {
-    if (menu.isConnected && !menu.matches(":popover-open")) menu.showPopover();
-  });
-  return [button, menu];
+  const group2 = el("div", { className: "choices" }, change);
+  group2.setAttribute("role", "group");
+  group2.setAttribute("aria-label", "Decide");
+  return group2;
 }
-function actionGroup(item, look, small = false) {
+function actionGroup(item, look, small = false, closes = true) {
+  if (closes && decisionOf(item) && !changing.has(itemKey(item))) return changeButton(item, small);
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   const group2 = el("div", { className: "choices" }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
   group2.setAttribute("role", "group");
@@ -27212,12 +28194,11 @@ function stateTag(item, long) {
   const key2 = itemKey(item);
   const decision = walkthrough.decided[key2] ?? null;
   const reopened = walkthrough.reopened[key2];
-  if (decision) return el("span", { className: "tag decided" }, `Decided: ${labelOf(item, decision.action)}`);
-  if (reopened)
-    return el("span", { className: "tag reopened" }, long ? `Changed since you chose ${labelOf(item, reopened.action)}` : CHANGED);
-  return el("span", { className: "tag" }, "Undecided");
+  if (decision) return [toned(el("span", { className: "tag decided" }, outcomeOf(item, decision.action)), decidedShown(item, decision))];
+  if (reopened) return [el("span", { className: "tag reopened", title: CHANGED }, long ? `Changed since you ${pastOf(item, reopened.action)}` : CHANGED)];
+  return [];
 }
-function decideView(item, text2 = "", small = true) {
+function decideView(item, text2 = "", small = true, look = firstLeads) {
   const key2 = itemKey(item);
   const actions = walkthrough.actions[key2] ?? [];
   if (!actions.length) return [];
@@ -27230,19 +28211,19 @@ function decideView(item, text2 = "", small = true) {
       el(
         "div",
         { className: "decide-row" },
-        ...shown2 || readOnly ? [stateTag(item, true)] : [],
-        ...readOnly ? [] : [actionGroup(item, firstLeads, small)]
+        ...shown2 || readOnly ? stateTag(item, true) : [],
+        ...readOnly ? [] : [actionGroup(item, look, small)]
       ),
       ...shown2 ? decisionSaid(shown2) : [],
       ...taken ? [takingForm(item, taken, text2)] : []
     )
   ];
 }
-function decisionSaid(decision) {
+function decisionSaid(decision, receipts = false) {
   return [
     ...decision.note ? [el("p", { className: "said person" }, decision.note)] : [],
     ...decision.text ? [markdown2(decision.text, "said person")] : [],
-    ...followUps(decision).map(said)
+    ...receipts ? followUps(decision).map(said) : []
   ];
 }
 function takingForm(item, action, text2) {
@@ -27251,7 +28232,7 @@ function takingForm(item, action, text2) {
     ...action.edit ? [draftArea(draft("text"), "Text", text2, 3)] : [],
     ...action.note ? [draftArea(draft("note"), "Note", "", 3)] : []
   ];
-  for (const box of boxes) box.required = true;
+  for (const box of boxes) box.required = box.dataset["draft"] === draft("text");
   const form = el(
     "form",
     { className: "taking" },
@@ -27260,7 +28241,6 @@ function takingForm(item, action, text2) {
     el(
       "div",
       { className: "taking-row" },
-      el("span", { className: "hint" }, "Goes to the session with your decision."),
       keyed(el("button", { type: "button", className: "btn ghost", onclick: () => {
         taking = null;
         flung = null;
@@ -27288,8 +28268,9 @@ function oldLines({ linesText }) {
   return [el("pre", { className: "old-lines" }, linesText.map((line2) => line2.slice(indent)).join("\n"))];
 }
 var replying = /* @__PURE__ */ new Set();
-function replyView(note) {
-  if (readOnly) return [];
+function replyView(note, actions) {
+  const foot = (...end) => actions.length || end.length ? [el("div", { className: "note-foot" }, ...actions, ...end)] : [];
+  if (readOnly) return foot();
   const draft = `reply:${note.id}`;
   if (!replying.has(note.id) && !drafts.get(draft)) {
     const open = el("button", { type: "button", className: "link" }, "Reply");
@@ -27299,7 +28280,7 @@ function replyView(note) {
       render();
       document.querySelector(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
     };
-    return [el("div", { className: "note-foot" }, open)];
+    return foot(open);
   }
   const form = lineBox(draft, "Reply", "Reply\u2026", () => {
     void send2("reply", { to: note.id, text: drafts.get(draft) ?? "" }, draft).then((sent) => {
@@ -27318,7 +28299,7 @@ function replyView(note) {
     render();
     document.querySelector(`[data-key="${CSS.escape(`reply:${note.id}`)}"]`)?.focus();
   };
-  return [form];
+  return [...foot(), form];
 }
 function lateWords(note) {
   const step = walkthrough.steps.find((one) => one.id === anchorOf(note));
@@ -27342,15 +28323,13 @@ function noteView(note, asked) {
       ...detached2 ? [icon(note.note.finding ? "warn" : "message")] : [],
       el("span", { className: note.note.finding ? "label finding" : "label" }, ...note.note.finding && !detached2 ? [icon("warn")] : [], label),
       ...detached2 ? [el("span", { className: "was" }, `was on ${placeWas(placeOf(note))}`)] : late ? [el("span", { className: "lines" }, late)] : linesOf(lines),
-      ...shown2 ? [stateTag(item, false)] : [],
-      el("span", { className: "spacer" }),
-      ...actionsMenu(item, label)
+      ...shown2 ? stateTag(item, false) : []
     ),
     ...detached2 ? oldLines(placeOf(note)) : [],
     ...asked ? [el("p", { className: "you-asked" }, el("span", { className: "muted" }, "You asked:"), ` ${asked.text}`), ...replies([note, ...followUps(note)])] : [...taken?.edit ? [] : [markdown2(note.text, "note-text")], ...replies(followUps(note))],
     ...shown2 ? decisionSaid(shown2) : [],
     ...taken ? [takingForm(item, taken, note.text)] : [],
-    ...taken ? [] : replyView(note)
+    ...taken ? [] : replyView(note, readOnly || !walkthrough.actions[key2]?.length ? [] : [actionGroup(item, () => "secondary", true)])
   );
   view.setAttribute("aria-label", label);
   view.id = `note-${note.id}`;
@@ -27442,7 +28421,7 @@ function cancelPick() {
   end?.querySelector(".d2h-code-linenumber")?.focus();
 }
 function pickedChoice(step, lines) {
-  const ask = keyed(el("button", { type: "button", className: "btn small" }, icon("ask"), "Ask about lines"), `pick-ask:${step.id}`);
+  const ask = keyed(el("button", { type: "button", className: "btn small" }, icon("ask"), "Ask"), `pick-ask:${step.id}`);
   ask.onclick = () => {
     choosePicked("ask");
   };
@@ -27450,7 +28429,7 @@ function pickedChoice(step, lines) {
   comment.onclick = () => {
     choosePicked("comment");
   };
-  comment.title = "Comment on these lines (C)";
+  comment.title = "Comment (C)";
   return el("div", { className: "picked-choose" }, el("span", { className: "picked-lines" }, linesLabel(lines)), el("span", { className: "spacer" }), ask, comment);
 }
 var commentHint = () => walkthrough.commentHint ? [el("span", { className: "hint" }, walkthrough.commentHint)] : [];
@@ -27503,7 +28482,7 @@ function commentView(comment) {
   const { id, lines } = comment;
   const posted2 = walkthrough.posted.includes(id);
   const where = commentAnchor(comment) === null ? [el("span", { className: "was" }, `was on ${placeWas(comment)}`)] : linesOf(lines);
-  const view = el("article", { className: "mine" });
+  const view = el("article", { className: "mine", id: `comment-${id}` });
   view.setAttribute("aria-label", "Your comment");
   view.dataset["motion"] = `comment:${id}`;
   if (editingComments.has(id) && !posted2 && !readOnly) {
@@ -27514,8 +28493,8 @@ function commentView(comment) {
       document.querySelector(`[data-key="${CSS.escape(`edit:${id}`)}"]`)?.focus();
     };
     view.append(commentBox(draft, comment.text, where, (text2) => {
-      void send2("comment", { comment: id, text: text2 }, draft).then((sent2) => {
-        if (sent2) done();
+      void send2("comment", { comment: id, text: text2 }, draft).then((sent) => {
+        if (sent) done();
       });
     }, done));
     return view;
@@ -27534,8 +28513,6 @@ function commentView(comment) {
   remove.onclick = () => {
     void send2("comment", { comment: id, delete: true });
   };
-  const sent = new Set(session.conversation.flatMap((entry) => entry.from === "page" && (entry.id === id || "comment" in entry && entry.comment === id) ? [entry.id] : []));
-  const answers = session.conversation.filter((entry) => entry.from === "session" && entry.answer !== void 0 && sent.has(entry.answer));
   view.append(
     el(
       "div",
@@ -27547,14 +28524,13 @@ function commentView(comment) {
     ),
     ...commentAnchor(comment) === null ? oldLines(comment) : [],
     markdown2(comment.text, "comment-text"),
-    ...posted2 ? [el("span", { className: "hint" }, "Posted")] : commentHint(),
-    ...replies(answers)
+    ...posted2 ? [el("span", { className: "hint" }, "Posted")] : commentHint()
   );
   return view;
 }
 function pickedAsk(step, file, lines) {
   const draft = `ask:${step.id}:${file}:${lines.join("-")}`;
-  const label = `Ask about ${file} ${linesLabel(lines).toLowerCase()}`;
+  const label = `Ask about ${linesLabel(lines).toLowerCase()}`;
   const form = lineBox(draft, label, "", () => {
     void send2("ask", { step: step.id, file, lines, text: drafts.get(draft) ?? "" }, draft).then((sent) => {
       if (sent) unpick();
@@ -27631,7 +28607,7 @@ function drawDiff(step) {
       cell.tabIndex = at === 0 ? 0 : -1;
       cell.setAttribute("role", "button");
       cell.setAttribute("aria-pressed", "false");
-      cell.setAttribute("aria-label", `Ask about line ${cell.closest("tr")?.dataset["line"] ?? ""} of ${cell.closest("tr")?.dataset["file"] ?? ""}`);
+      cell.setAttribute("aria-label", `Ask about line ${cell.closest("tr")?.dataset["line"] ?? ""}`);
     });
     view.onkeydown = (event) => {
       pickByKey(step, event);
@@ -27641,9 +28617,9 @@ function drawDiff(step) {
   drawn.set(step.id, made);
   return made;
 }
-var SVG2 = "http://www.w3.org/2000/svg";
+var SVG3 = "http://www.w3.org/2000/svg";
 function stripeMark(className, from, size, total) {
-  const mark = document.createElementNS(SVG2, "rect");
+  const mark = document.createElementNS(SVG3, "rect");
   mark.classList.add(className);
   mark.setAttribute("y", `${String(from / total * 100)}%`);
   mark.setAttribute("height", size === null ? "3" : `${String(size / total * 100)}%`);
@@ -27652,17 +28628,17 @@ function stripeMark(className, from, size, total) {
   return mark;
 }
 function overviewStripe(fileDiff) {
-  const stripe = document.createElementNS(SVG2, "svg");
+  const stripe = document.createElementNS(SVG3, "svg");
   stripe.classList.add("overview-stripe");
   stripe.setAttribute("aria-hidden", "true");
   const rows = [...fileDiff.querySelectorAll("tbody > tr")];
-  const types = rows.map((row) => row.querySelector(".d2h-ins") ? "add" : row.querySelector(".d2h-del") ? "del" : null);
+  const types2 = rows.map((row) => row.querySelector(".d2h-ins") ? "add" : row.querySelector(".d2h-del") ? "del" : null);
   rows.forEach((row, at) => {
     row.dataset["at"] = String(at);
-    const type = types[at];
-    if (!type || types[at - 1] === type) return;
+    const type = types2[at];
+    if (!type || types2[at - 1] === type) return;
     let end = at;
-    while (types[end + 1] === type) end++;
+    while (types2[end + 1] === type) end++;
     const run = stripeMark(`run-${type}`, at, end - at + 1, rows.length);
     svgTip(run, type === "add" ? "Added lines" : "Removed lines");
     stripe.append(run);
@@ -27689,11 +28665,11 @@ function foldAround(wrapper) {
   if (wrapper.classList.contains("viewed") && !was.viewed) {
     const label = header2?.querySelector(".viewed-toggle > span");
     if (label) {
-      const reveal = [
+      const reveal2 = [
         { maxWidth: "0px", marginLeft: "-6px", opacity: 0, overflow: "hidden" },
         { maxWidth: `${String(label.getBoundingClientRect().width)}px`, marginLeft: "0px", opacity: 1, overflow: "hidden" }
       ];
-      animate(label, "viewed-label", reduced() ? FADE_IN : reveal, { ms: "base", curve: reduced() ? "linear" : "ease-out" });
+      animate(label, "viewed-label", reduced() ? FADE_IN : reveal2, { ms: "base", curve: reduced() ? "linear" : "ease-out" });
     }
     const name = header2?.querySelector(".d2h-file-name");
     if (name) animate(name, "viewed-dim", [{ color: "var(--ink)" }, { color: "var(--muted)" }], { ms: "base", curve: "linear" });
@@ -27749,7 +28725,7 @@ function fileControls(wrapper, step) {
     foldAround(wrapper);
   };
   const viewed = el("button", { type: "button", className: "viewed-toggle", title: withKey("Viewed", "V") }, icon("eye"), el("span", {}, "Viewed"));
-  viewed.setAttribute("aria-label", `Mark ${file} as viewed`);
+  viewed.setAttribute("aria-label", `Viewed ${file}`);
   viewed.onclick = () => {
     void markViewed(step, file);
   };
@@ -27758,9 +28734,9 @@ function fileControls(wrapper, step) {
 }
 var MARKED = ["finding", "own", "note"];
 var MARK_ICONS = { finding: "warn", own: "own", note: "message" };
-var MARK_WORDS = { finding: "A finding on this line", own: "Your comment on this line", note: "A note on this line" };
+var MARK_WORDS = { finding: "Finding", own: "Your comment", note: "Note" };
 function svgTip(mark, words) {
-  const title = document.createElementNS(SVG2, "title");
+  const title = document.createElementNS(SVG3, "title");
   title.textContent = words;
   mark.append(title);
 }
@@ -27851,7 +28827,7 @@ function diffView(step, pinned) {
     toggle2?.setAttribute("aria-label", `${closed2 ? "Expand" : "Collapse"} ${file}`);
     const mark = wrapper.querySelector(".viewed-toggle");
     mark?.setAttribute("aria-pressed", String(viewed));
-    if (mark) mark.title = viewed ? "Viewed (V)" : "Mark as viewed (V)";
+    if (mark) mark.title = "Viewed (V)";
   }
   const mine = commentsOf(session.conversation).filter((comment) => commentAnchor(comment) === step.id);
   const at = /* @__PURE__ */ new Map();
@@ -27872,6 +28848,10 @@ function diffView(step, pinned) {
   }
   for (const comment of mine) add(comment.file, comment.lines, "own", comment);
   markLines(view, rows, marks);
+  for (const old of view.querySelectorAll(".file-marks")) old.remove();
+  if (!readOnly)
+    for (const wrapper of view.querySelectorAll(".d2h-file-wrapper"))
+      wrapper.querySelector(".file-stats")?.after(...fileMarks(step, wrapper.dataset["file"] ?? "", pinned.filter(isNote), mine));
   const pick2 = picked?.step === step.id ? picked : null;
   const pickKey = pick2 && lineKey(pick2.file, pick2.lines[1]);
   if (pick2 && pickKey) {
@@ -27894,6 +28874,26 @@ function diffView(step, pinned) {
     rows.get(key2)?.after(el("tr", { className: "pinned-row" }, el("td", { colSpan: 2 }, shown2)));
   }
   return view;
+}
+function fileMarks(step, file, notes, mine) {
+  const inFile = (shown2) => inPageOrder(step, shown2.filter((one) => pinnedAt(one).file === file && pinnedAt(one).lines !== void 0));
+  const mark = (className, name, words, what, first) => {
+    if (!first) return [];
+    const go3 = () => {
+      if ("from" in first) revealNote(step, first);
+      else reveal(step, first, `comment-${first.id}`);
+    };
+    return [el("button", { type: "button", className: `file-mark ${className}`.trim(), title: `First ${what} here`, onclick: go3 }, icon(name), words)];
+  };
+  const findings = inFile(notes.filter((note) => note.note.finding));
+  const others = inFile(notes.filter((note) => !note.note.finding));
+  const yours = inFile(mine);
+  const marks = [
+    ...mark("finding", "warn", plural(findings.length, "finding"), "finding", findings[0]),
+    ...mark("", "message", plural(others.length, "note"), "note", others[0]),
+    ...mark("own", "own", `${String(yours.length)} yours`, "comment of yours", yours[0])
+  ];
+  return marks.length ? [el("span", { className: "file-marks" }, ...marks)] : [];
 }
 var previewed = /* @__PURE__ */ new Set();
 var fileStats = (parsed) => el("span", { className: "file-stats" }, parsed.isBinary ? "binary" : `+${String(parsed.addedLines)} \u2212${String(parsed.deletedLines)}`);
@@ -27939,11 +28939,12 @@ function addPreview(wrapper, stepId, parsed) {
       );
       return;
     }
-    preview.replaceChildren(el("p", { className: "muted" }, "Loading the preview."));
+    preview.replaceChildren(el("p", { className: "muted" }, "Loading preview"));
     const answer = await fetch(at(file)).catch(() => null);
     const added = new Set(parsed.blocks.flatMap((block3) => block3.lines).flatMap((line2) => line2.type === LineType.INSERT ? [line2.newNumber] : []));
     if (!answer?.ok) {
-      preview.replaceChildren(el("p", { className: "muted" }, "Could not load the preview."));
+      const back = el("button", { type: "button", className: "btn small", onclick: () => void choose2(false) }, "Show the diff");
+      preview.replaceChildren(el("p", { className: "muted" }, "Preview failed. ", back));
       return;
     }
     preview.innerHTML = renderMarkdown(await answer.text(), file, added);
@@ -28037,7 +29038,7 @@ function foldedView(step, pinned) {
   }, "fold-summary", key2);
   summary.title = reasons.join("\n");
   const found = step.problems.length ? [el("ul", { className: "problems" }, ...step.problems.map((problem) => el("li", { className: "problem" }, icon("warn"), markdown2(problem, "problem-text"))))] : [];
-  found[0]?.setAttribute("aria-label", "Problems the session found");
+  found[0]?.setAttribute("aria-label", "Problems");
   if (!open) return [el("div", { className: "block" }, summary, ...found)];
   const diff2 = step.diff ? diffView(step, pinned) : null;
   const wrappers = new Map([...diff2?.querySelectorAll(".d2h-file-wrapper") ?? []].map((wrapper) => [wrapper.dataset["file"], wrapper]));
@@ -28090,13 +29091,12 @@ function stepBody(step) {
 function lateLine(step) {
   const late = readOnly ? 0 : lateFindings(step).length;
   if (!late) return [];
-  const what = late === 1 ? "A finding arrived" : `${String(late)} findings arrived`;
-  const matters = late === 1 ? "the finding matters" : "the findings matter";
-  return [el("p", { className: "late-line" }, icon("warn"), el("span", {}, `${what} after you ${doneWith(step)}. Your decision stays; change it if ${matters}.`))];
+  const what = late === 1 ? "New finding" : `${String(late)} new findings`;
+  return [el("p", { className: "late-line" }, icon("warn"), el("span", {}, `${what} after you ${doneWith(step)}.`))];
 }
 function checkingNotice(step) {
   if (!beingChecked(step)) return [];
-  return [el("div", { className: "notice checking" }, icon("unchecked"), el("span", {}, "The session is still checking this step. Findings may still arrive."))];
+  return [el("div", { className: "notice checking" }, icon("unchecked"), el("span", {}, "Still checking this step. Findings may arrive."))];
 }
 function stepDecisionView(step) {
   const item = { type: "step", id: step.id };
@@ -28105,15 +29105,13 @@ function stepDecisionView(step) {
   if (reopened && !decision) {
     const note = reopened.note ? [" ", el("s", {}, `\u201C${reopened.note}\u201D`)] : [];
     return [
-      el("p", { className: "reopened-line" }, "Changed since you chose ", el("strong", {}, labelOf(item, reopened.action)), ".", ...note),
-      ...followUps(reopened).map(said)
+      el("p", { className: "reopened-line" }, `Changed since you ${pastOf(item, reopened.action)}.`, ...note)
     ];
   }
   if (!decision) return [];
   const shown2 = [
     ...decision.note ? [el("span", { className: "muted" }, readOnly ? "Note" : "Your note"), el("p", { className: "said person" }, decision.note)] : [],
-    ...decision.text ? [markdown2(decision.text, "said person")] : [],
-    ...followUps(decision).map(said)
+    ...decision.text ? [markdown2(decision.text, "said person")] : []
   ];
   return shown2.length ? [el("div", { className: "decision-said" }, ...shown2)] : [];
 }
@@ -28125,7 +29123,7 @@ function actionBar(step, asks = true) {
   const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
   if (taken) return [el("div", { className: "action-bar" }, takingForm(item, taken, ""))];
   const draft = `ask:${step.id}`;
-  const ask = lineBox(draft, "Ask about this step", "Ask about this step\u2026", () => {
+  const ask = lineBox(draft, "Ask about this step", "Ask about this step", () => {
     void send2("ask", { step: step.id, text: drafts.get(draft) ?? "" }, draft);
   });
   ask.title = withKey("Ask about this step", "/");
@@ -28133,17 +29131,30 @@ function actionBar(step, asks = true) {
   const change = el("button", { type: "button", className: "btn", onclick: () => {
     changing.add(key2);
     render();
-  } }, "Change decision");
+  } }, "Change");
   change.dataset["key"] = `change:${key2}`;
-  const open = openFindings(step);
+  const open = openFindings(step).length;
   const choices = decided ? change : actionGroup(item, (action) => open && action.id === "approve" ? "secondary" : stepLook(action));
   const held = beingChecked(step) ? [el("span", { className: "held" }, HELD)] : [];
   if (held.length) {
     for (const button of [choices, ...choices.querySelectorAll("button")]) if (button instanceof HTMLButtonElement) button.disabled = true;
   }
   const asking = asks ? [ask] : [];
-  const late = decided ? lateFindings(step).length : 0;
-  const count = late ? [el("span", { className: "open-findings" }, icon("warn"), plural(late, "new finding"))] : open ? [el("span", { className: "open-findings" }, icon("warn"), plural(open, "open finding"))] : [];
+  const late = decided ? lateFindings(step) : [];
+  const counted = inPageOrder(step, late.length ? late : openFindings(step));
+  const count = counted.length ? [
+    keyed(
+      el(
+        "button",
+        { type: "button", className: "open-findings", title: "Next finding", onclick: () => {
+          nextFinding(step, counted);
+        } },
+        icon("warn"),
+        late.length ? plural(late.length, "new finding") : plural(open, "open finding")
+      ),
+      `findings:${step.id}`
+    )
+  ] : [];
   const bar2 = held.length ? "action-bar holding" : "action-bar";
   if (!phone.matches) return [el("div", { className: bar2 }, el("div", { className: "action-row" }, choices, ...asking, ...held, ...count))];
   if (!decided) choices.replaceChildren(...[...choices.children].reverse());
@@ -28189,7 +29200,7 @@ function stepView(step, notices, view) {
   const title = el("h2", { className: "step-title", id: `step-${step.id}` }, step.title);
   const { prose, code: code2 } = stepBody(step);
   const explaining = shows("explanation");
-  const lead = [el("div", { className: "title-row" }, title, stateTag({ type: "step", id: step.id }, false)), ...prose];
+  const lead = [el("div", { className: "title-row" }, title, ...stateTag({ type: "step", id: step.id }, false)), ...prose];
   const parts = [
     ...explaining ? lead : [el("div", { className: "step-head" }, el("div", { className: "step-lead" }, ...lead), ...factsRail(step))],
     ...explaining ? [] : code2,
@@ -28206,13 +29217,21 @@ function stepView(step, notices, view) {
   splitStep.setAttribute("aria-labelledby", title.id);
   return splitStep;
 }
-var stateName = (mark) => ["decided", "reopened"].includes(mark) ? void 0 : MEANS[mark];
-function queueRow(address, state, mark, title, sub, current) {
+var stateName = (mark) => ["decided", "flagged", "no-tone", "reopened"].includes(mark) ? void 0 : MEANS[mark];
+var SHOWN_ICON = { cur: "current", ok: "decided", flag: "flagged", neu: "no-tone", reo: "reopened", find: "warn", un: "unread" };
+var SHOWN_SUB = { ok: "ok", flag: "attention" };
+function queueRow(address, state, mark, title, sub, current, clamped = false) {
+  const name = clamped ? el("span", { className: "queue-name clamped", title }, title) : title;
   const row = el(
     "a",
     { href: `#${encodeURIComponent(address)}`, className: "queue-item" },
     icon(mark, stateName(mark)),
-    el("span", { className: "queue-title" }, title, ...sub ? [el("span", { className: sub.attention ? "queue-sub attention" : "queue-sub" }, sub.text)] : [])
+    el(
+      "span",
+      { className: "queue-title" },
+      name,
+      ...sub ? [el("span", { className: `queue-sub ${sub.colour ?? ""}`.trim() }, sub.text)] : []
+    )
   );
   row.dataset["state"] = state;
   row.dataset["key"] = `row:${address}`;
@@ -28222,29 +29241,36 @@ function queueRow(address, state, mark, title, sub, current) {
   return row;
 }
 function stepRow(step, isCurrent) {
+  const row = stepRowView(step, isCurrent);
+  if (openFindings(step).length)
+    row.onclick = (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openAtFinding(step);
+    };
+  return row;
+}
+function stepRowView(step, isCurrent) {
   const current = isCurrent && "step";
   const item = { type: "step", id: step.id };
+  const shown2 = shownOf(step, isCurrent ? step : void 0);
   const decision = decisionOf(item);
   if (decision) {
-    const sub = lateFindings(step).length ? { text: "New finding", attention: true } : { text: `Decided: ${labelOf(item, decision.action)}` };
-    return queueRow(step.id, "decided", "decided", step.title, sub, current);
+    const sub = lateFindings(step).length ? { text: "New finding", colour: "attention" } : { text: outcomeOf(item, decision.action), colour: SHOWN_SUB[decidedShown(item, decision)] };
+    return queueRow(step.id, shown2, SHOWN_ICON[shown2], step.title, sub, current);
   }
+  const open = openFindings(step).length;
+  const findings = open ? { text: plural(open, "open finding"), colour: "attention" } : null;
   const checking = beingChecked(step) ? { text: "Being checked" } : null;
-  if (stepReopened(step)) return queueRow(step.id, "reopened", "reopened", step.title, checking ?? { text: CHANGED }, current);
+  if (stepReopened(step)) return queueRow(step.id, shown2, SHOWN_ICON[shown2], step.title, checking ?? { text: CHANGED, colour: "attention" }, current);
   if (step.kind === "folded") {
-    const problems = step.problems.length ? { text: plural(step.problems.length, "problem"), attention: true } : null;
-    return queueRow(step.id, "folded", "folded", step.title, checking ?? problems, current);
+    const problems = step.problems.length ? { text: plural(step.problems.length, "problem"), colour: "attention" } : null;
+    const state = isCurrent ? shown2 : "folded";
+    return queueRow(step.id, state, isCurrent ? "current" : "folded", step.title, checking ?? findings ?? problems, current);
   }
-  const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? "read" : "unread", isCurrent ? "current" : read ? "read" : "unread", step.title, checking, current);
+  return queueRow(step.id, shown2, SHOWN_ICON[shown2], step.title, checking ?? findings, current);
 }
 var stepLeft = (step) => !stepDecided(step) || lateFindings(step).length > 0;
-function leftItems() {
-  return (walkthrough.checklist?.items ?? []).filter((item) => {
-    const key2 = itemKey({ type: "checklist", id: item.id });
-    return item.mark === "not-met" || (walkthrough.actions[key2] ?? []).length > 0 && !walkthrough.decided[key2];
-  });
-}
 var SESSION_PAGE = "Session messages";
 function sessionRow(view) {
   const messages = sessionMessages().length;
@@ -28279,14 +29305,18 @@ function viewAddress(view) {
 }
 function queueSelect(view, left, decided) {
   const shown2 = viewAddress(view);
-  const named = (address, title) => view.kind === "step" && address === shown2?.[0] ? `Step ${String(stepNumber(address))} of ${String(walkthrough.steps.length)} \xB7 ${title}` : title;
+  const named = (address, title) => view.kind === "step" && address === shown2?.[0] ? `Step ${String(stepNumber(address))} of ${String(walkthrough.steps.length)}` : title;
   const option = ([address, title]) => el("option", { value: address, selected: address === shown2?.[0] }, named(address, title));
   const known = [...left, ...decided.map((step) => [step.id, step.title]), ["summary", ""]].some(([address]) => address === shown2?.[0]);
   const select = el(
     "select",
-    { onchange: () => {
-      go2(select.value);
-    } },
+    {
+      onchange: () => {
+        const step = walkthrough.steps.find((one) => one.id === select.value);
+        if (step) openAtFinding(step);
+        else go2(select.value);
+      }
+    },
     ...shown2 && !known ? [option(shown2)] : [],
     ...walkthrough.steps.length || left.length ? [] : [el("option", { disabled: true, selected: true }, "No steps yet")],
     ...left.map(option),
@@ -28306,18 +29336,16 @@ function queueView(view) {
   const undecided = steps.filter(stepLeft);
   const fromSession = sessionRow(view);
   const rows = [...undecided.map((step) => stepRow(step, step === current)), ...fromSession];
-  const left = undecided.map((step) => [step.id, lateFindings(step).length ? `${step.title} \xB7 New finding` : step.title]);
+  const left = undecided.map((step) => {
+    const open2 = openFindings(step).length;
+    return [step.id, lateFindings(step).length ? `${step.title} \xB7 New finding` : open2 ? `${step.title} \xB7 ${plural(open2, "open finding")}` : step.title];
+  });
   if (fromSession.length) left.push(["session", SESSION_PAGE]);
-  for (const item of leftItems()) {
-    const at = view.kind === "checklist" && view.item === item.id;
-    rows.push(queueRow(`checklist-${item.id}`, item.mark ?? "unchecked", item.mark ?? "unchecked", plain(item.text), { text: "Checklist" }, at && "page"));
-    left.push([`checklist-${item.id}`, plain(item.text)]);
-  }
   const counted = steps.length > 0 || rows.length > 0;
   const leftCount = el("span", { className: "counter" }, String(rows.length));
   leftCount.dataset["motion"] = "count:left";
   const head = panelHead("queue", el("h2", { className: "queue-head", id: "queue-head" }, PANEL.queue.title, ...counted ? [leftCount] : []));
-  const empty = rows.length ? [] : [el("p", { className: "queue-empty" }, steps.length ? "Everything is decided." : "No steps yet")];
+  const empty = rows.length ? [] : [el("p", { className: "queue-empty" }, steps.length ? "Nothing left." : "No steps yet")];
   const decided = steps.filter((step) => !stepLeft(step));
   const open = opened.has("decided") || current !== void 0 && decided.includes(current);
   const decidedNumber = el("span", {}, String(decided.length));
@@ -28347,9 +29375,10 @@ function queueView(view) {
   return [...queueSelect(view, left, decided), head, ...rows, ...empty, ...foot, ...summary];
 }
 var stepNumber = (id) => walkthrough.steps.findIndex((step) => step.id === id) + 1;
-function metCount(items) {
+function metCount(items, short = false) {
   if (!items.some((item) => item.mark !== void 0)) return null;
-  return `${String(items.filter((item) => item.mark === "met").length)} of ${String(items.length)} met`;
+  const met = String(items.filter((item) => item.mark === "met").length);
+  return short ? `${met}/${String(items.length)}` : `${met} of ${String(items.length)} met`;
 }
 function checklistRows(items, view, compact) {
   return items.map((item) => {
@@ -28376,7 +29405,7 @@ function checklistRows(items, view, compact) {
         el("p", { className: "item-line" }, el("span", { className: "item-status" }, item.status), ...steps),
         ...gone ? [el("p", { className: "gone" }, icon("unlink"), `${plural(gone, "linked step")} no longer in the change`)] : []
       ),
-      ...compact ? [] : decideView({ type: "checklist", id: item.id }, item.text)
+      ...compact ? [] : decideView({ type: "checklist", id: item.id }, item.text, true, () => "secondary")
     );
     row.dataset["mark"] = mark;
     row.id = `checklist-item-${item.id}`;
@@ -28403,7 +29432,7 @@ function wholeView() {
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   if (!actions.length) return [];
   const shown2 = walkthrough.decided[itemKey(item)] ?? walkthrough.reopened[itemKey(item)];
-  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", ...shown2 || readOnly ? [stateTag(item, true)] : []);
+  const heading2 = el("h2", { className: "section-head", id: "whole" }, "Whole walkthrough", ...shown2 || readOnly ? stateTag(item, true) : []);
   const taken = taking?.key === itemKey(item) ? actions.find((action) => action.id === taking?.action) : void 0;
   const section = el(
     "section",
@@ -28423,7 +29452,9 @@ function verdictLabel() {
 }
 var verdictStatus = () => {
   const label = verdictLabel();
-  return label === null ? [] : [el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), label)];
+  const chosen = decisionOf(VERDICT);
+  if (label === null || !chosen) return [];
+  return [toned(el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), label), decidedShown(VERDICT, chosen))];
 };
 var finishWaits = () => (walkthrough.actions[itemKey(VERDICT)] ?? []).length > 0 && !decisionOf(VERDICT);
 var linesShort = ([first, last]) => first === last ? String(first) : `${String(first)}\u2013${String(last)}`;
@@ -28434,11 +29465,11 @@ function summarySection(name, count, ...body) {
   section.setAttribute("aria-labelledby", id);
   return section;
 }
-var ledgerSub = (text2, className = "") => el("span", { className: `ledger-sub ${className}`.trim() }, text2);
+var ledgerSub = (text2, className = "") => el("span", { className: `ledger-sub ${className}`.trim(), title: text2 }, text2);
 function ownSubs(step) {
   return commentsOf(session.conversation).filter((comment) => commentAnchor(comment) === step.id).map((comment) => {
     const where = el("span", { className: "where", title: comment.file }, `${comment.file.split("/").at(-1) ?? comment.file}:${linesShort(comment.lines)}`);
-    return el("span", { className: "ledger-sub own" }, icon("own", "Your comment"), where, " ", plain(comment.text));
+    return el("span", { className: "ledger-sub own", title: plain(comment.text) }, icon("own", "Your comment"), where, " ", plain(comment.text));
   });
 }
 function stepLedgerRow(step) {
@@ -28447,41 +29478,65 @@ function stepLedgerRow(step) {
   const reopened = stepReopened(step);
   const row = { item, address: step.id, number: String(stepNumber(step.id)), title: step.title };
   const own = ownSubs(step);
-  const checking = beingChecked(step) ? [ledgerSub("Findings may still arrive.", decision ? "muted" : "")] : [];
   if (decision) {
     const said2 = [decision.note, decision.text].flatMap((text2) => text2 ? [ledgerSub(`\u201C${plain(text2)}\u201D`)] : []);
     const late = lateFindings(step).length;
     const arrived2 = late ? [ledgerSub(`${plural(late, "new finding")} since you ${doneWith(step)}.`, "changed")] : [];
-    return { ...row, mark: "decided", words: labelOf(item, decision.action), tone: "decided", subs: [...said2, ...arrived2, ...checking, ...own], open: false };
+    const state2 = decidedShown(item, decision);
+    const subs = [...said2, ...arrived2, ...own];
+    return { ...row, mark: SHOWN_ICON[state2], state: state2, words: outcomeOf(item, decision.action), tone: "decided", subs, open: false };
   }
-  if (checking.length) return { ...row, mark: "unchecked", words: "Being checked", tone: "muted", subs: [...checking, ...own], open: true };
+  if (beingChecked(step)) return { ...row, mark: "unchecked", state: "unchecked", words: "Being checked", tone: "muted", subs: own, open: true };
   if (reopened) {
-    const since = ledgerSub(`Changed since you chose ${labelOf(item, reopened.action)}.`, "muted");
-    return { ...row, mark: "reopened", words: "Changed", tone: "changed", subs: [since, ...own], open: true };
+    const since = ledgerSub(`Changed since you ${pastOf(item, reopened.action)}.`, "muted");
+    return { ...row, mark: "reopened", state: "reo", words: "Changed", tone: "changed", subs: [since, ...own], open: true };
   }
-  const mark = step.kind === "folded" ? "folded" : walkthrough.read.includes(step.id) ? "read" : "unread";
-  return { ...row, mark, words: "Undecided", tone: "muted", subs: own, open: true };
+  const state = shownOf(step);
+  const listed2 = (count, what, texts) => count ? [ledgerSub(texts.length ? `${plural(count, what)}: ${texts.join(" \xB7 ")}` : plural(count, what), "changed finding")] : [];
+  const findings = openFindings(step);
+  const problems = step.kind === "folded" ? step.problems : [];
+  const unlisted = findings.filter((note) => !(walkthrough.actions[itemKey({ type: "note", id: note.id })] ?? []).length);
+  const open = [...listed2(findings.length, "open finding", unlisted.map((note) => plain(note.text))), ...listed2(problems.length, "problem", problems)];
+  for (const sub of open) sub.prepend(icon("warn"));
+  return { ...row, mark: SHOWN_ICON[state], state, words: "", tone: "muted", subs: [...open, ...own], open: true };
 }
 function otherOpenRows() {
-  const notes = session.conversation.filter(isNote).map((note) => ({
+  const notes = session.conversation.filter(isNote).filter((note) => !isDraft(note)).map((note) => ({
     item: { type: "note", id: note.id },
     address: anchorOf(note) ?? "session",
     mark: note.note.finding ? "warn" : "message",
-    title: `${note.note.label}: ${plain(note.text)}`
+    state: note.note.finding ? "find" : "note",
+    title: `${note.note.label}: ${plain(note.text)}`,
+    text: note.text
   }));
-  const items = (walkthrough.checklist?.items ?? []).map((one) => ({
-    item: { type: "checklist", id: one.id },
-    address: `checklist-${one.id}`,
-    mark: one.mark ?? "unchecked",
-    title: plain(one.text)
-  }));
-  return [...notes, ...items].filter((one) => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0).map((one) => {
+  return notes.filter((one) => !decisionOf(one.item) && (walkthrough.actions[itemKey(one.item)] ?? []).length > 0).map((one) => {
     const reopened = walkthrough.reopened[itemKey(one.item)];
-    const subs = reopened ? [ledgerSub(`Changed since you chose ${labelOf(one.item, reopened.action)}.`, "muted")] : [];
-    return { ...one, number: "", words: reopened ? "Changed" : "Undecided", tone: reopened ? "changed" : "muted", subs, open: true };
+    const subs = reopened ? [ledgerSub(`Changed since you ${pastOf(one.item, reopened.action)}.`, "muted")] : [];
+    return { ...one, number: "", words: reopened ? "Changed" : "", tone: reopened ? "changed" : "muted", subs, open: true };
   });
 }
 var ledgerRows = () => [...walkthrough.steps.map(stepLedgerRow), ...otherOpenRows()];
+function ledgerActions(item, text2 = "", closes = true) {
+  const key2 = itemKey(item);
+  const actions = walkthrough.actions[key2] ?? [];
+  const step = item.type === "step" ? walkthrough.steps.find((one) => one.id === item.id) : void 0;
+  if (readOnly || !actions.length || step && beingChecked(step)) return [];
+  const taken = taking?.key === key2 ? actions.find((action) => action.id === taking?.action) : void 0;
+  if (taken) return [takingForm(item, taken, text2)];
+  return [el("div", { className: "ledger-actions" }, actionGroup(item, () => "secondary", true, closes))];
+}
+function ledgerGo(item, address) {
+  const step = walkthrough.steps.find((one) => one.id === address);
+  if (!step) return null;
+  const note = item.type === "note" ? session.conversation.filter(isNote).find((one) => one.id === item.id) : void 0;
+  if (item.type === "step" ? !openFindings(step).length : !note) return null;
+  return (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (note) openAtNote(step, note);
+    else openAtFinding(step);
+  };
+}
 function ledgerView(rows) {
   const groups = [
     ["Still open", rows.filter((row) => row.open)],
@@ -28493,24 +29548,25 @@ function ledgerView(rows) {
       "tbody",
       {},
       el("tr", { className: "ledger-group" }, head),
-      ...group2.map(({ item, address, number, mark, title, words, tone, subs }) => {
-        const link2 = keyed(el("a", { href: `#${encodeURIComponent(address)}` }, title), `ledger:${itemKey(item)}`);
+      ...group2.map(({ item, address, number, mark, state, title, words, tone, subs, open, text: text2 }) => {
+        const link2 = keyed(el("a", { href: `#${encodeURIComponent(address)}`, title }, title), `ledger:${itemKey(item)}`);
+        const going = ledgerGo(item, address);
+        if (going) link2.onclick = going;
+        const actions = open ? ledgerActions(item, text2) : [];
         const row = el(
           "tr",
           { className: "ledger-row" },
           el("td", { className: "ledger-number" }, number),
           el("td", { className: "ledger-mark" }, icon(mark, stateName(mark))),
-          el("td", { className: "ledger-title" }, link2, ...subs.length ? [el("span", { className: "ledger-subs" }, ...subs)] : []),
+          el("td", { className: "ledger-title" }, link2, ...subs.length ? [el("span", { className: "ledger-subs" }, ...subs)] : [], ...actions),
           el("td", { className: `ledger-decision ${tone}` }, words)
         );
-        row.dataset["state"] = mark;
+        row.dataset["state"] = state;
         return row;
       })
     );
   });
-  const table2 = el("table", { className: "ledger" }, ...bodies);
-  table2.setAttribute("aria-label", "Every step and what you decided");
-  return table2;
+  return el("table", { className: "ledger" }, ...bodies);
 }
 function verdictView() {
   const actions = walkthrough.actions[itemKey(VERDICT)] ?? [];
@@ -28527,6 +29583,7 @@ function verdictView() {
       ),
       `verdict:${action.id}`
     );
+    if (chosen && checked) option.dataset["state"] = decidedShown(VERDICT, chosen);
     option.setAttribute("role", "radio");
     option.setAttribute("aria-checked", String(checked));
     option.onclick = () => {
@@ -28534,7 +29591,8 @@ function verdictView() {
     };
     return option;
   });
-  const now2 = chosen ? el("p", { className: "verdict-now" }, "Your verdict: ", el("strong", {}, labelOf(VERDICT, chosen.action))) : reopened ? el("p", { className: "verdict-now reopened" }, icon("reopened"), `Changed since you chose ${labelOf(VERDICT, reopened.action)}`) : el("p", { className: "verdict-now muted" }, "No verdict yet.");
+  const offered = options2.length > 0 && !readOnly && !(decisionOf(WHOLE) && !changing.has(itemKey(WHOLE)));
+  const now2 = chosen ? offered ? [] : [el("p", { className: "verdict-now" }, toned(el("strong", {}, labelOf(VERDICT, chosen.action)), decidedShown(VERDICT, chosen)))] : reopened ? [el("p", { className: "verdict-now reopened" }, icon("reopened"), `Changed since you ${pastOf(VERDICT, reopened.action)}`)] : [];
   const group2 = el("div", { className: "verdict-options" }, ...options2);
   group2.setAttribute("role", "radiogroup");
   group2.setAttribute("aria-label", "Verdict");
@@ -28551,55 +29609,70 @@ function verdictView() {
     "section",
     { className: "verdict" },
     heading2,
-    now2,
-    ...options2.length && !readOnly ? [group2] : [],
+    ...now2,
+    ...offered ? [group2] : [],
     ...taken ? [takingForm(VERDICT, taken, "")] : [],
     ...chosen ? decisionSaid(chosen) : []
   );
   section.setAttribute("aria-labelledby", heading2.id);
   return section;
 }
-var DRAFT_STATES = ["Accepted", "Edited", "Dropped", "Undecided"];
+var DRAFT_STATES = ["Goes out", "Edited", "Dropped"];
+var draftCount = (count, state) => `${String(count)} ${state === "Goes out" ? count === 1 ? "goes out" : "go out" : state.toLowerCase()}`;
+var isDraft = (note) => (walkthrough.actions[itemKey({ type: "note", id: note.id })] ?? []).some((action) => action.edit);
 function draftsView() {
-  const drafts2 = session.conversation.filter(isNote).flatMap((note) => {
-    const actions = walkthrough.actions[itemKey({ type: "note", id: note.id })] ?? [];
-    if (!actions.some((action) => action.edit)) return [];
-    const decision = decisionOf({ type: "note", id: note.id });
-    const sent = decision && actions.find((action) => action.id === decision.action)?.edit;
-    const edited = sent && decision.text !== void 0 && decision.text !== note.text ? decision.text : void 0;
-    const state = !decision ? "Undecided" : !sent ? "Dropped" : edited === void 0 ? "Accepted" : "Edited";
-    return [{ note, state, text: edited ?? note.text }];
+  const drafts2 = session.conversation.filter(isNote).filter(isDraft).map((note) => {
+    const item = { type: "note", id: note.id };
+    const decision = decisionOf(item);
+    const kept = !decision || walkthrough.actions[itemKey(item)]?.find((action) => action.id === decision.action)?.edit;
+    const edited = kept && decision?.text !== void 0 && decision.text !== note.text ? decision.text : void 0;
+    const state = !kept ? "Dropped" : edited === void 0 ? "Goes out" : "Edited";
+    return { note, item, state, text: edited ?? note.text };
   });
   if (!drafts2.length) return [];
   const counts = DRAFT_STATES.flatMap((state) => {
     const count = drafts2.filter((one) => one.state === state).length;
-    return count ? [`${String(count)} ${state.toLowerCase()}`] : [];
+    return count ? [draftCount(count, state)] : [];
   });
-  const rows = drafts2.map(({ note, state, text: text2 }) => {
+  const rows = drafts2.map(({ note, item, state, text: text2 }) => {
     const { file, lines } = note.note;
-    const step = walkthrough.steps.find((one) => one.id === anchorOf(note));
+    const address = anchorOf(note) ?? "session";
+    const step = walkthrough.steps.find((one) => one.id === address);
     const where = file !== void 0 && lines ? `${file} \xB7 ${linesShort(lines)}` : step ? `Step ${String(stepNumber(step.id))}` : "On removed code";
-    const said2 = markdown2(text2, "summary-text");
-    if (state === "Dropped") said2.replaceChildren(el("s", {}, ...said2.childNodes));
+    const words = plain(text2);
+    const link2 = keyed(el("a", { className: "draft-line", href: `#${encodeURIComponent(address)}`, title: words }, state === "Dropped" ? el("s", {}, words) : words), `draft:${note.id}`);
+    const going = ledgerGo(item, address);
+    if (going) link2.onclick = going;
     return el(
       "li",
       { className: state === "Dropped" ? "dropped" : "" },
       el("span", { className: "where" }, where),
-      el("span", { className: "draft-text" }, el("span", { className: "draft-state" }, state), said2)
+      el("span", { className: "draft-text" }, ...state === "Goes out" ? [] : [el("span", { className: "draft-state" }, state)], link2),
+      ...ledgerActions(item, note.text)
     );
   });
-  return [summarySection("Comments the session drafted", counts.join(" \xB7 "), el("ul", { className: "summary-list" }, ...rows))];
+  return [summarySection("Goes out", counts.join(" \xB7 "), el("ul", { className: "summary-list" }, ...rows))];
 }
-function checklistSummary() {
+var TONE_MARK = { positive: "met", attention: "not-met" };
+function criteriaView() {
   const { checklist } = walkthrough;
   if (!checklist) return [];
-  const rows = checklist.items.map((item) => {
-    const mark = item.mark ?? "unchecked";
-    const row = el("li", { title: item.status }, icon(mark, stateName(mark)), el("span", {}, plain(item.text)));
+  const rows = checklist.items.map((one) => {
+    const item = { type: "checklist", id: one.id };
+    const actions = walkthrough.actions[itemKey(item)] ?? [];
+    const decision = decisionOf(item);
+    const mark = decision && TONE_MARK[toneOf(actions, decision.action)] || one.mark || "unchecked";
+    const words = plain(one.text);
+    const link2 = el("a", { className: "draft-line", href: `#checklist-${encodeURIComponent(one.id)}`, title: words }, words);
+    const own = actions.length && !readOnly ? ledgerActions(item, one.text, false) : [];
+    if (!decision)
+      for (const [at, button] of [...own[0]?.querySelectorAll("button") ?? []].entries())
+        button.setAttribute("aria-pressed", String(actions[at] !== void 0 && TONE_MARK[toneOf(actions, actions[at].id)] === one.mark));
+    const row = el("li", { title: one.status }, el("span", { className: "draft-text" }, icon(mark, stateName(mark)), link2), ...own);
     row.dataset["mark"] = mark;
     return row;
   });
-  return [summarySection("Checklist", metCount(checklist.items), el("ul", { className: "rail-checklist" }, ...rows))];
+  return [summarySection(checklist.title, metCount(checklist.items), el("ul", { className: "summary-list criteria" }, ...rows))];
 }
 function finishGroup() {
   const group2 = actionGroup(WHOLE, firstLeads);
@@ -28612,14 +29685,14 @@ function finishView() {
   const shown2 = decisionOf(WHOLE) ?? walkthrough.reopened[itemKey(WHOLE)];
   const taken = taking?.key === itemKey(WHOLE) ? actions.find((action) => action.id === taking?.action) : void 0;
   const hint = [
-    ...actions.length && finishWaits() ? ["Choose a verdict first."] : [],
     walkthrough.hints?.[itemKey(VERDICT)],
     ...actions.length ? [walkthrough.hints?.[itemKey(WHOLE)]] : []
   ].filter(Boolean).join(" ");
   return [
-    ...actions.length ? [el("div", { className: "finish" }, ...shown2 ? [stateTag(WHOLE, true)] : [], taken ? takingForm(WHOLE, taken, "") : finishGroup())] : [],
+    ...actions.length ? [el("div", { className: "finish" }, ...shown2 ? stateTag(WHOLE, true) : [], taken ? takingForm(WHOLE, taken, "") : finishGroup())] : [],
     ...hint ? [el("p", { className: "hint finish-hint" }, hint)] : [],
-    ...shown2 && actions.length ? decisionSaid(shown2) : []
+    // What the finishing action did, such as where the review went, is the one answer worth reading.
+    ...shown2 && actions.length ? decisionSaid(shown2, true) : []
   ];
 }
 function summaryView() {
@@ -28638,14 +29711,14 @@ function summaryView() {
     ...comments ? [`${String(comments)} of your comments`] : [],
     ...items.some((item) => item.mark !== void 0) ? [`checklist ${String(items.filter((item) => item.mark === "met").length)} of ${String(items.length)} met`] : []
   ];
-  const rail = el("aside", { className: "finish-rail" }, verdictView(), ...finishView(), ...checklistSummary());
+  const rail = el("aside", { className: "finish-rail" }, verdictView(), ...finishView());
   rail.setAttribute("aria-label", "Finish");
   const section = el(
     "section",
     { className: "summary" },
-    el("div", { className: "title-row" }, title, el("span", { className: "tag" }, open ? `${String(open)} still open` : "Nothing still open")),
+    el("div", { className: "title-row" }, title, el("span", { className: "tag" }, open ? `${String(open)} still open` : "Nothing left.")),
     el("p", { className: "summary-line" }, counts.join(" \xB7 ")),
-    el("div", { className: "summary-grid" }, el("div", { className: "summary-walk" }, ledgerView(rows), ...draftsView()), rail)
+    el("div", { className: "summary-grid" }, el("div", { className: "summary-walk" }, ledgerView(rows), ...criteriaView(), ...draftsView()), rail)
   );
   section.setAttribute("aria-labelledby", title.id);
   return section;
@@ -28659,18 +29732,16 @@ function messagesSection(id, mark, name, count, ...body) {
 function sessionThreads() {
   const waiting = new Set(waitingQuestions().map((message) => message.id));
   const threads = sessionMessages().filter((message) => !waiting.has(message.id)).map((message) => el("div", { className: "thread" }, icon("message"), el("div", { className: "thread-body" }, said(message), ...followUps(message).map(said))));
-  return threads.length ? [messagesSection("from-session", "message", "From the session", threads.length, ...threads)] : [];
+  return threads.length ? [messagesSection("from-session", "message", SESSION_PAGE, threads.length, ...threads)] : [];
 }
 function sessionView(stepless = true) {
   const title = el("h2", { className: "step-title", id: "session-messages" }, SESSION_PAGE);
-  const about = el("p", { className: "page-about" }, "What the session told you outside the steps, and notes whose code was removed.");
   const body = [...stepless ? unplacedNotice() : [], ...sessionThreads(), ...stepless ? detachedView() : []];
   const section = el(
     "section",
     { className: "messages" },
     el("div", { className: "title-row" }, title),
-    ...stepless ? [about] : [],
-    ...body.length ? body : [el("p", { className: "muted" }, "Nothing from the session yet.")]
+    ...body.length ? body : [el("p", { className: "muted" }, "No messages yet.")]
   );
   section.setAttribute("aria-labelledby", title.id);
   return section;
@@ -28679,7 +29750,7 @@ function preparingView() {
   return el(
     "div",
     { className: "preparing" },
-    el("div", { className: "preparing-head" }, icon("mark", "Preparing"), el("div", {}, el("strong", {}, "Preparing the steps"), el("span", { className: "muted" }, "They appear here as the session records them."))),
+    el("div", { className: "preparing-head" }, icon("mark", "Preparing"), el("div", {}, el("strong", {}, "Preparing steps"))),
     el("div", { className: "skeleton title" }),
     el("div", { className: "skeleton" }),
     el("div", { className: "skeleton short" })
@@ -28822,7 +29893,7 @@ function cardView(step, top, swipes) {
   const first = notes.find((note) => note.note.finding);
   const explanation = step.kind === "step" ? markdown2(step.explanation, "explanation") : el("p", { className: "explanation" }, SKIM);
   for (const link2 of explanation.querySelectorAll("a")) link2.replaceWith(...link2.childNodes);
-  const title = el("div", { className: "title-row" }, el("span", { className: "step-title" }, step.title), stateTag({ type: "step", id: step.id }, false));
+  const title = el("div", { className: "title-row" }, el("span", { className: "step-title" }, step.title), ...stateTag({ type: "step", id: step.id }, false));
   if (!top) {
     const beneath = el("div", { className: "swipe-card next" }, title, explanation);
     beneath.setAttribute("aria-hidden", "true");
@@ -28844,7 +29915,7 @@ function cardView(step, top, swipes) {
     ...first ? [el("p", { className: "card-note" }, icon("warn"), el("span", {}, el("b", {}, first.note.label), `${where(first.note.lines)}: ${plain(first.text)}`))] : [],
     el("span", { className: "card-meta" }, `${plural(step.files.length, "file")} \xB7 ${notes.length ? plural(notes.length, "note") : "no notes"}`)
   );
-  card.setAttribute("aria-label", `Open step ${String(stepNumber(step.id))}, ${step.title}`);
+  card.setAttribute("aria-label", `Open step ${String(stepNumber(step.id))}`);
   card.dataset["key"] = `card:${step.id}`;
   return card;
 }
@@ -28854,7 +29925,7 @@ function deckView() {
   section.setAttribute("aria-label", "Swipe to decide");
   const top = deckTop();
   if (!top) {
-    section.append(el("p", { className: "deck-empty" }, "Everything is decided."), el("a", { href: "#summary" }, "See the summary"));
+    section.append(el("p", { className: "deck-empty" }, "Nothing left."), el("a", { href: "#summary" }, "Summary"));
     return section;
   }
   const next = walkthrough.steps.find((step) => step !== top && !stepDecided(step));
@@ -28883,8 +29954,8 @@ function deckView() {
         fling(deck, top, to);
       };
   }
-  const hint = beingChecked(top) ? "Tap to open the step." : swipes ? "Swipe right to approve, left to flag. Tap to open the step." : "The session chose this step's actions; use the buttons. Tap to open the step.";
-  section.append(deck, el("p", { className: "swipe-hint" }, hint), ...bar2);
+  const hint = beingChecked(top) ? "" : swipes ? "Swipe right: approve. Left: flag." : "The session chose this step's actions; use the buttons.";
+  section.append(deck, ...hint ? [el("p", { className: "swipe-hint" }, hint)] : [], ...bar2);
   return section;
 }
 function questionBox(message) {
@@ -28898,9 +29969,10 @@ function questionBox(message) {
   const reply = lineBox(draft, "Reply", choices.length ? "Or reply\u2026" : "Reply\u2026", () => {
     void send2("reply", { to: message.id, text: drafts.get(draft) ?? "" }, draft);
   });
-  const head = el("p", { className: "question-head", id: `asks-${message.id}` }, icon("ask"), "The session asks");
-  const box = el("section", { className: "question-box" }, head, markdown2(message.text, "question-text"), el("div", { className: "action-row" }, ...choices, reply));
-  box.setAttribute("aria-labelledby", head.id);
+  const question = markdown2(message.text, "question-text");
+  question.id = `asks-${message.id}`;
+  const box = el("section", { className: "question-box" }, question, el("div", { className: "action-row" }, ...choices, reply));
+  box.setAttribute("aria-labelledby", question.id);
   return box;
 }
 function goneNotice() {
@@ -28910,7 +29982,7 @@ function goneNotice() {
       "div",
       { className: "notice" },
       icon("offline"),
-      el("span", {}, el("strong", {}, "The session stopped listening."), " Your decisions are kept; start the session again to continue.")
+      el("span", {}, el("strong", {}, "Session gone."), " Your decisions are kept; start the session again to continue.")
     )
   ];
 }
@@ -28924,12 +29996,12 @@ function unplacedNotice() {
     el(
       "div",
       { className: "notice-body" },
-      el("span", {}, "Changed files not in any step yet"),
+      el("span", {}, "Not in any step"),
       el("div", { className: "file-chips" }, ...files.map((file) => el("code", { className: "file-chip" }, file)))
     )
   );
   notice.setAttribute("role", "region");
-  notice.setAttribute("aria-label", "Changed files not in any step yet");
+  notice.setAttribute("aria-label", "Not in any step");
   return [notice];
 }
 function detached() {
@@ -28953,14 +30025,13 @@ function detachedView() {
     messagesSection(
       "removed-code",
       "unlink",
-      "Notes on removed code",
+      "On removed code",
       count,
-      el("p", { className: "page-about" }, "Their lines are gone from the change, so they wait here instead of being dropped."),
       ...gone.map(
         (entry) => isNote(entry) ? noteView(entry) : el("div", {}, el("p", { className: "was" }, `Was on ${placeWas(entry)}`), ...oldLines(entry), askThread(entry))
       ),
       ...comments.map(commentView),
-      ...links.map((item) => el("p", { className: "detached-item" }, icon("unlink"), el("span", {}, `Checklist \u201C${plain(item.text)}\u201D linked to a step that no longer exists`)))
+      ...links.map((item) => el("p", { className: "detached-item" }, icon("unlink"), el("span", {}, `\u201C${plain(item.text)}\u201D: its step is gone`)))
     )
   ];
 }
@@ -29012,7 +30083,59 @@ function navRow(view) {
   return [nav];
 }
 var stepNotesOf = (step) => session.conversation.filter((entry) => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
-var openFindings = (step) => stepNotesOf(step).filter((note) => note.note.finding && !decisionOf({ type: "note", id: note.id })).length;
+var openFindings = (step) => stepNotesOf(step).filter((note) => note.note.finding && !decisionOf({ type: "note", id: note.id }));
+var pinnedAt = (one) => "from" in one ? one.note : one;
+function inPageOrder(step, shown2) {
+  const files = step.diff ? [...drawDiff(step).view.querySelectorAll(".d2h-file-wrapper")].map((wrapper) => wrapper.dataset["file"]) : [];
+  const rank = (one) => {
+    const { file, lines } = pinnedAt(one);
+    return file !== void 0 && lines ? [files.indexOf(file) + 1, lines[1]] : [0, 0];
+  };
+  return [...shown2].sort((a, b) => {
+    const [fileA = 0, lineA = 0] = rank(a);
+    const [fileB = 0, lineB = 0] = rank(b);
+    return fileA - fileB || lineA - lineB;
+  });
+}
+function reveal(step, { file, lines }, id, low = false) {
+  if (file !== void 0 && lines) {
+    if (step.kind === "folded") for (const key2 of [`fold:${step.id}`, `fold-diff:${step.id}:${file}`]) opened.delete(key2);
+    else folds.set(file, false);
+  }
+  if (low) opened.add(file !== void 0 && lines ? `more:${step.id}:${lineKey(file, lines[1])}` : `more:${step.id}`);
+  render();
+  const shown2 = [...main.querySelectorAll(`#${CSS.escape(id)}`)].find((found) => !leavingPane?.contains(found));
+  if (!shown2) return;
+  shown2.tabIndex = -1;
+  shown2.scrollIntoView({ block: "center" });
+  shown2.focus({ preventScroll: true });
+}
+var revealNote = (step, note) => {
+  reveal(step, note.note, `note-${note.id}`, note.note.low);
+};
+var seeking = null;
+function openAtNote(step, note) {
+  if (decodeURIComponent(location.hash.slice(1)) === step.id) revealNote(step, note);
+  else {
+    seeking = { step: step.id, note: note.id };
+    go2(step.id);
+  }
+}
+function openAtFinding(step) {
+  const [first] = inPageOrder(step, openFindings(step));
+  if (first) openAtNote(step, first);
+  else {
+    seeking = null;
+    go2(step.id);
+  }
+}
+var lastFinding = null;
+function nextFinding(step, findings) {
+  const next = findings[(findings.findIndex((note) => note.id === lastFinding) + 1) % findings.length];
+  if (!next) return;
+  lastFinding = next.id;
+  revealNote(step, next);
+}
 function lateFindings(step) {
   const decided = decisionOf({ type: "step", id: step.id });
   if (!decided) return [];
@@ -29020,13 +30143,17 @@ function lateFindings(step) {
 }
 var seenFindings = null;
 var arrived = [];
+function pastOf(item, action) {
+  const outcome = actionOf(item, action)?.outcome;
+  if (outcome) return /^[A-Z][a-z]/.test(outcome) ? outcome.charAt(0).toLowerCase() + outcome.slice(1) : outcome;
+  const label = labelOf(item, action).toLowerCase();
+  const past = { approve: "approved", flag: "flagged" };
+  return builtIn(walkthrough.actions[itemKey(item)] ?? []) ? past[action] ?? label : `chose ${label}`;
+}
 function doneWith(step) {
   const item = { type: "step", id: step.id };
   const decision = decisionOf(item);
-  if (!decision) return "read";
-  const label = labelOf(item, decision.action).toLowerCase();
-  const past = { approve: "approved", flag: "flagged" };
-  return builtIn(walkthrough.actions[itemKey(item)] ?? []) ? past[decision.action] ?? label : `chose ${label}`;
+  return decision ? pastOf(item, decision.action) : "read";
 }
 var listed = (words) => words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1) ?? ""}` : words[0] ?? "";
 function dismissArrived() {
@@ -29058,7 +30185,7 @@ function arrivedBanner() {
     return;
   }
   if (!box.hidden && !own) return;
-  const text2 = notes.length === 1 ? `New finding on step ${String(stepNumber(first.id))}, ${first.title}, which you ${doneWith(first)}.` : `${String(notes.length)} new findings on ${steps.length === 1 ? "step" : "steps"} ${listed(steps.map((step) => String(stepNumber(step.id))))}.`;
+  const text2 = notes.length === 1 ? `New finding on step ${String(stepNumber(first.id))}, which you ${doneWith(first)}.` : `${String(notes.length)} new findings on ${steps.length === 1 ? "step" : "steps"} ${listed(steps.map((step) => String(stepNumber(step.id))))}.`;
   if (own && box.dataset["text"] === text2) return;
   const goTo = el("button", { type: "button", className: "btn small" }, "Go to step");
   goTo.onclick = () => {
@@ -29081,7 +30208,7 @@ function drawEdges(view, side2) {
     ...hidden("explanation") && view.kind === "step" ? [showButton("explanation", null)] : []
   );
   const items = walkthrough.checklist?.items ?? [];
-  rightEdge.replaceChildren(...hidden("checklist") && side2.length ? [showButton("checklist", metCount(items))] : []);
+  rightEdge.replaceChildren(...hidden("checklist") && side2.length ? [showButton("checklist", metCount(items, true))] : []);
   for (const edge of [leftEdge, rightEdge]) edge.hidden = !edge.hasChildNodes();
 }
 var pressed = false;
@@ -29112,7 +30239,7 @@ function exportStep(step, number) {
   const section = el(
     "section",
     { className: "export-step", id: step.id },
-    el("h2", { className: "export-title" }, el("span", { className: "number" }, String(number)), title, stateTag({ type: "step", id: step.id }, true)),
+    el("h2", { className: "export-title" }, el("span", { className: "number" }, String(number)), title, ...stateTag({ type: "step", id: step.id }, true)),
     ...prose,
     ...code2,
     ...stepAsks(step)
@@ -29437,6 +30564,10 @@ window.addEventListener("hashchange", () => {
   codePane.scrollTop = 0;
   const view = currentView();
   if (view.kind === "checklist" && view.item !== void 0) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: "nearest" });
+  const sought = seeking;
+  seeking = null;
+  const note = view.kind === "step" && view.step.id === sought?.step ? session.conversation.filter(isNote).find((one) => one.id === sought.note) : void 0;
+  if (note && view.kind === "step") revealNote(view.step, note);
 });
 var POLL_MS = 1500;
 var polling = false;

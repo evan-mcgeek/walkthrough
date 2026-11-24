@@ -16,8 +16,10 @@ For their own change, `/walkthrough` is the procedure instead.
 3. Run `walkthrough start --kind requested --base <rev> --head <rev> --label <label>` in the repo, with a short label naming the change, such as its number.
    Give the same label whenever the person opens this change again, so the walkthrough goes on with their decisions; fetch its head again first.
    Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "Someone else's change" part, such as `--comments 'Posted with your review'`.
-4. Go on as "Walking through" says, until the walkthrough stops.
-   Your comments are drafts marked "[AI]" that the person posts, edits or drops on the page, apart from the person's own comments, which are never marked; what they post goes out as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
+4. When the policy has you ask how well the person knows the feature, ask it in the chat now, with your question tool when you have one so they pick rather than type, offering the policy's answers and saying they may skip.
+   Read the change while they answer; their answer sets how much your explanations say, as the policy says.
+5. Go on as "Walking through" says, until the walkthrough stops.
+   Your comments are drafts marked "[AI]" that the person edits or drops on the page, apart from the person's own comments, which are never marked; every draft they keep goes out together with their own comments, as the policy's "Someone else's change" part says, and nothing goes out before they take the action for it.
 
 ## Walking through
 
@@ -97,7 +99,9 @@ A note whose step or lines leave the change, or whose lines change, stays on the
 ## Actions
 
 Record the actions the page offers on steps, notes, checklist items, the verdict and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
-Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy; a step with none recorded offers Approve and Flag.
+Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy, and so does each action's `tone`, the colour its decision shows in: `"positive"` green, `"attention"` amber, or `"none"` grey, the same as leaving it out.
+So do its `consequence`, at most 8 words on where the decision goes or what it costs, its `outcome`, at most 3 words in the past tense shown once the person took it, and `primary`, the one action per item whose consequence shows under the buttons.
+A step with none recorded offers Approve, positive, and Flag, attention.
 The page ends with a Summary, where the person chooses their verdict on the whole walkthrough and takes its finishing action.
 Offer the verdict's choices on the verdict and the finishing action first on the whole walkthrough, as the review policy names them, each with a short hint saying where it goes; the finishing action waits for a verdict.
 A step or checklist item that is gone takes its actions with it, so record actions on new ones.
@@ -126,13 +130,15 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
      A decision on the verdict is the person's verdict on the whole walkthrough; keep it for the finishing action, which carries it as the review policy says.
      A later decision on the same item replaces the earlier one.
      A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
-   - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.
-     Act on it as the review policy says, such as putting it on the fix list or into the review to post, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
-     An `edit-comment` or `delete-comment` changes or takes back the comment it names; follow it the same way and answer it.
-     Once comments have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them; `walkthrough comments` lists them as they are now, such as after a restart.
+   - The page does not show your answers to decisions, apart from the finishing action's: they only mark the request handled, so a few words do.
+     Say what the person must know, such as a comment that could not go out, with `walkthrough say --question`, which the page shows; the finishing action's answer, such as where the review went, is shown on the Summary.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
+
+The person's own line comments never come through listen and need no answer.
+When the review policy acts on them, such as at the finishing action, read them all with `walkthrough comments`, as they are now with edits applied and deleted ones left out; they are the person's words, never yours, so never mark them "[AI]" and never reword them.
+Once they have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them.
 
 To ask the person something on the page, run `walkthrough say --question '<question>'` and listen; their reply comes back as a reply line.
 When the question has a few likely answers, offer each with `--choice '<answer>'`; the page shows them as buttons.
