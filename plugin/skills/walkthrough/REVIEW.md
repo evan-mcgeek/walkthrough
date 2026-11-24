@@ -17,6 +17,11 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Before recording anything, read the ticket or spec the change is for, from your tracker or from wherever the branch name, the commits, the change's description or I point.
 
+### Comments already on the change
+
+- Before recording the steps, find the change's open pull request on your code host, if it has one, and read its review threads.
+- Pin each unresolved thread from someone else as a note labelled "Thread" on its lines, never flagged as a finding, with the reviewer's check of whether it still holds at the head.
+
 ### Steps
 
 - A step is one idea rather than one file, and may span several files.
@@ -109,8 +114,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### A review I received
 
-- When I name my own change that has unanswered review threads, walk through it and pin each such thread as a note labelled "Thread" on its lines.
-- The reviewer checks whether each comment holds at the head; add its verdict and evidence to the thread's note.
+- The threads pinned as "Comments already on the change" says are the review I received.
 - On each thread offer Accept (goes on the fix list) and Push back (you draft a reply).
 - Offer "Send my replies" on the whole walkthrough as well; replies go into a pending review on your code host that I submit myself.
 
