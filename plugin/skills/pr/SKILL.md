@@ -132,6 +132,8 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
    - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.
      Act on it as the review policy says, such as putting it on the fix list or into the review to post, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
      An `edit-comment` or `delete-comment` changes or takes back the comment it names; follow it the same way and answer it.
+   - The page does not show your answers to decisions and comments, apart from the finishing action's: they only mark the request handled, so a few words do.
+     Say what the person must know, such as a comment that could not go out, with `walkthrough say --question`, which the page shows; the finishing action's answer, such as where the review went, is shown on the Summary.
      Once comments have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them; `walkthrough comments` lists them as they are now, such as after a restart.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.

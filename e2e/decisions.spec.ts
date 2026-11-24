@@ -110,7 +110,7 @@ test('a press on an action survives the page redrawing before the release', asyn
   await expect(page.getByRole('link', { name: /Session messages/ })).toBeVisible();
 });
 
-test('a decision can be changed,and the latest one shows with the session answer to it', async ({ page, repo }) => {
+test('a decision can be changed, and the latest one shows with the note, never the session\'s answer to it', async ({ page, repo }) => {
   const step = page.getByRole('region', { name: 'Login check' });
   await step.getByRole('button', { name: 'Approve' }).click();
   await page.getByRole('navigation', { name: 'To review' }).getByRole('button', { name: '1 decided' }).click();
@@ -129,8 +129,11 @@ test('a decision can be changed,and the latest one shows with the session answer
   await expect(step.getByText('Decided: Flag', { exact: true })).toBeVisible();
   await step.getByRole('button', { name: 'Change decision' }).click();
   await expect(step.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'false');
+  const taken = page.waitForResponse(async response => response.url().includes('session.json') && (await response.text()).includes('Added to the fix list.'));
   repo.run('say', '--answer', String(flagged['id']), 'Added to the fix list.');
-  await expect(step.getByText('Added to the fix list.')).toBeVisible();
+  await taken;
+  await expect(step.getByText('Not yet.', { exact: true })).toBeVisible();
+  await expect(step.getByText('Added to the fix list.')).toHaveCount(0);
 });
 
 test('the session actions show on notes, checklist items and the whole walkthrough, editing text first where allowed', async ({
@@ -199,7 +202,7 @@ test('the session actions show on notes, checklist items and the whole walkthrou
   await expect(whole.getByText('Decided: Post my comments', { exact: true })).toBeVisible();
 });
 
-test('a checklist item the session records again after a decision shows reopened, keeping the note and the answer', async ({
+test('a checklist item the session records again after a decision shows reopened, keeping the note', async ({
   page,
   repo,
 }) => {
@@ -219,7 +222,7 @@ test('a checklist item the session records again after a decision shows reopened
 
   await expect(item.getByText('Changed since you chose Disagree', { exact: true })).toBeVisible();
   await expect(item.getByText('Only staff can.', { exact: true })).toBeVisible();
-  await expect(item.getByText('Marked it not met.', { exact: true })).toBeVisible();
+  await expect(item.getByText('Marked it not met.', { exact: true })).toHaveCount(0);
   await expect(item.getByRole('button', { name: 'Disagree' })).toHaveAttribute('aria-pressed', 'false');
 });
 

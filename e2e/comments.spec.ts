@@ -105,3 +105,42 @@ test('C comments on the focused line or on the picked range, from the keyboard',
   await expect(rowAfter(page, 4).getByRole('textbox', { name: 'Your comment' })).toBeFocused();
   await expect(rowAfter(page, 4)).toContainText('lines 3–4');
 });
+
+test('the session answering a comment or a decision adds nothing to the page, so nothing below moves; an answer to an ask still shows', async ({ page, repo }) => {
+  await row(page, 3).locator('.line-num2').hover();
+  await row(page, 3).locator('.add-comment').click();
+  await rowAfter(page, 3).getByRole('textbox', { name: 'Your comment' }).fill('C is odd.');
+  await rowAfter(page, 3).getByRole('button', { name: 'Save comment' }).click();
+  const mine = rowAfter(page, 3).getByRole('article', { name: 'Your comment' });
+  await expect(mine).toContainText('C is odd.');
+  const comment = await heard(repo.background('listen'));
+  const below = row(page, 5);
+  const before = (await below.boundingBox())?.y;
+
+  // The page has taken the answer once its poll brings the session back changed.
+  const answered = (text: string) =>
+    page.waitForResponse(async response => response.url().includes('session.json') && (await response.text()).includes(text));
+  let taken = answered('Added to your review.');
+  expect(repo.run('say', '--answer', String(comment['id']), 'Added to your review.').status).toBe(0);
+  await taken;
+  await expect(page.getByText('Added to your review.')).toHaveCount(0);
+  expect((await below.boundingBox())?.y).toBe(before);
+
+  const listener = repo.background('listen');
+  await page.getByRole('button', { name: 'Flag' }).click();
+  await page.getByRole('textbox', { name: 'Note' }).fill('Odd names.');
+  await page.getByRole('button', { name: 'Send' }).click();
+  const decision = await heard(listener);
+  taken = answered('On the fix list.');
+  expect(repo.run('say', '--answer', String(decision['id']), 'On the fix list.').status).toBe(0);
+  await taken;
+  await expect(page.getByText('On the fix list.')).toHaveCount(0);
+
+  const asking = repo.background('listen');
+  await page.goto(`${page.url().split('#')[0] ?? ''}#1`);
+  await page.getByRole('textbox', { name: 'Ask about this step' }).fill('Why three?');
+  await page.getByRole('textbox', { name: 'Ask about this step' }).press('Enter');
+  const ask = await heard(asking);
+  expect(repo.run('say', '--answer', String(ask['id']), 'One per constant.').status).toBe(0);
+  await expect(page.getByText('One per constant.')).toBeVisible();
+});

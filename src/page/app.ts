@@ -925,11 +925,12 @@ function decideView(item: Item, text = '', small = true, look: (action: Action, 
   ];
 }
 
-function decisionSaid(decision: Decision): HTMLElement[] {
+/** The person's own words on a decision; the session's answers to it only mark it handled, unless `receipts` shows them. */
+function decisionSaid(decision: Decision, receipts = false): HTMLElement[] {
   return [
     ...(decision.note ? [el('p', { className: 'said person' }, decision.note)] : []),
     ...(decision.text ? [markdown(decision.text, 'said person')] : []),
-    ...followUps(decision).map(said),
+    ...(receipts ? followUps(decision).map(said) : []),
   ];
 }
 
@@ -1260,9 +1261,6 @@ function commentView(comment: Comment): HTMLElement {
   remove.onclick = () => {
     void send('comment', { comment: id, delete: true });
   };
-  // The session answers each comment, edit and deletion the page sent about it.
-  const sent = new Set(session.conversation.flatMap(entry => (entry.from === 'page' && (entry.id === id || ('comment' in entry && entry.comment === id)) ? [entry.id] : [])));
-  const answers = session.conversation.filter(entry => entry.from === 'session' && entry.answer !== undefined && sent.has(entry.answer));
   view.append(
     el(
       'div',
@@ -1274,8 +1272,8 @@ function commentView(comment: Comment): HTMLElement {
     ),
     ...(commentAnchor(comment) === null ? oldLines(comment) : []),
     markdown(comment.text, 'comment-text'),
+    // The session's answer to a comment only marks it handled, so nothing arrives under it.
     ...(posted ? [el('span', { className: 'hint' }, 'Posted')] : commentHint()),
-    ...replies(answers),
   );
   return view;
 }
@@ -1935,14 +1933,12 @@ function stepDecisionView(step: Step): HTMLElement[] {
     const note = reopened.note ? [' ', el('s', {}, `“${reopened.note}”`)] : [];
     return [
       el('p', { className: 'reopened-line' }, 'Changed since you chose ', el('strong', {}, labelOf(item, reopened.action)), '.', ...note),
-      ...followUps(reopened).map(said),
     ];
   }
   if (!decision) return [];
   const shown = [
     ...(decision.note ? [el('span', { className: 'muted' }, readOnly ? 'Note' : 'Your note'), el('p', { className: 'said person' }, decision.note)] : []),
     ...(decision.text ? [markdown(decision.text, 'said person')] : []),
-    ...followUps(decision).map(said),
   ];
   return shown.length ? [el('div', { className: 'decision-said' }, ...shown)] : [];
 }
@@ -2652,7 +2648,8 @@ function finishView(): HTMLElement[] {
   return [
     ...(actions.length ? [el('div', { className: 'finish' }, ...(shown ? [stateTag(WHOLE, true)] : []), taken ? takingForm(WHOLE, taken, '') : finishGroup())] : []),
     ...(hint ? [el('p', { className: 'hint finish-hint' }, hint)] : []),
-    ...(shown && actions.length ? decisionSaid(shown) : []),
+    // What the finishing action did, such as where the review went, is the one answer worth reading.
+    ...(shown && actions.length ? decisionSaid(shown, true) : []),
   ];
 }
 
