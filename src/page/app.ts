@@ -540,7 +540,7 @@ function panelItems(item: MenuItem): HTMLButtonElement[] {
 const HELP = 'Help: what things mean';
 const END = 'End session';
 
-/** The data-key of the button whose menu is open, the header's More or a note's actions; one at a time, kept across redraws. */
+/** The data-key of the button whose menu is open, kept across redraws. */
 let menuOpen: string | null = null;
 
 function closeMenu(refocus = false): void {
@@ -560,7 +560,7 @@ function openMenu(key: string): void {
 }
 
 document.addEventListener('click', event => {
-  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
+  if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu'))) closeMenu();
 });
 
 const moreButton = () => document.querySelector('[data-key="more"]');
@@ -868,65 +868,6 @@ function take(item: Item, action: Action): void {
   } else void decide(item, action.id);
 }
 
-/** A note's actions, behind its button. */
-function actionsMenu(item: Item, label: string): HTMLElement[] {
-  const key = itemKey(item);
-  const actions = walkthrough.actions[key] ?? [];
-  if (readOnly || !actions.length) return [];
-  const opener = `menu:${key}`;
-  const open = menuOpen === opener;
-  const button = el('button', { type: 'button', className: 'icon-button menu-button' }, icon('more'));
-  button.setAttribute('aria-label', 'Note actions');
-  button.setAttribute('aria-haspopup', 'menu');
-  button.setAttribute('aria-expanded', String(open));
-  button.dataset['key'] = opener;
-  button.onclick = () => {
-    if (open) {
-      closeMenu();
-      return;
-    }
-    openMenu(opener);
-    document.querySelector<HTMLElement>('.menu [role="menuitem"]')?.focus();
-  };
-  if (!open) return [button];
-  const choices = actions.map(action => {
-    const choice = el('button', { type: 'button', tabIndex: -1 }, action.label);
-    choice.setAttribute('role', 'menuitem');
-    choice.dataset['key'] = `menu-item:${key}:${action.id}`;
-    choice.onclick = () => {
-      menuOpen = null;
-      render();
-      take(item, action);
-    };
-    return choice;
-  });
-  const menu = el('div', { className: 'menu', popover: 'manual' }, ...choices);
-  menu.setAttribute('role', 'menu');
-  menu.dataset['motion'] = 'menu';
-  menu.setAttribute('aria-label', `${label} actions`);
-  menu.onkeydown = event => {
-    const at = choices.findIndex(choice => choice === document.activeElement);
-    const moves: Record<string, number> = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: choices.length - 1 };
-    const to = moves[event.key];
-    if (to !== undefined) {
-      event.preventDefault();
-      choices[(to + choices.length) % choices.length]?.focus();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      closeMenu(true);
-    } else if (event.key === 'Tab') {
-      menuOpen = null;
-      // After focus has moved on.
-      setTimeout(render, 0);
-    }
-  };
-  // In the top layer the diff's scroll box cannot clip it.
-  queueMicrotask(() => {
-    if (menu.isConnected && !menu.matches(':popover-open')) menu.showPopover();
-  });
-  return [button, menu];
-}
-
 function actionGroup(item: Item, look: (action: Action, at: number) => Look, small = false): HTMLElement {
   const actions = walkthrough.actions[itemKey(item)] ?? [];
   const group = el('div', { className: 'choices' }, ...actions.map((action, at) => actionButton(item, action, look(action, at), small)));
@@ -1028,8 +969,10 @@ function oldLines({ linesText }: Place): HTMLElement[] {
 /** Notes whose Reply box the person opened. */
 const replying = new Set<string>();
 
-function replyView(note: Note): HTMLElement[] {
-  if (readOnly) return [];
+/** The note's foot: its actions as buttons, then Reply, or the Reply box under them once opened. */
+function replyView(note: Note, actions: HTMLElement[]): HTMLElement[] {
+  const foot = (...end: HTMLElement[]) => (actions.length || end.length ? [el('div', { className: 'note-foot' }, ...actions, ...end)] : []);
+  if (readOnly) return foot();
   const draft = `reply:${note.id}`;
   if (!replying.has(note.id) && !drafts.get(draft)) {
     const open = el('button', { type: 'button', className: 'link' }, 'Reply');
@@ -1039,7 +982,7 @@ function replyView(note: Note): HTMLElement[] {
       render();
       document.querySelector<HTMLInputElement>(`[data-draft="${CSS.escape(draft)}"]`)?.focus();
     };
-    return [el('div', { className: 'note-foot' }, open)];
+    return foot(open);
   }
   const form = lineBox(draft, 'Reply', 'Reply…', () => {
     void send('reply', { to: note.id, text: drafts.get(draft) ?? '' }, draft).then(sent => {
@@ -1058,7 +1001,7 @@ function replyView(note: Note): HTMLElement[] {
     render();
     document.querySelector<HTMLElement>(`[data-key="${CSS.escape(`reply:${note.id}`)}"]`)?.focus();
   };
-  return [form];
+  return [...foot(), form];
 }
 
 /** "new since you approved" on a finding that arrived after the person decided its step. */
@@ -1087,8 +1030,6 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
       el('span', { className: note.note.finding ? 'label finding' : 'label' }, ...(note.note.finding && !detached ? [icon('warn')] : []), label),
       ...(detached ? [el('span', { className: 'was' }, `was on ${placeWas(placeOf(note))}`)] : late ? [el('span', { className: 'lines' }, late)] : linesOf(lines)),
       ...(shown ? [stateTag(item, false)] : []),
-      el('span', { className: 'spacer' }),
-      ...actionsMenu(item, label),
     ),
     ...(detached ? oldLines(placeOf(note)) : []),
     ...(asked
@@ -1097,7 +1038,7 @@ function noteView(note: Note, asked?: Ask): HTMLElement {
     // A reopened note keeps what the person and the session said about the decision it had.
     ...(shown ? decisionSaid(shown) : []),
     ...(taken ? [takingForm(item, taken, note.text)] : []),
-    ...(taken ? [] : replyView(note)),
+    ...(taken ? [] : replyView(note, readOnly || !walkthrough.actions[key]?.length ? [] : [actionGroup(item, () => 'secondary', true)])),
   );
   view.setAttribute('aria-label', label);
   view.id = `note-${note.id}`;
@@ -1277,7 +1218,7 @@ function commentView(comment: Comment): HTMLElement {
   const { id, lines } = comment;
   const posted = walkthrough.posted.includes(id);
   const where = commentAnchor(comment) === null ? [el('span', { className: 'was' }, `was on ${placeWas(comment)}`)] : linesOf(lines);
-  const view = el('article', { className: 'mine' });
+  const view = el('article', { className: 'mine', id: `comment-${id}` });
   view.setAttribute('aria-label', 'Your comment');
   view.dataset['motion'] = `comment:${id}`;
   if (editingComments.has(id) && !posted && !readOnly) {
@@ -1689,6 +1630,10 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
   }
   for (const comment of mine) add(comment.file, comment.lines, 'own', comment);
   markLines(view, rows, marks);
+  for (const old of view.querySelectorAll('.file-marks')) old.remove();
+  if (!readOnly)
+    for (const wrapper of view.querySelectorAll<HTMLElement>('.d2h-file-wrapper'))
+      wrapper.querySelector('.file-stats')?.after(...fileMarks(step, wrapper.dataset['file'] ?? '', pinned.filter(isNote), mine));
   const pick = picked?.step === step.id ? picked : null;
   const pickKey = pick && lineKey(pick.file, pick.lines[1]);
   if (pick && pickKey) {
@@ -1712,6 +1657,29 @@ function diffView(step: Step, pinned: (Note | Ask)[]): HTMLElement {
     rows.get(key)?.after(el('tr', { className: 'pinned-row' }, el('td', { colSpan: 2 }, shown)));
   }
   return view;
+}
+
+/** After a file's counts, its notes in the marks "In this step" uses; each goes to the first of its kind in the file. */
+function fileMarks(step: Step, file: string, notes: Note[], mine: Comment[]): HTMLElement[] {
+  const inFile = <T extends Note | Comment>(shown: T[]) =>
+    inPageOrder(step, shown.filter(one => pinnedAt(one).file === file && pinnedAt(one).lines !== undefined));
+  const mark = (className: string, name: IconName, words: string, what: string, first: Note | Comment | undefined): HTMLElement[] => {
+    if (!first) return [];
+    const go = () => {
+      if ('from' in first) revealNote(step, first);
+      else reveal(step, first, `comment-${first.id}`);
+    };
+    return [el('button', { type: 'button', className: `file-mark ${className}`.trim(), title: `Go to the first ${what} in this file`, onclick: go }, icon(name), words)];
+  };
+  const findings = inFile(notes.filter(note => note.note.finding));
+  const others = inFile(notes.filter(note => !note.note.finding));
+  const yours = inFile(mine);
+  const marks = [
+    ...mark('finding', 'warn', plural(findings.length, 'finding'), 'finding', findings[0]),
+    ...mark('', 'message', plural(others.length, 'note'), 'note', others[0]),
+    ...mark('own', 'own', `${String(yours.length)} yours`, 'comment of yours', yours[0]),
+  ];
+  return marks.length ? [el('span', { className: 'file-marks' }, ...marks)] : [];
 }
 
 /** Files the person switched to their preview, by step id and path, so a redraw keeps them so. */
@@ -1985,18 +1953,27 @@ function actionBar(step: Step, asks = true): HTMLElement[] {
   const change = el('button', { type: 'button', className: 'btn', onclick: () => { changing.add(key); render(); } }, 'Change decision');
   change.dataset['key'] = `change:${key}`;
   // While findings are open, Approve weighs no more than Flag.
-  const open = openFindings(step);
+  const open = openFindings(step).length;
   const choices = decided ? change : actionGroup(item, action => (open && action.id === 'approve' ? 'secondary' : stepLook(action)));
   const held = beingChecked(step) ? [el('span', { className: 'held' }, HELD)] : [];
   if (held.length)
     for (const button of [choices, ...choices.querySelectorAll('button')]) if (button instanceof HTMLButtonElement) button.disabled = true;
   const asking = asks ? [ask] : [];
-  const late = decided ? lateFindings(step).length : 0;
-  const count = late
-    ? [el('span', { className: 'open-findings' }, icon('warn'), plural(late, 'new finding'))]
-    : open
-      ? [el('span', { className: 'open-findings' }, icon('warn'), plural(open, 'open finding'))]
-      : [];
+  const late = decided ? lateFindings(step) : [];
+  const counted = inPageOrder(step, late.length ? late : openFindings(step));
+  const count = counted.length
+    ? [
+        keyed(
+          el(
+            'button',
+            { type: 'button', className: 'open-findings', title: 'Go to the next open finding', onclick: () => { nextFinding(step, counted); } },
+            icon('warn'),
+            late.length ? plural(late.length, 'new finding') : plural(open, 'open finding'),
+          ),
+          `findings:${step.id}`,
+        ),
+      ]
+    : [];
   const bar = held.length ? 'action-bar holding' : 'action-bar';
   if (!phone.matches) return [el('div', { className: bar }, el('div', { className: 'action-row' }, choices, ...asking, ...held, ...count))];
   // A thumb reaches the right first, so the leading action goes last.
@@ -2080,7 +2057,7 @@ function queueRow(
   state: string,
   mark: IconName,
   title: string,
-  sub: { text: string; attention?: boolean } | null,
+  sub: { text: string; attention?: boolean; mark?: IconName } | null,
   // Only a step is one of a sequence; the session's messages and the checklist are pages of their own.
   current: false | 'step' | 'page',
   // A long title holds to two lines, all of it in its tooltip.
@@ -2091,7 +2068,12 @@ function queueRow(
     'a',
     { href: `#${encodeURIComponent(address)}`, className: 'queue-item' },
     icon(mark, stateName(mark)),
-    el('span', { className: 'queue-title' }, name, ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, sub.text)] : [])),
+    el(
+      'span',
+      { className: 'queue-title' },
+      name,
+      ...(sub ? [el('span', { className: sub.attention ? 'queue-sub attention' : 'queue-sub' }, ...(sub.mark ? [icon(sub.mark)] : []), sub.text)] : []),
+    ),
   );
   row.dataset['state'] = state;
   row.dataset['key'] = `row:${address}`;
@@ -2102,7 +2084,20 @@ function queueRow(
   return row;
 }
 
+/** A step's row; one with open findings opens at the first of them. */
 function stepRow(step: Step, isCurrent: boolean): HTMLElement {
+  const row = stepRowView(step, isCurrent);
+  if (openFindings(step).length)
+    row.onclick = event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openAtFinding(step);
+    };
+  return row;
+}
+
+/** The sub-line says, in this order: a finding after the decision, being checked, changed since decided, open findings, a folded step's problems. */
+function stepRowView(step: Step, isCurrent: boolean): HTMLElement {
   const current = isCurrent && 'step';
   const item: Item = { type: 'step', id: step.id };
   const decision = decisionOf(item);
@@ -2112,14 +2107,16 @@ function stepRow(step: Step, isCurrent: boolean): HTMLElement {
       : { text: `Decided: ${labelOf(item, decision.action)}` };
     return queueRow(step.id, 'decided', 'decided', step.title, sub, current);
   }
+  const open = openFindings(step).length;
+  const findings = open ? { text: plural(open, 'open finding'), attention: true, mark: 'warn' as const } : null;
   const checking = beingChecked(step) ? { text: 'Being checked' } : null;
   if (stepReopened(step)) return queueRow(step.id, 'reopened', 'reopened', step.title, checking ?? { text: CHANGED }, current);
   if (step.kind === 'folded') {
     const problems = step.problems.length ? { text: plural(step.problems.length, 'problem'), attention: true } : null;
-    return queueRow(step.id, 'folded', 'folded', step.title, checking ?? problems, current);
+    return queueRow(step.id, 'folded', 'folded', step.title, checking ?? findings ?? problems, current);
   }
   const read = walkthrough.read.includes(step.id);
-  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, checking, current);
+  return queueRow(step.id, read ? 'read' : 'unread', isCurrent ? 'current' : read ? 'read' : 'unread', step.title, checking ?? findings, current);
 }
 
 /** A step is left while it is undecided, or a finding was pinned on it after the person decided it. */
@@ -2179,7 +2176,13 @@ function queueSelect(view: View, left: [string, string][], decided: Step[]): HTM
   const known = [...left, ...decided.map(step => [step.id, step.title]), ['summary', '']].some(([address]) => address === shown?.[0]);
   const select = el(
     'select',
-    { onchange: () => { go(select.value); } },
+    {
+      onchange: () => {
+        const step = walkthrough.steps.find(one => one.id === select.value);
+        if (step) openAtFinding(step);
+        else go(select.value);
+      },
+    },
     ...(shown && !known ? [option(shown)] : []),
     ...(walkthrough.steps.length || left.length ? [] : [el('option', { disabled: true, selected: true }, 'No steps yet')]),
     ...left.map(option),
@@ -2200,7 +2203,10 @@ function queueView(view: View): HTMLElement[] {
   const undecided = steps.filter(stepLeft);
   const fromSession = sessionRow(view);
   const rows = [...undecided.map(step => stepRow(step, step === current)), ...fromSession];
-  const left: [string, string][] = undecided.map(step => [step.id, lateFindings(step).length ? `${step.title} · New finding` : step.title]);
+  const left: [string, string][] = undecided.map(step => {
+    const open = openFindings(step).length;
+    return [step.id, lateFindings(step).length ? `${step.title} · New finding` : open ? `${step.title} · ${plural(open, 'open finding')}` : step.title];
+  });
   if (fromSession.length) left.push(['session', SESSION_PAGE]);
   for (const item of leftItems()) {
     const at = view.kind === 'checklist' && view.item === item.id;
@@ -3036,7 +3042,65 @@ const stepNotesOf = (step: Step) =>
   session.conversation.filter((entry): entry is Note => isNote(entry) && !answersAsk(entry) && anchorOf(entry) === step.id);
 
 /** The step's findings the person has not decided yet; which notes are findings is the session's flag. */
-const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id })).length;
+const openFindings = (step: Step) => stepNotesOf(step).filter(note => note.note.finding && !decisionOf({ type: 'note', id: note.id }));
+
+const pinnedAt = (one: Note | Comment): Place => ('from' in one ? one.note : one);
+
+/** Notes or comments in the order the step shows them: those on the step first, then each file's by the line they are pinned under. */
+function inPageOrder<T extends Note | Comment>(step: Step, shown: T[]): T[] {
+  const files = step.diff ? [...drawDiff(step).view.querySelectorAll<HTMLElement>('.d2h-file-wrapper')].map(wrapper => wrapper.dataset['file']) : [];
+  const rank = (one: T) => {
+    const { file, lines } = pinnedAt(one);
+    return file !== undefined && lines ? [files.indexOf(file) + 1, lines[1]] : [0, 0];
+  };
+  return [...shown].sort((a, b) => {
+    const [fileA = 0, lineA = 0] = rank(a);
+    const [fileB = 0, lineB = 0] = rank(b);
+    return fileA - fileB || lineA - lineB;
+  });
+}
+
+/** Opens what hides a note or comment (its collapsed or Viewed file, a folded step's diff, "N more notes"), then scrolls to it and focuses it. */
+function reveal(step: Step, { file, lines }: { file?: string; lines?: Lines }, id: string, low = false): void {
+  if (file !== undefined && lines) {
+    // A folded step shows a noted file by default, so forgetting the person's toggles shows it.
+    if (step.kind === 'folded') for (const key of [`fold:${step.id}`, `fold-diff:${step.id}:${file}`]) opened.delete(key);
+    else folds.set(file, false);
+  }
+  if (low) opened.add(file !== undefined && lines ? `more:${step.id}:${lineKey(file, lines[1])}` : `more:${step.id}`);
+  render();
+  const shown = [...main.querySelectorAll<HTMLElement>(`#${CSS.escape(id)}`)].find(found => !leavingPane?.contains(found));
+  if (!shown) return;
+  shown.tabIndex = -1;
+  shown.scrollIntoView({ block: 'center' });
+  shown.focus({ preventScroll: true });
+}
+
+const revealNote = (step: Step, note: Note) => {
+  reveal(step, note.note, `note-${note.id}`, note.note.low);
+};
+
+/** A step chosen from To review while it has open findings, opened at the first once its address has changed. */
+let seeking: string | null = null;
+
+function openAtFinding(step: Step): void {
+  const [first] = inPageOrder(step, openFindings(step));
+  if (first && decodeURIComponent(location.hash.slice(1)) === step.id) revealNote(step, first);
+  else {
+    seeking = first ? step.id : null;
+    go(step.id);
+  }
+}
+
+/** The open finding the action bar went to last, so the next press goes on from it. */
+let lastFinding: string | null = null;
+
+function nextFinding(step: Step, findings: Note[]): void {
+  const next = findings[(findings.findIndex(note => note.id === lastFinding) + 1) % findings.length];
+  if (!next) return;
+  lastFinding = next.id;
+  revealNote(step, next);
+}
 
 /** The step's open findings pinned after the person decided it; the step's own decision stays. */
 function lateFindings(step: Step): Note[] {
@@ -3538,6 +3602,10 @@ window.addEventListener('hashchange', () => {
   codePane.scrollTop = 0;
   const view = currentView();
   if (view.kind === 'checklist' && view.item !== undefined) document.getElementById(`checklist-item-${view.item}`)?.scrollIntoView({ block: 'nearest' });
+  const sought = seeking;
+  seeking = null;
+  const [first] = view.kind === 'step' && view.step.id === sought ? inPageOrder(view.step, openFindings(view.step)) : [];
+  if (first && view.kind === 'step') revealNote(view.step, first);
 });
 
 const POLL_MS = 1500;

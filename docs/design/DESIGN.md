@@ -24,8 +24,10 @@ colors:
   berry: "#9c1f62"
   amber: "#8a5a00"
   amber-wash: "#fbf1dc"
-  rust: "#9a3412"
-  met: "#1a7431"
+  ok: "#1a7340"
+  ok-bg: "#e4f4ea"
+  bad: "#b3261e"
+  bad-bg: "#fbe7e5"
   live: "#2b7a4b"
   diff-add: "#e8f6ec"
   diff-add-gutter: "#d3eedc"
@@ -57,8 +59,10 @@ colors:
   berry-dark: "#f07ab4"
   amber-dark: "#e3b260"
   amber-wash-dark: "#33280f"
-  rust-dark: "#f0a083"
-  met-dark: "#7dd08b"
+  ok-dark: "#5fd38d"
+  ok-bg-dark: "#15301f"
+  bad-dark: "#ff8a80"
+  bad-bg-dark: "#3b1a18"
   live-dark: "#6fcf97"
   diff-add-dark: "#14281c"
   diff-add-gutter-dark: "#193423"
@@ -380,8 +384,9 @@ A cool grey neutral scale with a single, person-configurable accent and four nar
 
 ### Status
 - **Reopened Amber** (`amber`, `amber-wash`): findings (label, gutter marker, stripe tick, "N open findings" in the action bar), reopened steps and progress segments, "Needs you" and "Offline · retrying" statuses, attention notices and banners (wash fill, no border), folded-file problems, the Flag chip during a swipe, the session's question box (1px amber border), and a partly met checklist item's icon and status words. Amber means "this changed, is wrong, or wants you".
-- **Not-met Rust** (`rust`): a not met checklist item's icon and status words, wherever the item shows. Icon and text colour only; it never fills a surface.
-- **Met Green** (`met`): a met checklist item's icon and status words, wherever the item shows (the checklist panel and page, the Summary's rail, "In this step" and To review). Its own token, AA on canvas and surface tint in both themes, apart from the Listening green and the diff's addition green. Icon and text colour only; it never marks a decision.
+- **Bad** (`bad`, with `bad-bg`; `rust` is an alias of `bad`): a not met checklist item's icon and status words, in red, wherever the item shows. Icon and text colour only; it never fills a surface.
+- **OK Green** (`ok`, with `ok-bg`): a met checklist item's icon and status words, wherever the item shows (the checklist panel and page, the Summary's rail, "In this step" and To review). Its own token, AA on canvas, surface tint and `ok-bg` in both themes, apart from the Listening green and the diff's addition green. Icon and text colour only; it never marks a decision.
+- `ok-bg` and `bad-bg` are the washes of the round 4 status set; nothing on the page fills with them yet.
 - **Listening Green** (`live`): the Listening session status dot and label. It is session health, never a decision, nothing else.
 
 ### Diff
@@ -399,7 +404,7 @@ A cool grey neutral scale with a single, person-configurable accent and four nar
 - **Marker Note** (`marker-note`): the gutter marker and stripe tick for an agent note that is not a finding. A data mark, quieter than muted in light so findings outrank it.
 
 ### Named Rules
-**The Grey Verdict Rule.** A recorded decision or verdict is shown in neutral greys only: decided is a filled dot in secondary ink, the chosen verdict is an ink border on surface tint. Green appears in exactly three places, diff additions, the Listening status and a met checklist status, and never on a decision. (The swipe chip is gesture feedback, not recorded state: accent for Approve, amber for Flag.)
+**The Grey Verdict Rule.** A recorded decision or verdict is shown in neutral greys only: decided is a filled dot in secondary ink, the chosen verdict is an ink border on surface tint. Green appears in exactly three places, diff additions, the Listening status and a met checklist status (`ok`), and never on a decision. (The swipe chip is gesture feedback, not recorded state: accent for Approve, amber for Flag.)
 
 **The One Accent Rule.** The accent marks the primary action, focus, the caret, links, decided progress, picked lines, the reviewer's own words and the rule beside a File Note or the current "Files" entry. It is never a heading colour, a pressed-control fill, a section fill or a decorative accent; the one surface it fills is the reviewer's own comment.
 
@@ -409,7 +414,7 @@ A cool grey neutral scale with a single, person-configurable accent and four nar
 
 **The Three Greys Rule.** Text and interface icons use exactly three greys per theme: ink, secondary ink and muted. Data marks (progress-read, marker-note) are fills on the instrument, not text.
 
-**The Narrow Status Rule.** Amber is reopened, finding, attention or partly met; rust is not met; the `met` green is met; the Listening green is listening. If a new state does not mean one of those, it is grey.
+**The Narrow Status Rule.** Amber is reopened, finding, attention or partly met; `bad` is not met; `ok` is met; the Listening green is listening. If a new state does not mean one of those, it is grey.
 
 ## Typography
 
@@ -459,7 +464,7 @@ At 390px the header moves the panel show/hide controls and End session into a "M
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from tonal steps (canvas against the surface rail) and hairline rules. One shadow exists, for things that float: the actions menu, popovers (Appearance, Help) and the top card of the phone swipe deck (the card beneath carries none). Two contact cues are allowed and nothing else: the primary button's inset 1px bottom shade, and the 1px contact shadow under the gutter "+" so it reads above the line numbers. The current queue item is "lifted" with a 1px rule ring, not a shadow.
+Flat by default. Depth comes from tonal steps (canvas against the surface rail) and hairline rules. One shadow exists, for things that float: the More menu, popovers (Appearance, Help) and the top card of the phone swipe deck (the card beneath carries none). Two contact cues are allowed and nothing else: the primary button's inset 1px bottom shade, and the 1px contact shadow under the gutter "+" so it reads above the line numbers. The current queue item is "lifted" with a 1px rule ring, not a shadow.
 
 ### Shadow Vocabulary
 - **Float** (sidecar `float`): menus, popovers and the top swipe card only.
@@ -512,9 +517,11 @@ The IDE pattern, played straight.
 - **No tool panel:** there is no bottom panel or strip. Notes live on their lines (counted in "In this step"); session messages and notes on removed code live on the Session messages page, whose row in To review counts both ("1 file not in a step · 2 on removed code"). Keys 1 to 3 toggle To review, Checklist and Explanation.
 
 ### Queue ("To review")
-The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; changed-since-decided amber (sub-line "Changed since you decided"); not met rust; session messages muted. A checklist item's row holds its text to two lines, cut with an ellipsis, with all of it in the text's tooltip; the item's own page shows all of it.
+The signature rail, headed "To review" with a counter. Items are a 16px state icon plus a 13.5px title and optional 12px sub-line. The current step has its own icon (a ring with a centre dot) in the accent; read steps use the accent half-filled icon; not read is a muted hollow ring; changed-since-decided amber (sub-line "Changed since you decided"); not met `bad` red; session messages muted. A checklist item's row holds its text to two lines, cut with an ellipsis, with all of it in the text's tooltip; the item's own page shows all of it.
 The current item is canvas-filled with a 1px rule ring and 600 weight. Decided items fold into "N decided" at the rail's foot. The Summary is the last row, set off by a rule above and marked with a list icon in secondary ink.
 A step the session is still checking keeps its state icon with the muted sub-line "Being checked". A decided step that gets a finding after the decision comes back above the fold with its decided icon and the amber sub-line "New finding", which fits the rail on one line; its decision stays.
+A step with open findings has the amber sub-line "1 open finding" or "N open findings" after a 13px warning icon, and choosing its row opens the step at its first open finding, focused in the middle of the pane; the phone's step picker names it the same way ("Overdue styling · 2 open findings").
+One sub-line shows, the first that holds: "New finding", "Being checked", "Changed since you decided", the open findings, then a folded step's problems.
 
 ### In This Step (facts rail)
 Beside the step head, behind a 1px rule with 16px left padding, in 12.5px secondary ink under a 12px 600 muted "In this step" heading. Three groups separated by soft rules: the step's files (mono 12px names in ink, linkable, with tabular counts at the right); the note counts (amber "N finding" with its icon first, then muted "N notes", then accent "N yours"); and the linked checklist criteria with their status icons in their status colours, each icon on its criterion's first line.
@@ -525,7 +532,7 @@ The title carries a counter that says what it counts, "15 of 21 met", in the sam
 The session's optional description sits under the title as one 13px muted line, such as "Each acceptance criterion from the tickets, and the steps that deliver it."
 Each item reads down: the state icon and the item's text (Body UI) at the full width, then one 12px muted line with the session's status and the steps it links to, "partly met: V still runs after Stop · Steps 4, 10, 13" ("Step 2" for one, nothing for none).
 The step numbers are plain accent-text links, underlined on hover, each with its step's title as its tooltip; "Steps" and its numbers wrap as one piece.
-The status words and the icon take the status's colour: met in the `met` green, partly met in amber, not met in rust, not checked yet muted.
+The status words and the icon take the status's colour: met in `ok` green, partly met in amber, not met in `bad` red, not checked yet muted.
 The same colours mark the item's icon wherever it shows: the panel, its page, the Summary's rail, "In this step" and To review.
 Inline code in an item's text never breaks inside the code.
 On the checklist page an item's actions follow under its line.
@@ -534,7 +541,7 @@ On the checklist page an item's actions follow under its line.
 diff2html line-by-line, restyled through classes: 46px number columns in muted ink, 12.5/21px mono code with 16px right padding, addition and deletion washes with deeper gutters, picked lines in the line-pick tone. Hunk headers lose their fill and sit in muted ink.
 - **Gutter markers:** a line that carries a note shows a 13px icon in a 16px box at the left of its new-line number: amber warning triangle for a finding, accent person for your own comment, marker-note speech bubble for any other note.
 - **Overview stripe:** a 10px column at the right edge of each file's diff, on the surface tone behind a soft rule: added and removed runs as 6px-wide stripe-add and stripe-del bars, and each note as a 3px full-width tick in its marker colour. It maps the whole file at a glance and never scrolls with the code.
-- **Notes:** a note row spans the table in UI sans, label in 12.5px (a finding's label in amber with its icon), body 14/1.55 in primary ink, replies indented behind a 2px rule. The note's head is as wide as its 66ch text column, so its "…" actions menu sits at the end of the text, never at the far edge of the pane; the same holds for notes on a step and on a folded step. "N more notes" is an accent-text link on a row with no fill. The Ask-about-lines composer is a row in the accent wash with accent-line rules.
+- **Notes:** a note row spans the table in UI sans, label in 12.5px (a finding's label in amber with its icon), body 14/1.55 in primary ink, replies indented behind a 2px rule. The actions the session offers on a note are small secondary buttons under its text, starting where the text does, then Reply, 8px apart; they wrap at 390px. The chosen one shows pressed, and a decided note keeps its decided tag in its head and the Undo toast; the same holds for notes on a step and on a folded step. "N more notes" is an accent-text link on a row with no fill. The Ask-about-lines composer is a row in the accent wash with accent-line rules.
 
 ### Files to Skim (the folded step)
 The step is titled "Files to skim" on the page. A session writes a sentence per file, so the step reads reasons as text.
@@ -544,13 +551,17 @@ The step is titled "Files to skim" on the page. A session writes a sentence per 
 - **Export:** the files are listed open with their diffs, each headed by its path and reason in the same two columns, each file after the first 32px below the one before it behind a control-edge rule, the problem above the list; no Show diff buttons. An image shows as "Binary image · W × H · replaced".
 
 ### File Header
-A 36px sticky row on surface tint under a 1px control-edge rule: a chevron toggle (collapse/expand), the mono file name, tabular +/- counts, and a Viewed toggle at the right. Viewed is an eye icon button (4px corners, 4px 6px, muted); once pressed it shows the eye plus "Viewed" in secondary ink. On the tinted row, hover and pressed step to the canvas so they still show. Viewed is a reading mark, not a decision, and never takes the accent.
+A 36px sticky row on surface tint under a 1px control-edge rule: a chevron toggle (collapse/expand), the mono file name, tabular +/- counts, the file's notes, and a Viewed toggle at the right.
+The notes come in the marks "In this step" uses, only the counts above zero: amber "1 finding" with its icon, muted "2 notes" with the note icon, accent "1 yours" with the person icon, each 12.5px 500 with 4px between.
+Each count is a small button (2px 6px, 4px corners, hovering to the canvas) that opens the file if it is collapsed or Viewed and goes to the first such note in it, focused in the middle of the pane; its tooltip says so ("Go to the first finding in this file").
+At 390px the counts take a row of their own under the name, lined up with it. Viewed is an eye icon button (4px corners, 4px 6px, muted); once pressed it shows the eye plus "Viewed" in secondary ink. On the tinted row, hover and pressed step to the canvas so they still show. Viewed is a reading mark, not a decision, and never takes the accent.
 
 ### Your Comments
 The reviewer's own comment is an accent-wash box with a 1px accent-line border, 8px corners and 12px 16px padding, up to 70ch: a "Your comment" heading in 650 accent text with a person icon, edit and delete icon buttons in accent text, the 14/1.55 body in primary ink, and a 12.5px destination hint (for example "Joins the fix list"). On hover or focus of a line number, a 20px accent "+" square appears in the gutter to start a comment; a picked range offers "Ask about lines" and "Comment".
 
 ### Action Bar
 Docked at the foot of the step: Approve, Flag, any session offers, the Ask box. While the step has open findings, Approve is a secondary button and an amber "N open finding(s)" with a warning icon closes the row.
+That count is a button with the tooltip "Go to the next open finding": each press scrolls to and focuses the next open finding in the step, in the page's order, wrapping to the first; it hovers to the amber wash. A decided step's "1 new finding" does the same with its new findings.
 While the session is still checking the step, its actions are held: drawn disabled, followed by the muted 12.5px hint "Decide once the session has checked this step.", and the A and F keys and the swipe deck decide nothing. The Ask box stays live.
 
 ### Summary Step
@@ -559,7 +570,7 @@ The title with an "N still open" state and one plain 14.5px count line in second
 - **Finish rail (288px):** sticky, behind a 1px rule with 24px left padding, like the "In this step" rail. Verdict heading, "No verdict yet." or "Your verdict: <label>", the session's verdict options stacked full width (radio buttons: canvas, 1px control edge, 4px corners; chosen = secondary-ink border, surface tint, 600, filled icon), then the finishing action full width (primary, disabled until a verdict is chosen) and any secondary action, one 12.5px hint naming what goes where ("Choose a verdict first." while the finishing action waits, then the session's hints for the verdict and for finishing, such as "Fix list: 2 flags and 2 of your comments."), then the checklist, compact: "Checklist 2 of 5 met", each item its mark and text, its status in the row's tooltip. At 390px the rail drops under the ledger behind a top rule.
 
 ### Help: what things mean
-Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), the session statuses, and the checklist statuses with their colours in words ("Met, in green", "Partly met, in amber", "Not met, in rust", "Not checked yet, in grey"): then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
+Opened with ? or from More. A canvas popover (1px rule, 6px corners, float shadow, 16px padding) in three columns: **What things mean**: the queue icons with their meaning in words, the progress-bar colours and the current-step ring, the note labels (Finding, Note, Thread, Your comment), the counts that go to notes (the queue's "2 open findings", a file's "1 finding", "2 notes" and "1 yours", the action bar's "2 open findings"), the session statuses, and the checklist statuses with their colours in words ("Met, in green", "Partly met, in amber", "Not met, in red", "Not checked yet, in grey"): then **Keyboard shortcuts**. Every icon and colour on the page is said in words here and in its tooltip.
 
 ### Popovers: Appearance and Help
 Canvas, 1px rule, 6px corners, float shadow, 16px padding. **Appearance** (300px): an Accent radio list (16px swatch with 4px corners, name, "(default)" on Ultramarine; chosen = surface tint, 600) and a Theme radio row (System, Light, Dark) in the verdict-option style, then "Saved for you on this machine." **Help** (1040px, 60px from the top, one column at 390px): two-column tables, rows on soft rules; its key caps in 11.5px mono ink on the surface tone with a 1px control edge, a 2px bottom edge and 4px corners.
@@ -646,5 +657,5 @@ A redraw from polling continues what is playing and starts nothing new.
 - **Don't** add shadows beyond the float shadow, the primary shade and the gutter lift.
 - **Don't** crossfade panes or bounce anything; motion leaves before it enters and settles without overshoot.
 - **Don't** add a fourth text grey.
-- **Don't** use the accent for headings or decoration, or use amber and rust for anything but findings, reopened, attention, partly met and not met.
+- **Don't** use the accent for headings or decoration, or use amber and `bad` for anything but findings, reopened, attention, partly met and not met.
 - **Don't** use text glyphs or emoji as status icons; use the drawn SVG set.

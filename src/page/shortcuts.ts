@@ -47,7 +47,7 @@ const STATUSES = [
 const CHECKLIST_COLOURS = [
   ['met', 'green'],
   ['partly', 'amber'],
-  ['not-met', 'rust'],
+  ['not-met', 'red'],
   ['unchecked', 'grey'],
 ] as const;
 
@@ -76,7 +76,12 @@ function meanings(): HTMLElement[] {
     [el('span', { className: 'help-label' }, icon('message'), 'Note'), 'A remark from the session'],
     [el('span', { className: 'help-label' }, 'You asked'), 'Your question and its answer'],
     [el('span', { className: 'help-label own' }, icon('own'), 'Your comment'), 'Yours: the session gets it with your decisions'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '1 finding'), 'On a file: go to its first finding'],
+    [el('span', { className: 'help-label' }, icon('message'), '2 notes'), 'On a file: go to its first note'],
+    [el('span', { className: 'help-label own' }, icon('own'), '1 yours'), 'On a file: go to your first comment on it'],
+    [el('span', { className: 'help-label finding' }, icon('warn'), '2 open findings'), 'Under a step: go to the next open finding'],
   ];
+  const findings = el('span', { className: 'help-label finding' }, icon('warn'));
   const statuses = STATUSES.map(([state, name, means]): [Node, string] => {
     const status = el('span', { className: 'status' }, state === 'working' ? icon('spinner') : el('span', { className: 'dot' }), name);
     status.dataset['state'] = state;
@@ -88,7 +93,7 @@ function meanings(): HTMLElement[] {
       { className: 'help-column' },
       el('h2', { className: 'popover-head', id: 'help-head' }, 'What things mean'),
       group('Steps in To review'),
-      legend([...steps, [checking, 'The session is still checking it'], means('folded')]),
+      legend([...steps, [checking, 'The session is still checking it'], means('folded'), [findings, 'Open findings, as "2 open findings": opens the step at the first']]),
       group('The progress bar'),
       legend(segments),
     ),

@@ -139,12 +139,12 @@ const marked = {
   ],
 };
 
-test('a checklist status wears its colour everywhere it shows: met green, partly amber, not met rust, not checked muted', async ({ page, repo }) => {
+test('a checklist status wears its colour everywhere it shows: met green, partly amber, not met red, not checked muted', async ({ page, repo }) => {
   repo.record(marked, 'checklist');
   const at = (address: string) => page.goto(`${page.url().split('#')[0] ?? ''}#${address}`);
   const expectColours = async (shown: Locator) => {
     await expect(shown).toHaveCount(4);
-    for (const [index, token] of ['--met', '--amber', '--rust', '--muted'].entries())
+    for (const [index, token] of ['--ok', '--amber', '--bad', '--muted'].entries())
       await expect(shown.nth(index)).toHaveCSS('color', await tokenColor(page, token));
   };
   for (const colorScheme of ['light', 'dark'] as const) {
@@ -152,7 +152,7 @@ test('a checklist status wears its colour everywhere it shows: met green, partly
     await at('1');
     await expectColours(page.getByRole('complementary', { name: 'In this step' }).locator('li[data-mark] > .icon'));
     const left = page.getByRole('navigation', { name: 'To review' }).getByRole('link', { name: 'Due dates sort the list.' });
-    await expect(left.locator('.icon')).toHaveCSS('color', await tokenColor(page, '--rust'));
+    await expect(left.locator('.icon')).toHaveCSS('color', await tokenColor(page, '--bad'));
 
     await at('checklist');
     const items = page.getByRole('main').getByRole('region', { name: 'Acceptance criteria' }).getByRole('listitem');
@@ -165,7 +165,7 @@ test('a checklist status wears its colour everywhere it shows: met green, partly
 
   await page.keyboard.press('?');
   const help = page.getByRole('dialog', { name: 'Help: what things mean' });
-  for (const words of ['Met, in green', 'Partly met, in amber', 'Not met, in rust', 'Not checked yet, in grey'])
+  for (const words of ['Met, in green', 'Partly met, in amber', 'Not met, in red', 'Not checked yet, in grey'])
     await expect(help.getByRole('row').filter({ hasText: words })).toHaveCount(1);
 });
 

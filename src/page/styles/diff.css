@@ -89,6 +89,43 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* What is noted on the file, as "In this step" counts it; each goes to the first of its kind. */
+.file-marks {
+  display: flex;
+  flex: none;
+  gap: var(--s1);
+}
+
+.file-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--muted);
+  font: 500 12.5px/1.4 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.file-mark .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.file-mark.finding {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.file-mark.own {
+  color: var(--accent-text);
+}
+
 /* A short note on the file under its header: its text starts where the code's does, behind a 2px accent rule, with even space above and below. */
 .diff .file-explanation {
   max-width: 68ch;
@@ -150,7 +187,7 @@
 }
 
 /* The header is on surface tint, so hover and pressed step to the canvas to still show. */
-.diff .d2h-file-header :is(.icon-button, .viewed-toggle):hover,
+.diff .d2h-file-header :is(.icon-button, .viewed-toggle, .file-mark):hover,
 .diff .d2h-file-header .viewed-toggle[aria-pressed='true'] {
   background: var(--canvas);
 }
@@ -479,13 +516,24 @@
   height: 13px;
 }
 
+/* A button that reads as the count it is: each press goes to the next open finding. */
 .open-findings {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: var(--s1) 6px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
   color: var(--amber);
-  font-size: 12.5px;
+  font: 500 12.5px/1.4 var(--font-ui);
   white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--fast) linear;
+}
+
+.open-findings:hover {
+  background: var(--amber-wash);
 }
 
 .open-findings .icon {
@@ -521,6 +569,18 @@
   .diff {
     --code-column: var(--s3);
   }
+
+  /* The file's name keeps the row; its notes' counts take a row under it, lined up with the name. */
+  .diff .d2h-file-header:has(.file-marks) {
+    flex-wrap: wrap;
+    padding-bottom: var(--s1);
+  }
+
+  .file-marks {
+    flex-basis: 100%;
+    order: 1;
+    padding-left: 22px;
+  }
 }
 
 /* ---------- notes ---------- */
@@ -536,7 +596,7 @@
   display: flex;
   align-items: center;
   gap: var(--s2);
-  /* Measured in the note's own font, as its text is, so the menu ends where the text does in every engine. */
+  /* Measured in the note's own font, as its text is, so what ends the head ends where the text does in every engine. */
   max-width: 66ch;
   min-height: 24px;
   margin: 0;
@@ -588,8 +648,17 @@
   font: 600 12px/1.4 var(--font-ui);
 }
 
+/* The note's actions as small buttons, then Reply; they wrap on a narrow screen. */
 .note-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
   margin-top: var(--s1);
+}
+
+.note-foot > .choices {
+  margin: 0;
 }
 
 .reply {

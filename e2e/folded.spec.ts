@@ -12,10 +12,7 @@ const record = (repo: Repo, input: unknown, command: string) => {
   if (recorded.status !== 0) throw new Error(recorded.stderr);
   return [...recorded.stdout.matchAll(/([0-9a-f]{8})/g)].map(match => match[1] ?? '');
 };
-const right = async (locator: Locator) => {
-  const box = await locator.boundingBox();
-  return (box?.x ?? 0) + (box?.width ?? 0);
-};
+const left = async (locator: Locator) => (await locator.boundingBox())?.x ?? 0;
 
 test.beforeEach(async ({ page, repo, url }) => {
   await expect(page).toHaveURL(url);
@@ -64,7 +61,7 @@ test('opened, each folded file is a row with its reason as text that wraps', asy
   await expect(step.getByRole('list', { name: 'Problems the session found' })).toBeVisible();
 });
 
-test('a note’s menu ends where its text column does, on a step, on lines and on a folded step', async ({ page, repo, url }) => {
+test('a note’s action buttons start where its text does, on a step, on lines and on a folded step', async ({ page, repo, url }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
   const ids = record(
     repo,
@@ -80,8 +77,8 @@ test('a note’s menu ends where its text column does, on a step, on lines and o
   for (const [label, address] of [['Risk', '1'], ['Nit', '1'], ['Draft', '2']] as const) {
     await page.goto(`${url}#${address}`);
     const note = page.getByRole('article', { name: label });
-    const menu = note.getByRole('button', { name: 'Note actions' });
-    await expect(menu).toBeVisible();
-    expect(Math.abs((await right(menu)) - (await right(note.locator('.note-text'))))).toBeLessThan(2);
+    const accept = note.getByRole('button', { name: 'Accept' });
+    await expect(accept).toBeVisible();
+    expect(Math.abs((await left(accept)) - (await left(note.locator('.note-text'))))).toBeLessThan(2);
   }
 });

@@ -72,7 +72,7 @@ Replace the stacked sections (Still open / Verdict / Decided table / Flagged / Y
 - **Late finding:** amber banner under the header (`New finding on step 8, <title>, which you approved.` / `3 new findings on steps 3 and 8.`) with `Go to step` and a dismiss; the decided step returns to the queue with its decided icon and amber `New finding`. On the step itself (new): an amber-wash line under the title (`A finding arrived after you approved. Your decision stays; change it if the finding matters.`), the note labelled `line N · new since you approved`, and an action bar of `Change decision`, Ask, and amber `1 new finding`.
 - **Files to skim** (folded step): collapsed summary line (chevron, `18 files` never wrapping, distinct reasons joined by ` · ` with one ellipsis, problem tag); problems shown under it even when collapsed; opened, a grid of path (max 45%) / reason (wraps) / Show diff; at 390px the reason goes under the path. Insert `<wbr>` after `/` in paths so they break cleanly. Export lists every file open with path, reason and diff; images read `Binary image · W × H · replaced`.
 - **File headers:** on surface tint under a control-edge rule, each file after the first 32px below the one before it, opened or collapsed (this replaced the flush headers first drawn here; DESIGN.md has it).
-- **Notes:** the note block is `max-width: 66ch`, so its `…` menu (`right:0`) opens at the end of the text column on step notes, line notes and notes on Files to skim.
+- **Notes:** the note block is `max-width: 66ch`; its actions are buttons under its text beside Reply on step notes, line notes and notes on Files to skim (this replaced the `…` menu first drawn here; DESIGN.md has it).
 
 ### 7. Motion (see `prototype.html`; specs in `DESIGN.md` → Motion)
 

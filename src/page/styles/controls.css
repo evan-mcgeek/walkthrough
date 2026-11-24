@@ -358,7 +358,7 @@ select:disabled {
 
 /* A checklist status's colour, for its icon and words wherever it shows; not checked yet has none and stays muted. */
 :is([data-mark='met'], [data-state='met']) {
-  --status: var(--met);
+  --status: var(--ok);
 }
 
 :is([data-mark='partly'], [data-state='partly']) {
@@ -366,7 +366,7 @@ select:disabled {
 }
 
 :is([data-mark='not-met'], [data-state='not-met']) {
-  --status: var(--rust);
+  --status: var(--bad);
 }
 
 .counter {
@@ -500,21 +500,6 @@ select:disabled {
   padding-left: var(--s3);
   color: var(--muted);
   font-size: 12px;
-}
-
-/* A note's menu lifts into the top layer, out of the diff's scroll box, anchored under its open button. */
-.menu-button[aria-expanded='true'] {
-  anchor-name: --menu;
-}
-
-.menu[popover] {
-  position: fixed;
-  position-anchor: --menu;
-  position-area: bottom span-left;
-  position-try-fallbacks: flip-block;
-  inset: auto;
-  margin: var(--s1) 0;
-  color: var(--ink);
 }
 
 .menu-separator {

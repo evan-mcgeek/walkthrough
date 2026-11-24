@@ -124,6 +124,18 @@
   color: var(--amber);
 }
 
+.queue-sub:has(> .icon) {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.queue-sub > .icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
 .queue-item[aria-current] {
   background: var(--canvas);
   box-shadow: 0 0 0 1px var(--rule);
