@@ -39,7 +39,7 @@
 }
 
 /* Files stack with no gap, opened or collapsed, so the list keeps its rhythm as a file opens; a collapsed file keeps only its header. */
-.diff .d2h-file-wrapper.closed > :not(.d2h-file-header) {
+.diff .d2h-file-wrapper.closed:not(.closing) > :not(.d2h-file-header) {
   display: none;
 }
 
@@ -103,13 +103,9 @@
   margin-left: 0;
 }
 
-/* The chevron turns to point down while the file is open. */
+/* The chevron points down while the file is open; the page turns it. */
 .file-toggle {
   margin-left: calc(-1 * var(--s1));
-}
-
-.file-toggle .icon {
-  transition: transform var(--fast) var(--ease-out);
 }
 
 .file-toggle[aria-expanded='true'] .icon {

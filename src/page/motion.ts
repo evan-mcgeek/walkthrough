@@ -15,8 +15,11 @@ const token = (name: string) => root.getPropertyValue(`--${name}`).trim();
 
 export const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** What reduced motion keeps of an element arriving. */
+export const FADE_IN: Keyframe[] = [{ opacity: 0 }, { opacity: 1 }];
+
 // The animation clock, which page timers and their fakes leave alone.
-export const now = () => Number(document.timeline.currentTime ?? performance.now());
+const now = () => Number(document.timeline.currentTime ?? performance.now());
 
 function options(id: string, { ms, curve, delay = 0, iterations = 1, fill = 'backwards' }: Timing) {
   const duration = typeof ms === 'number' ? ms : Number.parseFloat(token(ms));

@@ -22,7 +22,14 @@ export async function loadViewer(): Promise<Viewer | null> {
 
 const shown = (setting: keyof Viewer, fallback: string) => document.documentElement.dataset[setting] ?? fallback;
 
+const root = document.documentElement;
+root.addEventListener('transitionend', event => {
+  if (event.target === root && event.propertyName === '--accent') root.classList.remove('accent-fade');
+});
+
 function choose(change: Partial<Viewer>): void {
+  // The accent cross-fades; a theme switch snaps.
+  root.classList.toggle('accent-fade', change.accent !== undefined);
   showViewer(change);
   void postQuietly('viewer', change);
 }

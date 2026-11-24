@@ -18,6 +18,22 @@
   box-shadow: var(--shadow-float);
 }
 
+/* It settles from the control that opened it: More, at the header's right. */
+.popover {
+  transform-origin: top right;
+}
+
+.popover.help {
+  transform-origin: top center;
+}
+
+/* Closed already, still drawn over the page while it fades. */
+.popover.leaving {
+  z-index: 30;
+  display: block;
+  pointer-events: none;
+}
+
 /* Focused itself when it holds nothing to focus, which needs no ring: it is plainly the one thing open. */
 .popover:focus {
   outline: none;
@@ -136,7 +152,7 @@
 /* ---------- Help ---------- */
 
 /* Three columns: what things mean in two, the keyboard shortcuts in the third; one column on a narrow screen. */
-.popover.help[open] {
+.popover.help:is([open], .leaving) {
   inset: 60px 0 auto;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -226,14 +242,14 @@
 }
 
 @media (max-width: 1072px) {
-  .popover.help[open] {
+  .popover.help:is([open], .leaving) {
     width: auto;
     inset: 60px var(--s4) auto;
   }
 }
 
 @media (max-width: 760px) {
-  .popover.help[open] {
+  .popover.help:is([open], .leaving) {
     grid-template-columns: minmax(0, 1fr);
     inset: 52px var(--s2) auto;
   }

@@ -39,15 +39,20 @@ test('the progress bar has a segment per step coloured by its state, marks where
   await expect(progress(page)).toHaveAttribute('aria-valuetext', '1 of 3 steps decided, 2 left, 3 read');
   expect(await segments(page)).toEqual(['decided', 'read', 'current']);
 
-  // A decided step read again is still where the person is: solid ink and taller.
+  // A decided step read again is still where the person is: the ink marker, taller, sits on it; reduced motion puts it there at once.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.keyboard.press('k');
   await page.keyboard.press('k');
   await expect(page.getByRole('region', { name: 'Login check' })).toBeVisible();
   expect(await segments(page)).toEqual(['current', 'read', 'read']);
   const current = progress(page).locator('[data-state="current"]');
-  await expect(current).toHaveCSS('height', '9px');
-  await expect(progress(page).locator('[data-state="read"]').first()).toHaveCSS('height', '5px');
-  expect(await current.evaluate(one => getComputedStyle(one).backgroundColor)).toBe(
+  const marker = progress(page).locator('.progress-marker');
+  await expect(marker).toHaveCSS('height', '9px');
+  await expect(current).toHaveCSS('height', '5px');
+  const [on, under] = await Promise.all([marker.boundingBox(), current.boundingBox()]);
+  expect(Math.round(on?.x ?? 0)).toBe(Math.round(under?.x ?? -1));
+  expect(Math.round(on?.width ?? 0)).toBe(Math.round(under?.width ?? -1));
+  expect(await marker.evaluate(one => getComputedStyle(one).backgroundColor)).toBe(
     await page.evaluate(() => {
       const probe = document.body.appendChild(document.createElement('span'));
       probe.style.color = 'var(--ink)';
@@ -61,6 +66,8 @@ test('the progress bar has a segment per step coloured by its state, marks where
   await page.keyboard.press('s');
   await expect(page.getByText('Summary · 1 decided', { exact: true })).toBeVisible();
   expect(await segments(page)).toEqual(['decided', 'read', 'read']);
+  // On the Summary no step is where the person is, so the marker fades out.
+  await expect(marker).toHaveClass(/\baway\b/);
 });
 
 test('the session status shows its state with a dot, or a spinning icon while the session works', async ({

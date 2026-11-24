@@ -15,16 +15,13 @@ import { appearanceDialog, loadViewer, showViewer } from './appearance';
 import { icon, type IconName } from './icons';
 import { renderMarkdown } from './markdown';
 import { bind, helpSheet, isTyping, MEANS, runShortcut, withKey } from './shortcuts';
-import { animate, now, play, reduced, replay } from './motion';
+import { animate, FADE_IN, play, reduced, replay } from './motion';
 
 /** The state an exported file carries, with when it was exported; it shows the walkthrough as it was, with nothing to send to. */
 type Exported = { walkthrough: WalkthroughView; session: SessionView; at: string; viewer?: Viewer; images?: Record<string, { width: number; height: number }> };
 const exportedText = document.getElementById('exported')?.textContent;
 const exported = exportedText === undefined ? undefined : (JSON.parse(exportedText) as Exported);
 const readOnly = exported !== undefined;
-
-/** What reduced motion keeps of an element arriving. */
-const FADE_IN = [{ opacity: 0 }, { opacity: 1 }];
 
 function markdown(text: string, className: string): HTMLElement {
   const box = document.createElement('div');
@@ -360,27 +357,41 @@ function progressWords(): string {
   return currentView().kind === 'summary' ? `Summary · ${decided} decided` : `${decided} of ${String(steps.length)} decided`;
 }
 
-/** One segment per step in step order, coloured by its state, and where the person is. */
-function progressView(): HTMLElement[] {
+/** Kept across redraws, so the fills and the "you are here" marker move by transition from where they were. */
+const bar = el('div', { className: 'progress' });
+const marker = el('span', { className: 'progress-marker' });
+const progressCount = el('span', { className: 'progress-count' });
+progressCount.setAttribute('aria-hidden', 'true');
+progressCount.dataset['motion'] = 'count:progress';
+
+/** One segment per step in step order, coloured by its state, and the marker on where the person is; `waits` holds it while a fill reads. */
+function progressView(waits: boolean): HTMLElement[] {
   const { steps } = walkthrough;
   const decided = steps.filter(stepDecided).length;
   const current = headerStep();
   const said = steps.length
     ? `${String(decided)} of ${plural(steps.length, 'step')} decided, ${String(steps.length - decided)} left, ${String(walkthrough.read.length)} read`
     : 'No steps yet';
-  const bar = el(
-    'div',
-    { className: 'progress', title: said },
-    ...steps.map((step, at) => {
-      const state = segmentState(step, current);
-      const fill = el('span', { className: 'segment-fill' });
-      fill.dataset['motion'] = `fill:${step.id}`;
-      const segment = el('span', { className: 'segment', title: `${String(at + 1)} ${step.title}: ${SEGMENT_WORDS[state]}` }, ...(state === 'decided' ? [fill] : []));
-      segment.dataset['state'] = state;
-      return segment;
-    }),
-  );
+  bar.title = said;
+  const segments = [...bar.querySelectorAll<HTMLElement>(':scope > .segment')];
+  while (segments.length > steps.length) segments.pop()?.remove();
+  while (segments.length < steps.length) segments.push(bar.insertBefore(el('span', { className: 'segment' }), marker.parentNode ? marker : null));
+  steps.forEach((step, at) => {
+    const state = segmentState(step, current);
+    const segment = segments[at];
+    if (!segment) return;
+    segment.title = `${String(at + 1)} ${step.title}: ${SEGMENT_WORDS[state]}`;
+    segment.dataset['state'] = state;
+    // What the segment shows under the marker: its own state, wherever the person is.
+    segment.dataset['fill'] = segmentState(step, undefined);
+  });
+  const here = current ? steps.indexOf(current) : -1;
   if (steps.length) {
+    marker.style.setProperty('--steps', String(steps.length));
+    if (here >= 0) marker.style.setProperty('--at', String(here));
+    marker.classList.toggle('away', here < 0);
+    marker.classList.toggle('waits', waits);
+    if (!marker.parentNode) bar.append(marker);
     bar.setAttribute('role', 'progressbar');
     bar.setAttribute('aria-label', 'Steps decided');
     bar.setAttribute('aria-valuemin', '0');
@@ -388,10 +399,8 @@ function progressView(): HTMLElement[] {
     bar.setAttribute('aria-valuenow', String(decided));
     bar.setAttribute('aria-valuetext', said);
   }
-  const count = el('span', { className: 'progress-count' }, steps.length ? progressWords() : '');
-  count.setAttribute('aria-hidden', 'true');
-  count.dataset['motion'] = 'count:progress';
-  return [bar, count];
+  progressCount.textContent = steps.length ? progressWords() : '';
+  return [bar, progressCount];
 }
 
 /** Each tool window's name in its title bar and menu item, and the key that shows and hides it. */
@@ -404,12 +413,79 @@ const PANEL: Record<Panel, { title: string; menu: string; key: string }> = {
 /** The explanation column needs the width a phone does not have. */
 const shows = (panel: Panel) => panels[panel] && (panel !== 'explanation' || !phone.matches);
 
+/** The tool windows that slide to their edge, each with its box and that edge. */
+const SLIDES: Partial<Record<Panel, { box: HTMLElement; edge: HTMLElement }>> = { queue: { box: queue, edge: leftEdge }, checklist: { box: side, edge: rightEdge } };
+/** Tool windows hidden but still drawn while their contents fade and their width closes. */
+const closing = new Set<Panel>();
+const painted = (panel: Panel) => shows(panel) || closing.has(panel);
+
 /** `refocus` moves the focus to the control that undoes this, as the one that did it may be gone. */
 function togglePanel(panel: Panel, refocus = false): void {
+  const slide = SLIDES[panel];
+  const widthOf = (box: HTMLElement) => (box.hidden ? 0 : box.getBoundingClientRect().width);
+  // Measured mid-motion too, so a window shown again on its way out turns back from where it is.
+  const was = slide ? { box: widthOf(slide.box), edge: widthOf(slide.edge) } : { box: 0, edge: 0 };
+  for (const running of slide ? [...slide.box.getAnimations(), ...slide.edge.getAnimations()] : []) running.cancel();
+  slide?.box.classList.remove('sliding');
   panels[panel] = !panels[panel];
+  closing.delete(panel);
+  const sliding = slide && !phone.matches;
+  if (sliding && !panels[panel] && was.box) closing.add(panel);
+  // A window going to its edge takes the focus in it along, to the button that brings it back.
+  const moveFocus = refocus || !!slide?.box.contains(document.activeElement);
   void postQuietly('viewer', { panels: { [panel]: panels[panel] } });
   render();
-  if (refocus) document.querySelector<HTMLElement>(`[data-key="${panels[panel] ? 'hide' : 'show'}:${panel}"]`)?.focus();
+  if (sliding) slidePanel(panel, slide.box, slide.edge, was, moveFocus);
+  if (moveFocus) document.querySelector<HTMLElement>(`[data-key="${panels[panel] ? 'hide' : 'show'}:${panel}"]`)?.focus();
+}
+
+const widthFrames = (from: number, to: number) =>
+  [from, to].map(px => ({ width: `${String(px)}px`, minWidth: '0px', overflow: 'hidden', ...(px ? {} : { paddingLeft: '0px', paddingRight: '0px' }) }));
+
+/** Plays `frames` on a tool window's width while what it holds keeps its open width, so nothing in it rewraps. */
+function slideWidth(box: HTMLElement, from: number, to: number, timing: Parameters<typeof animate>[3]): Animation {
+  const { paddingLeft, paddingRight } = getComputedStyle(box);
+  const inner = Math.max(from, to) - Number.parseFloat(paddingLeft) - Number.parseFloat(paddingRight);
+  box.style.setProperty('--open-width', `${String(inner)}px`);
+  box.classList.add('sliding');
+  const running = animate(box, 'panel-width', widthFrames(from, to), timing);
+  running.finished.then(() => { box.classList.remove('sliding'); }, () => {});
+  return running;
+}
+
+/** A tool window's contents fade, then its width closes while its edge opens; showing reverses with the width leading. */
+function slidePanel(panel: Panel, box: HTMLElement, edge: HTMLElement, was: { box: number; edge: number }, moveFocus: boolean): void {
+  const contents = `panel:${panel}`;
+  if (closing.has(panel)) {
+    const fade = play(contents, 'panel-fade', [{ opacity: 1 }, { opacity: 0 }], { ms: reduced() ? 'fast' : 100, curve: 'linear', fill: 'forwards' });
+    const done = (running: Animation) => () => {
+      if (!closing.delete(panel)) return;
+      render();
+      running.cancel();
+      // With reduced motion the edge's button arrives only now.
+      if (moveFocus && document.activeElement === document.body) document.querySelector<HTMLElement>(`[data-key="show:${panel}"]`)?.focus();
+      if (reduced()) play(`edge:${panel}`, 'edge-in', FADE_IN, { ms: 'base', curve: 'linear' });
+      replay();
+    };
+    if (reduced()) {
+      // Contents fade, then the width snaps.
+      const hold = animate(box, 'panel-hold', [{ opacity: 1 }, { opacity: 1 }], { ms: fade, curve: 'linear' });
+      hold.finished.then(done(hold), () => {});
+    } else {
+      const closes = slideWidth(box, was.box, 0, { ms: 'base', curve: 'ease-out', delay: 60, fill: 'both' });
+      closes.finished.then(done(closes), () => {});
+      const edgeWidth = edge.getBoundingClientRect().width;
+      if (was.edge < edgeWidth) animate(edge, 'edge-width', widthFrames(was.edge, edgeWidth), { ms: 'base', curve: 'ease-out', delay: 60, fill: 'backwards' });
+      play(`edge:${panel}`, 'edge-in', FADE_IN, { ms: 'fast', curve: 'linear', delay: 200 });
+    }
+    replay();
+    return;
+  }
+  if (box.hidden) return;
+  play(contents, 'panel-fade', FADE_IN, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out', delay: 120 });
+  // A window shown from its edge grows from the edge's width, so nothing beside it jumps.
+  if (!reduced()) slideWidth(box, was.box + (edge.hidden ? was.edge : 0), box.getBoundingClientRect().width, { ms: 'slow', curve: 'ease-out', fill: 'backwards' });
+  replay();
 }
 
 /** A tool window's title bar: its title and the button that hides it to its edge. */
@@ -434,6 +510,7 @@ function showButton(panel: Panel, count: string | null): HTMLButtonElement {
   );
   button.setAttribute('aria-expanded', 'false');
   button.dataset['key'] = `show:${panel}`;
+  button.dataset['motion'] = `edge:${panel}`;
   button.onclick = () => {
     togglePanel(panel, true);
   };
@@ -473,6 +550,15 @@ function closeMenu(refocus = false): void {
   if (refocus && key !== null) document.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`)?.focus();
 }
 
+/** Opens the menu of the button keyed `key`, settling from that button as a popover does; it closes at once. */
+function openMenu(key: string): void {
+  menuOpen = key;
+  render();
+  play('menu', 'popover-in', FADE_IN, { ms: 'fast', curve: 'linear' });
+  if (!reduced()) play('menu', 'popover-settle', [{ transform: 'translateY(-4px) scale(0.98)' }, { transform: 'none' }], { ms: 'base', curve: 'ease-out' });
+  replay();
+}
+
 document.addEventListener('click', event => {
   if (menuOpen !== null && !(event.target instanceof Element && event.target.closest('.menu, .more-menu, .menu-button'))) closeMenu();
 });
@@ -482,8 +568,8 @@ const moreButton = () => document.querySelector('[data-key="more"]');
 /** The header's More menu: Appearance and Help, and at phone width what the header has no room for. */
 function moreMenu(): HTMLElement {
   const button = el('button', { type: 'button', className: 'icon-button', onclick: () => {
-    menuOpen = menuOpen === 'more' ? null : 'more';
-    render();
+    if (menuOpen === 'more') closeMenu();
+    else openMenu('more');
     document.querySelector<HTMLElement>('.menu [role^=menuitem]')?.focus();
   } }, icon('more'));
   button.setAttribute('aria-label', 'More');
@@ -511,6 +597,7 @@ function moreMenu(): HTMLElement {
   separator.setAttribute('role', 'separator');
   const menu = el('div', { className: 'menu' }, ...swipe, ...toggles, ...(toggles.length ? [separator] : []), ...after);
   menu.setAttribute('role', 'menu');
+  menu.dataset['motion'] = 'menu';
   menu.setAttribute('aria-label', 'More');
   menu.onkeydown = event => {
     const at = items.indexOf(event.target as HTMLButtonElement);
@@ -527,12 +614,92 @@ function moreMenu(): HTMLElement {
   return box;
 }
 
-/** Redraws `parent` around `kept`, which never leaves the page. */
-function around(parent: HTMLElement, kept: HTMLElement, before: Node[], after: Node[]): void {
-  for (const child of [...parent.childNodes]) if (child !== kept) child.remove();
-  if (kept.parentNode !== parent) parent.append(kept);
-  kept.before(...before);
-  kept.after(...after);
+/** Puts `children` in `parent` in order, leaving in place those already there, so what they are playing goes on. */
+function place(parent: HTMLElement, children: Node[]): void {
+  for (const child of [...parent.childNodes]) if (!children.includes(child)) child.remove();
+  children.forEach((child, at) => {
+    if (parent.childNodes[at] !== child) parent.insertBefore(child, parent.childNodes[at] ?? null);
+  });
+}
+
+/** The header's verdict slot, kept across redraws so its label can be docked into it. */
+const verdictText = el('span', { className: 'verdict-text' });
+const verdictSlot = el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), verdictText);
+
+function headerVerdict(): HTMLElement[] {
+  const label = verdictLabel();
+  if (label === null) return [];
+  if (verdictText.textContent !== label) verdictText.textContent = label;
+  return [verdictSlot];
+}
+
+/** Where the header's verdict was before a redraw, to fade the old label out from. */
+type VerdictWas = { label: string; width: number };
+
+/** A fixed copy of the label laid over the page while it travels, so no redraw cuts it. */
+function verdictChip(label: string): HTMLElement {
+  for (const old of document.querySelectorAll('.verdict-chip')) old.remove();
+  const chip = el('span', { className: 'verdict-chip' }, label);
+  chip.setAttribute('aria-hidden', 'true');
+  document.body.append(chip);
+  return chip;
+}
+
+/** Where a node's text is drawn, which an element's box pads by its line height. */
+function textRect(node: Node): DOMRect {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  return range.getBoundingClientRect();
+}
+
+const removeWhenDone = (running: Animation, element: Element) => {
+  running.finished.then(() => { element.remove(); }, () => {});
+};
+
+/** The one authored moment: the chosen verdict lifts off its option as a chip and docks into the header's slot. */
+function dockVerdict(was: VerdictWas | null): void {
+  const slot = verdictSlot.getBoundingClientRect();
+  // At phone width the header has no slot.
+  if (!slot.width) return;
+  for (const running of [...verdictSlot.getAnimations(), ...verdictText.getAnimations()]) running.cancel();
+  const to = textRect(verdictText);
+  if (was) {
+    // Inside the slot, so it moves as the slot's width eases to the new label.
+    for (const older of verdictSlot.querySelectorAll('.verdict-old')) older.remove();
+    const old = el('span', { className: 'verdict-old' }, was.label);
+    old.setAttribute('aria-hidden', 'true');
+    old.style.setProperty('left', `${String(verdictText.offsetLeft)}px`);
+    old.style.setProperty('top', `${String(verdictText.offsetTop)}px`);
+    verdictSlot.append(old);
+    removeWhenDone(animate(old, 'verdict-old', [{ opacity: 1 }, { opacity: 0 }], { ms: reduced() ? 100 : 'base', curve: 'linear', fill: 'forwards' }), old);
+  }
+  if (reduced()) {
+    if (was) animate(verdictText, 'verdict-in', FADE_IN, { ms: 100, curve: 'linear', delay: 100 });
+    else animate(verdictSlot, 'verdict-in', FADE_IN, { ms: 'base', curve: 'linear' });
+    return;
+  }
+  const opens = [{ width: `${String(was?.width ?? 0)}px`, overflow: 'hidden' }, { width: `${String(slot.width)}px`, overflow: 'hidden' }];
+  animate(verdictSlot, 'verdict-width', opens, { ms: 'slow', curve: 'ease-out' });
+  // The label arrives as the chip fades, so it never drops out.
+  animate(was ? verdictText : verdictSlot, 'verdict-land', [{ opacity: 0 }, { opacity: 0, offset: 0.62 }, { opacity: 1 }], { ms: 440, curve: 'linear' });
+  const label = main.querySelector('.verdict-option[aria-checked="true"]')?.lastChild;
+  if (!label) return;
+  const from = textRect(label);
+  const chip = verdictChip(verdictText.textContent);
+  // The chip's own text sits exactly on the option's.
+  const own = textRect(chip);
+  chip.style.setProperty('left', `${String(from.left - own.left)}px`);
+  chip.style.setProperty('top', `${String(from.top + from.height / 2 - (own.top + own.height / 2))}px`);
+  const dx = to.left - from.left;
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+  const scale = Math.max(to.height / from.height, 0.9);
+  animate(chip, 'verdict-chip', [{ transform: 'none' }, { transform: `translate(${String(dx)}px, ${String(dy)}px) scale(${String(scale)})` }], {
+    ms: 440,
+    curve: 'ease-out',
+    fill: 'forwards',
+  });
+  const fade = [{ opacity: 1 }, { opacity: 1, offset: 0.62 }, { opacity: 0, borderColor: 'transparent', backgroundColor: 'transparent' }];
+  removeWhenDone(animate(chip, 'verdict-chip-fade', fade, { ms: 440, curve: 'linear', fill: 'forwards' }), chip);
 }
 
 /** The header's way to the Summary, where the verdict is chosen. */
@@ -541,27 +708,25 @@ const finishReview = () =>
     ? [keyed(el('a', { href: '#summary', className: 'btn small ghost finish-review', title: 'Finish review: go to the Summary (G S)' }, 'Finish review'), 'finish-review')]
     : [];
 
-function drawHeader(): void {
+function drawHeader(waits: boolean): void {
   const range = `against ${targetName(walkthrough.target)}, ${walkthrough.base.slice(0, 7)}..${walkthrough.head.slice(0, 7)}`;
   const prefix = el('span', { className: 'status-prefix' }, 'Session');
   prefix.setAttribute('aria-hidden', 'true');
-  around(
-    headerEnd,
+  place(headerEnd, [
+    ...headerVerdict(),
+    ...finishReview(),
+    prefix,
     statusView(),
-    [...verdictStatus(), ...finishReview(), prefix],
-    [...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, END)]), moreMenu()],
-  );
-  around(
-    header,
+    ...(stopped ? [] : [el('button', { type: 'button', className: 'btn small stop', onclick: () => void stop() }, END)]),
+    moreMenu(),
+  ]);
+  place(header, [
+    el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
+    ...kindView(walkthrough.kindLabel),
+    el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
+    ...progressView(waits),
     headerEnd,
-    [
-      el('span', { className: 'logo' }, icon('mark'), 'Walkthrough'),
-      ...kindView(walkthrough.kindLabel),
-      el('h1', { className: 'session-label', title: range }, nameOf(walkthrough)),
-      ...progressView(),
-    ],
-    [],
-  );
+  ]);
 }
 
 function draftArea(draft: string, label: string, start = '', rows = 2): HTMLTextAreaElement {
@@ -720,8 +885,7 @@ function actionsMenu(item: Item, label: string): HTMLElement[] {
       closeMenu();
       return;
     }
-    menuOpen = opener;
-    render();
+    openMenu(opener);
     document.querySelector<HTMLElement>('.menu [role="menuitem"]')?.focus();
   };
   if (!open) return [button];
@@ -738,6 +902,7 @@ function actionsMenu(item: Item, label: string): HTMLElement[] {
   });
   const menu = el('div', { className: 'menu', popover: 'manual' }, ...choices);
   menu.setAttribute('role', 'menu');
+  menu.dataset['motion'] = 'menu';
   menu.setAttribute('aria-label', `${label} actions`);
   menu.onkeydown = event => {
     const at = choices.findIndex(choice => choice === document.activeElement);
@@ -1304,12 +1469,64 @@ const isClosed = (wrapper: HTMLElement) => {
   return folds.get(file) ?? (walkthrough.viewed.includes(file) || Number(wrapper.dataset['changed']) > LARGE_FILE);
 };
 
+/** Redraws, then moves `wrapper` from how it was drawn to how it is now: a file opens or closes by its height, its header flush. */
+function foldAround(wrapper: HTMLElement | null): void {
+  const was = wrapper && {
+    closed: wrapper.classList.contains('closed'),
+    viewed: wrapper.classList.contains('viewed'),
+    // Measured mid-motion too, so a file turned back goes on from where it is.
+    height: wrapper.getBoundingClientRect().height,
+  };
+  render();
+  if (!wrapper || !was || !wrapper.isConnected) return;
+  const header = wrapper.querySelector<HTMLElement>(':scope > .d2h-file-header');
+  if (wrapper.classList.contains('viewed') && !was.viewed) {
+    const label = header?.querySelector<HTMLElement>('.viewed-toggle > span');
+    if (label) {
+      const reveal = [
+        { maxWidth: '0px', marginLeft: '-6px', opacity: 0, overflow: 'hidden' },
+        { maxWidth: `${String(label.getBoundingClientRect().width)}px`, marginLeft: '0px', opacity: 1, overflow: 'hidden' },
+      ];
+      animate(label, 'viewed-label', reduced() ? FADE_IN : reveal, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out' });
+    }
+    const name = header?.querySelector('.d2h-file-name');
+    if (name) animate(name, 'viewed-dim', [{ color: 'var(--ink)' }, { color: 'var(--muted)' }], { ms: 'base', curve: 'linear' });
+  }
+  const closed = wrapper.classList.contains('closed');
+  if (closed === was.closed) return;
+  for (const running of wrapper.getAnimations({ subtree: true })) if (running.id.startsWith('fold')) running.cancel();
+  wrapper.classList.remove('closing');
+  const contents = [...wrapper.children].filter(child => child !== header);
+  const chevron = header?.querySelector('.file-toggle > .icon');
+  const turn = [{ transform: 'none' }, { transform: 'rotate(90deg)' }];
+  if (chevron && !reduced()) animate(chevron, 'fold-turn', closed ? turn.reverse() : turn, { ms: 'fast', curve: 'ease-out' });
+  const height = wrapper.getBoundingClientRect().height;
+  const rows = [{ height: `${String(was.height)}px`, overflow: 'hidden' }, { height: `${String(height)}px`, overflow: 'hidden' }];
+  if (!closed) {
+    for (const part of contents) animate(part, 'fold-fade', FADE_IN, { ms: 'base', curve: 'linear', delay: reduced() ? 0 : 80 });
+    if (!reduced()) animate(wrapper, 'fold-rows', rows, { ms: 'slow', curve: 'ease-out' });
+    return;
+  }
+  // What the file held stays drawn until it has faded and the file has closed.
+  wrapper.classList.add('closing');
+  const fades = contents.map(part => animate(part, 'fold-fade', [{ opacity: 1 }, { opacity: 0 }], { ms: reduced() ? 'fast' : 80, curve: 'linear', fill: 'forwards' }));
+  const ends = reduced() ? fades[0] : animate(wrapper, 'fold-rows', rows, { ms: 'base', curve: 'ease-out', delay: 80, fill: 'both' });
+  if (!ends) {
+    wrapper.classList.remove('closing');
+    return;
+  }
+  ends.finished.then(() => {
+    wrapper.classList.remove('closing');
+    for (const running of wrapper.getAnimations({ subtree: true })) if (running.id.startsWith('fold')) running.cancel();
+  }, () => {});
+}
+
 /** Viewed is the person's reading mark: it folds the file away and never decides anything. */
 async function markViewed(step: Step, file: string): Promise<void> {
   const viewed = !walkthrough.viewed.includes(file);
   walkthrough = { ...walkthrough, viewed: viewed ? [...walkthrough.viewed, file] : walkthrough.viewed.filter(one => one !== file) };
   folds.set(file, viewed);
-  render();
+  foldAround(drawn.get(step.id)?.view.querySelector<HTMLElement>(`.d2h-file-wrapper[data-file="${CSS.escape(file)}"]`) ?? null);
   const answer = await post('viewed', { step: step.id, file, viewed, on: walkthrough.on[itemKey({ type: 'step', id: step.id })] });
   if (answer) {
     walkthrough = (await answer.json()) as WalkthroughView;
@@ -1327,7 +1544,7 @@ function fileControls(wrapper: HTMLElement, step: Step): void {
   const toggle = el('button', { type: 'button', className: 'icon-button file-toggle' }, icon('chevron-right'));
   toggle.onclick = () => {
     folds.set(file, !isClosed(wrapper));
-    render();
+    foldAround(wrapper);
   };
   const viewed = el('button', { type: 'button', className: 'viewed-toggle', title: withKey('Viewed', 'V') }, icon('eye'), el('span', {}, 'Viewed'));
   viewed.setAttribute('aria-label', `Mark ${file} as viewed`);
@@ -1994,8 +2211,10 @@ function queueView(view: View): HTMLElement[] {
   const empty = rows.length ? [] : [el('p', { className: 'queue-empty' }, steps.length ? 'Everything is decided.' : 'No steps yet')];
   const decided = steps.filter(step => !stepLeft(step));
   const open = opened.has('decided') || (current !== undefined && decided.includes(current));
-  const decidedCount = el('span', {}, `${String(decided.length)} decided`);
-  decidedCount.dataset['motion'] = 'count:decided';
+  // Only the number arrives as the chip lands; the words stay put.
+  const decidedNumber = el('span', {}, String(decided.length));
+  decidedNumber.dataset['motion'] = 'count:decided';
+  const decidedCount = el('span', {}, decidedNumber, ' decided');
   const toggleDecided = el(
     'button',
     { type: 'button', className: 'decided-toggle', onclick: () => { toggle(opened, 'decided'); } },
@@ -2005,6 +2224,7 @@ function queueView(view: View): HTMLElement[] {
   );
   toggleDecided.setAttribute('aria-expanded', String(open));
   toggleDecided.dataset['key'] = 'decided-toggle';
+  toggleDecided.dataset['motion'] = 'flash:decided';
   const foot = decided.length
     ? [
         el(
@@ -2892,7 +3112,8 @@ function arrivedBanner(): void {
 
 /** The buttons hidden windows leave on their edges; an edge with none is not drawn. */
 function drawEdges(view: View, side: HTMLElement[]): void {
-  const hidden = (panel: Panel) => !shows(panel) && !phone.matches;
+  // With reduced motion the edge waits for the window's contents to fade, as the width snaps rather than closes.
+  const hidden = (panel: Panel) => !shows(panel) && !phone.matches && !(closing.has(panel) && reduced());
   leftEdge.replaceChildren(
     ...(hidden('queue') ? [showButton('queue', queue.querySelector('.queue-head .counter')?.textContent ?? null)] : []),
     ...(hidden('explanation') && view.kind === 'step' ? [showButton('explanation', null)] : []),
@@ -3004,9 +3225,9 @@ function render(): void {
   const decisionsMoved = newly.length > 0 || [...(before?.decided ?? [])].some(key => !decided.has(key));
   const shownView = viewKey(view);
   const swapped = before !== null && before.view !== shownView;
-  const rows = [...queue.querySelectorAll<HTMLElement>(':scope > .queue-item[data-key]')].map(row => {
+  const rows = [...queue.querySelectorAll<HTMLElement>(':scope > .queue-item[data-key]')].map((row): LeavingRow => {
     const { paddingTop, paddingBottom } = getComputedStyle(row);
-    return { row, key: row.dataset['key'] ?? '', height: row.offsetHeight, paddingTop, paddingBottom };
+    return { row, key: row.dataset['key'] ?? '', height: row.offsetHeight, paddingTop, paddingBottom, rect: row.getBoundingClientRect() };
   });
   const wasSplit = main.contains(splitStep);
   // The split step's panes stay for the next step, so what leaves is their content, moved into panes of its own.
@@ -3015,11 +3236,14 @@ function render(): void {
     : wasSplit
       ? [el('section', { className: 'step split' }, el('div', { className: 'prose' }, ...prosePane.childNodes), el('div', { className: 'code' }, ...codePane.childNodes))]
       : [...main.childNodes].filter(node => node !== leavingPane);
-  drawHeader();
+  const verdictWas: VerdictWas | null = verdictSlot.isConnected
+    ? { label: verdictText.textContent, width: verdictSlot.getBoundingClientRect().width }
+    : null;
+  drawHeader(newly.some(key => key.startsWith('step:')));
   arrivedBanner();
   // Drawn while hidden too, as its edge button counts what it holds.
   queue.replaceChildren(...queueView(view));
-  queue.hidden = !shows('queue');
+  queue.hidden = !painted('queue');
   const notices = [...waitingQuestions().map(questionBox), ...goneNotice()];
   const explaining = shows('explanation') && view.kind === 'step';
   main.classList.toggle('split', explaining);
@@ -3028,8 +3252,15 @@ function render(): void {
   // Putting the explanation column's step back would lose where its panes were scrolled.
   if (shown.length !== present.length || shown.some((part, at) => present[at] !== part)) main.replaceChildren(...shown);
   const beside = checklistPanel(view);
-  side.replaceChildren(...(shows('checklist') && beside.length ? [panelHead('checklist', el('span', {}, PANEL.checklist.title)), ...beside] : []));
+  side.replaceChildren(...(painted('checklist') && beside.length ? [panelHead('checklist', el('span', {}, PANEL.checklist.title)), ...beside] : []));
   side.hidden = !side.hasChildNodes();
+  // A window on its way to its edge is a picture of what was.
+  for (const [panel, box] of [['queue', queue], ['checklist', side]] as const) {
+    box.inert = closing.has(panel);
+    if (closing.has(panel)) box.setAttribute('aria-hidden', 'true');
+    else box.removeAttribute('aria-hidden');
+    for (const part of box.children) (part as HTMLElement).dataset['motion'] ??= `panel:${panel}`;
+  }
   drawEdges(view, beside);
   panes.forEach((pane, at) => {
     pane.scrollTop = scrolled[at] ?? 0;
@@ -3038,18 +3269,19 @@ function render(): void {
   markTopFile();
   for (const part of shown) part.dataset['motion'] = 'pane-enter';
   leaveRows(rows, newly);
-  placeGhosts();
   if (swapped) swapPanes(oldPane, wasSplit, scrolled.slice(1, 4));
   else if (leavingPane) main.prepend(leavingPane);
   const counts = new Map(
     [...document.querySelectorAll<HTMLElement>('[data-motion^="count:"]')].map(count => [count.dataset['motion'] ?? '', count.textContent]),
   );
-  if (decisionsMoved) moveDecided(newly, counts, before?.counts);
+  if (decisionsMoved) moveDecided(counts, before?.counts);
   const state = stopped ? 'stopped' : session.state;
   if (state === 'needs-you' && before?.state !== 'needs-you' && !reduced())
     play('pulse', 'pulse', [{ boxShadow: '0 0 0 0 currentColor' }, { boxShadow: '0 0 0 6px transparent' }], { ms: 1200, curve: 'ease-out', iterations: 2 });
   drawnState = { decided, view: shownView, state, counts };
   replay();
+  const verdict = verdictLabel();
+  if (before && verdict !== null && verdict !== (verdictWas?.label ?? null)) dockVerdict(verdictWas);
   // The pane leaving is a picture of what was, so nothing in it takes focus again.
   const current = (selector: string) => [...document.querySelectorAll<HTMLElement>(selector)].find(found => !leavingPane?.contains(found));
   const lost = focused instanceof HTMLElement && (!focused.isConnected || !!leavingPane?.contains(focused));
@@ -3067,9 +3299,17 @@ let drawnState: { decided: Set<string>; view: string; state: string; counts: Map
 
 const viewKey = (view: View) => (view.kind === 'step' ? `step:${view.step.id}` : view.kind);
 
-/** A rail row that left because its item was decided, kept in place while it slides out and collapses. */
-type Ghost = { row: HTMLElement; after: string[]; until: number };
+/** A rail row that left because its item was decided, kept in place while it collapses, and the chip that carries it to "N decided". */
+type Ghost = { row: HTMLElement; key: string; after: string[]; chip: HTMLElement | null };
 const ghosts = new Set<Ghost>();
+
+function dropGhost(ghost: Ghost): void {
+  ghosts.delete(ghost);
+  ghost.row.remove();
+  ghost.chip?.remove();
+}
+
+type LeavingRow = { row: HTMLElement; key: string; height: number; paddingTop: string; paddingBottom: string; rect: DOMRect };
 
 const itemOfRow = (key: string) => {
   const address = key.slice('row:'.length);
@@ -3077,45 +3317,58 @@ const itemOfRow = (key: string) => {
   return item === undefined ? `step:${address}` : `checklist:${item}`;
 };
 
-function leaveRows(rows: { row: HTMLElement; key: string; height: number; paddingTop: string; paddingBottom: string }[], newly: string[]): void {
-  rows.forEach(({ row, key, height, paddingTop, paddingBottom }, at) => {
+/** A decided row hides and the rows below close up, while a chip of it lifts off and travels into "N decided" at the rail's foot. */
+function leaveRows(rows: LeavingRow[], newly: string[]): void {
+  const flying = !reduced() && shows('queue') && !phone.matches;
+  const chips: { chip: HTMLElement; rect: DOMRect }[] = [];
+  rows.forEach(({ row, key, height, paddingTop, paddingBottom, rect }, at) => {
     if (!newly.includes(itemOfRow(key)) || queue.querySelector(`:scope > [data-key="${CSS.escape(key)}"]`)) return;
-    const motion = `leave:${key}`;
+    for (const older of ghosts) if (older.key === key) dropGhost(older);
+    const chip = flying ? (row.cloneNode(true) as HTMLElement) : null;
     row.classList.add('leaving');
     row.removeAttribute('aria-current');
     row.setAttribute('aria-hidden', 'true');
     row.inert = true;
     delete row.dataset['key'];
-    row.dataset['motion'] = motion;
-    const ghost = { row, after: rows.slice(at + 1).map(one => one.key), until: Infinity };
+    delete row.dataset['motion'];
+    const ghost: Ghost = { row, key, after: rows.slice(at + 1).map(one => one.key), chip };
     ghosts.add(ghost);
+    // The row is the same element however often the rail is redrawn, so what plays on it goes on; its end takes it away.
     const fade = [{ opacity: 1 }, { opacity: 0 }];
-    const lasts = reduced()
-      ? [play(motion, 'row-fade', fade, { ms: 'base', curve: 'linear', fill: 'forwards' })]
-      : [
-          play(motion, 'row-slide', [{ transform: 'none' }, { transform: 'translateX(-16px)' }], { ms: 160, curve: 'ease-out', fill: 'forwards' }),
-          play(motion, 'row-fade', fade, { ms: 160, curve: 'linear', fill: 'forwards' }),
-          play(
-            motion,
-            'row-collapse',
-            [
-              { height: `${String(height)}px`, paddingTop, paddingBottom, marginBottom: '0px' },
-              // The rail's 2px gap goes with the row.
-              { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '-2px' },
-            ],
-            { ms: 'slow', curve: 'ease-out', delay: 120, fill: 'both' },
-          ),
-        ];
-    ghost.until = now() + Math.max(...lasts);
-    setTimeout(() => {
-      ghosts.delete(ghost);
-      row.remove();
-    }, Math.max(...lasts));
+    const hides = animate(row, 'row-fade', fade, { ms: reduced() ? 'base' : 60, curve: 'linear', fill: 'forwards' });
+    const collapse = [
+      { height: `${String(height)}px`, paddingTop, paddingBottom, marginBottom: '0px' },
+      // The rail's 2px gap goes with the row.
+      { height: '0px', paddingTop: '0px', paddingBottom: '0px', marginBottom: '-2px' },
+    ];
+    const ends = reduced() ? hides : animate(row, 'row-collapse', collapse, { ms: 'slow', curve: 'ease-out', delay: 120, fill: 'both' });
+    ends.finished.then(() => {
+      if (ghosts.has(ghost)) dropGhost(ghost);
+    }, () => {});
+    if (chip) chips.push({ chip, rect });
   });
+  placeGhosts();
+  const target = queue.querySelector<HTMLElement>('.decided-toggle');
+  if (!target || !chips.length) return;
+  const to = target.getBoundingClientRect();
+  for (const { chip, rect } of chips) {
+    chip.className = 'queue-item queue-chip';
+    for (const name of ['href', 'data-key', 'aria-current', 'title']) chip.removeAttribute(name);
+    chip.setAttribute('aria-hidden', 'true');
+    chip.inert = true;
+    for (const [side, px] of [['left', rect.left], ['top', rect.top], ['width', rect.width]] as const) chip.style.setProperty(side, `${String(px)}px`);
+    document.body.append(chip);
+    const dy = to.top + to.height / 2 - (rect.top + rect.height / 2);
+    animate(chip, 'chip-travel', [{ transform: 'none' }, { transform: `translateY(${String(dy)}px) scale(0.92)` }], { ms: 'slow', curve: 'ease-out', fill: 'forwards' });
+    const out = animate(chip, 'chip-fade', [{ opacity: 1 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], { ms: 'slow', curve: 'linear', fill: 'forwards' });
+    out.finished.then(() => { chip.remove(); }, () => {});
+  }
+  play('flash:decided', 'decided-flash', [{ backgroundColor: 'var(--surface-tint)' }, { backgroundColor: 'transparent' }], { ms: 'base', curve: 'linear', delay: 240 });
 }
 
 function placeGhosts(): void {
-  for (const ghost of ghosts) if (ghost.until <= now()) ghosts.delete(ghost);
+  // A row back in the rail, its decision taken back, needs no picture of it leaving.
+  for (const ghost of ghosts) if (queue.querySelector(`:scope > [data-key="${CSS.escape(ghost.key)}"]`)) dropGhost(ghost);
   for (const { row, after } of ghosts) {
     const next = after.map(key => queue.querySelector(`:scope > [data-key="${CSS.escape(key)}"]`)).find(found => found !== null);
     const end = queue.querySelector(':scope > .queue-empty, :scope > .queue-foot');
@@ -3135,34 +3388,34 @@ function swapPanes(old: Node[], split: boolean, scrolled: number[]): void {
   const pane = el('div', { className: 'pane-leaving' }, shown);
   pane.inert = true;
   pane.setAttribute('aria-hidden', 'true');
-  pane.dataset['motion'] = 'pane-leave';
   main.scrollTo(0, 0);
   main.prepend(pane);
   [shown, ...shown.querySelectorAll(':scope > .step > .prose, :scope > .step > .code')].forEach((scroller, at) => {
     scroller.scrollTop = scrolled[at] ?? 0;
   });
   leavingPane = pane;
-  const gone = play('pane-leave', 'pane-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 100, curve: 'linear', fill: 'forwards' });
-  if (!reduced()) play('pane-leave', 'pane-out', [{ transform: 'none' }, { transform: 'translateX(-12px)' }], { ms: 100, curve: 'ease-in', fill: 'forwards' });
+  // The leaving pane is one element a redraw puts back, so what plays on it goes on, and its end takes it away.
+  const gone = animate(pane, 'pane-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 100, curve: 'linear', fill: 'forwards' });
+  if (!reduced()) animate(pane, 'pane-out', [{ transform: 'none' }, { transform: 'translateX(-12px)' }], { ms: 100, curve: 'ease-in', fill: 'forwards' });
   const enter = [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }];
   play('pane-enter', 'pane-enter', reduced() ? FADE_IN : enter, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out', delay: 100 });
-  setTimeout(() => {
+  gone.finished.then(() => {
     if (leavingPane !== pane) return;
     pane.remove();
     leavingPane = null;
-  }, gone);
+  }, () => {});
 }
 
-/** Decided steps fill their progress segment and every count that changed ticks. */
-function moveDecided(newly: string[], counts: Map<string, string>, before = new Map<string, string>()): void {
-  for (const key of newly.filter(one => one.startsWith('step:'))) {
-    const fill = [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }];
-    play(`fill:${key.slice('step:'.length)}`, 'fill', reduced() ? FADE_IN : fill, reduced() ? { ms: 'base', curve: 'linear' } : { ms: 'slow', curve: 'ease-out' });
-  }
+/** Every count that changed ticks; "N decided" takes its new count as the chip lands. */
+function moveDecided(counts: Map<string, string>, before = new Map<string, string>()): void {
   const tick = [{ opacity: 0.55, transform: 'translateY(2px)' }, { opacity: 1, transform: 'none' }];
-  for (const [key, text] of counts)
-    if (before.get(key) !== text)
-      play(key, 'tick', reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : tick, { ms: 'base', curve: reduced() ? 'linear' : 'ease-out' });
+  const lands = [{ opacity: 0, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }];
+  for (const [key, text] of counts) {
+    if (before.get(key) === text) continue;
+    if (reduced()) play(key, 'tick', [{ opacity: 0.55 }, { opacity: 1 }], { ms: 'base', curve: 'linear' });
+    else if (key === 'count:decided') play(key, 'count-land', lands, { ms: 'base', curve: 'ease-out', delay: 240 });
+    else play(key, 'tick', tick, { ms: 'base', curve: 'ease-out' });
+  }
 }
 
 /** V marks the file the keyboard is in, or else the step's first file not viewed yet. */

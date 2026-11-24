@@ -95,6 +95,88 @@
   background: var(--amber);
 }
 
+/* The header's bar: fills scale in from the left, grey when read and the accent when decided, under an ink marker that walks. */
+.progress {
+  position: relative;
+}
+
+.progress > .segment[data-state] {
+  height: 5px;
+  background: var(--rule);
+  transition: background-color var(--slow) linear;
+}
+
+.progress > .segment::before,
+.progress > .segment::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--slow) var(--ease-out);
+}
+
+.progress > .segment::before {
+  background: var(--progress-read);
+}
+
+.progress > .segment::after {
+  background: var(--accent);
+}
+
+.progress > .segment[data-fill='read']::before,
+.progress > .segment[data-fill='decided']::before,
+.progress > .segment[data-fill='decided']::after {
+  transform: none;
+}
+
+.progress > .segment[data-fill='reopened'] {
+  background: var(--amber);
+}
+
+.progress-marker {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: calc((100% - (var(--steps, 1) - 1) * 3px) / var(--steps, 1));
+  height: 9px;
+  border-radius: var(--r-hairline);
+  background: var(--ink);
+  pointer-events: none;
+  transform: translateX(calc(var(--at, 0) * (100% + 3px)));
+  transition:
+    transform var(--slow) var(--ease-out),
+    opacity var(--base) linear;
+}
+
+/* After a decision the fill reads first. */
+.progress-marker.waits {
+  transition-delay: 180ms, 0ms;
+}
+
+.progress-marker.away {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-marker {
+    transition: opacity var(--base) linear;
+  }
+
+  .progress > .segment::before,
+  .progress > .segment::after {
+    opacity: 0;
+    transform: none;
+    transition: opacity var(--base) linear;
+  }
+
+  .progress > .segment[data-fill='read']::before,
+  .progress > .segment[data-fill='decided']::before,
+  .progress > .segment[data-fill='decided']::after {
+    opacity: 1;
+  }
+}
+
 .progress-count {
   flex: none;
   color: var(--muted);

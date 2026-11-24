@@ -576,20 +576,39 @@ At 390px a step can be decided by swiping its card: right approves, left flags (
 
 ### Motion
 One family (the Preparing state's pulsing mark and the Working spinner are the only loops): `ease-out` cubic-bezier(0.16, 1, 0.3, 1) for things arriving or settling, `ease-in` cubic-bezier(0.7, 0, 0.84, 0) for things leaving, at 120ms (fast), 200ms (base) and 320ms (slow).
-- **Decide:** the queue row slides 16px left (160ms ease-out) while fading (160ms linear), then its height collapses (320ms ease-out after 120ms). The progress segment fills left to right (320ms), and counts tick from .55 opacity and 2px low (200ms).
+A click takes effect at once and the motion follows: every animation starts in the task that changed the state, a leaving element stays drawn, inert and hidden from assistive technology until its exit ends, and the exit's own end, never a timer, takes it away.
+The swipe card is the one exception: it decides once its flight ends.
+A redraw from polling continues what is playing and starts nothing new.
+- **Decide:** the queue row hides (60ms) and the rows below close up (height 320ms ease-out after 120ms) while a chip of the row (float shadow) lifts off and travels into "N decided" at the rail's foot (translate and 92% scale, 320ms ease-out, opacity held to 75% then out).
+  "N decided" flashes the surface tint (200ms after 240ms) and its number rises in as the chip lands (200ms after 240ms); the other counts tick from .55 opacity and 2px low (200ms).
+  A row whose decision is taken back while it leaves drops its chip and its picture at once.
+- **Stepper:** an ink marker (9px, the width of one segment) walks to the current segment (translateX, 320ms ease-out).
+  Each segment fills from the left under it, grey when read and the accent when decided (scaleX, 320ms ease-out).
+  After a decision the marker waits 180ms so the fill reads first, and it fades out (200ms) where no step is shown, on the Summary and the pages of their own.
 - **Pane swap:** sequential, never crossfaded: the old pane leaves to -12px (100ms, linear fade), then the new one enters from +12px (200ms ease-out after 100ms).
+  The step's action bar leaves with its pane, Finish review included.
 - **Reveal:** assumptions open by grid rows (320ms) with the chevron turning 90° (120ms); extra notes rise 4px (200ms, 40ms stagger).
 - **Attention:** "Needs you" pulses its amber ring twice (1.2s) and then holds still.
 - **Swipe:** the card follows the finger, rotating 0.025° per pixel of travel; on release it flies out (200ms ease-in) with its fade held back until late (80ms after 120ms).
-- **Verdict (the one authored moment):** choosing a verdict lifts the chosen label off its option as a chip and docks it into the header verdict slot: transform 440ms ease-out, opacity held to 62% then out (linear) while the slot fades in over the same window, so the label never drops out. The slot opens by width (320ms); on a change the old label fades under the arriving chip and the slot width eases to the new label.
-- **Tool windows:** hiding a panel fades its contents (100ms), then its width collapses (200ms ease-out, after 60ms) while the edge stripe grows and its vertical button fades in (after 200ms). Showing reverses with width leading (320ms) and contents fading in after 120ms.
-- **Files:** collapse and expand by grid rows (open 320ms, close 200ms after an 80ms content fade), headers staying flush so nothing jumps, chevron turning 90° (120ms). Viewed folds the file, dims its name and reveals the "Viewed" label in the toggle.
-- **Summary:** Finish review uses the pane swap; the step action bar steps aside (100ms fade, 8px down, ease-in).
-- **Popovers:** open from the control that opened them, 120ms fade with a 200ms settle from 4px up at 98% scale; close in 80ms ease-in.
-- **Accent:** changing the accent cross-fades the accent family over 320ms (registered colour properties); theme switches snap.
-- **Stepper:** the ink "you are here" segment walks to the new segment (320ms ease-out); a segment fills left to right in grey when first read and in the accent when decided (320ms); after a decision the marker waits 180ms so the fill reads first, and it fades out on the Summary.
-- **Decided row:** the row lifts as a chip (float shadow) and travels into "N decided" at the rail's foot (320ms ease-out, fading over its last quarter); the rows below close up (320ms after 120ms); "N decided" flashes surface tint (200ms after 240ms) and its count arrives as the chip lands.
-- **Reduced motion:** no translate, rotate or scale anywhere: opacity and colour only. Queue rows fade then snap shut (no chip), the step marker snaps, segments fill by opacity, and the swipe card only fades. Tool windows and files fade their contents, then snap; the verdict chip is skipped and the header slot fades in, with an old label fading out before the new one fades in; popovers only fade.
+- **Verdict (the one authored moment):** choosing a verdict lifts the chosen label off its option as a chip, its text laid exactly on the option's, and docks it onto the label in the header's verdict slot: transform 440ms ease-out, opacity held to 62% then out (linear) while the slot's label fades in over the same window, so the label never drops out.
+  The slot opens by width (320ms ease-out); on a change the old label, kept in the slot, fades out (200ms) under the arriving chip and the slot's width eases to the new label.
+  At phone width the header has no slot, so nothing flies.
+- **Tool windows** (To review and Checklist): hiding one fades its contents (100ms linear), then its width closes (200ms ease-out after 60ms) while what it holds keeps its open width, and a new edge stripe opens by the same amount at the same time, so nothing beside it jumps; the edge button fades in after 200ms (120ms).
+  Showing grows the width from the stripe's (320ms ease-out) with the contents fading in after 120ms (200ms).
+  The explanation column, a layout of the step rather than a window beside it, snaps.
+- **Files:** a file closes by its height (200ms ease-out after an 80ms content fade) and opens by its height (320ms ease-out) with its contents fading in after 80ms (200ms); headers stay flush so nothing jumps, and the chevron turns 90° (120ms ease-out).
+  Viewed folds the file, dims its name (200ms colour) and reveals the "Viewed" label in its toggle (width and fade, 200ms).
+  A file turned back mid-motion goes on from the height it has.
+- **Popovers** (Appearance, Help and the menus): open from the control that opened them, 120ms fade with a 200ms settle from 4px up at 98% scale.
+  Appearance and Help close at once and stay drawn, inert, while they fade (80ms ease-in); a menu closes at once.
+- **Accent:** the accent family is registered as colours (`@property`), so changing the accent cross-fades it over 320ms; theme switches snap.
+- **Reduced motion:** no translate, rotate or scale anywhere: opacity and colour only.
+  Queue rows fade (200ms), then snap shut, with no chip and no flash; the stepper's marker snaps and segments fill by opacity; the swipe card only fades.
+  Tool windows fade their contents (120ms), then snap, the edge button fading in after; showing snaps the width and fades the contents in.
+  Files fade their contents, then snap, and the chevron snaps.
+  The verdict chip is skipped: the header slot fades in (200ms), and on a change the old label fades out (100ms) before the new one fades in (100ms).
+  Popovers only fade.
+  The accent still cross-fades, as colour.
 
 ## Do's and Don'ts
 
