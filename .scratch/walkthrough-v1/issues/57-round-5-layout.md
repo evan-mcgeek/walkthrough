@@ -19,4 +19,4 @@ the checklist page, Session messages (unread first, read ones fold), Help (Icons
 - [ ] After any note action the outcome icon and word show without hover
 - [ ] Greyscale screenshot: every status reads by shape
 
-**Status:** ready-for-agent
+**Status:** wontfix (replaced by 59 to 64 after the rescope to VISION.md)
