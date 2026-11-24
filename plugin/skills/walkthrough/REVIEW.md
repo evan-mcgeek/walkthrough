@@ -44,13 +44,22 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### Reviewers and findings
 
+#### Who reviews
+
+- Reviewer agent: none.
+  To hand the reviewing to your own agent, write its name here and the runs it needs, and the rest of "Who reviews" no longer applies.
 - Run reviewers in a fresh context that sees only the change at the pinned head, the project and this policy.
 - Run one reviewer for the project's own rules, which quotes the rule behind each finding, and one for each of these concerns: contracts, error handling, state, tests.
 - A finding states a concrete failure: what input or state leads to what wrong result, at which file and lines.
 - Give each finding to a second fresh-context agent, which confirms or refutes it against the code at the head.
-- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
-- Pin the unconfirmed ones, and anything that is a matter of taste, with the low-priority flag.
 - A finding that goes against a convention in the project's instructions is settled; leave it out.
+- "The reviewer" in this policy is the reviewer agent when one is named, and a fresh-context agent otherwise.
+
+#### What happens to findings
+
+- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
+- Pin the unconfirmed ones, and anything the reviewer calls a matter of taste or judgement, with the low-priority flag.
+- When the reviewer reports each acceptance criterion as met, partly met or not shown, use that for the checklist.
 - Check the steps in reading order: run the reviewers over the whole change, then confirm and pin each step's findings before the next, and keep every step marked as being checked until its findings are pinned with their actions.
 
 ### My own comments
@@ -96,7 +105,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### A review I received
 
 - When I name my own change that has unanswered review threads, walk through it and pin each such thread as a note labelled "Thread" on its lines.
-- A fresh-context agent checks whether each comment holds at the head; add its verdict and evidence to the thread's note.
+- The reviewer checks whether each comment holds at the head; add its verdict and evidence to the thread's note.
 - On each thread offer Accept (goes on the fix list) and Push back (you draft a reply).
 - Offer "Send my replies" on the whole walkthrough as well; replies go into a pending review on your code host that I submit myself.
 
@@ -124,7 +133,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Replies to my review
 
 - When I open a change I reviewed again after its author replied or pushed, fetch its new head and go on with the same walkthrough, under the same label: steps whose diff is unchanged keep my decisions, and changed ones reopen.
-- Pin only the threads with new activity, each with a fresh-context agent's check of whether the replies or the new commits resolve my concern.
+- Pin only the threads with new activity, each with the reviewer's check of whether the replies or the new commits resolve my concern.
 - On each thread offer Resolve, Reply (you draft one) and Still blocking (asks for a note).
 - Offer "Send my replies" on the whole walkthrough; replies go into a pending review that I submit myself.
 - Resolve the threads I marked Resolve on your code host only after you have confirmed there that my review was submitted.

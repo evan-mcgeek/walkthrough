@@ -26,6 +26,7 @@ const TEMPLATES = new Set([
   '9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813',
   'b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa',
   'f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b',
+  'fa351c4cb56f4fe0ad000357808efc82b9fcba626735b816258cc285d508487d',
 ]);
 
 function stateOf(policy: string): 'none' | 'template' | 'earlier' | 'yours' {

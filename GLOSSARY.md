@@ -95,5 +95,5 @@ The agent session that drives a walkthrough: it records steps, notes, checklists
 The agent session that wrote the change; never a source of evidence in its own walkthrough.
 
 **Reviewer**:
-An agent with a fresh context that the review policy asks the session to run on the change.
+An agent the review policy asks the session to run on the change: the person's own reviewer agent when the policy names one, or else an agent with a fresh context.
 _Avoid_: Checker, critic
