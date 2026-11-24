@@ -126,15 +126,15 @@ The page reaches you only while `walkthrough listen` runs, and the chat stays fr
      A decision on the verdict is the person's verdict on the whole walkthrough; keep it for the finishing action, which carries it as the review policy says.
      A later decision on the same item replaces the earlier one.
      A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
-   - A comment: the person's own words on lines, with its id; never mark it "[AI]" and never reword it.
-     Act on it as the review policy says, such as putting it on the fix list or into the review to post, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
-     An `edit-comment` or `delete-comment` changes or takes back the comment it names; follow it the same way and answer it.
-   - The page does not show your answers to decisions and comments, apart from the finishing action's: they only mark the request handled, so a few words do.
+   - The page does not show your answers to decisions, apart from the finishing action's: they only mark the request handled, so a few words do.
      Say what the person must know, such as a comment that could not go out, with `walkthrough say --question`, which the page shows; the finishing action's answer, such as where the review went, is shown on the Summary.
-     Once comments have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them; `walkthrough comments` lists them as they are now, such as after a restart.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after answering, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
+
+The person's own line comments never come through listen and need no answer.
+When the review policy acts on them, such as at the finishing action, read them all with `walkthrough comments`, as they are now with edits applied and deleted ones left out; they are the person's words, never yours, so never mark them "[AI]" and never reword them.
+Once they have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them.
 
 To ask the person something on the page, run `walkthrough say --question '<question>'` and listen; their reply comes back as a reply line.
 When the question has a few likely answers, offer each with `--choice '<answer>'`; the page shows them as buttons.

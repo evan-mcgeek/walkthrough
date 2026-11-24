@@ -58,7 +58,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 #### What happens to findings
 
-- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding.
+- Pin each confirmed finding as a note labelled "Finding" on its lines, flagged as a finding, unless the part for this walkthrough says otherwise.
 - Pin the unconfirmed ones, and anything the reviewer calls a matter of taste or judgement, with the low-priority flag.
 - When the reviewer reports each acceptance criterion as met, partly met or not shown, use that for the checklist.
 - Check the steps in reading order: run the reviewers over the whole change, then confirm and pin each step's findings before the next, and keep every step marked as being checked until its findings are pinned with their actions.
@@ -71,13 +71,13 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Anything you draft to go out under my name, a comment or a reply, is one or two sentences.
 - It starts with the marker "[AI]", and keeps it after I edit the text; put the marker back if my edit dropped it.
-- Pin each draft as a note labelled "Draft" on its lines.
+- Pin each draft as a note labelled "Draft" on its lines, never flagged as a finding, since it is not waiting for me.
 
 ### Actions
 
 - An action's tone is the colour my decision shows in on the page: positive is green, attention is amber, and none is grey; an action I give no tone here has none.
 - A step: Approve, positive, and Flag, attention (asks for a note).
-- A finding: Accept, positive, Reject (asks for a note with the reason, which I may leave out), and Ignore, with no tone.
+- A finding on my change: Accept, positive, Reject (asks for a note with the reason, which I may leave out), and Ignore, with no tone.
 - A checklist item: Met, positive, and Not met, attention (asks for a note).
 - A draft: Edit (lets me edit the text first), and Drop; a draft I leave alone goes out as drafted, and drafts go out together, never one by one.
 - The rest of the actions are in the part for this walkthrough.
@@ -134,16 +134,18 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### My review
 
-- Turn each flagged step and accepted finding into a draft comment on its lines.
+- Pin each confirmed finding as a draft comment on its lines, worded for the author, in place of a "Finding" note: there is nothing to accept first, and a draft I leave alone goes out.
+- Pin the unconfirmed ones and matters of taste as low-priority notes with no actions; I write my own comment when I want one to go out.
+- Turn each flagged step into a draft comment on its lines.
 - My own line comments go into the review as line comments, as I wrote them.
 - Offer my verdict on the verdict, "Approve", positive, "Request changes", attention, or "Comment", with no tone, with the hint "Sent with the review."
 - Offer "Send my review" first on the whole walkthrough, with a hint saying it sends every draft I kept and my own comments at once, as a pending review I submit myself.
 - When I take Send my review, put every draft I did not drop, as drafted or as I edited it, and my own comments into one pending review on your code host, joining my existing pending review when there is one; I submit it myself, with my verdict, which you name in the chat.
 - The author's branch and the change's description stay as they are.
 
-### Rejected findings
+### Dropped drafts
 
-- Turn a rejected finding into a draft suggestion for the author, and leave the project's files as they are.
+- A draft I drop is gone; do not raise it again in this walkthrough, and leave the project's files as they are.
 
 ### Replies to my review
 

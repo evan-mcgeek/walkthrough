@@ -178,13 +178,11 @@ walkthrough listen
     {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
     {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
     {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
-    {"kind": "comment", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   the person's own comment on those lines; its id is the comment's
-    {"kind": "edit-comment", "id": string, "comment": string, "text": string}   the person changed the comment with id "comment" to this text
-    {"kind": "delete-comment", "id": string, "comment": string}   the person deleted the comment with id "comment"
     {"kind": "stopped"}   the page was stopped or closed; nothing more will come
   The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
   Act on a clear as the review policy says, and answer it with say --answer like any decision.
-  A comment is the person's own words, never yours: act on it, its edits and its deletion as the review policy says, and answer each with say --answer.
+  The person's own line comments, their edits and their deletions never come through listen and need no answer:
+  read them all with walkthrough comments when the review policy acts on them, such as at the finishing action.
   Files the person collapses or marks viewed are their own reading marks and never reach the session.
   Exit code 3: another walkthrough listen took over; this one gets nothing more.
 
