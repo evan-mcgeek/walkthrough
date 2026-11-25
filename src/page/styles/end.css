@@ -228,8 +228,17 @@ body.walkthrough > .end-page {
     display: block !important;
   }
 
+  /* As in the header: small to the eye, with a 44px target around it. */
   .outcome-actions .btn,
   .command .btn {
-    min-height: 44px;
+    position: relative;
+    min-height: 32px;
+  }
+
+  .outcome-actions .btn::after,
+  .command .btn::after {
+    position: absolute;
+    inset: -6px -4px;
+    content: '';
   }
 }
