@@ -56,7 +56,7 @@ function row(one: Listed): HTMLTableRowElement {
     'tr',
     { role: 'row' },
     // The id is what walkthrough prune takes to remove this one.
-    el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name), el('code', { className: 'list-id' }, one.id)),
+    el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name), el('code', { className: 'list-id' }, decodeURIComponent(one.id))),
     el('td', { role: 'cell' }, progress(one)),
     el('td', { role: 'cell' }, one.submitted ? TYPES[one.submitted] : ''),
     el('td', { role: 'cell', className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),

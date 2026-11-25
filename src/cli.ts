@@ -237,7 +237,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
     const { positionals } = parseArgs({ args, allowPositionals: true, options: SOURCE_OPTIONS });
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === 'range') throw new Error('name a branch or a range, not both');
-    const listed = readWalkthrough(dir) ? undefined : listView(repoDir()).find(one => one.id === positionals[0]);
+    const listed = readWalkthrough(dir) ? undefined : listView(repoDir()).find(one => one.id === positionals[0] || decodeURIComponent(one.id) === positionals[0]);
     console.log(await (listed ? pruneOne(path.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
