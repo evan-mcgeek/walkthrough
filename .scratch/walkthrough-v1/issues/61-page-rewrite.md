@@ -8,9 +8,9 @@ Remove everything in HANDOFF.md section 1.
 
 **Design:** docs/design/HANDOFF.md, screens.html, COPY.md, DESIGN.md
 
-- [ ] Nothing from HANDOFF.md section 1 is on any screen
-- [ ] Every string is in COPY.md and within its cap
-- [ ] An arriving comment never moves the line you read
-- [ ] Light and dark at 1440 and 390 match the boards
+- [x] Nothing from HANDOFF.md section 1 is on any screen
+- [x] Every string is in COPY.md and within its cap
+- [x] An arriving comment never moves the line you read
+- [x] Light and dark at 1440 and 390 match the boards
 
-**Status:** ready-for-agent
+**Status:** done

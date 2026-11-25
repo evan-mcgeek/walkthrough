@@ -11,8 +11,8 @@ Viewed keeps resetting when a file's diff changes, and the view says which files
 
 **Design:** docs/design/HANDOFF.md (founder decisions, section 2), PRODUCT.md
 
-- [ ] No removed command, field or state is left in `src/`
-- [ ] `walkthrough guide` prints only the new formats
-- [ ] Only Ask AI and the submit wake `listen`
+- [x] No removed command, field or state is left in `src/`
+- [x] `walkthrough guide` prints only the new formats
+- [x] Only Ask AI and the submit wake `listen`
 
-**Status:** ready-for-agent
+**Status:** done
