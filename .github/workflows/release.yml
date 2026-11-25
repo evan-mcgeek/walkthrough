@@ -38,6 +38,7 @@ jobs:
             exit 1
           fi
           echo "TAG=$tag" >> "$GITHUB_ENV"
+      - run: .github/roadmap-has-version.sh
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
