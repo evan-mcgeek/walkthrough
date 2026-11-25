@@ -7,7 +7,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | String | Where | Note |
 |---|---|---|
 | `<branch>` / `#<N> <title>` | header label | branch in mono; number in secondary ink, title in sans |
-| `<branch>` · Walkthrough / `#<N> <title>` · Walkthrough | browser tab title | tells open walkthroughs apart |
+| `<branch>` · Walkthrough / `#<N> <title>` · Walkthrough | browser tab title | tells open walkthroughs apart; "Reviewing · " before it during the Opening |
 | N / M files viewed | header progress | **GH** |
 | Finish review | header, primary | **GH** ("Finish your review"); tooltip "Go to the Summary (G S)" |
 | Theme | menu | System, Light, Dark |
@@ -51,7 +51,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | You | your name on your comments | |
 | AI | the AI's name | |
 | `[AI]` | prefix of the AI's pending comments (not its Ask AI answers) | |
-| `<handle>` | a colleague | from the pull request |
+| `<handle>` | a colleague | from the code host |
 | Pending | tag on a pending comment | **GH** |
 | `<time>` (now, 2 days ago) | comment header | **GH** |
 | Edit | icon button | **GH** |
@@ -82,15 +82,16 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Finish your review | review box title | **GH** |
 | Comment / Approve / Request changes | review type | **GH** |
 | Submit review | pull request | **GH** |
-| Send to agent | your own change | disabled with no comments unless Approve or Request changes is chosen |
-| Add a comment, or choose Approve or Request changes. | under a disabled Send to agent | |
+| Send to agent | your own change | no review type on your own change; disabled with no comments (decision 11) |
+| Add a comment to send it to the agent. | under a disabled Send to agent | |
 | No comments. Add one on a line, or answer the AI’s. | Going out, when empty | |
 | Changed since last view | file header, after new commits touch a file you marked Viewed | GitHub’s words |
-| Review submitted | after submitting | |
+| Review submitted | after submitting | no code host named (decision 6) |
 | `<type>`, with N comments, on #N. | after submitting | |
-| View review | after submitting | links to the address the session records; no code host is named on the page |
+| View review | after submitting, and on the farewell | opens the posted review |
+| End session | quiet button after submitting or sending; also in the menu | no confirm |
 | Sent to the agent | own change, after sending | |
-| N comments; it fixes them in the Claude Code chat. | own change, after sending | |
+| N comments. The agent is fixing them; follow along there. | own change, after sending (Summary box) | |
 
 ## Opening
 
@@ -104,10 +105,34 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | The AI is finishing its review of the N changed files. The walkthrough opens here when it’s ready, usually within a minute. | under the title | |
 | N changed files | file list heading | **GH** |
 | The AI couldn’t prepare the walkthrough | title, once the session stopped before ready | |
-| The Claude Code session stopped before the review was done. Nothing was posted. Run `<command>` again to pick it up. | under the error title | `<command>` in mono: `/walkthrough:pr <number>` for a pull request, else `/walkthrough` |
-| Copy command | small secondary button under it | copies the command; reads "Copied" for 2 seconds after a click |
+| It stopped before the review was done. Nothing was posted. | under the error title | |
+| Start it over in your agent: | under it | then the command and Copy command, as on the farewell (decision 10: no Try again) |
 | Wait, what?! · Hmm… · Nice. | the desk scene’s speech bubbles (decorative; the SVG’s accessible name is “The AI at its desk, reading the change”) | |
+
+## After the session
+
+| String | Where | Note |
+|---|---|---|
+| Session ended | farewell title | |
+| Review submitted | outcome box, pull request, submitted | |
+| `<type>`, with N comments, on #N. | under it | |
+| View review | button in that box | |
+| Nothing was posted. | outcome box, pull request, not submitted | |
+| Your N comments and Viewed marks are kept for next time. | under it | with no comments: "Your Viewed marks are kept for next time." |
+| Sent to the agent | outcome box, your own change, sent | |
+| N comments. The agent picks them up in your conversation. | under it (farewell) | |
+| Nothing was sent to the agent. | outcome box, your own change, not sent | |
+| Pick it up again | section heading | |
+| Run this in your agent: | before the command | |
+| `/walkthrough:pr <N>` · `/walkthrough` | the command, mono | pull request · your own change |
+| Copy command → Copied | button beside the command | "Copied" for 2s |
+| A new commit reopens only the steps that changed. | under the command | |
+| You can close this tab. | last line | not on the lost-session screen |
+| The session isn’t running | title, when the page loses its server | replaces "Could not reach the walkthrough page." |
+| This page lost its session. | outcome box | |
+| Nothing is lost: the walkthrough, your comments and Viewed marks are saved. If the agent is still running, try again; otherwise start it below. | under it | |
+| Try again | primary, in that box | reconnects |
 
 ## Strings to remove from the existing page
 
-Any string not listed above is removed. Grep the templates for at least: Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide.
+Any string not listed above is removed. Grep the templates for at least: "GitHub" and "Claude Code" in any page string, "Could not reach the walkthrough page.", Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide.
