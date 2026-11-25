@@ -243,7 +243,7 @@ function drawHeader(onSummary: boolean): void {
   filesViewed.hidden = !ready;
   filesChanged.hidden = ready;
   const changed = view.changedFiles.length;
-  if (!ready) filesChanged.replaceChildren(plural(changed, 'file'), el('span', { className: 'long' }, ' changed'));
+  if (!ready) filesChanged.replaceChildren(el('span', {}, plural(changed, 'file'), el('span', { className: 'long' }, ' changed')));
   finish.hidden = onSummary || !ready;
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
