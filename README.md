@@ -49,12 +49,20 @@ Nothing is ever checked out, and uncommitted edits are left out with a warning.
 1. The session asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need.
 2. The AI splits the change into steps and reviews it against the ticket.
    The page opens when the review is nearly done and shows the whole walkthrough once it is ready.
+   Meanwhile the tab shows an amber dot and "Reviewing", and you can ask the session to open it earlier.
 3. Each step has "Look at:" links to the lines that matter and a sentence or two of explanation.
    The AI's comments are on the lines, marked `[AI]`. Colleagues' threads show on their lines as well.
 4. You read, mark files Viewed, comment, edit or delete the AI's comments, reply and resolve.
    For a question, use Ask AI in a thread; the answer stays on the page and never goes out.
 5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them.
    Pick Comment, Approve or Request changes and submit.
+
+While the AI finishes its review, the page shows it at its desk:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/opening-dark.png">
+  <img alt="The Opening: the AI at its desk, and the changed files, while the review is not ready" src="docs/images/opening-light.png">
+</picture>
 
 On a pull request, Submit review posts one review with your summary and comments.
 On your own change, Send to agent hands your comments back to the agent as a fix list.

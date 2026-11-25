@@ -1,6 +1,6 @@
 # Every pull request to main checks the plugin, its skills and hooks, and the marketplace manifest the way Claude Code
 # reads them, and runs the lint and the tests in Chromium. A newer push cancels the run before it; run it by hand on main
-# when in doubt.
+# when in doubt. The tests skip a pull request that changes only docs, Markdown or pictures; the plugin check always runs.
 name: Validate plugin
 
 on:
@@ -30,7 +30,30 @@ jobs:
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict plugin
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict .
 
+  # Whether the pull request changes anything the tests cover: the skills and the brand files the page ships count.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: files
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then echo code=true >> "$GITHUB_OUTPUT"; exit 0; fi
+          files=$(git diff --name-only "$BASE" HEAD)
+          if grep -qvE '(\.md$|^docs/|^LICENSE$|^\.scratch/)' <<< "$files" || grep -qE '^(plugin/|docs/design/brand/)' <<< "$files"; then
+            echo code=true >> "$GITHUB_OUTPUT"
+          else
+            echo code=false >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+
   test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
