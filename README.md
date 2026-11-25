@@ -57,6 +57,13 @@ Nothing is ever checked out, and uncommitted edits are left out with a warning.
 5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them.
    Pick Comment, Approve or Request changes and submit.
 
+While the AI finishes its review, the page shows it at its desk:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/opening-dark.png">
+  <img alt="The Opening: the AI at its desk, and the changed files, while the review is not ready" src="docs/images/opening-light.png">
+</picture>
+
 On a pull request, Submit review posts one review with your summary and comments.
 On your own change, Send to agent hands your comments back to the agent as a fix list.
 So, nothing leaves before you submit.
