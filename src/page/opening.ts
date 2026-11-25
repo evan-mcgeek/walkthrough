@@ -30,7 +30,7 @@ export class Opening {
           'div',
           {},
           el('h1', { className: 'opening-title' }, 'Preparing the walkthrough'),
-          el('p', { className: 'opening-line' }, `The AI is finishing its review of the ${files}. The walkthrough opens here when it’s ready, usually within a minute.`),
+          el('p', { className: 'opening-line' }, 'The AI is finishing its review, usually within a minute.'),
         ),
         { role: 'status' },
       ),

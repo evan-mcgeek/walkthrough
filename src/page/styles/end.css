@@ -82,6 +82,11 @@ body.walkthrough > .end-page {
   margin: var(--s3) 0 0 !important;
 }
 
+/* View review: the secondary button's box with link ink, as it leaves the page. */
+.outcome-actions a.btn {
+  color: var(--accent-text);
+}
+
 .btn.ghost:hover {
   color: var(--ink);
 }

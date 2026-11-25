@@ -38,6 +38,15 @@ test.describe('a pull request', () => {
     await expect(view).toHaveAttribute('href', 'https://example.test/review/7');
     await expect(view.locator('svg')).toHaveCount(1);
     await expect(view).toHaveClass(/\bbtn\b/);
+    const ink = await view.evaluate(link => [getComputedStyle(link).color, getComputedStyle(link.querySelector('svg') ?? link).color]);
+    expect(ink[0]).toBe(ink[1]);
+    expect(ink[0]).toBe(await page.evaluate(() => {
+      const probe = document.body.appendChild(document.createElement('span'));
+      probe.style.setProperty('color', 'var(--accent-text)');
+      const color = getComputedStyle(probe).color;
+      probe.remove();
+      return color;
+    }));
     await listener.ended;
 
     const { shown, names } = await clickAndLook(page, '.review-box.done .btn.ghost');
@@ -108,7 +117,7 @@ test.describe('a pull request', () => {
     expect(failed.shownAtSecond).toBe(false);
     await expect(end.getByText('This page lost its session.')).toBeVisible();
     await expect(
-      end.getByText('Nothing is lost: the walkthrough, your comments and Viewed marks are saved. If the agent is still running, try again; otherwise start it below.'),
+      end.getByText('Nothing is lost; your comments and Viewed marks are saved.'),
     ).toBeVisible();
     await expect(end.locator('.command code')).toHaveText('/walkthrough:pr 212');
     await expect(end.getByText('You can close this tab.')).toHaveCount(0);
@@ -116,6 +125,18 @@ test.describe('a pull request', () => {
     await expect(page.getByText('Could not reach the walkthrough page.')).toHaveCount(0);
     await expect(page.locator('#nav')).toBeHidden();
     expect(await end.evaluate(box => box.getAnimations({ subtree: true }).map(one => (one as CSSAnimation).animationName))).toContain('zz6');
+
+    // The "z" loop pauses while the tab is hidden, as the desk scene does.
+    const hide = (hidden: boolean) =>
+      page.evaluate(now => {
+        Object.defineProperty(document, 'hidden', { configurable: true, get: () => now });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, hidden);
+    const drift = () => end.locator('.zz').evaluate(zz => zz.getAnimations().map(one => one.playState));
+    await hide(true);
+    expect(await drift()).toEqual(['paused']);
+    await hide(false);
+    expect(await drift()).toEqual(['running']);
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect(await end.evaluate(box => box.getAnimations({ subtree: true }).length)).toBe(0);
@@ -133,24 +154,25 @@ test('your own change: no review type, Send to agent, then the farewell says it 
   await open(page, url, '#summary');
 
   await expect(page.getByRole('radio')).toHaveCount(0);
+  await expect(page.getByText('No comments. Add one on a line.')).toBeVisible();
   const send = page.getByRole('button', { name: 'Send to agent' });
   await expect(send).toBeDisabled();
-  await expect(page.getByText('Add a comment to send it to the agent.')).toBeVisible();
+  await expect(page.getByText('Add a comment to send it.')).toBeVisible();
 
   record(repo, AI_COMMENT, 'comment');
   await expect(send).toBeEnabled();
-  await expect(page.getByText('Add a comment to send it to the agent.')).toBeHidden();
+  await expect(page.getByText('Add a comment to send it.')).toBeHidden();
   const listener = repo.background('listen');
   await send.click();
   await expect(page.getByText('Sent to the agent')).toBeVisible();
-  await expect(page.getByText('1 comment. The agent is fixing them; follow along there.')).toBeVisible();
+  await expect(page.getByText('1 comment. The agent is fixing it; follow along there.')).toBeVisible();
   const [line] = (await listener.ended).stdout.trim().split('\n');
   expect(JSON.parse(line ?? '{}')).toEqual({ kind: 'submit', id: expect.any(String) as unknown, summary: '' });
 
   await page.locator('.review-box.done').getByRole('button', { name: 'End session' }).click();
   const end = page.locator('.end-page');
   await expect(end.getByText('Sent to the agent')).toBeVisible();
-  await expect(end.getByText('1 comment. The agent picks them up in your conversation.')).toBeVisible();
+  await expect(end.getByText('1 comment. The agent picks it up in your conversation.')).toBeVisible();
   await expect(end.locator('.command code')).toHaveText('/walkthrough');
   await expect(end.locator('.bye6 .hap')).toHaveCount(2);
   await expect(page).toHaveTitle('feature/login · Walkthrough');

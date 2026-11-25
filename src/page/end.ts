@@ -15,6 +15,9 @@ export function sentLine(): string {
   return pr ? `${submitted?.type ? TYPE_NAMES[submitted.type] : ''}, with ${comments}, on #${pr.number}.` : `${comments}.`;
 }
 
+/** "it" for one comment sent, else "them". */
+export const them = () => (state.view.submitted?.comments === 1 ? 'it' : 'them');
+
 /** Opens the posted review, once the session recorded where it is. */
 export const viewReview = (): HTMLElement[] => {
   const address = state.view.submitted?.address;
@@ -49,13 +52,13 @@ export function endScreen(ending: Ending, retry: () => void): { box: HTMLElement
   const pending = pendingComments().length;
   const kept = pending ? `Your ${plural(pending, 'comment')} and Viewed marks are kept for next time.` : 'Your Viewed marks are kept for next time.';
   const outcome = lost
-    ? box(false, 'This page lost its session.', 'Nothing is lost: the walkthrough, your comments and Viewed marks are saved. If the agent is still running, try again; otherwise start it below.', [
+    ? box(false, 'This page lost its session.', 'Nothing is lost; your comments and Viewed marks are saved.', [
         el('button', { type: 'button', className: 'btn small primary', onclick: retry }, 'Try again'),
       ])
     : submitted
       ? pr
         ? box(true, 'Review submitted', sentLine(), viewReview())
-        : box(true, 'Sent to the agent', `${sentLine()} The agent picks them up in your conversation.`, [])
+        : box(true, 'Sent to the agent', `${sentLine()} The agent picks ${them()} up in your conversation.`, [])
       : box(false, pr ? 'Nothing was posted.' : 'Nothing was sent to the agent.', kept, []);
   const page = el(
     'div',

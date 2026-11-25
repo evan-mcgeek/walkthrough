@@ -83,15 +83,15 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Comment / Approve / Request changes | review type | **GH** |
 | Submit review | pull request | **GH** |
 | Send to agent | your own change | no review type on your own change; disabled with no comments (decision 11) |
-| Add a comment to send it to the agent. | under a disabled Send to agent | |
-| No comments. Add one on a line, or answer the AI’s. | Going out, when empty | |
+| Add a comment to send it. | under a disabled Send to agent | |
+| No comments. Add one on a line. | Going out, when empty | |
 | Changed since last view | file header, after new commits touch a file you marked Viewed | GitHub’s words |
 | Review submitted | after submitting | no code host named (decision 6) |
 | `<type>`, with N comments, on #N. | after submitting | |
 | View review | after submitting, and on the farewell | opens the posted review |
 | End session | quiet button after submitting or sending; also in the menu | no confirm |
 | Sent to the agent | own change, after sending | |
-| N comments. The agent is fixing them; follow along there. | own change, after sending (Summary box) | |
+| N comments. The agent is fixing them; follow along there. | own change, after sending (Summary box) | with one comment: "1 comment. The agent is fixing it; follow along there." |
 
 ## Opening
 
@@ -102,7 +102,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Steps appear here when the AI is done. | step list, while the review is not ready | |
 | No steps yet. | step list, once the session stopped before ready | |
 | Preparing the walkthrough | main pane title | |
-| The AI is finishing its review of the N changed files. The walkthrough opens here when it’s ready, usually within a minute. | under the title | |
+| The AI is finishing its review, usually within a minute. | under the title | |
 | N changed files | file list heading | **GH** |
 | The AI couldn’t prepare the walkthrough | title, once the session stopped before ready | |
 | It stopped before the review was done. Nothing was posted. | under the error title | |
@@ -120,7 +120,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Nothing was posted. | outcome box, pull request, not submitted | |
 | Your N comments and Viewed marks are kept for next time. | under it | with no comments: "Your Viewed marks are kept for next time." |
 | Sent to the agent | outcome box, your own change, sent | |
-| N comments. The agent picks them up in your conversation. | under it (farewell) | |
+| N comments. The agent picks them up in your conversation. | under it (farewell) | with one comment: "1 comment. The agent picks it up in your conversation." |
 | Nothing was sent to the agent. | outcome box, your own change, not sent | |
 | Pick it up again | section heading | |
 | Run this in your agent: | before the command | |
@@ -130,8 +130,14 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | You can close this tab. | last line | not on the lost-session screen |
 | The session isn’t running | title, when the page loses its server | replaces "Could not reach the walkthrough page." |
 | This page lost its session. | outcome box | |
-| Nothing is lost: the walkthrough, your comments and Viewed marks are saved. If the agent is still running, try again; otherwise start it below. | under it | |
-| Try again | primary, in that box | reconnects |
+| Nothing is lost; your comments and Viewed marks are saved. | under it | |
+| Try again | primary, in that box | reconnects at once; the page also keeps polling and comes back by itself when the session answers again |
+
+## Walkthroughs list
+
+| String | Where | Note |
+|---|---|---|
+| Sent to the agent | Review column, your own change once sent | your own change has no review type; a pull request shows Comment, Approve or Request changes |
 
 ## Strings to remove from the existing page
 

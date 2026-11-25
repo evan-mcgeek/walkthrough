@@ -15,7 +15,7 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   const main = page.locator('#main');
 
   await expect(main.getByRole('heading', { level: 1, name: 'Preparing the walkthrough' })).toBeVisible();
-  await expect(main.getByText('The AI is finishing its review of the 2 changed files.')).toBeVisible();
+  await expect(main.getByText('The AI is finishing its review, usually within a minute.')).toBeVisible();
   await expect(main.locator('.changed-files li')).toHaveText([/app\.ts\s*\+1 −1/, /login\.ts\s*\+1 −0/]);
   await expect(page.locator('.files-changed')).toHaveText('2 files changed');
   await expect(page.getByRole('status', { name: 'AI reviewing' })).toBeVisible();

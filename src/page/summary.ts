@@ -2,7 +2,7 @@
 import type { CommentView, ReviewType, ThreadView } from '../review';
 import type { Criterion } from '../walkthrough';
 import { attrs, el } from './dom';
-import { sentLine, TYPE_NAMES, viewReview } from './end';
+import { sentLine, them, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
 import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, unresolved } from './state';
 import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
@@ -56,7 +56,7 @@ export class SummaryPane {
       { className: 'summary-section' },
       el('h2', { className: 'section-head' }, submitted ? 'Sent' : 'Going out', counter),
       ...(list.children.length ? [list] : []),
-      ...(rows.length || submitted ? [] : [el('p', { className: 'empty' }, 'No comments. Add one on a line, or answer the AI’s.')]),
+      ...(rows.length || submitted ? [] : [el('p', { className: 'empty' }, 'No comments. Add one on a line.')]),
       ...(submitted ? [] : this.counts()),
     );
     const left = el('div', { className: 'summary-lists' }, going, ...this.criteria());
@@ -178,7 +178,7 @@ export class SummaryPane {
     // Your own change has no review type: it goes to the agent with its comments, so it needs one.
     const blocked = own && pendingComments().length === 0;
     const submit = el('button', { type: 'button', className: 'btn primary wide', disabled: blocked || this.sending }, own ? 'Send to agent' : 'Submit review');
-    const note = el('p', { className: 'review-note', hidden: !blocked }, 'Add a comment to send it to the agent.');
+    const note = el('p', { className: 'review-note', hidden: !blocked }, 'Add a comment to send it.');
     attrs(submit, { 'aria-describedby': 'review-note' });
     note.id = 'review-note';
     const radios = TYPES.map(([value, label]) => {
@@ -222,7 +222,7 @@ export class SummaryPane {
     const end = el('button', { type: 'button', className: 'btn small ghost', onclick: this.end }, 'End session');
     const lines = state.view.pr
       ? [el('strong', {}, 'Review submitted'), el('p', {}, sentLine()), el('p', { className: 'outcome-actions' }, ...viewReview(), end)]
-      : [el('strong', {}, 'Sent to the agent'), el('p', {}, `${sentLine()} The agent is fixing them; follow along there.`), el('p', { className: 'outcome-actions' }, end)];
+      : [el('strong', {}, 'Sent to the agent'), el('p', {}, `${sentLine()} The agent is fixing ${them()}; follow along there.`), el('p', { className: 'outcome-actions' }, end)];
     return attrs(el('div', { className: 'review-box done' }, icon('met'), el('div', {}, ...lines)), { role: 'status' });
   }
 }
