@@ -1,6 +1,6 @@
 # Walkthrough
 
-A page that shows a code change step by step while an agent session, following the person's own review rules, explains it, comments on it and acts on the person's decisions.
+A review page, shaped like a code host's pull request review, where an agent session walks the person through a code change step by step, comments on it and answers their questions, following the person's own review rules.
 The tool knows only git, its own state and the page; every rule comes from the person or the project.
 
 ## Language
@@ -16,67 +16,59 @@ One review of one change that a person goes through on the page, kept until it i
 _Avoid_: Review session, tour
 
 **Kind of walkthrough**:
-Whose change a walkthrough is for: the person's own change (`/walkthrough`), or a review request, a change someone asked them to review (`/walkthrough:pr`).
-Each kind has its own part of the review policy; the session names the kind to the CLI as a label the page shows, and the tool does nothing else with it.
+Whose change a walkthrough is for: the person's own change (`/walkthrough`), which ends in Send to agent, or a pull request someone asked them to review (`/walkthrough:pr`), which ends in Submit review.
+Each kind has its own part of the review policy.
 _Avoid_: Mode, flow
 
-**Review request**:
+**Pull request**:
 A change someone asked the person to review, named by its number or link on the code host.
+_Avoid_: Review request
 
 **Step**:
-A part of the change the agent recorded, made of whole files, shown with its diff and the agent's explanation, its overview.
-A file in it may carry a short explanation of its own, shown above that file's diff, or under the overview while the explanation column is open.
+A part of the change the agent recorded, made of whole files, in reading order, with a title, Look at pointers and a short explanation.
 _Avoid_: Hunk, chunk
 
-**Folded step**:
-A step the agent marked as not worth reading line by line, shown collapsed with the agent's reason for each file; the page calls it Files to skim.
-_Avoid_: Mechanical step, generated step
+**Look at**:
+One or two pointers in a step to the lines to read first, each with a label of a few words.
 
-**Being checked**:
-A step the session is still checking, such as with the review policy's reviewers, so its findings may still arrive; the page holds its actions until the session records it as checked.
-A finding that arrives on a step after the person decided it puts the step back in To review, the queue, with their decision kept.
-_Avoid_: Pending, in review
+**Folded file**:
+A file the agent marked as not worth reading line by line, such as a generated one; it arrives folded with the agent's one-line reason.
+_Avoid_: Mechanical file, files to skim
 
-### What the agent puts on the page
+**AI reviewing**:
+The steps the session is still reviewing, so its comments on them may still arrive.
+_Avoid_: Being checked
 
-**Note**:
-Something the agent pins to a step or to a line of it: a finding, an answer, a comment thread, anything the person should see in place.
-_Avoid_: Annotation
-
-**Finding**:
-A note the session flags as a finding under the review policy, whatever its label; it is marked in the line gutter and on the overview stripe, and is open until the person decides it.
-
-### What the person puts on the page
+### Comments and threads
 
 **Comment**:
-The person's own words on lines of a step, never marked `[AI]`; it reaches the session and stays editable and deletable until the session marks it posted.
-_Avoid_: Note (a note is the agent's)
+Words on lines of the change, from the person, the agent or a colleague, all shown the same way.
+The person's and the agent's new comments are pending until the review is submitted; the agent's carry `[AI]`.
+_Avoid_: Note, finding, draft
+
+**Thread**:
+A comment with its replies; colleagues' existing threads come from the code host through the session, and the person can reply to them and resolve them.
+
+**Ask AI**:
+A question the person asks the agent on picked lines or in a thread.
+The agent's answer is a reply in that thread; the question and the answer stay on the page and never go out.
 
 **Viewed**:
-The person's mark on a file they have read, which collapses it; a reading mark, never a decision.
+The person's mark on a file they have read, which folds it; it clears when new commits change the file.
 
-**Checklist**:
-A list the agent shows beside the steps, each item with a status and links to steps; what it lists (acceptance criteria, open questions, anything) is up to the review policy.
-_Avoid_: AC map, outstanding list
-
-**Action**:
-A choice the agent offers on a step, a note, a checklist item, the verdict or the whole walkthrough, which the person can take with an optional note.
-The whole walkthrough's first action is its finishing action, such as sending the fix list to the session or posting the review.
-Each action has a tone the session picks from the review policy, positive, attention or none, which colours a decision with it green, amber or grey.
-It may also carry a consequence, where a decision with it goes or what it costs, and an outcome, what the page shows once it is taken; the one primary action of an item shows its consequence under its buttons.
-_Avoid_: Button, command
-
-**Decision**:
-The action a person took on an item, with their note, sent to the session and kept with the walkthrough.
-Taking it back with Undo is sent the same way and leaves the item undecided.
+### The end of a review
 
 **Summary**:
-The last entry of the queue: what the person decided and what is still open, their comments and the drafts, the verdict and the finishing action.
+The page's last entry, the code host's "Finish your review" made visible: every pending comment that goes out, the unresolved threads and files not viewed as counts, the acceptance criteria, and the review box.
 
-**Verdict**:
-The person's decision on the whole walkthrough, one of the choices the session offers for it, such as Approve or Needs fixes; chosen only on the Summary, and shown as a status in its action's tone once chosen.
-The finishing action waits for it.
-_Avoid_: Final decision, review state
+**Review**:
+What the person submits from the Summary: a type (Comment, Approve or Request changes), a summary and every pending comment.
+On a pull request the session posts it to the code host as one finished review; on the person's own change it goes to the agent as a fix list.
+_Avoid_: Verdict, decision
+
+**Acceptance criteria**:
+The ticket's criteria as the agent checked them against the change, each met, partly met, not met or not checked; read-only on the page.
+_Avoid_: Checklist, AC map
 
 ### Whose rules
 
@@ -91,7 +83,7 @@ _Avoid_: Repo config
 ### Who is involved
 
 **Session**:
-The agent session that drives a walkthrough: it records steps, notes, checklists and actions, and answers the person's decisions.
+The agent session that drives a walkthrough: it records steps, comments, threads and criteria, answers the person's questions and sends the review on.
 
 **Author session**:
 The agent session that wrote the change; never a source of evidence in its own walkthrough.

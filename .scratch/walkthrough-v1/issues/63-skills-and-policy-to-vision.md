@@ -9,7 +9,7 @@ Add the template's hash to `src/policy.ts`; then update the person's policy with
 
 **Design:** VISION.md, docs/design/HANDOFF.md
 
-- [ ] No skill or template line names a removed command or concept
+- [x] No skill or template line names a removed command or concept
 - [ ] The person's policy is updated with them
 
 **Status:** ready-for-agent
