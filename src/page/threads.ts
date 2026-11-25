@@ -1,0 +1,256 @@
+// One comment component for everyone, threads of them, and the composer they are written in.
+import type { CommentView, ThreadView } from '../review';
+import { attrs, el } from './dom';
+import { icon } from './icons';
+import { ago, goesOut, markdown, send } from './state';
+
+const initials = (handle: string) =>
+  handle
+    .split(/[-_.\s]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part.charAt(0).toUpperCase())
+    .join('') || '?';
+
+export const authorName = (comment: Pick<CommentView, 'by' | 'author'>) =>
+  comment.by === 'you' ? 'You' : comment.by === 'ai' ? 'AI' : (comment.author ?? '');
+
+/** You in an accent circle, the AI in an ink square, a colleague in a grey circle; the name beside it says who. */
+export function avatar(comment: Pick<CommentView, 'by' | 'author'>): HTMLElement {
+  const text = comment.by === 'you' ? 'Y' : comment.by === 'ai' ? 'AI' : initials(comment.author ?? '');
+  return attrs(el('span', { className: `avatar avatar-${comment.by}` }, text), { 'aria-hidden': 'true' });
+}
+
+/** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it. */
+export function commentBody(comment: CommentView): HTMLElement {
+  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text');
+  if (goesOut(comment)) (body.querySelector('p') ?? body).prepend(el('code', { className: 'ai-tag' }, '[AI]'), ' ');
+  return body;
+}
+
+type ComposerOptions = {
+  placeholder: string;
+  text?: string;
+  primary: string;
+  onPrimary: (text: string) => Promise<boolean>;
+  onAsk?: (text: string) => Promise<boolean>;
+  onCancel: () => void;
+};
+
+export function composer({ placeholder, text = '', primary, onPrimary, onAsk, onCancel }: ComposerOptions): HTMLElement {
+  const area = el('textarea', { className: 'composer-text', placeholder, value: text, rows: 3 });
+  area.setAttribute('aria-label', placeholder);
+  const add = el('button', { type: 'button', className: 'btn primary small', disabled: !text.trim() }, primary);
+  const busy = (doing: boolean) => {
+    for (const button of box.querySelectorAll('button')) button.disabled = doing;
+    if (!doing) add.disabled = !area.value.trim();
+  };
+  const run = async (action: (text: string) => Promise<boolean>) => {
+    if (!area.value.trim()) {
+      area.focus();
+      return;
+    }
+    busy(true);
+    if (!(await action(area.value.trim()))) busy(false);
+  };
+  area.oninput = () => {
+    add.disabled = !area.value.trim();
+  };
+  area.onkeydown = event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+    } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      void run(onPrimary);
+    }
+  };
+  add.onclick = () => void run(onPrimary);
+  const box = el(
+    'div',
+    { className: 'composer' },
+    area,
+    el(
+      'div',
+      { className: 'composer-row' },
+      ...(onAsk ? [askButton(() => void run(onAsk))] : []),
+      el('span', { className: 'spacer' }),
+      el('button', { type: 'button', className: 'btn ghost small', onclick: onCancel }, 'Cancel'),
+      add,
+    ),
+  );
+  return box;
+}
+
+export const askButton = (onclick: () => void) => el('button', { type: 'button', className: 'btn small ask', onclick }, icon('ask'), 'Ask AI');
+
+function iconButton(name: 'edit' | 'trash', label: string, onclick: () => void): HTMLButtonElement {
+  return attrs(el('button', { type: 'button', className: 'icon-button', title: label, onclick }, icon(name)), { 'aria-label': label });
+}
+
+/** A thread under its line; it keeps its own state, such as an open reply, across the page's redraws. */
+export class ThreadBox {
+  readonly box = el('div', { className: 'thread' });
+  private readonly list = el('div', { className: 'thread-comments' });
+  private readonly foot = el('div', { className: 'thread-foot' });
+  private readonly shown = new Map<string, { element: HTMLElement; key: string }>();
+  private answering: HTMLElement | null = null;
+  private editing: string | null = null;
+  private replying = false;
+  private thread: ThreadView;
+
+  constructor(thread: ThreadView) {
+    this.thread = thread;
+    this.box.dataset['thread'] = thread.id;
+    this.box.append(this.list, this.foot);
+    this.update(thread);
+  }
+
+  /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
+  update(thread: ThreadView): HTMLElement[] {
+    this.thread = thread;
+    this.box.classList.toggle('resolved', !!thread.resolved);
+    const arrived: HTMLElement[] = [];
+    const ids = new Set(thread.comments.map(one => one.id));
+    for (const [id, { element }] of this.shown)
+      if (!ids.has(id)) {
+        element.remove();
+        this.shown.delete(id);
+      }
+    let before: Element | null = null;
+    for (const comment of thread.comments) {
+      const key = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id]);
+      const was = this.shown.get(comment.id);
+      let element = was?.element;
+      if (!was || (was.key !== key && this.editing !== comment.id) || (this.editing === comment.id && !was.element.querySelector('textarea'))) {
+        element = this.commentRow(comment);
+        if (was) was.element.replaceWith(element);
+        else {
+          if (this.shown.size) arrived.push(element);
+          // An answer takes the place of its "Answering…" row.
+          if (comment.answer) element.classList.add('arrive');
+        }
+        this.shown.set(comment.id, { element, key });
+      }
+      if (element && (element.parentElement !== this.list || element.previousElementSibling !== before)) {
+        if (before) before.after(element);
+        else this.list.prepend(element);
+      }
+      before = element ?? before;
+    }
+    const waiting = thread.comments.some(one => one.waiting);
+    if (waiting && !this.answering)
+      this.answering = el(
+        'div',
+        { className: 'comment answering' },
+        avatar({ by: 'ai' }),
+        el('span', { className: 'answering-text' }, attrs(icon('spinner'), { role: 'img', 'aria-label': 'AI is answering' }), 'Answering…'),
+      );
+    if (waiting && this.answering) this.list.append(this.answering);
+    if (!waiting) {
+      this.answering?.remove();
+      this.answering = null;
+    }
+    this.drawFoot();
+    return arrived.filter(element => !element.classList.contains('arrive'));
+  }
+
+  /** Opens a pending comment of the thread in the composer. */
+  edit(id: string): void {
+    this.editing = id;
+    this.update(this.thread);
+    this.box.querySelector<HTMLElement>(`[data-comment="${CSS.escape(id)}"] textarea`)?.focus();
+  }
+
+  private commentRow(comment: CommentView): HTMLElement {
+    const row = el('div', { className: `comment comment-${comment.by}` });
+    row.dataset['comment'] = comment.id;
+    const head = el(
+      'div',
+      { className: 'comment-head' },
+      el('strong', { className: 'comment-name' }, authorName(comment)),
+      ...(comment.pending ? [el('span', { className: 'pending-tag' }, 'Pending')] : []),
+      el('time', { className: 'comment-time', dateTime: comment.at, title: new Date(comment.at).toLocaleString() }, ago(comment.at)),
+    );
+    if (comment.pending && this.editing !== comment.id)
+      head.append(
+        el(
+          'span',
+          { className: 'comment-actions' },
+          iconButton('edit', 'Edit', () => {
+            this.edit(comment.id);
+          }),
+          iconButton('trash', 'Delete', () => void send('comment', { comment: comment.id, delete: true })),
+        ),
+      );
+    const body =
+      this.editing === comment.id
+        ? composer({
+            placeholder: 'Leave a comment',
+            text: comment.body,
+            primary: 'Update comment',
+            onPrimary: async text => {
+              this.editing = null;
+              const done = await send('comment', { comment: comment.id, text });
+              if (!done) this.editing = comment.id;
+              return done;
+            },
+            onCancel: () => {
+              this.editing = null;
+              this.update(this.thread);
+            },
+          })
+        : commentBody(comment);
+    row.append(avatar(comment), el('div', { className: 'comment-main' }, head, body));
+    return row;
+  }
+
+  private drawFoot(): void {
+    const { thread } = this;
+    if (thread.resolved) {
+      this.foot.replaceChildren();
+      this.foot.hidden = true;
+      return;
+    }
+    this.foot.hidden = false;
+    if (this.replying) {
+      if (this.foot.querySelector('.composer')) return;
+      const box = composer({
+        placeholder: 'Reply…',
+        primary: 'Add comment',
+        onPrimary: async text => this.closeAfter(await send('comment', { thread: thread.id, text })),
+        onAsk: async text => this.closeAfter(await send('ask', { thread: thread.id, text })),
+        onCancel: () => {
+          this.replying = false;
+          this.drawFoot();
+          this.foot.querySelector<HTMLElement>('.reply-field')?.focus();
+        },
+      });
+      this.foot.replaceChildren(box);
+      this.foot.classList.add('composing');
+      box.querySelector('textarea')?.focus();
+      return;
+    }
+    if (this.foot.querySelector('.reply-field')) return;
+    this.foot.classList.remove('composing');
+    const open = () => {
+      this.replying = true;
+      this.drawFoot();
+    };
+    // A button that looks like a reply field and opens the composer in its place.
+    const field = el('button', { type: 'button', className: 'reply-field', onclick: open }, 'Reply…');
+    this.foot.replaceChildren(
+      field,
+      askButton(open),
+      ...(thread.colleague ? [el('button', { type: 'button', className: 'btn small resolve', onclick: () => void send('resolve', { thread: thread.id }) }, 'Resolve')] : []),
+    );
+  }
+
+  private closeAfter(done: boolean): boolean {
+    if (done) {
+      this.replying = false;
+      this.drawFoot();
+    }
+    return done;
+  }
+}

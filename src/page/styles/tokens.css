@@ -1,6 +1,6 @@
 /*
   Design tokens (docs/design/DESIGN.md). Every colour on the page comes from a semantic token below, as light-dark(light, dark);
-  the theme follows the system unless the person picks one (html[data-theme]), and html[data-accent] re-points the accent family.
+  the theme follows the system unless the person picks one (html[data-theme]).
 */
 
 :root {
@@ -18,10 +18,7 @@
   --muted: light-dark(#5b636d, #9aa2ac);
   --icon-knockout: light-dark(#ffffff, #15181d);
 
-  /* Data marks on the instrument, not text */
-  --marker-note: light-dark(#6b737d, #9aa2ac);
-
-  /* The accent (Ultramarine by default): the mark, the primary action, focus, picked lines and your own words; never status */
+  /* The one accent, Ultramarine: the mark, the primary action, focus, picked lines and your own words; never status */
   --accent: light-dark(#2433b8, #8c97ff);
   --accent-hover: light-dark(#1b2896, #a3abff);
   --accent-text: light-dark(#2433b8, #a9b1ff);
@@ -31,17 +28,13 @@
   --line-pick: light-dark(#eef0fd, #1d2242);
   --line-pick-gutter: light-dark(#d9ddf8, #2a3263);
 
-  /* Status, one traffic-light set: ok is decided positive or met, amber needs you, bad is not met, neu is decided without tone */
+  /* Status only where it means something: Pending, the criteria marks and the submitted note */
   --amber: light-dark(#8a5a00, #e3b260);
   --amber-wash: light-dark(#fbf1dc, #33280f);
   --ok: light-dark(#1a7340, #5fd38d);
   --ok-bg: light-dark(#e4f4ea, #15301f);
   --bad: light-dark(#b3261e, #ff8a80);
   --bad-bg: light-dark(#fbe7e5, #3b1a18);
-  --rust: var(--bad);
-  --neu: light-dark(#7b838d, #8a929c);
-  /* The Listening session, in secondary ink: green always means decided positive */
-  --live: light-dark(#3a4048, #c3c8cf);
 
   /* Diff */
   --diff-add: light-dark(#e8f6ec, #14281c);
@@ -94,88 +87,10 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-/* Registered, so changing the accent cross-fades the family; a theme switch snaps. */
-@property --accent {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #2433b8;
-}
-
-@property --accent-hover {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #1b2896;
-}
-
-@property --accent-text {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #2433b8;
-}
-
-@property --accent-wash {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #eceefc;
-}
-
-@property --accent-line {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #d3d7f7;
-}
-
-@property --on-accent {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #ffffff;
-}
-
-@property --line-pick {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #eef0fd;
-}
-
-@property --line-pick-gutter {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #d9ddf8;
-}
-
-:root.accent-fade {
-  transition-property: --accent, --accent-hover, --accent-text, --accent-wash, --accent-line, --on-accent, --line-pick, --line-pick-gutter;
-  transition-duration: var(--slow);
-  transition-timing-function: linear;
-}
-
 :root[data-theme='light'] {
   color-scheme: light;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-}
-
-/* The other accents re-point the whole family together; each keeps AA in both themes. */
-:root[data-accent='petrol'] {
-  --accent: light-dark(#0e6577, #5cc2d4);
-  --accent-hover: light-dark(#0a4f5d, #7fd2e0);
-  --accent-text: light-dark(#0e6577, #7fd2e0);
-  --accent-wash: light-dark(#e3f1f3, #14323a);
-  --accent-line: light-dark(#c4e1e6, #1f4a55);
-  --on-accent: light-dark(#ffffff, #061a1f);
-  --line-pick: light-dark(#e7f3f5, #132e35);
-  --line-pick-gutter: light-dark(#cbe4e9, #1c4550);
-}
-
-:root[data-accent='berry'] {
-  --accent: light-dark(#9c1f62, #f07ab4);
-  --accent-hover: light-dark(#7f174f, #f59cc7);
-  --accent-text: light-dark(#9c1f62, #f59cc7);
-  --accent-wash: light-dark(#f8e7f0, #3a1a2b);
-  --accent-line: light-dark(#efc9dc, #5a2843);
-  --on-accent: light-dark(#ffffff, #2a0717);
-  --line-pick: light-dark(#faecf3, #341827);
-  --line-pick-gutter: light-dark(#f1d2e1, #4f2239);
 }

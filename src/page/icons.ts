@@ -6,90 +6,57 @@ const round = { fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round',
 const line = (d: string, width = 1.7): Shape => ['path', { d, ...round, 'stroke-width': width }];
 const ring = (extra: Record<string, string | number> = {}): Shape =>
   ['circle', { cx: 8, cy: 8, r: 6.2, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.6, ...extra }];
-const block = (x: number, y: number, width: number, height: number, opacity = 1): Shape =>
-  ['rect', { x, y, width, height, rx: 1, fill: 'currentColor', ...(opacity < 1 && { opacity }) }];
-
-const frame: Shape = ['rect', { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }];
 
 const ICONS = {
-  /** Queue and step states. */
-  unread: [ring()],
-  current: [ring(), ['circle', { cx: 8, cy: 8, r: 2.8, fill: 'currentColor' }]],
-  // The tick is cut out of the disc in the canvas colour.
-  decided: [
-    ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
-    ['path', { d: 'M4.8 8.2l2.1 2.1 4.3-4.6', ...round, 'stroke-width': 1.8, class: 'knockout' }],
-  ],
-  flagged: [
-    ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
-    ['path', { d: 'M6 11.6V4.6h4.6l-1 1.6 1 1.6H6', ...round, 'stroke-width': 1.5, class: 'knockout' }],
-  ],
-  'no-tone': [
-    ['circle', { cx: 8, cy: 8, r: 7, fill: 'currentColor' }],
-    ['path', { d: 'M5.2 8h5.6', ...round, 'stroke-width': 1.8, class: 'knockout' }],
-  ],
-  reopened: [line('M13 8a5 5 0 1 1-1.6-3.7'), line('M11.8 1.8v3h-3')],
-  folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],
-  message: [line('M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 1.5)],
-  summary: [line('M3 3.5h10M3 8h10M3 12.5h6', 1.6)],
-  /** The verdict. */
-  finish: [['path', { d: 'M3.5 14V2.5M3.5 3h8.2l-1.6 2.6 1.6 2.6H3.5', ...round, 'stroke-width': 1.5 }]],
-  /** Checklist statuses. */
-  met: [ring(), line('M5 8.2l2 2 4-4.3')],
-  'not-met': [ring(), line('M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8')],
-  partly: [ring(), line('M5 8h6')],
-  unchecked: [ring({ 'stroke-dasharray': '2.4 2.2' })],
-  /** Notices and session. */
-  warn: [
-    ['path', { d: 'M8 2l6.5 11.5h-13z', ...round, 'stroke-width': 1.5 }],
-    line('M8 6.5v3.2', 1.6),
-    ['circle', { cx: 8, cy: 11.6, r: 0.9, fill: 'currentColor' }],
-  ],
-  unlink: [line('M6.5 9.5l-1.8 1.8a2 2 0 0 1-2.8-2.8L3.7 6.7M9.5 6.5l1.8-1.8a2 2 0 0 1 2.8 2.8l-1.8 1.8M5 3V1.5M3 5H1.5M11 13v1.5M13 11h1.5', 1.5)],
-  offline: [line('M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11', 1.5)],
-  ask: [
-    ring({ 'stroke-width': 1.5 }),
-    line('M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3', 1.5),
-    ['circle', { cx: 8, cy: 11.4, r: 0.9, fill: 'currentColor' }],
-  ],
-  spinner: [
-    ['circle', { cx: 8, cy: 8, r: 6, fill: 'none', stroke: 'currentColor', 'stroke-opacity': 0.25, 'stroke-width': 2 }],
-    line('M8 2a6 6 0 0 1 6 6', 2),
-  ],
-  /** Files and controls. */
-  file: [['path', { d: 'M4 1.8h5l3 3v9.4H4z M9 1.8v3h3', ...round, 'stroke-width': 1.5 }]],
-  more: [3.5, 8, 12.5].map((cx): Shape => ['circle', { cx, cy: 8, r: 1.4, fill: 'currentColor' }]),
-  'chevron-right': [line('M6 4l4 4-4 4')],
-  'chevron-down': [line('M4 6l4 4 4-4')],
-  eye: [
-    ['path', { d: 'M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z', ...round, 'stroke-width': 1.4 }],
-    ['circle', { cx: 8, cy: 8, r: 2, fill: 'currentColor' }],
-  ],
-  plus: [line('M8 3.5v9M3.5 8h9', 1.8)],
-  /** The person's own words. */
-  own: [
-    ['circle', { cx: 8, cy: 5.6, r: 2.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5 }],
-    line('M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6', 1.5),
-  ],
-  edit: [line('M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z', 1.4)],
-  trash: [line('M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5', 1.4)],
-  previous: [line('M10 3.5L5.5 8l4.5 4.5')],
-  next: [line('M6 3.5L10.5 8 6 12.5')],
-  minus: [line('M3.5 8h9', 1.6)],
-  close: [line('M4.5 4.5l7 7M11.5 4.5l-7 7', 1.6)],
-  keyboard: [
-    ['rect', { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
-    line('M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6', 1.4),
-  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ['path', { d: 'M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8', ...round, 'stroke-width': 2.3 }],
     ['path', { d: 'M11.4 12.8L14.4 3.2', ...round, 'stroke-width': 2.3, opacity: 0.4 }],
   ],
-  /** Panels, as a window with the panel's part filled. */
-  'panel-queue': [frame, block(2.6, 3.6, 3.4, 8.8)],
-  'panel-checklist': [frame, block(10, 3.6, 3.4, 8.8)],
-  'panel-explanation': [frame, block(2.6, 3.6, 5.2, 8.8), ['path', { d: 'M4 6h2.4M4 8h2.4M4 10h1.6', ...round, 'stroke-width': 0.9, class: 'knockout' }]],
+  sidebar: [
+    ['rect', { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
+    ['rect', { x: 2.6, y: 3.6, width: 3.4, height: 8.8, rx: 0.8, fill: 'currentColor' }],
+  ],
+  /** The one spinner: the dashed ring with its turning arc, while the AI works. */
+  spinner: [
+    ring({ 'stroke-opacity': 0.45, 'stroke-dasharray': '2.4 2.2' }),
+    line('M8 1.8a6.2 6.2 0 0 1 6.2 6.2', 1.9),
+  ],
+  more: [3.5, 8, 12.5].map((cx): Shape => ['circle', { cx, cy: 8, r: 1.4, fill: 'currentColor' }]),
+  message: [line('M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 1.5)],
+  own: [
+    ['circle', { cx: 8, cy: 5.6, r: 2.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5 }],
+    line('M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6', 1.5),
+  ],
+  summary: [line('M3 3.5h10M3 8h10M3 12.5h6', 1.6)],
+  /** A file not viewed yet; `met` doubles as a viewed one. */
+  ring: [ring()],
+  met: [ring(), line('M5 8.2l2 2 4-4.3')],
+  'not-met': [ring(), line('M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8')],
+  partly: [ring(), line('M5 8h6')],
+  unchecked: [ring({ 'stroke-dasharray': '2.4 2.2' })],
+  eye: [
+    ['path', { d: 'M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z', ...round, 'stroke-width': 1.4 }],
+    ['circle', { cx: 8, cy: 8, r: 2, fill: 'currentColor' }],
+  ],
+  ask: [
+    ring({ 'stroke-width': 1.5 }),
+    line('M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3', 1.5),
+    ['circle', { cx: 8, cy: 11.4, r: 0.9, fill: 'currentColor' }],
+  ],
+  edit: [line('M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z', 1.4)],
+  trash: [line('M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5', 1.4)],
+  'chevron-right': [line('M6 4l4 4-4 4')],
+  previous: [line('M10 3.5L5.5 8l4.5 4.5')],
+  next: [line('M6 3.5L10.5 8 6 12.5')],
+  up: [line('M4 10l4-4 4 4')],
+  warn: [
+    ['path', { d: 'M8 2l6.5 11.5h-13z', ...round, 'stroke-width': 1.5 }],
+    line('M8 6.5v3.2', 1.6),
+    ['circle', { cx: 8, cy: 11.6, r: 0.9, fill: 'currentColor' }],
+  ],
+  offline: [line('M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11', 1.5)],
+  file: [['path', { d: 'M4 1.8h5l3 3v9.4H4z M9 1.8v3h3', ...round, 'stroke-width': 1.5 }]],
 } satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;
