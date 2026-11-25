@@ -24,9 +24,9 @@ var __export = (target, all) => {
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    for (let key2 of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key2) && key2 !== except)
+        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
   }
   return to;
 };
@@ -65,54 +65,54 @@ var require_polyfills = __commonJS({
     }
     var chdir;
     module.exports = patch;
-    function patch(fs13) {
+    function patch(fs12) {
       if (constants.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
-        patchLchmod(fs13);
+        patchLchmod(fs12);
       }
-      if (!fs13.lutimes) {
-        patchLutimes(fs13);
+      if (!fs12.lutimes) {
+        patchLutimes(fs12);
       }
-      fs13.chown = chownFix(fs13.chown);
-      fs13.fchown = chownFix(fs13.fchown);
-      fs13.lchown = chownFix(fs13.lchown);
-      fs13.chmod = chmodFix(fs13.chmod);
-      fs13.fchmod = chmodFix(fs13.fchmod);
-      fs13.lchmod = chmodFix(fs13.lchmod);
-      fs13.chownSync = chownFixSync(fs13.chownSync);
-      fs13.fchownSync = chownFixSync(fs13.fchownSync);
-      fs13.lchownSync = chownFixSync(fs13.lchownSync);
-      fs13.chmodSync = chmodFixSync(fs13.chmodSync);
-      fs13.fchmodSync = chmodFixSync(fs13.fchmodSync);
-      fs13.lchmodSync = chmodFixSync(fs13.lchmodSync);
-      fs13.stat = statFix(fs13.stat);
-      fs13.fstat = statFix(fs13.fstat);
-      fs13.lstat = statFix(fs13.lstat);
-      fs13.statSync = statFixSync(fs13.statSync);
-      fs13.fstatSync = statFixSync(fs13.fstatSync);
-      fs13.lstatSync = statFixSync(fs13.lstatSync);
-      if (fs13.chmod && !fs13.lchmod) {
-        fs13.lchmod = function(path13, mode, cb) {
+      fs12.chown = chownFix(fs12.chown);
+      fs12.fchown = chownFix(fs12.fchown);
+      fs12.lchown = chownFix(fs12.lchown);
+      fs12.chmod = chmodFix(fs12.chmod);
+      fs12.fchmod = chmodFix(fs12.fchmod);
+      fs12.lchmod = chmodFix(fs12.lchmod);
+      fs12.chownSync = chownFixSync(fs12.chownSync);
+      fs12.fchownSync = chownFixSync(fs12.fchownSync);
+      fs12.lchownSync = chownFixSync(fs12.lchownSync);
+      fs12.chmodSync = chmodFixSync(fs12.chmodSync);
+      fs12.fchmodSync = chmodFixSync(fs12.fchmodSync);
+      fs12.lchmodSync = chmodFixSync(fs12.lchmodSync);
+      fs12.stat = statFix(fs12.stat);
+      fs12.fstat = statFix(fs12.fstat);
+      fs12.lstat = statFix(fs12.lstat);
+      fs12.statSync = statFixSync(fs12.statSync);
+      fs12.fstatSync = statFixSync(fs12.fstatSync);
+      fs12.lstatSync = statFixSync(fs12.lstatSync);
+      if (fs12.chmod && !fs12.lchmod) {
+        fs12.lchmod = function(path12, mode, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs13.lchmodSync = function() {
+        fs12.lchmodSync = function() {
         };
       }
-      if (fs13.chown && !fs13.lchown) {
-        fs13.lchown = function(path13, uid, gid, cb) {
+      if (fs12.chown && !fs12.lchown) {
+        fs12.lchown = function(path12, uid, gid, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs13.lchownSync = function() {
+        fs12.lchownSync = function() {
         };
       }
       if (platform === "win32") {
-        fs13.rename = typeof fs13.rename !== "function" ? fs13.rename : (function(fs$rename) {
+        fs12.rename = typeof fs12.rename !== "function" ? fs12.rename : (function(fs$rename) {
           function rename(from, to, cb) {
             var start2 = Date.now();
             var backoff = 0;
             fs$rename(from, to, function CB(er) {
               if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start2 < 6e4) {
                 setTimeout(function() {
-                  fs13.stat(to, function(stater, st) {
+                  fs12.stat(to, function(stater, st) {
                     if (stater && stater.code === "ENOENT")
                       fs$rename(from, to, CB);
                     else
@@ -128,9 +128,9 @@ var require_polyfills = __commonJS({
           }
           if (Object.setPrototypeOf) Object.setPrototypeOf(rename, fs$rename);
           return rename;
-        })(fs13.rename);
+        })(fs12.rename);
       }
-      fs13.read = typeof fs13.read !== "function" ? fs13.read : (function(fs$read) {
+      fs12.read = typeof fs12.read !== "function" ? fs12.read : (function(fs$read) {
         function read2(fd, buffer, offset, length, position, callback_) {
           var callback;
           if (callback_ && typeof callback_ === "function") {
@@ -138,22 +138,22 @@ var require_polyfills = __commonJS({
             callback = function(er, _, __) {
               if (er && er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
-                return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
+                return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
               }
               callback_.apply(this, arguments);
             };
           }
-          return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
+          return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
         }
         if (Object.setPrototypeOf) Object.setPrototypeOf(read2, fs$read);
         return read2;
-      })(fs13.read);
-      fs13.readSync = typeof fs13.readSync !== "function" ? fs13.readSync : /* @__PURE__ */ (function(fs$readSync) {
+      })(fs12.read);
+      fs12.readSync = typeof fs12.readSync !== "function" ? fs12.readSync : /* @__PURE__ */ (function(fs$readSync) {
         return function(fd, buffer, offset, length, position) {
           var eagCounter = 0;
           while (true) {
             try {
-              return fs$readSync.call(fs13, fd, buffer, offset, length, position);
+              return fs$readSync.call(fs12, fd, buffer, offset, length, position);
             } catch (er) {
               if (er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
@@ -163,11 +163,11 @@ var require_polyfills = __commonJS({
             }
           }
         };
-      })(fs13.readSync);
-      function patchLchmod(fs14) {
-        fs14.lchmod = function(path13, mode, callback) {
-          fs14.open(
-            path13,
+      })(fs12.readSync);
+      function patchLchmod(fs13) {
+        fs13.lchmod = function(path12, mode, callback) {
+          fs13.open(
+            path12,
             constants.O_WRONLY | constants.O_SYMLINK,
             mode,
             function(err, fd) {
@@ -175,80 +175,80 @@ var require_polyfills = __commonJS({
                 if (callback) callback(err);
                 return;
               }
-              fs14.fchmod(fd, mode, function(err2) {
-                fs14.close(fd, function(err22) {
+              fs13.fchmod(fd, mode, function(err2) {
+                fs13.close(fd, function(err22) {
                   if (callback) callback(err2 || err22);
                 });
               });
             }
           );
         };
-        fs14.lchmodSync = function(path13, mode) {
-          var fd = fs14.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
+        fs13.lchmodSync = function(path12, mode) {
+          var fd = fs13.openSync(path12, constants.O_WRONLY | constants.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
-            ret = fs14.fchmodSync(fd, mode);
+            ret = fs13.fchmodSync(fd, mode);
             threw = false;
           } finally {
             if (threw) {
               try {
-                fs14.closeSync(fd);
+                fs13.closeSync(fd);
               } catch (er) {
               }
             } else {
-              fs14.closeSync(fd);
+              fs13.closeSync(fd);
             }
           }
           return ret;
         };
       }
-      function patchLutimes(fs14) {
-        if (constants.hasOwnProperty("O_SYMLINK") && fs14.futimes) {
-          fs14.lutimes = function(path13, at, mt, cb) {
-            fs14.open(path13, constants.O_SYMLINK, function(er, fd) {
+      function patchLutimes(fs13) {
+        if (constants.hasOwnProperty("O_SYMLINK") && fs13.futimes) {
+          fs13.lutimes = function(path12, at, mt, cb) {
+            fs13.open(path12, constants.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
               }
-              fs14.futimes(fd, at, mt, function(er2) {
-                fs14.close(fd, function(er22) {
+              fs13.futimes(fd, at, mt, function(er2) {
+                fs13.close(fd, function(er22) {
                   if (cb) cb(er2 || er22);
                 });
               });
             });
           };
-          fs14.lutimesSync = function(path13, at, mt) {
-            var fd = fs14.openSync(path13, constants.O_SYMLINK);
+          fs13.lutimesSync = function(path12, at, mt) {
+            var fd = fs13.openSync(path12, constants.O_SYMLINK);
             var ret;
             var threw = true;
             try {
-              ret = fs14.futimesSync(fd, at, mt);
+              ret = fs13.futimesSync(fd, at, mt);
               threw = false;
             } finally {
               if (threw) {
                 try {
-                  fs14.closeSync(fd);
+                  fs13.closeSync(fd);
                 } catch (er) {
                 }
               } else {
-                fs14.closeSync(fd);
+                fs13.closeSync(fd);
               }
             }
             return ret;
           };
-        } else if (fs14.futimes) {
-          fs14.lutimes = function(_a, _b, _c, cb) {
+        } else if (fs13.futimes) {
+          fs13.lutimes = function(_a, _b, _c, cb) {
             if (cb) process.nextTick(cb);
           };
-          fs14.lutimesSync = function() {
+          fs13.lutimesSync = function() {
           };
         }
       }
       function chmodFix(orig) {
         if (!orig) return orig;
         return function(target, mode, cb) {
-          return orig.call(fs13, target, mode, function(er) {
+          return orig.call(fs12, target, mode, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -258,7 +258,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, mode) {
           try {
-            return orig.call(fs13, target, mode);
+            return orig.call(fs12, target, mode);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -267,7 +267,7 @@ var require_polyfills = __commonJS({
       function chownFix(orig) {
         if (!orig) return orig;
         return function(target, uid, gid, cb) {
-          return orig.call(fs13, target, uid, gid, function(er) {
+          return orig.call(fs12, target, uid, gid, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -277,7 +277,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, uid, gid) {
           try {
-            return orig.call(fs13, target, uid, gid);
+            return orig.call(fs12, target, uid, gid);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -297,13 +297,13 @@ var require_polyfills = __commonJS({
             }
             if (cb) cb.apply(this, arguments);
           }
-          return options ? orig.call(fs13, target, options, callback) : orig.call(fs13, target, callback);
+          return options ? orig.call(fs12, target, options, callback) : orig.call(fs12, target, callback);
         };
       }
       function statFixSync(orig) {
         if (!orig) return orig;
         return function(target, options) {
-          var stats = options ? orig.call(fs13, target, options) : orig.call(fs13, target);
+          var stats = options ? orig.call(fs12, target, options) : orig.call(fs12, target);
           if (stats) {
             if (stats.uid < 0) stats.uid += 4294967296;
             if (stats.gid < 0) stats.gid += 4294967296;
@@ -332,16 +332,16 @@ var require_legacy_streams = __commonJS({
   "node_modules/graceful-fs/legacy-streams.js"(exports, module) {
     var Stream = __require("stream").Stream;
     module.exports = legacy;
-    function legacy(fs13) {
+    function legacy(fs12) {
       return {
         ReadStream,
         WriteStream
       };
-      function ReadStream(path13, options) {
-        if (!(this instanceof ReadStream)) return new ReadStream(path13, options);
+      function ReadStream(path12, options) {
+        if (!(this instanceof ReadStream)) return new ReadStream(path12, options);
         Stream.call(this);
         var self = this;
-        this.path = path13;
+        this.path = path12;
         this.fd = null;
         this.readable = true;
         this.paused = false;
@@ -351,8 +351,8 @@ var require_legacy_streams = __commonJS({
         options = options || {};
         var keys = Object.keys(options);
         for (var index = 0, length = keys.length; index < length; index++) {
-          var key = keys[index];
-          this[key] = options[key];
+          var key2 = keys[index];
+          this[key2] = options[key2];
         }
         if (this.encoding) this.setEncoding(this.encoding);
         if (this.start !== void 0) {
@@ -375,7 +375,7 @@ var require_legacy_streams = __commonJS({
           });
           return;
         }
-        fs13.open(this.path, this.flags, this.mode, function(err, fd) {
+        fs12.open(this.path, this.flags, this.mode, function(err, fd) {
           if (err) {
             self.emit("error", err);
             self.readable = false;
@@ -386,10 +386,10 @@ var require_legacy_streams = __commonJS({
           self._read();
         });
       }
-      function WriteStream(path13, options) {
-        if (!(this instanceof WriteStream)) return new WriteStream(path13, options);
+      function WriteStream(path12, options) {
+        if (!(this instanceof WriteStream)) return new WriteStream(path12, options);
         Stream.call(this);
-        this.path = path13;
+        this.path = path12;
         this.fd = null;
         this.writable = true;
         this.flags = "w";
@@ -399,8 +399,8 @@ var require_legacy_streams = __commonJS({
         options = options || {};
         var keys = Object.keys(options);
         for (var index = 0, length = keys.length; index < length; index++) {
-          var key = keys[index];
-          this[key] = options[key];
+          var key2 = keys[index];
+          this[key2] = options[key2];
         }
         if (this.start !== void 0) {
           if ("number" !== typeof this.start) {
@@ -414,7 +414,7 @@ var require_legacy_streams = __commonJS({
         this.busy = false;
         this._queue = [];
         if (this.fd === null) {
-          this._open = fs13.open;
+          this._open = fs12.open;
           this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
           this.flush();
         }
@@ -438,8 +438,8 @@ var require_clone = __commonJS({
         var copy = { __proto__: getPrototypeOf(obj) };
       else
         var copy = /* @__PURE__ */ Object.create(null);
-      Object.getOwnPropertyNames(obj).forEach(function(key) {
-        Object.defineProperty(copy, key, Object.getOwnPropertyDescriptor(obj, key));
+      Object.getOwnPropertyNames(obj).forEach(function(key2) {
+        Object.defineProperty(copy, key2, Object.getOwnPropertyDescriptor(obj, key2));
       });
       return copy;
     }
@@ -449,7 +449,7 @@ var require_clone = __commonJS({
 // node_modules/graceful-fs/graceful-fs.js
 var require_graceful_fs = __commonJS({
   "node_modules/graceful-fs/graceful-fs.js"(exports, module) {
-    var fs13 = __require("fs");
+    var fs12 = __require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
     var clone = require_clone();
@@ -481,12 +481,12 @@ var require_graceful_fs = __commonJS({
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
       };
-    if (!fs13[gracefulQueue]) {
+    if (!fs12[gracefulQueue]) {
       queue = global[gracefulQueue] || [];
-      publishQueue(fs13, queue);
-      fs13.close = (function(fs$close) {
+      publishQueue(fs12, queue);
+      fs12.close = (function(fs$close) {
         function close(fd, cb) {
-          return fs$close.call(fs13, fd, function(err) {
+          return fs$close.call(fs12, fd, function(err) {
             if (!err) {
               resetQueue();
             }
@@ -498,48 +498,48 @@ var require_graceful_fs = __commonJS({
           value: fs$close
         });
         return close;
-      })(fs13.close);
-      fs13.closeSync = (function(fs$closeSync) {
+      })(fs12.close);
+      fs12.closeSync = (function(fs$closeSync) {
         function closeSync(fd) {
-          fs$closeSync.apply(fs13, arguments);
+          fs$closeSync.apply(fs12, arguments);
           resetQueue();
         }
         Object.defineProperty(closeSync, previousSymbol, {
           value: fs$closeSync
         });
         return closeSync;
-      })(fs13.closeSync);
+      })(fs12.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug(fs13[gracefulQueue]);
-          __require("assert").equal(fs13[gracefulQueue].length, 0);
+          debug(fs12[gracefulQueue]);
+          __require("assert").equal(fs12[gracefulQueue].length, 0);
         });
       }
     }
     var queue;
     if (!global[gracefulQueue]) {
-      publishQueue(global, fs13[gracefulQueue]);
+      publishQueue(global, fs12[gracefulQueue]);
     }
-    module.exports = patch(clone(fs13));
-    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs13.__patched) {
-      module.exports = patch(fs13);
-      fs13.__patched = true;
+    module.exports = patch(clone(fs12));
+    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs12.__patched) {
+      module.exports = patch(fs12);
+      fs12.__patched = true;
     }
-    function patch(fs14) {
-      polyfills(fs14);
-      fs14.gracefulify = patch;
-      fs14.createReadStream = createReadStream;
-      fs14.createWriteStream = createWriteStream;
-      var fs$readFile = fs14.readFile;
-      fs14.readFile = readFile2;
-      function readFile2(path13, options, cb) {
+    function patch(fs13) {
+      polyfills(fs13);
+      fs13.gracefulify = patch;
+      fs13.createReadStream = createReadStream;
+      fs13.createWriteStream = createWriteStream;
+      var fs$readFile = fs13.readFile;
+      fs13.readFile = readFile;
+      function readFile(path12, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$readFile(path13, options, cb);
-        function go$readFile(path14, options2, cb2, startTime) {
-          return fs$readFile(path14, options2, function(err) {
+        return go$readFile(path12, options, cb);
+        function go$readFile(path13, options2, cb2, startTime) {
+          return fs$readFile(path13, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$readFile, [path14, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$readFile, [path13, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -547,16 +547,16 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$writeFile = fs14.writeFile;
-      fs14.writeFile = writeFile;
-      function writeFile(path13, data, options, cb) {
+      var fs$writeFile = fs13.writeFile;
+      fs13.writeFile = writeFile;
+      function writeFile(path12, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$writeFile(path13, data, options, cb);
-        function go$writeFile(path14, data2, options2, cb2, startTime) {
-          return fs$writeFile(path14, data2, options2, function(err) {
+        return go$writeFile(path12, data, options, cb);
+        function go$writeFile(path13, data2, options2, cb2, startTime) {
+          return fs$writeFile(path13, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$writeFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$writeFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -564,17 +564,17 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$appendFile = fs14.appendFile;
+      var fs$appendFile = fs13.appendFile;
       if (fs$appendFile)
-        fs14.appendFile = appendFile;
-      function appendFile(path13, data, options, cb) {
+        fs13.appendFile = appendFile;
+      function appendFile(path12, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$appendFile(path13, data, options, cb);
-        function go$appendFile(path14, data2, options2, cb2, startTime) {
-          return fs$appendFile(path14, data2, options2, function(err) {
+        return go$appendFile(path12, data, options, cb);
+        function go$appendFile(path13, data2, options2, cb2, startTime) {
+          return fs$appendFile(path13, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$appendFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$appendFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -582,9 +582,9 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$copyFile = fs14.copyFile;
+      var fs$copyFile = fs13.copyFile;
       if (fs$copyFile)
-        fs14.copyFile = copyFile;
+        fs13.copyFile = copyFile;
       function copyFile(src, dest, flags, cb) {
         if (typeof flags === "function") {
           cb = flags;
@@ -602,34 +602,34 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$readdir = fs14.readdir;
-      fs14.readdir = readdir;
+      var fs$readdir = fs13.readdir;
+      fs13.readdir = readdir;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir(path13, options, cb) {
+      function readdir(path12, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path14, options2, cb2, startTime) {
-          return fs$readdir(path14, fs$readdirCallback(
-            path14,
+        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path13, options2, cb2, startTime) {
+          return fs$readdir(path13, fs$readdirCallback(
+            path13,
             options2,
             cb2,
             startTime
           ));
-        } : function go$readdir2(path14, options2, cb2, startTime) {
-          return fs$readdir(path14, options2, fs$readdirCallback(
-            path14,
+        } : function go$readdir2(path13, options2, cb2, startTime) {
+          return fs$readdir(path13, options2, fs$readdirCallback(
+            path13,
             options2,
             cb2,
             startTime
           ));
         };
-        return go$readdir(path13, options, cb);
-        function fs$readdirCallback(path14, options2, cb2, startTime) {
+        return go$readdir(path12, options, cb);
+        function fs$readdirCallback(path13, options2, cb2, startTime) {
           return function(err, files3) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
               enqueue([
                 go$readdir,
-                [path14, options2, cb2],
+                [path13, options2, cb2],
                 err,
                 startTime || Date.now(),
                 Date.now()
@@ -644,21 +644,21 @@ var require_graceful_fs = __commonJS({
         }
       }
       if (process.version.substr(0, 4) === "v0.8") {
-        var legStreams = legacy(fs14);
+        var legStreams = legacy(fs13);
         ReadStream = legStreams.ReadStream;
         WriteStream = legStreams.WriteStream;
       }
-      var fs$ReadStream = fs14.ReadStream;
+      var fs$ReadStream = fs13.ReadStream;
       if (fs$ReadStream) {
         ReadStream.prototype = Object.create(fs$ReadStream.prototype);
         ReadStream.prototype.open = ReadStream$open;
       }
-      var fs$WriteStream = fs14.WriteStream;
+      var fs$WriteStream = fs13.WriteStream;
       if (fs$WriteStream) {
         WriteStream.prototype = Object.create(fs$WriteStream.prototype);
         WriteStream.prototype.open = WriteStream$open;
       }
-      Object.defineProperty(fs14, "ReadStream", {
+      Object.defineProperty(fs13, "ReadStream", {
         get: function() {
           return ReadStream;
         },
@@ -668,7 +668,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      Object.defineProperty(fs14, "WriteStream", {
+      Object.defineProperty(fs13, "WriteStream", {
         get: function() {
           return WriteStream;
         },
@@ -679,7 +679,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileReadStream = ReadStream;
-      Object.defineProperty(fs14, "FileReadStream", {
+      Object.defineProperty(fs13, "FileReadStream", {
         get: function() {
           return FileReadStream;
         },
@@ -690,7 +690,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileWriteStream = WriteStream;
-      Object.defineProperty(fs14, "FileWriteStream", {
+      Object.defineProperty(fs13, "FileWriteStream", {
         get: function() {
           return FileWriteStream;
         },
@@ -700,7 +700,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      function ReadStream(path13, options) {
+      function ReadStream(path12, options) {
         if (this instanceof ReadStream)
           return fs$ReadStream.apply(this, arguments), this;
         else
@@ -720,7 +720,7 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function WriteStream(path13, options) {
+      function WriteStream(path12, options) {
         if (this instanceof WriteStream)
           return fs$WriteStream.apply(this, arguments), this;
         else
@@ -738,22 +738,22 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function createReadStream(path13, options) {
-        return new fs14.ReadStream(path13, options);
+      function createReadStream(path12, options) {
+        return new fs13.ReadStream(path12, options);
       }
-      function createWriteStream(path13, options) {
-        return new fs14.WriteStream(path13, options);
+      function createWriteStream(path12, options) {
+        return new fs13.WriteStream(path12, options);
       }
-      var fs$open = fs14.open;
-      fs14.open = open2;
-      function open2(path13, flags, mode, cb) {
+      var fs$open = fs13.open;
+      fs13.open = open2;
+      function open2(path12, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
-        return go$open(path13, flags, mode, cb);
-        function go$open(path14, flags2, mode2, cb2, startTime) {
-          return fs$open(path14, flags2, mode2, function(err, fd) {
+        return go$open(path12, flags, mode, cb);
+        function go$open(path13, flags2, mode2, cb2, startTime) {
+          return fs$open(path13, flags2, mode2, function(err, fd) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$open, [path14, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$open, [path13, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -761,20 +761,20 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      return fs14;
+      return fs13;
     }
     function enqueue(elem) {
       debug("ENQUEUE", elem[0].name, elem[1]);
-      fs13[gracefulQueue].push(elem);
+      fs12[gracefulQueue].push(elem);
       retry();
     }
     var retryTimer;
     function resetQueue() {
       var now = Date.now();
-      for (var i = 0; i < fs13[gracefulQueue].length; ++i) {
-        if (fs13[gracefulQueue][i].length > 2) {
-          fs13[gracefulQueue][i][3] = now;
-          fs13[gracefulQueue][i][4] = now;
+      for (var i = 0; i < fs12[gracefulQueue].length; ++i) {
+        if (fs12[gracefulQueue][i].length > 2) {
+          fs12[gracefulQueue][i][3] = now;
+          fs12[gracefulQueue][i][4] = now;
         }
       }
       retry();
@@ -782,9 +782,9 @@ var require_graceful_fs = __commonJS({
     function retry() {
       clearTimeout(retryTimer);
       retryTimer = void 0;
-      if (fs13[gracefulQueue].length === 0)
+      if (fs12[gracefulQueue].length === 0)
         return;
-      var elem = fs13[gracefulQueue].shift();
+      var elem = fs12[gracefulQueue].shift();
       var fn = elem[0];
       var args = elem[1];
       var err = elem[2];
@@ -806,7 +806,7 @@ var require_graceful_fs = __commonJS({
           debug("RETRY", fn.name, args);
           fn.apply(null, args.concat([startTime]));
         } else {
-          fs13[gracefulQueue].push(elem);
+          fs12[gracefulQueue].push(elem);
         }
       }
       if (retryTimer === void 0) {
@@ -970,8 +970,8 @@ var require_retry = __commonJS({
         maxTimeout: Infinity,
         randomize: false
       };
-      for (var key in options) {
-        opts[key] = options[key];
+      for (var key2 in options) {
+        opts[key2] = options[key2];
       }
       if (opts.minTimeout > opts.maxTimeout) {
         throw new Error("minTimeout is greater than maxTimeout");
@@ -1001,9 +1001,9 @@ var require_retry = __commonJS({
       }
       if (!methods2) {
         methods2 = [];
-        for (var key in obj) {
-          if (typeof obj[key] === "function") {
-            methods2.push(key);
+        for (var key2 in obj) {
+          if (typeof obj[key2] === "function") {
+            methods2.push(key2);
           }
         }
       }
@@ -1241,10 +1241,10 @@ var require_mtime_precision = __commonJS({
   "node_modules/proper-lockfile/lib/mtime-precision.js"(exports, module) {
     "use strict";
     var cacheSymbol = /* @__PURE__ */ Symbol();
-    function probe(file2, fs13, callback) {
-      const cachedPrecision = fs13[cacheSymbol];
+    function probe(file2, fs12, callback) {
+      const cachedPrecision = fs12[cacheSymbol];
       if (cachedPrecision) {
-        return fs13.stat(file2, (err, stat) => {
+        return fs12.stat(file2, (err, stat) => {
           if (err) {
             return callback(err);
           }
@@ -1252,16 +1252,16 @@ var require_mtime_precision = __commonJS({
         });
       }
       const mtime = new Date(Math.ceil(Date.now() / 1e3) * 1e3 + 5);
-      fs13.utimes(file2, mtime, mtime, (err) => {
+      fs12.utimes(file2, mtime, mtime, (err) => {
         if (err) {
           return callback(err);
         }
-        fs13.stat(file2, (err2, stat) => {
+        fs12.stat(file2, (err2, stat) => {
           if (err2) {
             return callback(err2);
           }
           const precision = stat.mtime.getTime() % 1e3 === 0 ? "s" : "ms";
-          Object.defineProperty(fs13, cacheSymbol, { value: precision });
+          Object.defineProperty(fs12, cacheSymbol, { value: precision });
           callback(null, stat.mtime, precision);
         });
       });
@@ -1282,8 +1282,8 @@ var require_mtime_precision = __commonJS({
 var require_lockfile = __commonJS({
   "node_modules/proper-lockfile/lib/lockfile.js"(exports, module) {
     "use strict";
-    var path13 = __require("path");
-    var fs13 = require_graceful_fs();
+    var path12 = __require("path");
+    var fs12 = require_graceful_fs();
     var retry = require_retry2();
     var onExit = require_signal_exit();
     var mtimePrecision = require_mtime_precision();
@@ -1293,7 +1293,7 @@ var require_lockfile = __commonJS({
     }
     function resolveCanonicalPath(file2, options, callback) {
       if (!options.realpath) {
-        return callback(null, path13.resolve(file2));
+        return callback(null, path12.resolve(file2));
       }
       options.fs.realpath(file2, callback);
     }
@@ -1414,7 +1414,7 @@ var require_lockfile = __commonJS({
         update: null,
         realpath: true,
         retries: 0,
-        fs: fs13,
+        fs: fs12,
         onCompromised: (err) => {
           throw err;
         },
@@ -1458,7 +1458,7 @@ var require_lockfile = __commonJS({
     }
     function unlock(file2, options, callback) {
       options = {
-        fs: fs13,
+        fs: fs12,
         realpath: true,
         ...options
       };
@@ -1480,7 +1480,7 @@ var require_lockfile = __commonJS({
       options = {
         stale: 1e4,
         realpath: true,
-        fs: fs13,
+        fs: fs12,
         ...options
       };
       options.stale = Math.max(options.stale || 0, 2e3);
@@ -1519,16 +1519,16 @@ var require_lockfile = __commonJS({
 var require_adapter = __commonJS({
   "node_modules/proper-lockfile/lib/adapter.js"(exports, module) {
     "use strict";
-    var fs13 = require_graceful_fs();
-    function createSyncFs(fs14) {
+    var fs12 = require_graceful_fs();
+    function createSyncFs(fs13) {
       const methods2 = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
-      const newFs = { ...fs14 };
+      const newFs = { ...fs13 };
       methods2.forEach((method) => {
         newFs[method] = (...args) => {
           const callback = args.pop();
           let ret;
           try {
-            ret = fs14[`${method}Sync`](...args);
+            ret = fs13[`${method}Sync`](...args);
           } catch (err) {
             return callback(err);
           }
@@ -1538,12 +1538,12 @@ var require_adapter = __commonJS({
       return newFs;
     }
     function toPromise(method) {
-      return (...args) => new Promise((resolve, reject) => {
+      return (...args) => new Promise((resolve2, reject) => {
         args.push((err, result) => {
           if (err) {
             reject(err);
           } else {
-            resolve(result);
+            resolve2(result);
           }
         });
         method(...args);
@@ -1566,7 +1566,7 @@ var require_adapter = __commonJS({
     }
     function toSyncOptions(options) {
       options = { ...options };
-      options.fs = createSyncFs(options.fs || fs13);
+      options.fs = createSyncFs(options.fs || fs12);
       if (typeof options.retries === "number" && options.retries > 0 || options.retries && typeof options.retries.retries === "number" && options.retries.retries > 0) {
         throw Object.assign(new Error("Cannot use retries with the sync api"), { code: "ESYNC" });
       }
@@ -1855,10 +1855,4340 @@ var require_punycode = __commonJS({
   }
 });
 
+// node_modules/diff2html/lib/types.js
+var require_types = __commonJS({
+  "node_modules/diff2html/lib/types.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ColorSchemeType = exports.DiffStyleType = exports.LineMatchingType = exports.OutputFormatType = exports.LineType = void 0;
+    var LineType2;
+    (function(LineType3) {
+      LineType3["INSERT"] = "insert";
+      LineType3["DELETE"] = "delete";
+      LineType3["CONTEXT"] = "context";
+    })(LineType2 || (exports.LineType = LineType2 = {}));
+    exports.OutputFormatType = {
+      LINE_BY_LINE: "line-by-line",
+      SIDE_BY_SIDE: "side-by-side"
+    };
+    exports.LineMatchingType = {
+      LINES: "lines",
+      WORDS: "words",
+      NONE: "none"
+    };
+    exports.DiffStyleType = {
+      WORD: "word",
+      CHAR: "char"
+    };
+    var ColorSchemeType2;
+    (function(ColorSchemeType3) {
+      ColorSchemeType3["AUTO"] = "auto";
+      ColorSchemeType3["DARK"] = "dark";
+      ColorSchemeType3["LIGHT"] = "light";
+    })(ColorSchemeType2 || (exports.ColorSchemeType = ColorSchemeType2 = {}));
+  }
+});
+
+// node_modules/diff2html/lib/utils.js
+var require_utils = __commonJS({
+  "node_modules/diff2html/lib/utils.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.escapeForRegExp = escapeForRegExp2;
+    exports.unifyPath = unifyPath;
+    exports.hashCode = hashCode;
+    exports.max = max;
+    var specials2 = [
+      "-",
+      "[",
+      "]",
+      "/",
+      "{",
+      "}",
+      "(",
+      ")",
+      "*",
+      "+",
+      "?",
+      ".",
+      "\\",
+      "^",
+      "$",
+      "|"
+    ];
+    var regex2 = RegExp("[" + specials2.join("\\") + "]", "g");
+    function escapeForRegExp2(str) {
+      return str.replace(regex2, "\\$&");
+    }
+    function unifyPath(path12) {
+      return path12 ? path12.replace(/\\/g, "/") : path12;
+    }
+    function hashCode(text2) {
+      let i, chr, len;
+      let hash2 = 0;
+      for (i = 0, len = text2.length; i < len; i++) {
+        chr = text2.charCodeAt(i);
+        hash2 = (hash2 << 5) - hash2 + chr;
+        hash2 |= 0;
+      }
+      return hash2;
+    }
+    function max(arr) {
+      const length = arr.length;
+      let max2 = -Infinity;
+      for (let i = 0; i < length; i++) {
+        max2 = Math.max(max2, arr[i]);
+      }
+      return max2;
+    }
+  }
+});
+
+// node_modules/diff2html/lib/diff-parser.js
+var require_diff_parser = __commonJS({
+  "node_modules/diff2html/lib/diff-parser.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.parse = parse2;
+    var types_1 = require_types();
+    var utils_1 = require_utils();
+    function getExtension2(filename, language) {
+      const filenameParts = filename.split(".");
+      return filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : language;
+    }
+    function startsWithAny2(str, prefixes) {
+      return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
+    }
+    var baseDiffFilenamePrefixes2 = ["a/", "b/", "i/", "w/", "c/", "o/"];
+    function getFilename2(line, linePrefix, extraPrefix) {
+      const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes2, extraPrefix] : baseDiffFilenamePrefixes2;
+      const FilenameRegExp = linePrefix ? new RegExp(`^${(0, utils_1.escapeForRegExp)(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
+      const [, filename = ""] = FilenameRegExp.exec(line) || [];
+      const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
+      const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
+      return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
+    }
+    function getSrcFilename2(line, srcPrefix) {
+      return getFilename2(line, "---", srcPrefix);
+    }
+    function getDstFilename2(line, dstPrefix) {
+      return getFilename2(line, "+++", dstPrefix);
+    }
+    function parse2(diffInput, config2 = {}) {
+      const files3 = [];
+      let currentFile = null;
+      let currentBlock = null;
+      let oldLine = null;
+      let oldLine2 = null;
+      let newLine = null;
+      let possibleOldName = null;
+      let possibleNewName = null;
+      const oldFileNameHeader = "--- ";
+      const newFileNameHeader = "+++ ";
+      const hunkHeaderPrefix = "@@";
+      const oldMode = /^old mode (\d{6})/;
+      const newMode = /^new mode (\d{6})/;
+      const deletedFileMode = /^deleted file mode (\d{6})/;
+      const newFileMode = /^new file mode (\d{6})/;
+      const copyFrom = /^copy from "?(.+)"?/;
+      const copyTo = /^copy to "?(.+)"?/;
+      const renameFrom = /^rename from "?(.+)"?/;
+      const renameTo = /^rename to "?(.+)"?/;
+      const similarityIndex = /^similarity index (\d+)%/;
+      const dissimilarityIndex = /^dissimilarity index (\d+)%/;
+      const index = /^index ([\da-z]+)\.\.([\da-z]+)\s*(\d{6})?/;
+      const binaryFiles = /^Binary files (.*) and (.*) differ/;
+      const binaryDiff = /^GIT binary patch/;
+      const combinedIndex = /^index ([\da-z]+),([\da-z]+)\.\.([\da-z]+)/;
+      const combinedMode = /^mode (\d{6}),(\d{6})\.\.(\d{6})/;
+      const combinedNewFile = /^new file mode (\d{6})/;
+      const combinedDeletedFile = /^deleted file mode (\d{6}),(\d{6})/;
+      const diffLines = diffInput.replace(/\\ No newline at end of file/g, "").replace(/\r\n?/g, "\n").split("\n");
+      function saveBlock() {
+        if (currentBlock !== null && currentFile !== null) {
+          currentFile.blocks.push(currentBlock);
+          currentBlock = null;
+        }
+      }
+      function saveFile() {
+        if (currentFile !== null) {
+          if (!currentFile.oldName && possibleOldName !== null) {
+            currentFile.oldName = possibleOldName;
+          }
+          if (!currentFile.newName && possibleNewName !== null) {
+            currentFile.newName = possibleNewName;
+          }
+          if (currentFile.newName) {
+            files3.push(currentFile);
+            currentFile = null;
+          }
+        }
+        possibleOldName = null;
+        possibleNewName = null;
+      }
+      function startFile() {
+        saveBlock();
+        saveFile();
+        currentFile = {
+          blocks: [],
+          deletedLines: 0,
+          addedLines: 0
+        };
+      }
+      function startBlock(line) {
+        saveBlock();
+        let values;
+        if (currentFile !== null) {
+          if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line)) {
+            currentFile.isCombined = false;
+            oldLine = parseInt(values[1], 10);
+            newLine = parseInt(values[2], 10);
+          } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line)) {
+            currentFile.isCombined = true;
+            oldLine = parseInt(values[1], 10);
+            oldLine2 = parseInt(values[2], 10);
+            newLine = parseInt(values[3], 10);
+          } else {
+            if (line.startsWith(hunkHeaderPrefix)) {
+              console.error("Failed to parse lines, starting in 0!");
+            }
+            oldLine = 0;
+            newLine = 0;
+            currentFile.isCombined = false;
+          }
+        }
+        currentBlock = {
+          lines: [],
+          oldStartLine: oldLine,
+          oldStartLine2: oldLine2,
+          newStartLine: newLine,
+          header: line
+        };
+      }
+      function createLine(line) {
+        if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
+          return;
+        const currentLine = {
+          content: line
+        };
+        const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
+        const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
+        if (startsWithAny2(line, addedPrefixes)) {
+          currentFile.addedLines++;
+          currentLine.type = types_1.LineType.INSERT;
+          currentLine.oldNumber = void 0;
+          currentLine.newNumber = newLine++;
+        } else if (startsWithAny2(line, deletedPrefixes)) {
+          currentFile.deletedLines++;
+          currentLine.type = types_1.LineType.DELETE;
+          currentLine.oldNumber = oldLine++;
+          currentLine.newNumber = void 0;
+        } else {
+          currentLine.type = types_1.LineType.CONTEXT;
+          currentLine.oldNumber = oldLine++;
+          currentLine.newNumber = newLine++;
+        }
+        currentBlock.lines.push(currentLine);
+      }
+      function existHunkHeader(line, lineIdx) {
+        let idx = lineIdx;
+        while (idx < diffLines.length - 3) {
+          if (line.startsWith("diff")) {
+            return false;
+          }
+          if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
+            return true;
+          }
+          idx++;
+        }
+        return false;
+      }
+      diffLines.forEach((line, lineIndex) => {
+        if (!line || line.startsWith("*")) {
+          return;
+        }
+        let values;
+        const prevLine = diffLines[lineIndex - 1];
+        const nxtLine = diffLines[lineIndex + 1];
+        const afterNxtLine = diffLines[lineIndex + 2];
+        if (line.startsWith("diff --git") || line.startsWith("diff --combined")) {
+          startFile();
+          const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
+          if (values = gitDiffStart.exec(line)) {
+            possibleOldName = getFilename2(values[1], void 0, config2.dstPrefix);
+            possibleNewName = getFilename2(values[2], void 0, config2.srcPrefix);
+          }
+          if (currentFile === null) {
+            throw new Error("Where is my file !!!");
+          }
+          currentFile.isGitDiff = true;
+          return;
+        }
+        if (line.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
+          startFile();
+          const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
+          if (values = unixDiffBinaryStart.exec(line)) {
+            possibleOldName = getFilename2(values[1], void 0, config2.dstPrefix);
+            possibleNewName = getFilename2(values[2], void 0, config2.srcPrefix);
+          }
+          if (currentFile === null) {
+            throw new Error("Where is my file !!!");
+          }
+          currentFile.isBinary = true;
+          return;
+        }
+        if (!currentFile || !currentFile.isGitDiff && currentFile && line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
+          startFile();
+        }
+        if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
+          return;
+        }
+        if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line.length > config2.diffMaxLineLength)) {
+          currentFile.isTooBig = true;
+          currentFile.addedLines = 0;
+          currentFile.deletedLines = 0;
+          currentFile.blocks = [];
+          currentBlock = null;
+          const message = typeof config2.diffTooBigMessage === "function" ? config2.diffTooBigMessage(files3.length) : "Diff too big to be displayed";
+          startBlock(message);
+          return;
+        }
+        if (line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
+          if (currentFile && !currentFile.oldName && line.startsWith("--- ") && (values = getSrcFilename2(line, config2.srcPrefix))) {
+            currentFile.oldName = values;
+            currentFile.language = getExtension2(currentFile.oldName, currentFile.language);
+            return;
+          }
+          if (currentFile && !currentFile.newName && line.startsWith("+++ ") && (values = getDstFilename2(line, config2.dstPrefix))) {
+            currentFile.newName = values;
+            currentFile.language = getExtension2(currentFile.newName, currentFile.language);
+            return;
+          }
+        }
+        if (currentFile && (line.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
+          startBlock(line);
+          return;
+        }
+        if (currentBlock && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
+          createLine(line);
+          return;
+        }
+        const doesNotExistHunkHeader = !existHunkHeader(line, lineIndex);
+        if (currentFile === null) {
+          throw new Error("Where is my file !!!");
+        }
+        if (values = oldMode.exec(line)) {
+          currentFile.oldMode = values[1];
+        } else if (values = newMode.exec(line)) {
+          currentFile.newMode = values[1];
+        } else if (values = deletedFileMode.exec(line)) {
+          currentFile.deletedFileMode = values[1];
+          currentFile.isDeleted = true;
+        } else if (values = newFileMode.exec(line)) {
+          currentFile.newFileMode = values[1];
+          currentFile.isNew = true;
+        } else if (values = copyFrom.exec(line)) {
+          if (doesNotExistHunkHeader) {
+            currentFile.oldName = values[1];
+          }
+          currentFile.isCopy = true;
+        } else if (values = copyTo.exec(line)) {
+          if (doesNotExistHunkHeader) {
+            currentFile.newName = values[1];
+          }
+          currentFile.isCopy = true;
+        } else if (values = renameFrom.exec(line)) {
+          if (doesNotExistHunkHeader) {
+            currentFile.oldName = values[1];
+          }
+          currentFile.isRename = true;
+        } else if (values = renameTo.exec(line)) {
+          if (doesNotExistHunkHeader) {
+            currentFile.newName = values[1];
+          }
+          currentFile.isRename = true;
+        } else if (values = binaryFiles.exec(line)) {
+          currentFile.isBinary = true;
+          currentFile.oldName = getFilename2(values[1], void 0, config2.srcPrefix);
+          currentFile.newName = getFilename2(values[2], void 0, config2.dstPrefix);
+          startBlock("Binary file");
+        } else if (binaryDiff.test(line)) {
+          currentFile.isBinary = true;
+          startBlock(line);
+        } else if (values = similarityIndex.exec(line)) {
+          currentFile.unchangedPercentage = parseInt(values[1], 10);
+        } else if (values = dissimilarityIndex.exec(line)) {
+          currentFile.changedPercentage = parseInt(values[1], 10);
+        } else if (values = index.exec(line)) {
+          currentFile.checksumBefore = values[1];
+          currentFile.checksumAfter = values[2];
+          if (values[3])
+            currentFile.mode = values[3];
+        } else if (values = combinedIndex.exec(line)) {
+          currentFile.checksumBefore = [values[2], values[3]];
+          currentFile.checksumAfter = values[1];
+        } else if (values = combinedMode.exec(line)) {
+          currentFile.oldMode = [values[2], values[3]];
+          currentFile.newMode = values[1];
+        } else if (values = combinedNewFile.exec(line)) {
+          currentFile.newFileMode = values[1];
+          currentFile.isNew = true;
+        } else if (values = combinedDeletedFile.exec(line)) {
+          currentFile.deletedFileMode = values[1];
+          currentFile.isDeleted = true;
+        }
+      });
+      saveBlock();
+      saveFile();
+      return files3;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/base.js
+var require_base = __commonJS({
+  "node_modules/diff/libcjs/diff/base.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Diff = (
+      /** @class */
+      (function() {
+        function Diff2() {
+        }
+        Diff2.prototype.diff = function(oldStr, newStr, options) {
+          if (options === void 0) {
+            options = {};
+          }
+          var callback;
+          if (typeof options === "function") {
+            callback = options;
+            options = {};
+          } else if ("callback" in options) {
+            callback = options.callback;
+          }
+          var oldString = this.castInput(oldStr, options);
+          var newString = this.castInput(newStr, options);
+          var oldTokens = this.removeEmpty(this.tokenize(oldString, options));
+          var newTokens = this.removeEmpty(this.tokenize(newString, options));
+          return this.diffWithOptionsObj(oldTokens, newTokens, options, callback);
+        };
+        Diff2.prototype.diffWithOptionsObj = function(oldTokens, newTokens, options, callback) {
+          var _this = this;
+          var _a;
+          var done = function(value) {
+            value = _this.postProcess(value, options);
+            if (callback) {
+              setTimeout(function() {
+                callback(value);
+              }, 0);
+              return void 0;
+            } else {
+              return value;
+            }
+          };
+          var newLen = newTokens.length, oldLen = oldTokens.length;
+          var editLength = 1;
+          var maxEditLength = newLen + oldLen;
+          if (options.maxEditLength != null) {
+            maxEditLength = Math.min(maxEditLength, options.maxEditLength);
+          }
+          var maxExecutionTime = (_a = options.timeout) !== null && _a !== void 0 ? _a : Infinity;
+          var abortAfterTimestamp = Date.now() + maxExecutionTime;
+          var bestPath = [{ oldPos: -1, lastComponent: void 0 }];
+          var newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options);
+          if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+            return done(this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens));
+          }
+          var minDiagonalToConsider = -Infinity, maxDiagonalToConsider = Infinity;
+          var execEditLength = function() {
+            for (var diagonalPath = Math.max(minDiagonalToConsider, -editLength); diagonalPath <= Math.min(maxDiagonalToConsider, editLength); diagonalPath += 2) {
+              var basePath = void 0;
+              var removePath = bestPath[diagonalPath - 1], addPath = bestPath[diagonalPath + 1];
+              if (removePath) {
+                bestPath[diagonalPath - 1] = void 0;
+              }
+              var canAdd = false;
+              if (addPath) {
+                var addPathNewPos = addPath.oldPos - diagonalPath;
+                canAdd = addPath && 0 <= addPathNewPos && addPathNewPos < newLen;
+              }
+              var canRemove = removePath && removePath.oldPos + 1 < oldLen;
+              if (!canAdd && !canRemove) {
+                bestPath[diagonalPath] = void 0;
+                continue;
+              }
+              if (!canRemove || canAdd && removePath.oldPos < addPath.oldPos) {
+                basePath = _this.addToPath(addPath, true, false, 0, options);
+              } else {
+                basePath = _this.addToPath(removePath, false, true, 1, options);
+              }
+              newPos = _this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options);
+              if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+                return done(_this.buildValues(basePath.lastComponent, newTokens, oldTokens)) || true;
+              } else {
+                bestPath[diagonalPath] = basePath;
+                if (basePath.oldPos + 1 >= oldLen) {
+                  maxDiagonalToConsider = Math.min(maxDiagonalToConsider, diagonalPath - 1);
+                }
+                if (newPos + 1 >= newLen) {
+                  minDiagonalToConsider = Math.max(minDiagonalToConsider, diagonalPath + 1);
+                }
+              }
+            }
+            editLength++;
+          };
+          if (callback) {
+            (function exec() {
+              setTimeout(function() {
+                if (editLength > maxEditLength || Date.now() > abortAfterTimestamp) {
+                  return callback(void 0);
+                }
+                if (!execEditLength()) {
+                  exec();
+                }
+              }, 0);
+            })();
+          } else {
+            while (editLength <= maxEditLength && Date.now() <= abortAfterTimestamp) {
+              var ret = execEditLength();
+              if (ret) {
+                return ret;
+              }
+            }
+          }
+        };
+        Diff2.prototype.addToPath = function(path12, added, removed, oldPosInc, options) {
+          var last = path12.lastComponent;
+          if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
+            return {
+              oldPos: path12.oldPos + oldPosInc,
+              lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
+            };
+          } else {
+            return {
+              oldPos: path12.oldPos + oldPosInc,
+              lastComponent: { count: 1, added, removed, previousComponent: last }
+            };
+          }
+        };
+        Diff2.prototype.extractCommon = function(basePath, newTokens, oldTokens, diagonalPath, options) {
+          var newLen = newTokens.length, oldLen = oldTokens.length;
+          var oldPos = basePath.oldPos, newPos = oldPos - diagonalPath, commonCount = 0;
+          while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options)) {
+            newPos++;
+            oldPos++;
+            commonCount++;
+            if (options.oneChangePerToken) {
+              basePath.lastComponent = { count: 1, previousComponent: basePath.lastComponent, added: false, removed: false };
+            }
+          }
+          if (commonCount && !options.oneChangePerToken) {
+            basePath.lastComponent = { count: commonCount, previousComponent: basePath.lastComponent, added: false, removed: false };
+          }
+          basePath.oldPos = oldPos;
+          return newPos;
+        };
+        Diff2.prototype.equals = function(left, right, options) {
+          if (options.comparator) {
+            return options.comparator(left, right);
+          } else {
+            return left === right || !!options.ignoreCase && left.toLowerCase() === right.toLowerCase();
+          }
+        };
+        Diff2.prototype.removeEmpty = function(array) {
+          var ret = [];
+          for (var i = 0; i < array.length; i++) {
+            if (array[i]) {
+              ret.push(array[i]);
+            }
+          }
+          return ret;
+        };
+        Diff2.prototype.castInput = function(value, options) {
+          return value;
+        };
+        Diff2.prototype.tokenize = function(value, options) {
+          return Array.from(value);
+        };
+        Diff2.prototype.join = function(chars) {
+          return chars.join("");
+        };
+        Diff2.prototype.postProcess = function(changeObjects, options) {
+          return changeObjects;
+        };
+        Object.defineProperty(Diff2.prototype, "useLongestToken", {
+          get: function() {
+            return false;
+          },
+          enumerable: false,
+          configurable: true
+        });
+        Diff2.prototype.buildValues = function(lastComponent, newTokens, oldTokens) {
+          var components = [];
+          var nextComponent;
+          while (lastComponent) {
+            components.push(lastComponent);
+            nextComponent = lastComponent.previousComponent;
+            delete lastComponent.previousComponent;
+            lastComponent = nextComponent;
+          }
+          components.reverse();
+          var componentLen = components.length;
+          var componentPos = 0, newPos = 0, oldPos = 0;
+          for (; componentPos < componentLen; componentPos++) {
+            var component = components[componentPos];
+            if (!component.removed) {
+              if (!component.added && this.useLongestToken) {
+                var value = newTokens.slice(newPos, newPos + component.count);
+                value = value.map(function(value2, i) {
+                  var oldValue = oldTokens[oldPos + i];
+                  return oldValue.length > value2.length ? oldValue : value2;
+                });
+                component.value = this.join(value);
+              } else {
+                component.value = this.join(newTokens.slice(newPos, newPos + component.count));
+              }
+              newPos += component.count;
+              if (!component.added) {
+                oldPos += component.count;
+              }
+            } else {
+              component.value = this.join(oldTokens.slice(oldPos, oldPos + component.count));
+              oldPos += component.count;
+            }
+          }
+          return components;
+        };
+        return Diff2;
+      })()
+    );
+    exports.default = Diff;
+  }
+});
+
+// node_modules/diff/libcjs/diff/character.js
+var require_character = __commonJS({
+  "node_modules/diff/libcjs/diff/character.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.characterDiff = void 0;
+    exports.diffChars = diffChars;
+    var base_js_1 = require_base();
+    var CharacterDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(CharacterDiff2, _super);
+        function CharacterDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return CharacterDiff2;
+      })(base_js_1.default)
+    );
+    exports.characterDiff = new CharacterDiff();
+    function diffChars(oldStr, newStr, options) {
+      return exports.characterDiff.diff(oldStr, newStr, options);
+    }
+  }
+});
+
+// node_modules/diff/libcjs/util/string.js
+var require_string = __commonJS({
+  "node_modules/diff/libcjs/util/string.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.longestCommonPrefix = longestCommonPrefix;
+    exports.longestCommonSuffix = longestCommonSuffix;
+    exports.replacePrefix = replacePrefix;
+    exports.replaceSuffix = replaceSuffix;
+    exports.removePrefix = removePrefix;
+    exports.removeSuffix = removeSuffix;
+    exports.maximumOverlap = maximumOverlap;
+    exports.hasOnlyWinLineEndings = hasOnlyWinLineEndings;
+    exports.hasOnlyUnixLineEndings = hasOnlyUnixLineEndings;
+    exports.segment = segment;
+    exports.trailingWs = trailingWs;
+    exports.leadingWs = leadingWs;
+    exports.leadingAndTrailingWs = leadingAndTrailingWs;
+    function longestCommonPrefix(str1, str2) {
+      var i;
+      for (i = 0; i < str1.length && i < str2.length; i++) {
+        if (str1[i] != str2[i]) {
+          return str1.slice(0, i);
+        }
+      }
+      return str1.slice(0, i);
+    }
+    function longestCommonSuffix(str1, str2) {
+      var i;
+      if (!str1 || !str2 || str1[str1.length - 1] != str2[str2.length - 1]) {
+        return "";
+      }
+      for (i = 0; i < str1.length && i < str2.length; i++) {
+        if (str1[str1.length - (i + 1)] != str2[str2.length - (i + 1)]) {
+          return str1.slice(-i);
+        }
+      }
+      return str1.slice(-i);
+    }
+    function replacePrefix(string, oldPrefix, newPrefix) {
+      if (string.slice(0, oldPrefix.length) != oldPrefix) {
+        throw Error("string ".concat(JSON.stringify(string), " doesn't start with prefix ").concat(JSON.stringify(oldPrefix), "; this is a bug"));
+      }
+      return newPrefix + string.slice(oldPrefix.length);
+    }
+    function replaceSuffix(string, oldSuffix, newSuffix) {
+      if (!oldSuffix) {
+        return string + newSuffix;
+      }
+      if (string.slice(-oldSuffix.length) != oldSuffix) {
+        throw Error("string ".concat(JSON.stringify(string), " doesn't end with suffix ").concat(JSON.stringify(oldSuffix), "; this is a bug"));
+      }
+      return string.slice(0, -oldSuffix.length) + newSuffix;
+    }
+    function removePrefix(string, oldPrefix) {
+      return replacePrefix(string, oldPrefix, "");
+    }
+    function removeSuffix(string, oldSuffix) {
+      return replaceSuffix(string, oldSuffix, "");
+    }
+    function maximumOverlap(string1, string2) {
+      return string2.slice(0, overlapCount(string1, string2));
+    }
+    function overlapCount(a, b) {
+      var startA = 0;
+      if (a.length > b.length) {
+        startA = a.length - b.length;
+      }
+      var endB = b.length;
+      if (a.length < b.length) {
+        endB = a.length;
+      }
+      var map = Array(endB);
+      var k = 0;
+      map[0] = 0;
+      for (var j = 1; j < endB; j++) {
+        if (b[j] == b[k]) {
+          map[j] = map[k];
+        } else {
+          map[j] = k;
+        }
+        while (k > 0 && b[j] != b[k]) {
+          k = map[k];
+        }
+        if (b[j] == b[k]) {
+          k++;
+        }
+      }
+      k = 0;
+      for (var i = startA; i < a.length; i++) {
+        while (k > 0 && a[i] != b[k]) {
+          k = map[k];
+        }
+        if (a[i] == b[k]) {
+          k++;
+        }
+      }
+      return k;
+    }
+    function hasOnlyWinLineEndings(string) {
+      return string.includes("\r\n") && !string.startsWith("\n") && !string.match(/[^\r]\n/);
+    }
+    function hasOnlyUnixLineEndings(string) {
+      return !string.includes("\r\n") && string.includes("\n");
+    }
+    function segment(string, segmenter) {
+      var parts = [];
+      for (var _i = 0, _a = Array.from(segmenter.segment(string)); _i < _a.length; _i++) {
+        var segmentObj = _a[_i];
+        var segment_1 = segmentObj.segment;
+        if (parts.length && /\s/.test(parts[parts.length - 1]) && /\s/.test(segment_1)) {
+          parts[parts.length - 1] += segment_1;
+        } else {
+          parts.push(segment_1);
+        }
+      }
+      return parts;
+    }
+    function trailingWs(string, segmenter) {
+      if (segmenter) {
+        return leadingAndTrailingWs(string, segmenter)[1];
+      }
+      var i;
+      for (i = string.length - 1; i >= 0; i--) {
+        if (!string[i].match(/\s/)) {
+          break;
+        }
+      }
+      return string.substring(i + 1);
+    }
+    function leadingWs(string, segmenter) {
+      if (segmenter) {
+        return leadingAndTrailingWs(string, segmenter)[0];
+      }
+      var match = string.match(/^\s*/);
+      return match ? match[0] : "";
+    }
+    function leadingAndTrailingWs(string, segmenter) {
+      if (!segmenter) {
+        return [leadingWs(string), trailingWs(string)];
+      }
+      if (segmenter.resolvedOptions().granularity != "word") {
+        throw new Error('The segmenter passed must have a granularity of "word"');
+      }
+      var segments = segment(string, segmenter);
+      var firstSeg = segments[0];
+      var lastSeg = segments[segments.length - 1];
+      var head = /\s/.test(firstSeg) ? firstSeg : "";
+      var tail = /\s/.test(lastSeg) ? lastSeg : "";
+      return [head, tail];
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/word.js
+var require_word = __commonJS({
+  "node_modules/diff/libcjs/diff/word.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.wordsWithSpaceDiff = exports.wordDiff = void 0;
+    exports.diffWords = diffWords;
+    exports.diffWordsWithSpace = diffWordsWithSpace;
+    var base_js_1 = require_base();
+    var string_js_1 = require_string();
+    var extendedWordChars = "a-zA-Z0-9_\\u{AD}\\u{C0}-\\u{D6}\\u{D8}-\\u{F6}\\u{F8}-\\u{2C6}\\u{2C8}-\\u{2D7}\\u{2DE}-\\u{2FF}\\u{1E00}-\\u{1EFF}";
+    var tokenizeIncludingWhitespace = new RegExp("[".concat(extendedWordChars, "]+|\\s+|[^").concat(extendedWordChars, "]"), "ug");
+    var WordDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(WordDiff2, _super);
+        function WordDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        WordDiff2.prototype.equals = function(left, right, options) {
+          if (options.ignoreCase) {
+            left = left.toLowerCase();
+            right = right.toLowerCase();
+          }
+          return left.trim() === right.trim();
+        };
+        WordDiff2.prototype.tokenize = function(value, options) {
+          if (options === void 0) {
+            options = {};
+          }
+          var parts;
+          if (options.intlSegmenter) {
+            var segmenter = options.intlSegmenter;
+            if (segmenter.resolvedOptions().granularity != "word") {
+              throw new Error('The segmenter passed must have a granularity of "word"');
+            }
+            parts = (0, string_js_1.segment)(value, segmenter);
+          } else {
+            parts = value.match(tokenizeIncludingWhitespace) || [];
+          }
+          var tokens = [];
+          var prevPart = null;
+          parts.forEach(function(part) {
+            if (/\s/.test(part)) {
+              if (prevPart == null) {
+                tokens.push(part);
+              } else {
+                tokens.push(tokens.pop() + part);
+              }
+            } else if (prevPart != null && /\s/.test(prevPart)) {
+              if (tokens[tokens.length - 1] == prevPart) {
+                tokens.push(tokens.pop() + part);
+              } else {
+                tokens.push(prevPart + part);
+              }
+            } else {
+              tokens.push(part);
+            }
+            prevPart = part;
+          });
+          return tokens;
+        };
+        WordDiff2.prototype.join = function(tokens) {
+          return tokens.map(function(token, i) {
+            if (i == 0) {
+              return token;
+            } else {
+              return token.replace(/^\s+/, "");
+            }
+          }).join("");
+        };
+        WordDiff2.prototype.postProcess = function(changes, options) {
+          if (!changes || options.oneChangePerToken) {
+            return changes;
+          }
+          var lastKeep = null;
+          var insertion = null;
+          var deletion = null;
+          changes.forEach(function(change) {
+            if (change.added) {
+              insertion = change;
+            } else if (change.removed) {
+              deletion = change;
+            } else {
+              if (insertion || deletion) {
+                dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, change, options.intlSegmenter);
+              }
+              lastKeep = change;
+              insertion = null;
+              deletion = null;
+            }
+          });
+          if (insertion || deletion) {
+            dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options.intlSegmenter);
+          }
+          return changes;
+        };
+        return WordDiff2;
+      })(base_js_1.default)
+    );
+    exports.wordDiff = new WordDiff();
+    function diffWords(oldStr, newStr, options) {
+      if ((options === null || options === void 0 ? void 0 : options.ignoreWhitespace) != null && !options.ignoreWhitespace) {
+        return diffWordsWithSpace(oldStr, newStr, options);
+      }
+      return exports.wordDiff.diff(oldStr, newStr, options);
+    }
+    function dedupeWhitespaceInChangeObjects(startKeep, deletion, insertion, endKeep, segmenter) {
+      if (deletion && insertion) {
+        var _a = (0, string_js_1.leadingAndTrailingWs)(deletion.value, segmenter), oldWsPrefix = _a[0], oldWsSuffix = _a[1];
+        var _b = (0, string_js_1.leadingAndTrailingWs)(insertion.value, segmenter), newWsPrefix = _b[0], newWsSuffix = _b[1];
+        if (startKeep) {
+          var commonWsPrefix = (0, string_js_1.longestCommonPrefix)(oldWsPrefix, newWsPrefix);
+          startKeep.value = (0, string_js_1.replaceSuffix)(startKeep.value, newWsPrefix, commonWsPrefix);
+          deletion.value = (0, string_js_1.removePrefix)(deletion.value, commonWsPrefix);
+          insertion.value = (0, string_js_1.removePrefix)(insertion.value, commonWsPrefix);
+        }
+        if (endKeep) {
+          var commonWsSuffix = (0, string_js_1.longestCommonSuffix)(oldWsSuffix, newWsSuffix);
+          endKeep.value = (0, string_js_1.replacePrefix)(endKeep.value, newWsSuffix, commonWsSuffix);
+          deletion.value = (0, string_js_1.removeSuffix)(deletion.value, commonWsSuffix);
+          insertion.value = (0, string_js_1.removeSuffix)(insertion.value, commonWsSuffix);
+        }
+      } else if (insertion) {
+        if (startKeep) {
+          var ws = (0, string_js_1.leadingWs)(insertion.value, segmenter);
+          insertion.value = insertion.value.substring(ws.length);
+        }
+        if (endKeep) {
+          var ws = (0, string_js_1.leadingWs)(endKeep.value, segmenter);
+          endKeep.value = endKeep.value.substring(ws.length);
+        }
+      } else if (startKeep && endKeep) {
+        var newWsFull = (0, string_js_1.leadingWs)(endKeep.value, segmenter), _c = (0, string_js_1.leadingAndTrailingWs)(deletion.value, segmenter), delWsStart = _c[0], delWsEnd = _c[1];
+        var newWsStart = (0, string_js_1.longestCommonPrefix)(newWsFull, delWsStart);
+        deletion.value = (0, string_js_1.removePrefix)(deletion.value, newWsStart);
+        var newWsEnd = (0, string_js_1.longestCommonSuffix)((0, string_js_1.removePrefix)(newWsFull, newWsStart), delWsEnd);
+        deletion.value = (0, string_js_1.removeSuffix)(deletion.value, newWsEnd);
+        endKeep.value = (0, string_js_1.replacePrefix)(endKeep.value, newWsFull, newWsEnd);
+        startKeep.value = (0, string_js_1.replaceSuffix)(startKeep.value, newWsFull, newWsFull.slice(0, newWsFull.length - newWsEnd.length));
+      } else if (endKeep) {
+        var endKeepWsPrefix = (0, string_js_1.leadingWs)(endKeep.value, segmenter);
+        var deletionWsSuffix = (0, string_js_1.trailingWs)(deletion.value, segmenter);
+        var overlap = (0, string_js_1.maximumOverlap)(deletionWsSuffix, endKeepWsPrefix);
+        deletion.value = (0, string_js_1.removeSuffix)(deletion.value, overlap);
+      } else if (startKeep) {
+        var startKeepWsSuffix = (0, string_js_1.trailingWs)(startKeep.value, segmenter);
+        var deletionWsPrefix = (0, string_js_1.leadingWs)(deletion.value, segmenter);
+        var overlap = (0, string_js_1.maximumOverlap)(startKeepWsSuffix, deletionWsPrefix);
+        deletion.value = (0, string_js_1.removePrefix)(deletion.value, overlap);
+      }
+    }
+    var WordsWithSpaceDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(WordsWithSpaceDiff2, _super);
+        function WordsWithSpaceDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        WordsWithSpaceDiff2.prototype.tokenize = function(value) {
+          var regex2 = new RegExp("(\\r?\\n)|[".concat(extendedWordChars, "]+|[^\\S\\n\\r]+|[^").concat(extendedWordChars, "]"), "ug");
+          return value.match(regex2) || [];
+        };
+        return WordsWithSpaceDiff2;
+      })(base_js_1.default)
+    );
+    exports.wordsWithSpaceDiff = new WordsWithSpaceDiff();
+    function diffWordsWithSpace(oldStr, newStr, options) {
+      return exports.wordsWithSpaceDiff.diff(oldStr, newStr, options);
+    }
+  }
+});
+
+// node_modules/diff/libcjs/util/params.js
+var require_params = __commonJS({
+  "node_modules/diff/libcjs/util/params.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.generateOptions = generateOptions;
+    function generateOptions(options, defaults) {
+      if (typeof options === "function") {
+        defaults.callback = options;
+      } else if (options) {
+        for (var name2 in options) {
+          if (Object.prototype.hasOwnProperty.call(options, name2)) {
+            defaults[name2] = options[name2];
+          }
+        }
+      }
+      return defaults;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/line.js
+var require_line = __commonJS({
+  "node_modules/diff/libcjs/diff/line.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.lineDiff = void 0;
+    exports.diffLines = diffLines;
+    exports.diffTrimmedLines = diffTrimmedLines;
+    exports.tokenize = tokenize;
+    var base_js_1 = require_base();
+    var params_js_1 = require_params();
+    var LineDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(LineDiff2, _super);
+        function LineDiff2() {
+          var _this = _super !== null && _super.apply(this, arguments) || this;
+          _this.tokenize = tokenize;
+          return _this;
+        }
+        LineDiff2.prototype.equals = function(left, right, options) {
+          if (options.ignoreWhitespace) {
+            if (!options.newlineIsToken || !left.includes("\n")) {
+              left = left.trim();
+            }
+            if (!options.newlineIsToken || !right.includes("\n")) {
+              right = right.trim();
+            }
+          } else if (options.ignoreNewlineAtEof && !options.newlineIsToken) {
+            if (left.endsWith("\n")) {
+              left = left.slice(0, -1);
+            }
+            if (right.endsWith("\n")) {
+              right = right.slice(0, -1);
+            }
+          }
+          return _super.prototype.equals.call(this, left, right, options);
+        };
+        return LineDiff2;
+      })(base_js_1.default)
+    );
+    exports.lineDiff = new LineDiff();
+    function diffLines(oldStr, newStr, options) {
+      return exports.lineDiff.diff(oldStr, newStr, options);
+    }
+    function diffTrimmedLines(oldStr, newStr, options) {
+      options = (0, params_js_1.generateOptions)(options, { ignoreWhitespace: true });
+      return exports.lineDiff.diff(oldStr, newStr, options);
+    }
+    function tokenize(value, options) {
+      if (options.stripTrailingCr) {
+        value = value.replace(/\r\n/g, "\n");
+      }
+      var retLines = [], linesAndNewlines = value.split(/(\n|\r\n)/);
+      if (!linesAndNewlines[linesAndNewlines.length - 1]) {
+        linesAndNewlines.pop();
+      }
+      for (var i = 0; i < linesAndNewlines.length; i++) {
+        var line = linesAndNewlines[i];
+        if (i % 2 && !options.newlineIsToken) {
+          retLines[retLines.length - 1] += line;
+        } else {
+          retLines.push(line);
+        }
+      }
+      return retLines;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/sentence.js
+var require_sentence = __commonJS({
+  "node_modules/diff/libcjs/diff/sentence.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.sentenceDiff = void 0;
+    exports.diffSentences = diffSentences;
+    var base_js_1 = require_base();
+    function isSentenceEndPunct(char) {
+      return char == "." || char == "!" || char == "?";
+    }
+    var SentenceDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(SentenceDiff2, _super);
+        function SentenceDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        SentenceDiff2.prototype.tokenize = function(value) {
+          var _a;
+          var result = [];
+          var tokenStartI = 0;
+          for (var i = 0; i < value.length; i++) {
+            if (i == value.length - 1) {
+              result.push(value.slice(tokenStartI));
+              break;
+            }
+            if (isSentenceEndPunct(value[i]) && value[i + 1].match(/\s/)) {
+              result.push(value.slice(tokenStartI, i + 1));
+              i = tokenStartI = i + 1;
+              while ((_a = value[i + 1]) === null || _a === void 0 ? void 0 : _a.match(/\s/)) {
+                i++;
+              }
+              result.push(value.slice(tokenStartI, i + 1));
+              tokenStartI = i + 1;
+            }
+          }
+          return result;
+        };
+        return SentenceDiff2;
+      })(base_js_1.default)
+    );
+    exports.sentenceDiff = new SentenceDiff();
+    function diffSentences(oldStr, newStr, options) {
+      return exports.sentenceDiff.diff(oldStr, newStr, options);
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/css.js
+var require_css = __commonJS({
+  "node_modules/diff/libcjs/diff/css.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.cssDiff = void 0;
+    exports.diffCss = diffCss;
+    var base_js_1 = require_base();
+    var CssDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(CssDiff2, _super);
+        function CssDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        CssDiff2.prototype.tokenize = function(value) {
+          return value.split(/([{}:;,]|\s+)/);
+        };
+        return CssDiff2;
+      })(base_js_1.default)
+    );
+    exports.cssDiff = new CssDiff();
+    function diffCss(oldStr, newStr, options) {
+      return exports.cssDiff.diff(oldStr, newStr, options);
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/json.js
+var require_json = __commonJS({
+  "node_modules/diff/libcjs/diff/json.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.jsonDiff = void 0;
+    exports.diffJson = diffJson;
+    exports.canonicalize = canonicalize;
+    var base_js_1 = require_base();
+    var line_js_1 = require_line();
+    var JsonDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(JsonDiff2, _super);
+        function JsonDiff2() {
+          var _this = _super !== null && _super.apply(this, arguments) || this;
+          _this.tokenize = line_js_1.tokenize;
+          return _this;
+        }
+        Object.defineProperty(JsonDiff2.prototype, "useLongestToken", {
+          get: function() {
+            return true;
+          },
+          enumerable: false,
+          configurable: true
+        });
+        JsonDiff2.prototype.castInput = function(value, options) {
+          var undefinedReplacement = options.undefinedReplacement, _a = options.stringifyReplacer, stringifyReplacer = _a === void 0 ? function(k, v) {
+            return typeof v === "undefined" ? undefinedReplacement : v;
+          } : _a;
+          return typeof value === "string" ? value : JSON.stringify(canonicalize(value, null, null, stringifyReplacer), null, "  ");
+        };
+        JsonDiff2.prototype.equals = function(left, right, options) {
+          return _super.prototype.equals.call(this, left.replace(/,([\r\n])/g, "$1"), right.replace(/,([\r\n])/g, "$1"), options);
+        };
+        return JsonDiff2;
+      })(base_js_1.default)
+    );
+    exports.jsonDiff = new JsonDiff();
+    function diffJson(oldStr, newStr, options) {
+      return exports.jsonDiff.diff(oldStr, newStr, options);
+    }
+    function canonicalize(obj, stack, replacementStack, replacer, key2) {
+      stack = stack || [];
+      replacementStack = replacementStack || [];
+      if (replacer) {
+        obj = replacer(key2 === void 0 ? "" : key2, obj);
+      }
+      var i;
+      for (i = 0; i < stack.length; i += 1) {
+        if (stack[i] === obj) {
+          return replacementStack[i];
+        }
+      }
+      var canonicalizedObj;
+      if ("[object Array]" === Object.prototype.toString.call(obj)) {
+        stack.push(obj);
+        canonicalizedObj = new Array(obj.length);
+        replacementStack.push(canonicalizedObj);
+        for (i = 0; i < obj.length; i += 1) {
+          canonicalizedObj[i] = canonicalize(obj[i], stack, replacementStack, replacer, String(i));
+        }
+        stack.pop();
+        replacementStack.pop();
+        return canonicalizedObj;
+      }
+      if (obj && obj.toJSON) {
+        obj = obj.toJSON();
+      }
+      if (typeof obj === "object" && obj !== null) {
+        stack.push(obj);
+        canonicalizedObj = {};
+        replacementStack.push(canonicalizedObj);
+        var sortedKeys = [];
+        var key_1;
+        for (key_1 in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key_1)) {
+            sortedKeys.push(key_1);
+          }
+        }
+        sortedKeys.sort();
+        for (i = 0; i < sortedKeys.length; i += 1) {
+          key_1 = sortedKeys[i];
+          canonicalizedObj[key_1] = canonicalize(obj[key_1], stack, replacementStack, replacer, key_1);
+        }
+        stack.pop();
+        replacementStack.pop();
+      } else {
+        canonicalizedObj = obj;
+      }
+      return canonicalizedObj;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/diff/array.js
+var require_array = __commonJS({
+  "node_modules/diff/libcjs/diff/array.js"(exports) {
+    "use strict";
+    var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
+      var extendStatics = function(d, b) {
+        extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
+          d2.__proto__ = b2;
+        } || function(d2, b2) {
+          for (var p in b2) if (Object.prototype.hasOwnProperty.call(b2, p)) d2[p] = b2[p];
+        };
+        return extendStatics(d, b);
+      };
+      return function(d, b) {
+        if (typeof b !== "function" && b !== null)
+          throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.arrayDiff = void 0;
+    exports.diffArrays = diffArrays;
+    var base_js_1 = require_base();
+    var ArrayDiff = (
+      /** @class */
+      (function(_super) {
+        __extends(ArrayDiff2, _super);
+        function ArrayDiff2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        ArrayDiff2.prototype.tokenize = function(value) {
+          return value.slice();
+        };
+        ArrayDiff2.prototype.join = function(value) {
+          return value;
+        };
+        ArrayDiff2.prototype.removeEmpty = function(value) {
+          return value;
+        };
+        return ArrayDiff2;
+      })(base_js_1.default)
+    );
+    exports.arrayDiff = new ArrayDiff();
+    function diffArrays(oldArr, newArr, options) {
+      return exports.arrayDiff.diff(oldArr, newArr, options);
+    }
+  }
+});
+
+// node_modules/diff/libcjs/patch/line-endings.js
+var require_line_endings = __commonJS({
+  "node_modules/diff/libcjs/patch/line-endings.js"(exports) {
+    "use strict";
+    var __assign = exports && exports.__assign || function() {
+      __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.unixToWin = unixToWin;
+    exports.winToUnix = winToUnix;
+    exports.isUnix = isUnix;
+    exports.isWin = isWin;
+    function unixToWin(patch) {
+      if (Array.isArray(patch)) {
+        return patch.map(function(p) {
+          return unixToWin(p);
+        });
+      }
+      return __assign(__assign({}, patch), { hunks: patch.hunks.map(function(hunk) {
+        return __assign(__assign({}, hunk), { lines: hunk.lines.map(function(line, i) {
+          var _a;
+          return line.startsWith("\\") || line.endsWith("\r") || ((_a = hunk.lines[i + 1]) === null || _a === void 0 ? void 0 : _a.startsWith("\\")) ? line : line + "\r";
+        }) });
+      }) });
+    }
+    function winToUnix(patch) {
+      if (Array.isArray(patch)) {
+        return patch.map(function(p) {
+          return winToUnix(p);
+        });
+      }
+      return __assign(__assign({}, patch), { hunks: patch.hunks.map(function(hunk) {
+        return __assign(__assign({}, hunk), { lines: hunk.lines.map(function(line) {
+          return line.endsWith("\r") ? line.substring(0, line.length - 1) : line;
+        }) });
+      }) });
+    }
+    function isUnix(patch) {
+      if (!Array.isArray(patch)) {
+        patch = [patch];
+      }
+      return !patch.some(function(index) {
+        return index.hunks.some(function(hunk) {
+          return hunk.lines.some(function(line) {
+            return !line.startsWith("\\") && line.endsWith("\r");
+          });
+        });
+      });
+    }
+    function isWin(patch) {
+      if (!Array.isArray(patch)) {
+        patch = [patch];
+      }
+      return patch.some(function(index) {
+        return index.hunks.some(function(hunk) {
+          return hunk.lines.some(function(line) {
+            return line.endsWith("\r");
+          });
+        });
+      }) && patch.every(function(index) {
+        return index.hunks.every(function(hunk) {
+          return hunk.lines.every(function(line, i) {
+            var _a;
+            return line.startsWith("\\") || line.endsWith("\r") || ((_a = hunk.lines[i + 1]) === null || _a === void 0 ? void 0 : _a.startsWith("\\"));
+          });
+        });
+      });
+    }
+  }
+});
+
+// node_modules/diff/libcjs/patch/parse.js
+var require_parse = __commonJS({
+  "node_modules/diff/libcjs/patch/parse.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.parsePatch = parsePatch;
+    function parsePatch(uniDiff) {
+      var diffstr = uniDiff.split(/\n/), list3 = [];
+      var i = 0;
+      function parseIndex() {
+        var index = {};
+        list3.push(index);
+        while (i < diffstr.length) {
+          var line = diffstr[i];
+          if (/^(---|\+\+\+|@@)\s/.test(line)) {
+            break;
+          }
+          var headerMatch = /^(?:Index:|diff(?: -r \w+)+)\s+/.exec(line);
+          if (headerMatch) {
+            index.index = line.substring(headerMatch[0].length).trim();
+          }
+          i++;
+        }
+        parseFileHeader(index);
+        parseFileHeader(index);
+        index.hunks = [];
+        while (i < diffstr.length) {
+          var line = diffstr[i];
+          if (/^(Index:\s|diff\s|---\s|\+\+\+\s|===================================================================)/.test(line)) {
+            break;
+          } else if (/^@@/.test(line)) {
+            index.hunks.push(parseHunk());
+          } else if (line) {
+            throw new Error("Unknown line " + (i + 1) + " " + JSON.stringify(line));
+          } else {
+            i++;
+          }
+        }
+      }
+      function parseFileHeader(index) {
+        var fileHeaderMatch = /^(---|\+\+\+)\s+/.exec(diffstr[i]);
+        if (fileHeaderMatch) {
+          var prefix = fileHeaderMatch[1], data = diffstr[i].substring(3).trim().split("	", 2), header = (data[1] || "").trim();
+          var fileName = data[0].replace(/\\\\/g, "\\");
+          if (fileName.startsWith('"') && fileName.endsWith('"')) {
+            fileName = fileName.substr(1, fileName.length - 2);
+          }
+          if (prefix === "---") {
+            index.oldFileName = fileName;
+            index.oldHeader = header;
+          } else {
+            index.newFileName = fileName;
+            index.newHeader = header;
+          }
+          i++;
+        }
+      }
+      function parseHunk() {
+        var _a;
+        var chunkHeaderIndex = i, chunkHeaderLine = diffstr[i++], chunkHeader = chunkHeaderLine.split(/@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+        var hunk = {
+          oldStart: +chunkHeader[1],
+          oldLines: typeof chunkHeader[2] === "undefined" ? 1 : +chunkHeader[2],
+          newStart: +chunkHeader[3],
+          newLines: typeof chunkHeader[4] === "undefined" ? 1 : +chunkHeader[4],
+          lines: []
+        };
+        if (hunk.oldLines === 0) {
+          hunk.oldStart += 1;
+        }
+        if (hunk.newLines === 0) {
+          hunk.newStart += 1;
+        }
+        var addCount = 0, removeCount = 0;
+        for (; i < diffstr.length && (removeCount < hunk.oldLines || addCount < hunk.newLines || ((_a = diffstr[i]) === null || _a === void 0 ? void 0 : _a.startsWith("\\"))); i++) {
+          var operation = diffstr[i].length == 0 && i != diffstr.length - 1 ? " " : diffstr[i][0];
+          if (operation === "+" || operation === "-" || operation === " " || operation === "\\") {
+            hunk.lines.push(diffstr[i]);
+            if (operation === "+") {
+              addCount++;
+            } else if (operation === "-") {
+              removeCount++;
+            } else if (operation === " ") {
+              addCount++;
+              removeCount++;
+            }
+          } else {
+            throw new Error("Hunk at line ".concat(chunkHeaderIndex + 1, " contained invalid line ").concat(diffstr[i]));
+          }
+        }
+        if (!addCount && hunk.newLines === 1) {
+          hunk.newLines = 0;
+        }
+        if (!removeCount && hunk.oldLines === 1) {
+          hunk.oldLines = 0;
+        }
+        if (addCount !== hunk.newLines) {
+          throw new Error("Added line count did not match for hunk at line " + (chunkHeaderIndex + 1));
+        }
+        if (removeCount !== hunk.oldLines) {
+          throw new Error("Removed line count did not match for hunk at line " + (chunkHeaderIndex + 1));
+        }
+        return hunk;
+      }
+      while (i < diffstr.length) {
+        parseIndex();
+      }
+      return list3;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/util/distance-iterator.js
+var require_distance_iterator = __commonJS({
+  "node_modules/diff/libcjs/util/distance-iterator.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.default = default_1;
+    function default_1(start2, minLine, maxLine) {
+      var wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
+      return function iterator() {
+        if (wantForward && !forwardExhausted) {
+          if (backwardExhausted) {
+            localOffset++;
+          } else {
+            wantForward = false;
+          }
+          if (start2 + localOffset <= maxLine) {
+            return start2 + localOffset;
+          }
+          forwardExhausted = true;
+        }
+        if (!backwardExhausted) {
+          if (!forwardExhausted) {
+            wantForward = true;
+          }
+          if (minLine <= start2 - localOffset) {
+            return start2 - localOffset++;
+          }
+          backwardExhausted = true;
+          return iterator();
+        }
+        return void 0;
+      };
+    }
+  }
+});
+
+// node_modules/diff/libcjs/patch/apply.js
+var require_apply = __commonJS({
+  "node_modules/diff/libcjs/patch/apply.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.applyPatch = applyPatch;
+    exports.applyPatches = applyPatches;
+    var string_js_1 = require_string();
+    var line_endings_js_1 = require_line_endings();
+    var parse_js_1 = require_parse();
+    var distance_iterator_js_1 = require_distance_iterator();
+    function applyPatch(source, patch, options) {
+      if (options === void 0) {
+        options = {};
+      }
+      var patches;
+      if (typeof patch === "string") {
+        patches = (0, parse_js_1.parsePatch)(patch);
+      } else if (Array.isArray(patch)) {
+        patches = patch;
+      } else {
+        patches = [patch];
+      }
+      if (patches.length > 1) {
+        throw new Error("applyPatch only works with a single input.");
+      }
+      return applyStructuredPatch(source, patches[0], options);
+    }
+    function applyStructuredPatch(source, patch, options) {
+      if (options === void 0) {
+        options = {};
+      }
+      if (options.autoConvertLineEndings || options.autoConvertLineEndings == null) {
+        if ((0, string_js_1.hasOnlyWinLineEndings)(source) && (0, line_endings_js_1.isUnix)(patch)) {
+          patch = (0, line_endings_js_1.unixToWin)(patch);
+        } else if ((0, string_js_1.hasOnlyUnixLineEndings)(source) && (0, line_endings_js_1.isWin)(patch)) {
+          patch = (0, line_endings_js_1.winToUnix)(patch);
+        }
+      }
+      var lines = source.split("\n"), hunks = patch.hunks, compareLine = options.compareLine || (function(lineNumber, line2, operation, patchContent) {
+        return line2 === patchContent;
+      }), fuzzFactor = options.fuzzFactor || 0;
+      var minLine = 0;
+      if (fuzzFactor < 0 || !Number.isInteger(fuzzFactor)) {
+        throw new Error("fuzzFactor must be a non-negative integer");
+      }
+      if (!hunks.length) {
+        return source;
+      }
+      var prevLine = "", removeEOFNL = false, addEOFNL = false;
+      for (var i = 0; i < hunks[hunks.length - 1].lines.length; i++) {
+        var line = hunks[hunks.length - 1].lines[i];
+        if (line[0] == "\\") {
+          if (prevLine[0] == "+") {
+            removeEOFNL = true;
+          } else if (prevLine[0] == "-") {
+            addEOFNL = true;
+          }
+        }
+        prevLine = line;
+      }
+      if (removeEOFNL) {
+        if (addEOFNL) {
+          if (!fuzzFactor && lines[lines.length - 1] == "") {
+            return false;
+          }
+        } else if (lines[lines.length - 1] == "") {
+          lines.pop();
+        } else if (!fuzzFactor) {
+          return false;
+        }
+      } else if (addEOFNL) {
+        if (lines[lines.length - 1] != "") {
+          lines.push("");
+        } else if (!fuzzFactor) {
+          return false;
+        }
+      }
+      function applyHunk(hunkLines, toPos2, maxErrors2, hunkLinesI, lastContextLineMatched, patchedLines, patchedLinesLength) {
+        if (hunkLinesI === void 0) {
+          hunkLinesI = 0;
+        }
+        if (lastContextLineMatched === void 0) {
+          lastContextLineMatched = true;
+        }
+        if (patchedLines === void 0) {
+          patchedLines = [];
+        }
+        if (patchedLinesLength === void 0) {
+          patchedLinesLength = 0;
+        }
+        var nConsecutiveOldContextLines = 0;
+        var nextContextLineMustMatch = false;
+        for (; hunkLinesI < hunkLines.length; hunkLinesI++) {
+          var hunkLine = hunkLines[hunkLinesI], operation = hunkLine.length > 0 ? hunkLine[0] : " ", content = hunkLine.length > 0 ? hunkLine.substr(1) : hunkLine;
+          if (operation === "-") {
+            if (compareLine(toPos2 + 1, lines[toPos2], operation, content)) {
+              toPos2++;
+              nConsecutiveOldContextLines = 0;
+            } else {
+              if (!maxErrors2 || lines[toPos2] == null) {
+                return null;
+              }
+              patchedLines[patchedLinesLength] = lines[toPos2];
+              return applyHunk(hunkLines, toPos2 + 1, maxErrors2 - 1, hunkLinesI, false, patchedLines, patchedLinesLength + 1);
+            }
+          }
+          if (operation === "+") {
+            if (!lastContextLineMatched) {
+              return null;
+            }
+            patchedLines[patchedLinesLength] = content;
+            patchedLinesLength++;
+            nConsecutiveOldContextLines = 0;
+            nextContextLineMustMatch = true;
+          }
+          if (operation === " ") {
+            nConsecutiveOldContextLines++;
+            patchedLines[patchedLinesLength] = lines[toPos2];
+            if (compareLine(toPos2 + 1, lines[toPos2], operation, content)) {
+              patchedLinesLength++;
+              lastContextLineMatched = true;
+              nextContextLineMustMatch = false;
+              toPos2++;
+            } else {
+              if (nextContextLineMustMatch || !maxErrors2) {
+                return null;
+              }
+              return lines[toPos2] && (applyHunk(hunkLines, toPos2 + 1, maxErrors2 - 1, hunkLinesI + 1, false, patchedLines, patchedLinesLength + 1) || applyHunk(hunkLines, toPos2 + 1, maxErrors2 - 1, hunkLinesI, false, patchedLines, patchedLinesLength + 1)) || applyHunk(hunkLines, toPos2, maxErrors2 - 1, hunkLinesI + 1, false, patchedLines, patchedLinesLength);
+            }
+          }
+        }
+        patchedLinesLength -= nConsecutiveOldContextLines;
+        toPos2 -= nConsecutiveOldContextLines;
+        patchedLines.length = patchedLinesLength;
+        return {
+          patchedLines,
+          oldLineLastI: toPos2 - 1
+        };
+      }
+      var resultLines = [];
+      var prevHunkOffset = 0;
+      for (var i = 0; i < hunks.length; i++) {
+        var hunk = hunks[i];
+        var hunkResult = void 0;
+        var maxLine = lines.length - hunk.oldLines + fuzzFactor;
+        var toPos = void 0;
+        for (var maxErrors = 0; maxErrors <= fuzzFactor; maxErrors++) {
+          toPos = hunk.oldStart + prevHunkOffset - 1;
+          var iterator = (0, distance_iterator_js_1.default)(toPos, minLine, maxLine);
+          for (; toPos !== void 0; toPos = iterator()) {
+            hunkResult = applyHunk(hunk.lines, toPos, maxErrors);
+            if (hunkResult) {
+              break;
+            }
+          }
+          if (hunkResult) {
+            break;
+          }
+        }
+        if (!hunkResult) {
+          return false;
+        }
+        for (var i_1 = minLine; i_1 < toPos; i_1++) {
+          resultLines.push(lines[i_1]);
+        }
+        for (var i_2 = 0; i_2 < hunkResult.patchedLines.length; i_2++) {
+          var line = hunkResult.patchedLines[i_2];
+          resultLines.push(line);
+        }
+        minLine = hunkResult.oldLineLastI + 1;
+        prevHunkOffset = toPos + 1 - hunk.oldStart;
+      }
+      for (var i = minLine; i < lines.length; i++) {
+        resultLines.push(lines[i]);
+      }
+      return resultLines.join("\n");
+    }
+    function applyPatches(uniDiff, options) {
+      var spDiff = typeof uniDiff === "string" ? (0, parse_js_1.parsePatch)(uniDiff) : uniDiff;
+      var currentIndex = 0;
+      function processIndex() {
+        var index = spDiff[currentIndex++];
+        if (!index) {
+          return options.complete();
+        }
+        options.loadFile(index, function(err, data) {
+          if (err) {
+            return options.complete(err);
+          }
+          var updatedContent = applyPatch(data, index, options);
+          options.patched(index, updatedContent, function(err2) {
+            if (err2) {
+              return options.complete(err2);
+            }
+            processIndex();
+          });
+        });
+      }
+      processIndex();
+    }
+  }
+});
+
+// node_modules/diff/libcjs/patch/reverse.js
+var require_reverse = __commonJS({
+  "node_modules/diff/libcjs/patch/reverse.js"(exports) {
+    "use strict";
+    var __assign = exports && exports.__assign || function() {
+      __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.reversePatch = reversePatch;
+    function reversePatch(structuredPatch) {
+      if (Array.isArray(structuredPatch)) {
+        return structuredPatch.map(function(patch) {
+          return reversePatch(patch);
+        }).reverse();
+      }
+      return __assign(__assign({}, structuredPatch), { oldFileName: structuredPatch.newFileName, oldHeader: structuredPatch.newHeader, newFileName: structuredPatch.oldFileName, newHeader: structuredPatch.oldHeader, hunks: structuredPatch.hunks.map(function(hunk) {
+        return {
+          oldLines: hunk.newLines,
+          oldStart: hunk.newStart,
+          newLines: hunk.oldLines,
+          newStart: hunk.oldStart,
+          lines: hunk.lines.map(function(l) {
+            if (l.startsWith("-")) {
+              return "+".concat(l.slice(1));
+            }
+            if (l.startsWith("+")) {
+              return "-".concat(l.slice(1));
+            }
+            return l;
+          })
+        };
+      }) });
+    }
+  }
+});
+
+// node_modules/diff/libcjs/patch/create.js
+var require_create = __commonJS({
+  "node_modules/diff/libcjs/patch/create.js"(exports) {
+    "use strict";
+    var __assign = exports && exports.__assign || function() {
+      __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+            t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.OMIT_HEADERS = exports.FILE_HEADERS_ONLY = exports.INCLUDE_HEADERS = void 0;
+    exports.structuredPatch = structuredPatch;
+    exports.formatPatch = formatPatch;
+    exports.createTwoFilesPatch = createTwoFilesPatch;
+    exports.createPatch = createPatch;
+    var line_js_1 = require_line();
+    exports.INCLUDE_HEADERS = {
+      includeIndex: true,
+      includeUnderline: true,
+      includeFileHeaders: true
+    };
+    exports.FILE_HEADERS_ONLY = {
+      includeIndex: false,
+      includeUnderline: false,
+      includeFileHeaders: true
+    };
+    exports.OMIT_HEADERS = {
+      includeIndex: false,
+      includeUnderline: false,
+      includeFileHeaders: false
+    };
+    function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
+      var optionsObj;
+      if (!options) {
+        optionsObj = {};
+      } else if (typeof options === "function") {
+        optionsObj = { callback: options };
+      } else {
+        optionsObj = options;
+      }
+      if (typeof optionsObj.context === "undefined") {
+        optionsObj.context = 4;
+      }
+      var context = optionsObj.context;
+      if (optionsObj.newlineIsToken) {
+        throw new Error("newlineIsToken may not be used with patch-generation functions, only with diffing functions");
+      }
+      if (!optionsObj.callback) {
+        return diffLinesResultToPatch((0, line_js_1.diffLines)(oldStr, newStr, optionsObj));
+      } else {
+        var callback_1 = optionsObj.callback;
+        (0, line_js_1.diffLines)(oldStr, newStr, __assign(__assign({}, optionsObj), { callback: function(diff) {
+          var patch = diffLinesResultToPatch(diff);
+          callback_1(patch);
+        } }));
+      }
+      function diffLinesResultToPatch(diff) {
+        if (!diff) {
+          return;
+        }
+        diff.push({ value: "", lines: [] });
+        function contextLines(lines2) {
+          return lines2.map(function(entry) {
+            return " " + entry;
+          });
+        }
+        var hunks = [];
+        var oldRangeStart = 0, newRangeStart = 0, curRange = [], oldLine = 1, newLine = 1;
+        for (var i = 0; i < diff.length; i++) {
+          var current3 = diff[i], lines = current3.lines || splitLines(current3.value);
+          current3.lines = lines;
+          if (current3.added || current3.removed) {
+            if (!oldRangeStart) {
+              var prev = diff[i - 1];
+              oldRangeStart = oldLine;
+              newRangeStart = newLine;
+              if (prev) {
+                curRange = context > 0 ? contextLines(prev.lines.slice(-context)) : [];
+                oldRangeStart -= curRange.length;
+                newRangeStart -= curRange.length;
+              }
+            }
+            for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
+              var line = lines_1[_i];
+              curRange.push((current3.added ? "+" : "-") + line);
+            }
+            if (current3.added) {
+              newLine += lines.length;
+            } else {
+              oldLine += lines.length;
+            }
+          } else {
+            if (oldRangeStart) {
+              if (lines.length <= context * 2 && i < diff.length - 2) {
+                for (var _a = 0, _b = contextLines(lines); _a < _b.length; _a++) {
+                  var line = _b[_a];
+                  curRange.push(line);
+                }
+              } else {
+                var contextSize = Math.min(lines.length, context);
+                for (var _c = 0, _d = contextLines(lines.slice(0, contextSize)); _c < _d.length; _c++) {
+                  var line = _d[_c];
+                  curRange.push(line);
+                }
+                var hunk = {
+                  oldStart: oldRangeStart,
+                  oldLines: oldLine - oldRangeStart + contextSize,
+                  newStart: newRangeStart,
+                  newLines: newLine - newRangeStart + contextSize,
+                  lines: curRange
+                };
+                hunks.push(hunk);
+                oldRangeStart = 0;
+                newRangeStart = 0;
+                curRange = [];
+              }
+            }
+            oldLine += lines.length;
+            newLine += lines.length;
+          }
+        }
+        for (var _e = 0, hunks_1 = hunks; _e < hunks_1.length; _e++) {
+          var hunk = hunks_1[_e];
+          for (var i = 0; i < hunk.lines.length; i++) {
+            if (hunk.lines[i].endsWith("\n")) {
+              hunk.lines[i] = hunk.lines[i].slice(0, -1);
+            } else {
+              hunk.lines.splice(i + 1, 0, "\\ No newline at end of file");
+              i++;
+            }
+          }
+        }
+        return {
+          oldFileName,
+          newFileName,
+          oldHeader,
+          newHeader,
+          hunks
+        };
+      }
+    }
+    function formatPatch(patch, headerOptions) {
+      if (!headerOptions) {
+        headerOptions = exports.INCLUDE_HEADERS;
+      }
+      if (Array.isArray(patch)) {
+        if (patch.length > 1 && !headerOptions.includeFileHeaders) {
+          throw new Error("Cannot omit file headers on a multi-file patch. (The result would be unparseable; how would a tool trying to apply the patch know which changes are to which file?)");
+        }
+        return patch.map(function(p) {
+          return formatPatch(p, headerOptions);
+        }).join("\n");
+      }
+      var ret = [];
+      if (headerOptions.includeIndex && patch.oldFileName == patch.newFileName) {
+        ret.push("Index: " + patch.oldFileName);
+      }
+      if (headerOptions.includeUnderline) {
+        ret.push("===================================================================");
+      }
+      if (headerOptions.includeFileHeaders) {
+        ret.push("--- " + patch.oldFileName + (typeof patch.oldHeader === "undefined" ? "" : "	" + patch.oldHeader));
+        ret.push("+++ " + patch.newFileName + (typeof patch.newHeader === "undefined" ? "" : "	" + patch.newHeader));
+      }
+      for (var i = 0; i < patch.hunks.length; i++) {
+        var hunk = patch.hunks[i];
+        if (hunk.oldLines === 0) {
+          hunk.oldStart -= 1;
+        }
+        if (hunk.newLines === 0) {
+          hunk.newStart -= 1;
+        }
+        ret.push("@@ -" + hunk.oldStart + "," + hunk.oldLines + " +" + hunk.newStart + "," + hunk.newLines + " @@");
+        for (var _i = 0, _a = hunk.lines; _i < _a.length; _i++) {
+          var line = _a[_i];
+          ret.push(line);
+        }
+      }
+      return ret.join("\n") + "\n";
+    }
+    function createTwoFilesPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
+      if (typeof options === "function") {
+        options = { callback: options };
+      }
+      if (!(options === null || options === void 0 ? void 0 : options.callback)) {
+        var patchObj = structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options);
+        if (!patchObj) {
+          return;
+        }
+        return formatPatch(patchObj, options === null || options === void 0 ? void 0 : options.headerOptions);
+      } else {
+        var callback_2 = options.callback;
+        structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, __assign(__assign({}, options), { callback: function(patchObj2) {
+          if (!patchObj2) {
+            callback_2(void 0);
+          } else {
+            callback_2(formatPatch(patchObj2, options.headerOptions));
+          }
+        } }));
+      }
+    }
+    function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
+      return createTwoFilesPatch(fileName, fileName, oldStr, newStr, oldHeader, newHeader, options);
+    }
+    function splitLines(text2) {
+      var hasTrailingNl = text2.endsWith("\n");
+      var result = text2.split("\n").map(function(line) {
+        return line + "\n";
+      });
+      if (hasTrailingNl) {
+        result.pop();
+      } else {
+        result.push(result.pop().slice(0, -1));
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/convert/dmp.js
+var require_dmp = __commonJS({
+  "node_modules/diff/libcjs/convert/dmp.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.convertChangesToDMP = convertChangesToDMP;
+    function convertChangesToDMP(changes) {
+      var ret = [];
+      var change, operation;
+      for (var i = 0; i < changes.length; i++) {
+        change = changes[i];
+        if (change.added) {
+          operation = 1;
+        } else if (change.removed) {
+          operation = -1;
+        } else {
+          operation = 0;
+        }
+        ret.push([operation, change.value]);
+      }
+      return ret;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/convert/xml.js
+var require_xml = __commonJS({
+  "node_modules/diff/libcjs/convert/xml.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.convertChangesToXML = convertChangesToXML;
+    function convertChangesToXML(changes) {
+      var ret = [];
+      for (var i = 0; i < changes.length; i++) {
+        var change = changes[i];
+        if (change.added) {
+          ret.push("<ins>");
+        } else if (change.removed) {
+          ret.push("<del>");
+        }
+        ret.push(escapeHTML(change.value));
+        if (change.added) {
+          ret.push("</ins>");
+        } else if (change.removed) {
+          ret.push("</del>");
+        }
+      }
+      return ret.join("");
+    }
+    function escapeHTML(s) {
+      var n = s;
+      n = n.replace(/&/g, "&amp;");
+      n = n.replace(/</g, "&lt;");
+      n = n.replace(/>/g, "&gt;");
+      n = n.replace(/"/g, "&quot;");
+      return n;
+    }
+  }
+});
+
+// node_modules/diff/libcjs/index.js
+var require_libcjs = __commonJS({
+  "node_modules/diff/libcjs/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.canonicalize = exports.convertChangesToXML = exports.convertChangesToDMP = exports.reversePatch = exports.parsePatch = exports.applyPatches = exports.applyPatch = exports.OMIT_HEADERS = exports.FILE_HEADERS_ONLY = exports.INCLUDE_HEADERS = exports.formatPatch = exports.createPatch = exports.createTwoFilesPatch = exports.structuredPatch = exports.arrayDiff = exports.diffArrays = exports.jsonDiff = exports.diffJson = exports.cssDiff = exports.diffCss = exports.sentenceDiff = exports.diffSentences = exports.diffTrimmedLines = exports.lineDiff = exports.diffLines = exports.wordsWithSpaceDiff = exports.diffWordsWithSpace = exports.wordDiff = exports.diffWords = exports.characterDiff = exports.diffChars = exports.Diff = void 0;
+    var base_js_1 = require_base();
+    exports.Diff = base_js_1.default;
+    var character_js_1 = require_character();
+    Object.defineProperty(exports, "diffChars", { enumerable: true, get: function() {
+      return character_js_1.diffChars;
+    } });
+    Object.defineProperty(exports, "characterDiff", { enumerable: true, get: function() {
+      return character_js_1.characterDiff;
+    } });
+    var word_js_1 = require_word();
+    Object.defineProperty(exports, "diffWords", { enumerable: true, get: function() {
+      return word_js_1.diffWords;
+    } });
+    Object.defineProperty(exports, "diffWordsWithSpace", { enumerable: true, get: function() {
+      return word_js_1.diffWordsWithSpace;
+    } });
+    Object.defineProperty(exports, "wordDiff", { enumerable: true, get: function() {
+      return word_js_1.wordDiff;
+    } });
+    Object.defineProperty(exports, "wordsWithSpaceDiff", { enumerable: true, get: function() {
+      return word_js_1.wordsWithSpaceDiff;
+    } });
+    var line_js_1 = require_line();
+    Object.defineProperty(exports, "diffLines", { enumerable: true, get: function() {
+      return line_js_1.diffLines;
+    } });
+    Object.defineProperty(exports, "diffTrimmedLines", { enumerable: true, get: function() {
+      return line_js_1.diffTrimmedLines;
+    } });
+    Object.defineProperty(exports, "lineDiff", { enumerable: true, get: function() {
+      return line_js_1.lineDiff;
+    } });
+    var sentence_js_1 = require_sentence();
+    Object.defineProperty(exports, "diffSentences", { enumerable: true, get: function() {
+      return sentence_js_1.diffSentences;
+    } });
+    Object.defineProperty(exports, "sentenceDiff", { enumerable: true, get: function() {
+      return sentence_js_1.sentenceDiff;
+    } });
+    var css_js_1 = require_css();
+    Object.defineProperty(exports, "diffCss", { enumerable: true, get: function() {
+      return css_js_1.diffCss;
+    } });
+    Object.defineProperty(exports, "cssDiff", { enumerable: true, get: function() {
+      return css_js_1.cssDiff;
+    } });
+    var json_js_1 = require_json();
+    Object.defineProperty(exports, "diffJson", { enumerable: true, get: function() {
+      return json_js_1.diffJson;
+    } });
+    Object.defineProperty(exports, "canonicalize", { enumerable: true, get: function() {
+      return json_js_1.canonicalize;
+    } });
+    Object.defineProperty(exports, "jsonDiff", { enumerable: true, get: function() {
+      return json_js_1.jsonDiff;
+    } });
+    var array_js_1 = require_array();
+    Object.defineProperty(exports, "diffArrays", { enumerable: true, get: function() {
+      return array_js_1.diffArrays;
+    } });
+    Object.defineProperty(exports, "arrayDiff", { enumerable: true, get: function() {
+      return array_js_1.arrayDiff;
+    } });
+    var apply_js_1 = require_apply();
+    Object.defineProperty(exports, "applyPatch", { enumerable: true, get: function() {
+      return apply_js_1.applyPatch;
+    } });
+    Object.defineProperty(exports, "applyPatches", { enumerable: true, get: function() {
+      return apply_js_1.applyPatches;
+    } });
+    var parse_js_1 = require_parse();
+    Object.defineProperty(exports, "parsePatch", { enumerable: true, get: function() {
+      return parse_js_1.parsePatch;
+    } });
+    var reverse_js_1 = require_reverse();
+    Object.defineProperty(exports, "reversePatch", { enumerable: true, get: function() {
+      return reverse_js_1.reversePatch;
+    } });
+    var create_js_1 = require_create();
+    Object.defineProperty(exports, "structuredPatch", { enumerable: true, get: function() {
+      return create_js_1.structuredPatch;
+    } });
+    Object.defineProperty(exports, "createTwoFilesPatch", { enumerable: true, get: function() {
+      return create_js_1.createTwoFilesPatch;
+    } });
+    Object.defineProperty(exports, "createPatch", { enumerable: true, get: function() {
+      return create_js_1.createPatch;
+    } });
+    Object.defineProperty(exports, "formatPatch", { enumerable: true, get: function() {
+      return create_js_1.formatPatch;
+    } });
+    Object.defineProperty(exports, "INCLUDE_HEADERS", { enumerable: true, get: function() {
+      return create_js_1.INCLUDE_HEADERS;
+    } });
+    Object.defineProperty(exports, "FILE_HEADERS_ONLY", { enumerable: true, get: function() {
+      return create_js_1.FILE_HEADERS_ONLY;
+    } });
+    Object.defineProperty(exports, "OMIT_HEADERS", { enumerable: true, get: function() {
+      return create_js_1.OMIT_HEADERS;
+    } });
+    var dmp_js_1 = require_dmp();
+    Object.defineProperty(exports, "convertChangesToDMP", { enumerable: true, get: function() {
+      return dmp_js_1.convertChangesToDMP;
+    } });
+    var xml_js_1 = require_xml();
+    Object.defineProperty(exports, "convertChangesToXML", { enumerable: true, get: function() {
+      return xml_js_1.convertChangesToXML;
+    } });
+  }
+});
+
+// node_modules/diff2html/lib/rematch.js
+var require_rematch = __commonJS({
+  "node_modules/diff2html/lib/rematch.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.levenshtein = levenshtein;
+    exports.newDistanceFn = newDistanceFn;
+    exports.newMatcherFn = newMatcherFn;
+    function levenshtein(a, b) {
+      if (a.length === 0) {
+        return b.length;
+      }
+      if (b.length === 0) {
+        return a.length;
+      }
+      const matrix = [];
+      let i;
+      for (i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+      }
+      let j;
+      for (j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+      }
+      for (i = 1; i <= b.length; i++) {
+        for (j = 1; j <= a.length; j++) {
+          if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+          }
+        }
+      }
+      return matrix[b.length][a.length];
+    }
+    function newDistanceFn(str) {
+      return (x, y) => {
+        const xValue = str(x).trim();
+        const yValue = str(y).trim();
+        const lev = levenshtein(xValue, yValue);
+        return lev / (xValue.length + yValue.length);
+      };
+    }
+    function newMatcherFn(distance) {
+      function findBestMatch(a, b, cache = /* @__PURE__ */ new Map()) {
+        let bestMatchDist = Infinity;
+        let bestMatch;
+        for (let i = 0; i < a.length; ++i) {
+          for (let j = 0; j < b.length; ++j) {
+            const cacheKey = JSON.stringify([a[i], b[j]]);
+            let md;
+            if (!(cache.has(cacheKey) && (md = cache.get(cacheKey)))) {
+              md = distance(a[i], b[j]);
+              cache.set(cacheKey, md);
+            }
+            if (md < bestMatchDist) {
+              bestMatchDist = md;
+              bestMatch = { indexA: i, indexB: j, score: bestMatchDist };
+            }
+          }
+        }
+        return bestMatch;
+      }
+      function group(a, b, level = 0, cache = /* @__PURE__ */ new Map()) {
+        const bm = findBestMatch(a, b, cache);
+        if (!bm || a.length + b.length < 3) {
+          return [[a, b]];
+        }
+        const a1 = a.slice(0, bm.indexA);
+        const b1 = b.slice(0, bm.indexB);
+        const aMatch = [a[bm.indexA]];
+        const bMatch = [b[bm.indexB]];
+        const tailA = bm.indexA + 1;
+        const tailB = bm.indexB + 1;
+        const a2 = a.slice(tailA);
+        const b2 = b.slice(tailB);
+        const group1 = group(a1, b1, level + 1, cache);
+        const groupMatch = group(aMatch, bMatch, level + 1, cache);
+        const group2 = group(a2, b2, level + 1, cache);
+        let result = groupMatch;
+        if (bm.indexA > 0 || bm.indexB > 0) {
+          result = group1.concat(result);
+        }
+        if (a.length > tailA || b.length > tailB) {
+          result = result.concat(group2);
+        }
+        return result;
+      }
+      return group;
+    }
+  }
+});
+
+// node_modules/diff2html/lib/render-utils.js
+var require_render_utils = __commonJS({
+  "node_modules/diff2html/lib/render-utils.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.defaultRenderConfig = exports.CSSLineClass = void 0;
+    exports.toCSSClass = toCSSClass;
+    exports.colorSchemeToCss = colorSchemeToCss;
+    exports.escapeForHtml = escapeForHtml;
+    exports.deconstructLine = deconstructLine;
+    exports.filenameDiff = filenameDiff;
+    exports.getHtmlId = getHtmlId;
+    exports.getFileIcon = getFileIcon;
+    exports.diffHighlight = diffHighlight;
+    var jsDiff = __importStar(require_libcjs());
+    var utils_1 = require_utils();
+    var rematch = __importStar(require_rematch());
+    var types_1 = require_types();
+    exports.CSSLineClass = {
+      INSERTS: "d2h-ins",
+      DELETES: "d2h-del",
+      CONTEXT: "d2h-cntx",
+      INFO: "d2h-info",
+      INSERT_CHANGES: "d2h-ins d2h-change",
+      DELETE_CHANGES: "d2h-del d2h-change"
+    };
+    exports.defaultRenderConfig = {
+      matching: types_1.LineMatchingType.NONE,
+      matchWordsThreshold: 0.25,
+      maxLineLengthHighlight: 1e4,
+      diffStyle: types_1.DiffStyleType.WORD,
+      colorScheme: types_1.ColorSchemeType.LIGHT
+    };
+    var separator = "/";
+    var distance = rematch.newDistanceFn((change) => change.value);
+    var matcher = rematch.newMatcherFn(distance);
+    function isDevNullName(name2) {
+      return name2.indexOf("dev/null") !== -1;
+    }
+    function removeInsElements(line) {
+      return line.replace(/(<ins[^>]*>((.|\n)*?)<\/ins>)/g, "");
+    }
+    function removeDelElements(line) {
+      return line.replace(/(<del[^>]*>((.|\n)*?)<\/del>)/g, "");
+    }
+    function toCSSClass(lineType) {
+      switch (lineType) {
+        case types_1.LineType.CONTEXT:
+          return exports.CSSLineClass.CONTEXT;
+        case types_1.LineType.INSERT:
+          return exports.CSSLineClass.INSERTS;
+        case types_1.LineType.DELETE:
+          return exports.CSSLineClass.DELETES;
+      }
+    }
+    function colorSchemeToCss(colorScheme) {
+      switch (colorScheme) {
+        case types_1.ColorSchemeType.DARK:
+          return "d2h-dark-color-scheme";
+        case types_1.ColorSchemeType.AUTO:
+          return "d2h-auto-color-scheme";
+        case types_1.ColorSchemeType.LIGHT:
+        default:
+          return "d2h-light-color-scheme";
+      }
+    }
+    function prefixLength(isCombined) {
+      return isCombined ? 2 : 1;
+    }
+    function escapeForHtml(str) {
+      return str.slice(0).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;");
+    }
+    function deconstructLine(line, isCombined, escape3 = true) {
+      const indexToSplit = prefixLength(isCombined);
+      return {
+        prefix: line.substring(0, indexToSplit),
+        content: escape3 ? escapeForHtml(line.substring(indexToSplit)) : line.substring(indexToSplit)
+      };
+    }
+    function filenameDiff(file2) {
+      const oldFilename = (0, utils_1.unifyPath)(file2.oldName);
+      const newFilename = (0, utils_1.unifyPath)(file2.newName);
+      if (oldFilename !== newFilename && !isDevNullName(oldFilename) && !isDevNullName(newFilename)) {
+        const prefixPaths = [];
+        const suffixPaths = [];
+        const oldFilenameParts = oldFilename.split(separator);
+        const newFilenameParts = newFilename.split(separator);
+        const oldFilenamePartsSize = oldFilenameParts.length;
+        const newFilenamePartsSize = newFilenameParts.length;
+        let i = 0;
+        let j = oldFilenamePartsSize - 1;
+        let k = newFilenamePartsSize - 1;
+        while (i < j && i < k) {
+          if (oldFilenameParts[i] === newFilenameParts[i]) {
+            prefixPaths.push(newFilenameParts[i]);
+            i += 1;
+          } else {
+            break;
+          }
+        }
+        while (j > i && k > i) {
+          if (oldFilenameParts[j] === newFilenameParts[k]) {
+            suffixPaths.unshift(newFilenameParts[k]);
+            j -= 1;
+            k -= 1;
+          } else {
+            break;
+          }
+        }
+        const finalPrefix = prefixPaths.join(separator);
+        const finalSuffix = suffixPaths.join(separator);
+        const oldRemainingPath = oldFilenameParts.slice(i, j + 1).join(separator);
+        const newRemainingPath = newFilenameParts.slice(i, k + 1).join(separator);
+        if (finalPrefix.length && finalSuffix.length) {
+          return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
+        } else if (finalPrefix.length) {
+          return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}";
+        } else if (finalSuffix.length) {
+          return "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
+        }
+        return oldFilename + " \u2192 " + newFilename;
+      } else if (!isDevNullName(newFilename)) {
+        return newFilename;
+      } else {
+        return oldFilename;
+      }
+    }
+    function getHtmlId(file2) {
+      return `d2h-${(0, utils_1.hashCode)(filenameDiff(file2)).toString().slice(-6)}`;
+    }
+    function getFileIcon(file2) {
+      let templateName = "file-changed";
+      if (file2.isRename) {
+        templateName = "file-renamed";
+      } else if (file2.isCopy) {
+        templateName = "file-renamed";
+      } else if (file2.isNew) {
+        templateName = "file-added";
+      } else if (file2.isDeleted) {
+        templateName = "file-deleted";
+      } else if (file2.newName !== file2.oldName) {
+        templateName = "file-renamed";
+      }
+      return templateName;
+    }
+    function diffHighlight(diffLine1, diffLine2, isCombined, config2 = {}) {
+      const { matching, maxLineLengthHighlight, matchWordsThreshold, diffStyle } = Object.assign(Object.assign({}, exports.defaultRenderConfig), config2);
+      const line1 = deconstructLine(diffLine1, isCombined, false);
+      const line2 = deconstructLine(diffLine2, isCombined, false);
+      if (line1.content.length > maxLineLengthHighlight || line2.content.length > maxLineLengthHighlight) {
+        return {
+          oldLine: {
+            prefix: line1.prefix,
+            content: escapeForHtml(line1.content)
+          },
+          newLine: {
+            prefix: line2.prefix,
+            content: escapeForHtml(line2.content)
+          }
+        };
+      }
+      const diff = diffStyle === "char" ? jsDiff.diffChars(line1.content, line2.content) : jsDiff.diffWordsWithSpace(line1.content, line2.content);
+      const changedWords = [];
+      if (diffStyle === "word" && matching === "words") {
+        const removed = diff.filter((element) => element.removed);
+        const added = diff.filter((element) => element.added);
+        const chunks = matcher(added, removed);
+        chunks.forEach((chunk) => {
+          if (chunk[0].length === 1 && chunk[1].length === 1) {
+            const dist = distance(chunk[0][0], chunk[1][0]);
+            if (dist < matchWordsThreshold) {
+              changedWords.push(chunk[0][0]);
+              changedWords.push(chunk[1][0]);
+            }
+          }
+        });
+      }
+      const highlightedLine = diff.reduce((highlightedLine2, part) => {
+        const elemType = part.added ? "ins" : part.removed ? "del" : null;
+        const addClass = changedWords.indexOf(part) > -1 ? ' class="d2h-change"' : "";
+        const escapedValue = escapeForHtml(part.value);
+        return elemType !== null ? `${highlightedLine2}<${elemType}${addClass}>${escapedValue}</${elemType}>` : `${highlightedLine2}${escapedValue}`;
+      }, "");
+      return {
+        oldLine: {
+          prefix: line1.prefix,
+          content: removeInsElements(highlightedLine)
+        },
+        newLine: {
+          prefix: line2.prefix,
+          content: removeDelElements(highlightedLine)
+        }
+      };
+    }
+  }
+});
+
+// node_modules/diff2html/lib/file-list-renderer.js
+var require_file_list_renderer = __commonJS({
+  "node_modules/diff2html/lib/file-list-renderer.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FileListRenderer = exports.defaultFileListRendererConfig = void 0;
+    var renderUtils = __importStar(require_render_utils());
+    var baseTemplatesPath = "file-summary";
+    var iconsBaseTemplatesPath = "icon";
+    exports.defaultFileListRendererConfig = {
+      colorScheme: renderUtils.defaultRenderConfig.colorScheme
+    };
+    var FileListRenderer = class {
+      constructor(hoganUtils, config2 = {}) {
+        this.hoganUtils = hoganUtils;
+        this.config = Object.assign(Object.assign({}, exports.defaultFileListRendererConfig), config2);
+      }
+      render(diffFiles) {
+        const files3 = diffFiles.map((file2) => this.hoganUtils.render(baseTemplatesPath, "line", {
+          fileHtmlId: renderUtils.getHtmlId(file2),
+          oldName: file2.oldName,
+          newName: file2.newName,
+          fileName: renderUtils.filenameDiff(file2),
+          deletedLines: "-" + file2.deletedLines,
+          addedLines: "+" + file2.addedLines
+        }, {
+          fileIcon: this.hoganUtils.template(iconsBaseTemplatesPath, renderUtils.getFileIcon(file2))
+        })).join("\n");
+        return this.hoganUtils.render(baseTemplatesPath, "wrapper", {
+          colorScheme: renderUtils.colorSchemeToCss(this.config.colorScheme),
+          filesNumber: diffFiles.length,
+          files: files3
+        });
+      }
+    };
+    exports.FileListRenderer = FileListRenderer;
+  }
+});
+
+// node_modules/diff2html/lib/line-by-line-renderer.js
+var require_line_by_line_renderer = __commonJS({
+  "node_modules/diff2html/lib/line-by-line-renderer.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.defaultLineByLineRendererConfig = void 0;
+    var Rematch = __importStar(require_rematch());
+    var renderUtils = __importStar(require_render_utils());
+    var types_1 = require_types();
+    var utils_1 = require_utils();
+    exports.defaultLineByLineRendererConfig = Object.assign(Object.assign({}, renderUtils.defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
+    var genericTemplatesPath = "generic";
+    var baseTemplatesPath = "line-by-line";
+    var iconsBaseTemplatesPath = "icon";
+    var tagsBaseTemplatesPath = "tag";
+    var LineByLineRenderer = class {
+      constructor(hoganUtils, config2 = {}) {
+        this.hoganUtils = hoganUtils;
+        this.config = Object.assign(Object.assign({}, exports.defaultLineByLineRendererConfig), config2);
+      }
+      render(diffFiles) {
+        const diffsHtml = diffFiles.map((file2) => {
+          let diffs;
+          if (file2.blocks.length) {
+            diffs = this.generateFileHtml(file2);
+          } else {
+            diffs = this.generateEmptyDiff();
+          }
+          return this.makeFileDiffHtml(file2, diffs);
+        }).join("\n");
+        return this.hoganUtils.render(genericTemplatesPath, "wrapper", {
+          colorScheme: renderUtils.colorSchemeToCss(this.config.colorScheme),
+          content: diffsHtml
+        });
+      }
+      makeFileDiffHtml(file2, diffs) {
+        if (this.config.renderNothingWhenEmpty && Array.isArray(file2.blocks) && file2.blocks.length === 0)
+          return "";
+        const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath, "file-diff");
+        const filePathTemplate = this.hoganUtils.template(genericTemplatesPath, "file-path");
+        const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath, "file");
+        const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath, renderUtils.getFileIcon(file2));
+        return fileDiffTemplate.render({
+          file: file2,
+          fileHtmlId: renderUtils.getHtmlId(file2),
+          diffs,
+          filePath: filePathTemplate.render({
+            fileDiffName: renderUtils.filenameDiff(file2)
+          }, {
+            fileIcon: fileIconTemplate,
+            fileTag: fileTagTemplate
+          })
+        });
+      }
+      generateEmptyDiff() {
+        return this.hoganUtils.render(genericTemplatesPath, "empty-diff", {
+          contentClass: "d2h-code-line",
+          CSSLineClass: renderUtils.CSSLineClass
+        });
+      }
+      generateFileHtml(file2) {
+        const matcher = Rematch.newMatcherFn(Rematch.newDistanceFn((e) => renderUtils.deconstructLine(e.content, file2.isCombined).content));
+        return file2.blocks.map((block2) => {
+          let lines = this.hoganUtils.render(genericTemplatesPath, "block-header", {
+            CSSLineClass: renderUtils.CSSLineClass,
+            blockHeader: file2.isTooBig ? block2.header : renderUtils.escapeForHtml(block2.header),
+            lineClass: "d2h-code-linenumber",
+            contentClass: "d2h-code-line"
+          });
+          this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+            if (oldLines.length && newLines.length && !contextLines.length) {
+              this.applyRematchMatching(oldLines, newLines, matcher).map(([oldLines2, newLines2]) => {
+                const { left, right } = this.processChangedLines(file2, file2.isCombined, oldLines2, newLines2);
+                lines += left;
+                lines += right;
+              });
+            } else if (contextLines.length) {
+              contextLines.forEach((line) => {
+                const { prefix, content } = renderUtils.deconstructLine(line.content, file2.isCombined);
+                lines += this.generateSingleLineHtml(file2, {
+                  type: renderUtils.CSSLineClass.CONTEXT,
+                  prefix,
+                  content,
+                  oldNumber: line.oldNumber,
+                  newNumber: line.newNumber
+                });
+              });
+            } else if (oldLines.length || newLines.length) {
+              const { left, right } = this.processChangedLines(file2, file2.isCombined, oldLines, newLines);
+              lines += left;
+              lines += right;
+            } else {
+              console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
+            }
+          });
+          return lines;
+        }).join("\n");
+      }
+      applyLineGroupping(block2) {
+        const blockLinesGroups = [];
+        let oldLines = [];
+        let newLines = [];
+        for (let i = 0; i < block2.lines.length; i++) {
+          const diffLine = block2.lines[i];
+          if (diffLine.type !== types_1.LineType.INSERT && newLines.length || diffLine.type === types_1.LineType.CONTEXT && oldLines.length > 0) {
+            blockLinesGroups.push([[], oldLines, newLines]);
+            oldLines = [];
+            newLines = [];
+          }
+          if (diffLine.type === types_1.LineType.CONTEXT) {
+            blockLinesGroups.push([[diffLine], [], []]);
+          } else if (diffLine.type === types_1.LineType.INSERT && oldLines.length === 0) {
+            blockLinesGroups.push([[], [], [diffLine]]);
+          } else if (diffLine.type === types_1.LineType.INSERT && oldLines.length > 0) {
+            newLines.push(diffLine);
+          } else if (diffLine.type === types_1.LineType.DELETE) {
+            oldLines.push(diffLine);
+          }
+        }
+        if (oldLines.length || newLines.length) {
+          blockLinesGroups.push([[], oldLines, newLines]);
+          oldLines = [];
+          newLines = [];
+        }
+        return blockLinesGroups;
+      }
+      applyRematchMatching(oldLines, newLines, matcher) {
+        const comparisons = oldLines.length * newLines.length;
+        const maxLineSizeInBlock = (0, utils_1.max)(oldLines.concat(newLines).map((elem) => elem.content.length));
+        const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
+        return doMatching ? matcher(oldLines, newLines) : [[oldLines, newLines]];
+      }
+      processChangedLines(file2, isCombined, oldLines, newLines) {
+        const fileHtml = {
+          right: "",
+          left: ""
+        };
+        const maxLinesNumber = Math.max(oldLines.length, newLines.length);
+        for (let i = 0; i < maxLinesNumber; i++) {
+          const oldLine = oldLines[i];
+          const newLine = newLines[i];
+          const diff = oldLine !== void 0 && newLine !== void 0 ? renderUtils.diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
+          const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+            prefix: diff.oldLine.prefix,
+            content: diff.oldLine.content,
+            type: renderUtils.CSSLineClass.DELETE_CHANGES
+          } : Object.assign(Object.assign({}, renderUtils.deconstructLine(oldLine.content, isCombined)), { type: renderUtils.toCSSClass(oldLine.type) })), { oldNumber: oldLine.oldNumber, newNumber: oldLine.newNumber }) : void 0;
+          const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+            prefix: diff.newLine.prefix,
+            content: diff.newLine.content,
+            type: renderUtils.CSSLineClass.INSERT_CHANGES
+          } : Object.assign(Object.assign({}, renderUtils.deconstructLine(newLine.content, isCombined)), { type: renderUtils.toCSSClass(newLine.type) })), { oldNumber: newLine.oldNumber, newNumber: newLine.newNumber }) : void 0;
+          const { left, right } = this.generateLineHtml(file2, preparedOldLine, preparedNewLine);
+          fileHtml.left += left;
+          fileHtml.right += right;
+        }
+        return fileHtml;
+      }
+      generateLineHtml(file2, oldLine, newLine) {
+        return {
+          left: this.generateSingleLineHtml(file2, oldLine),
+          right: this.generateSingleLineHtml(file2, newLine)
+        };
+      }
+      generateSingleLineHtml(file2, line) {
+        if (line === void 0)
+          return "";
+        const lineNumberHtml = this.hoganUtils.render(baseTemplatesPath, "numbers", {
+          oldNumber: line.oldNumber || "",
+          newNumber: line.newNumber || ""
+        });
+        return this.hoganUtils.render(genericTemplatesPath, "line", {
+          type: line.type,
+          lineClass: "d2h-code-linenumber",
+          contentClass: "d2h-code-line",
+          prefix: line.prefix === " " ? "&nbsp;" : line.prefix,
+          content: line.content,
+          lineNumber: lineNumberHtml,
+          line,
+          file: file2
+        });
+      }
+    };
+    exports.default = LineByLineRenderer;
+  }
+});
+
+// node_modules/diff2html/lib/side-by-side-renderer.js
+var require_side_by_side_renderer = __commonJS({
+  "node_modules/diff2html/lib/side-by-side-renderer.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.defaultSideBySideRendererConfig = void 0;
+    var Rematch = __importStar(require_rematch());
+    var renderUtils = __importStar(require_render_utils());
+    var types_1 = require_types();
+    var utils_1 = require_utils();
+    exports.defaultSideBySideRendererConfig = Object.assign(Object.assign({}, renderUtils.defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
+    var genericTemplatesPath = "generic";
+    var baseTemplatesPath = "side-by-side";
+    var iconsBaseTemplatesPath = "icon";
+    var tagsBaseTemplatesPath = "tag";
+    var SideBySideRenderer = class {
+      constructor(hoganUtils, config2 = {}) {
+        this.hoganUtils = hoganUtils;
+        this.config = Object.assign(Object.assign({}, exports.defaultSideBySideRendererConfig), config2);
+      }
+      render(diffFiles) {
+        const diffsHtml = diffFiles.map((file2) => {
+          let diffs;
+          if (file2.blocks.length) {
+            diffs = this.generateFileHtml(file2);
+          } else {
+            diffs = this.generateEmptyDiff();
+          }
+          return this.makeFileDiffHtml(file2, diffs);
+        }).join("\n");
+        return this.hoganUtils.render(genericTemplatesPath, "wrapper", {
+          colorScheme: renderUtils.colorSchemeToCss(this.config.colorScheme),
+          content: diffsHtml
+        });
+      }
+      makeFileDiffHtml(file2, diffs) {
+        if (this.config.renderNothingWhenEmpty && Array.isArray(file2.blocks) && file2.blocks.length === 0)
+          return "";
+        const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath, "file-diff");
+        const filePathTemplate = this.hoganUtils.template(genericTemplatesPath, "file-path");
+        const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath, "file");
+        const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath, renderUtils.getFileIcon(file2));
+        return fileDiffTemplate.render({
+          file: file2,
+          fileHtmlId: renderUtils.getHtmlId(file2),
+          diffs,
+          filePath: filePathTemplate.render({
+            fileDiffName: renderUtils.filenameDiff(file2)
+          }, {
+            fileIcon: fileIconTemplate,
+            fileTag: fileTagTemplate
+          })
+        });
+      }
+      generateEmptyDiff() {
+        return {
+          right: "",
+          left: this.hoganUtils.render(genericTemplatesPath, "empty-diff", {
+            contentClass: "d2h-code-side-line",
+            CSSLineClass: renderUtils.CSSLineClass
+          })
+        };
+      }
+      generateFileHtml(file2) {
+        const matcher = Rematch.newMatcherFn(Rematch.newDistanceFn((e) => renderUtils.deconstructLine(e.content, file2.isCombined).content));
+        return file2.blocks.map((block2) => {
+          const fileHtml = {
+            left: this.makeHeaderHtml(block2.header, file2),
+            right: this.makeHeaderHtml("")
+          };
+          this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+            if (oldLines.length && newLines.length && !contextLines.length) {
+              this.applyRematchMatching(oldLines, newLines, matcher).map(([oldLines2, newLines2]) => {
+                const { left, right } = this.processChangedLines(file2.isCombined, oldLines2, newLines2);
+                fileHtml.left += left;
+                fileHtml.right += right;
+              });
+            } else if (contextLines.length) {
+              contextLines.forEach((line) => {
+                const { prefix, content } = renderUtils.deconstructLine(line.content, file2.isCombined);
+                const { left, right } = this.generateLineHtml({
+                  type: renderUtils.CSSLineClass.CONTEXT,
+                  prefix,
+                  content,
+                  number: line.oldNumber
+                }, {
+                  type: renderUtils.CSSLineClass.CONTEXT,
+                  prefix,
+                  content,
+                  number: line.newNumber
+                });
+                fileHtml.left += left;
+                fileHtml.right += right;
+              });
+            } else if (oldLines.length || newLines.length) {
+              const { left, right } = this.processChangedLines(file2.isCombined, oldLines, newLines);
+              fileHtml.left += left;
+              fileHtml.right += right;
+            } else {
+              console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
+            }
+          });
+          return fileHtml;
+        }).reduce((accomulated, html) => {
+          return { left: accomulated.left + html.left, right: accomulated.right + html.right };
+        }, { left: "", right: "" });
+      }
+      applyLineGroupping(block2) {
+        const blockLinesGroups = [];
+        let oldLines = [];
+        let newLines = [];
+        for (let i = 0; i < block2.lines.length; i++) {
+          const diffLine = block2.lines[i];
+          if (diffLine.type !== types_1.LineType.INSERT && newLines.length || diffLine.type === types_1.LineType.CONTEXT && oldLines.length > 0) {
+            blockLinesGroups.push([[], oldLines, newLines]);
+            oldLines = [];
+            newLines = [];
+          }
+          if (diffLine.type === types_1.LineType.CONTEXT) {
+            blockLinesGroups.push([[diffLine], [], []]);
+          } else if (diffLine.type === types_1.LineType.INSERT && oldLines.length === 0) {
+            blockLinesGroups.push([[], [], [diffLine]]);
+          } else if (diffLine.type === types_1.LineType.INSERT && oldLines.length > 0) {
+            newLines.push(diffLine);
+          } else if (diffLine.type === types_1.LineType.DELETE) {
+            oldLines.push(diffLine);
+          }
+        }
+        if (oldLines.length || newLines.length) {
+          blockLinesGroups.push([[], oldLines, newLines]);
+          oldLines = [];
+          newLines = [];
+        }
+        return blockLinesGroups;
+      }
+      applyRematchMatching(oldLines, newLines, matcher) {
+        const comparisons = oldLines.length * newLines.length;
+        const maxLineSizeInBlock = (0, utils_1.max)(oldLines.concat(newLines).map((elem) => elem.content.length));
+        const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
+        return doMatching ? matcher(oldLines, newLines) : [[oldLines, newLines]];
+      }
+      makeHeaderHtml(blockHeader, file2) {
+        return this.hoganUtils.render(genericTemplatesPath, "block-header", {
+          CSSLineClass: renderUtils.CSSLineClass,
+          blockHeader: (file2 === null || file2 === void 0 ? void 0 : file2.isTooBig) ? blockHeader : renderUtils.escapeForHtml(blockHeader),
+          lineClass: "d2h-code-side-linenumber",
+          contentClass: "d2h-code-side-line"
+        });
+      }
+      processChangedLines(isCombined, oldLines, newLines) {
+        const fileHtml = {
+          right: "",
+          left: ""
+        };
+        const maxLinesNumber = Math.max(oldLines.length, newLines.length);
+        for (let i = 0; i < maxLinesNumber; i++) {
+          const oldLine = oldLines[i];
+          const newLine = newLines[i];
+          const diff = oldLine !== void 0 && newLine !== void 0 ? renderUtils.diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
+          const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+            prefix: diff.oldLine.prefix,
+            content: diff.oldLine.content,
+            type: renderUtils.CSSLineClass.DELETE_CHANGES
+          } : Object.assign(Object.assign({}, renderUtils.deconstructLine(oldLine.content, isCombined)), { type: renderUtils.toCSSClass(oldLine.type) })), { number: oldLine.oldNumber }) : void 0;
+          const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+            prefix: diff.newLine.prefix,
+            content: diff.newLine.content,
+            type: renderUtils.CSSLineClass.INSERT_CHANGES
+          } : Object.assign(Object.assign({}, renderUtils.deconstructLine(newLine.content, isCombined)), { type: renderUtils.toCSSClass(newLine.type) })), { number: newLine.newNumber }) : void 0;
+          const { left, right } = this.generateLineHtml(preparedOldLine, preparedNewLine);
+          fileHtml.left += left;
+          fileHtml.right += right;
+        }
+        return fileHtml;
+      }
+      generateLineHtml(oldLine, newLine) {
+        return {
+          left: this.generateSingleHtml(oldLine),
+          right: this.generateSingleHtml(newLine)
+        };
+      }
+      generateSingleHtml(line) {
+        const lineClass = "d2h-code-side-linenumber";
+        const contentClass = "d2h-code-side-line";
+        return this.hoganUtils.render(genericTemplatesPath, "line", {
+          type: (line === null || line === void 0 ? void 0 : line.type) || `${renderUtils.CSSLineClass.CONTEXT} d2h-emptyplaceholder`,
+          lineClass: line !== void 0 ? lineClass : `${lineClass} d2h-code-side-emptyplaceholder`,
+          contentClass: line !== void 0 ? contentClass : `${contentClass} d2h-code-side-emptyplaceholder`,
+          prefix: (line === null || line === void 0 ? void 0 : line.prefix) === " " ? "&nbsp;" : line === null || line === void 0 ? void 0 : line.prefix,
+          content: line === null || line === void 0 ? void 0 : line.content,
+          lineNumber: line === null || line === void 0 ? void 0 : line.number
+        });
+      }
+    };
+    exports.default = SideBySideRenderer;
+  }
+});
+
+// node_modules/@profoundlogic/hogan/lib/compiler.js
+var require_compiler = __commonJS({
+  "node_modules/@profoundlogic/hogan/lib/compiler.js"(exports) {
+    (function(Hogan2) {
+      var rIsWhitespace = /\S/, rQuot = /\"/g, rNewline = /\n/g, rCr = /\r/g, rSlash = /\\/g, rLineSep = /\u2028/, rParagraphSep = /\u2029/;
+      Hogan2.tags = {
+        "#": 1,
+        "^": 2,
+        "<": 3,
+        "$": 4,
+        "/": 5,
+        "!": 6,
+        ">": 7,
+        "=": 8,
+        "_v": 9,
+        "{": 10,
+        "&": 11,
+        "_t": 12
+      };
+      Hogan2.scan = function scan(text2, delimiters) {
+        var len = text2.length, IN_TEXT = 0, IN_TAG_TYPE = 1, IN_TAG = 2, state = IN_TEXT, tagType = null, tag = null, buf = "", tokens = [], seenTag = false, i = 0, lineStart = 0, otag = "{{", ctag = "}}";
+        function addBuf() {
+          if (buf.length > 0) {
+            tokens.push({ tag: "_t", text: new String(buf) });
+            buf = "";
+          }
+        }
+        function lineIsWhitespace() {
+          var isAllWhitespace = true;
+          for (var j = lineStart; j < tokens.length; j++) {
+            isAllWhitespace = Hogan2.tags[tokens[j].tag] < Hogan2.tags["_v"] || tokens[j].tag == "_t" && tokens[j].text.match(rIsWhitespace) === null;
+            if (!isAllWhitespace) {
+              return false;
+            }
+          }
+          return isAllWhitespace;
+        }
+        function filterLine(haveSeenTag, noNewLine) {
+          addBuf();
+          if (haveSeenTag && lineIsWhitespace()) {
+            for (var j = lineStart, next; j < tokens.length; j++) {
+              if (tokens[j].text) {
+                if ((next = tokens[j + 1]) && next.tag == ">") {
+                  next.indent = tokens[j].text.toString();
+                }
+                tokens.splice(j, 1);
+              }
+            }
+          } else if (!noNewLine) {
+            tokens.push({ tag: "\n" });
+          }
+          seenTag = false;
+          lineStart = tokens.length;
+        }
+        function changeDelimiters(text3, index) {
+          var close = "=" + ctag, closeIndex = text3.indexOf(close, index), delimiters2 = trim(
+            text3.substring(text3.indexOf("=", index) + 1, closeIndex)
+          ).split(" ");
+          otag = delimiters2[0];
+          ctag = delimiters2[delimiters2.length - 1];
+          return closeIndex + close.length - 1;
+        }
+        if (delimiters) {
+          delimiters = delimiters.split(" ");
+          otag = delimiters[0];
+          ctag = delimiters[1];
+        }
+        for (i = 0; i < len; i++) {
+          if (state == IN_TEXT) {
+            if (tagChange(otag, text2, i)) {
+              --i;
+              addBuf();
+              state = IN_TAG_TYPE;
+            } else {
+              if (text2.charAt(i) == "\n") {
+                filterLine(seenTag);
+              } else {
+                buf += text2.charAt(i);
+              }
+            }
+          } else if (state == IN_TAG_TYPE) {
+            i += otag.length - 1;
+            tag = Hogan2.tags[text2.charAt(i + 1)];
+            tagType = tag ? text2.charAt(i + 1) : "_v";
+            if (tagType == "=") {
+              i = changeDelimiters(text2, i);
+              state = IN_TEXT;
+            } else {
+              if (tag) {
+                i++;
+              }
+              state = IN_TAG;
+            }
+            seenTag = i;
+          } else {
+            if (tagChange(ctag, text2, i)) {
+              tokens.push({
+                tag: tagType,
+                n: trim(buf),
+                otag,
+                ctag,
+                i: tagType == "/" ? seenTag - otag.length : i + ctag.length
+              });
+              buf = "";
+              i += ctag.length - 1;
+              state = IN_TEXT;
+              if (tagType == "{") {
+                if (ctag == "}}") {
+                  i++;
+                } else {
+                  cleanTripleStache(tokens[tokens.length - 1]);
+                }
+              }
+            } else {
+              buf += text2.charAt(i);
+            }
+          }
+        }
+        filterLine(seenTag, true);
+        return tokens;
+      };
+      function cleanTripleStache(token) {
+        if (token.n.substr(token.n.length - 1) === "}") {
+          token.n = token.n.substring(0, token.n.length - 1);
+        }
+      }
+      function trim(s) {
+        if (s.trim) {
+          return s.trim();
+        }
+        return s.replace(/^\s*|\s*$/g, "");
+      }
+      function tagChange(tag, text2, index) {
+        if (text2.charAt(index) != tag.charAt(0)) {
+          return false;
+        }
+        for (var i = 1, l = tag.length; i < l; i++) {
+          if (text2.charAt(index + i) != tag.charAt(i)) {
+            return false;
+          }
+        }
+        return true;
+      }
+      var allowedInSuper = { "_t": true, "\n": true, "$": true, "/": true };
+      function buildTree(tokens, kind, stack, customTags) {
+        var instructions = [], opener = null, tail = null, token = null;
+        tail = stack[stack.length - 1];
+        while (tokens.length > 0) {
+          token = tokens.shift();
+          if (tail && tail.tag == "<" && !(token.tag in allowedInSuper)) {
+            throw new Error("Illegal content in < super tag.");
+          }
+          if (Hogan2.tags[token.tag] <= Hogan2.tags["$"] || isOpener(token, customTags)) {
+            stack.push(token);
+            token.nodes = buildTree(tokens, token.tag, stack, customTags);
+          } else if (token.tag == "/") {
+            if (stack.length === 0) {
+              throw new Error("Closing tag without opener: /" + token.n);
+            }
+            opener = stack.pop();
+            if (token.n != opener.n && !isCloser(token.n, opener.n, customTags)) {
+              throw new Error("Nesting error: " + opener.n + " vs. " + token.n);
+            }
+            opener.end = token.i;
+            return instructions;
+          } else if (token.tag == "\n") {
+            token.last = tokens.length == 0 || tokens[0].tag == "\n";
+          }
+          instructions.push(token);
+        }
+        if (stack.length > 0) {
+          throw new Error("missing closing tag: " + stack.pop().n);
+        }
+        return instructions;
+      }
+      function isOpener(token, tags) {
+        for (var i = 0, l = tags.length; i < l; i++) {
+          if (tags[i].o == token.n) {
+            token.tag = "#";
+            return true;
+          }
+        }
+      }
+      function isCloser(close, open2, tags) {
+        for (var i = 0, l = tags.length; i < l; i++) {
+          if (tags[i].c == close && tags[i].o == open2) {
+            return true;
+          }
+        }
+      }
+      function stringifySubstitutions(obj) {
+        var items = [];
+        for (var key2 in obj) {
+          items.push('"' + esc(key2) + '": function(c,p,t,i) {' + obj[key2] + "}");
+        }
+        return "{ " + items.join(",") + " }";
+      }
+      function stringifyPartials(codeObj) {
+        var partials = [];
+        for (var key2 in codeObj.partials) {
+          partials.push('"' + esc(key2) + '":{name:"' + esc(codeObj.partials[key2].name) + '", ' + stringifyPartials(codeObj.partials[key2]) + "}");
+        }
+        return "partials: {" + partials.join(",") + "}, subs: " + stringifySubstitutions(codeObj.subs);
+      }
+      Hogan2.stringify = function(codeObj, text2, options) {
+        return "{code: function (c,p,i) { " + Hogan2.wrapMain(codeObj.code) + " }," + stringifyPartials(codeObj) + "}";
+      };
+      var serialNo = 0;
+      Hogan2.generate = function(tree, text2, options) {
+        serialNo = 0;
+        var context = { code: "", subs: {}, partials: {} };
+        Hogan2.walk(tree, context);
+        if (options.asString) {
+          return this.stringify(context, text2, options);
+        }
+        return this.makeTemplate(context, text2, options);
+      };
+      Hogan2.wrapMain = function(code2) {
+        return 'var t=this;t.b(i=i||"");' + code2 + "return t.fl();";
+      };
+      Hogan2.template = Hogan2.Template;
+      Hogan2.makeTemplate = function(codeObj, text2, options) {
+        var template = this.makePartials(codeObj);
+        template.code = new Function("c", "p", "i", this.wrapMain(codeObj.code));
+        return new this.template(template, text2, this, options);
+      };
+      Hogan2.makePartials = function(codeObj) {
+        var key2, template = { subs: {}, partials: codeObj.partials, name: codeObj.name };
+        for (key2 in template.partials) {
+          template.partials[key2] = this.makePartials(template.partials[key2]);
+        }
+        for (key2 in codeObj.subs) {
+          template.subs[key2] = new Function("c", "p", "t", "i", codeObj.subs[key2]);
+        }
+        return template;
+      };
+      function esc(s) {
+        return s.replace(rSlash, "\\\\").replace(rQuot, '\\"').replace(rNewline, "\\n").replace(rCr, "\\r").replace(rLineSep, "\\u2028").replace(rParagraphSep, "\\u2029");
+      }
+      function chooseMethod(s) {
+        return ~s.indexOf(".") ? "d" : "f";
+      }
+      function createPartial(node, context) {
+        var prefix = "<" + (context.prefix || "");
+        var sym = prefix + node.n + serialNo++;
+        context.partials[sym] = { name: node.n, partials: {} };
+        context.code += 't.b(t.rp("' + esc(sym) + '",c,p,"' + (node.indent || "") + '"));';
+        return sym;
+      }
+      Hogan2.codegen = {
+        "#": function(node, context) {
+          context.code += "if(t.s(t." + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),c,p,0,' + node.i + "," + node.end + ',"' + node.otag + " " + node.ctag + '")){t.rs(c,p,function(c,p,t){';
+          Hogan2.walk(node.nodes, context);
+          context.code += "});c.pop();}";
+        },
+        "^": function(node, context) {
+          context.code += "if(!t.s(t." + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),c,p,1,0,0,"")){';
+          Hogan2.walk(node.nodes, context);
+          context.code += "};";
+        },
+        ">": createPartial,
+        "<": function(node, context) {
+          var ctx = { partials: {}, code: "", subs: {}, inPartial: true };
+          Hogan2.walk(node.nodes, ctx);
+          var template = context.partials[createPartial(node, context)];
+          template.subs = ctx.subs;
+          template.partials = ctx.partials;
+        },
+        "$": function(node, context) {
+          var ctx = { subs: {}, code: "", partials: context.partials, prefix: node.n };
+          Hogan2.walk(node.nodes, ctx);
+          context.subs[node.n] = ctx.code;
+          if (!context.inPartial) {
+            context.code += 't.sub("' + esc(node.n) + '",c,p,i);';
+          }
+        },
+        "\n": function(node, context) {
+          context.code += write('"\\n"' + (node.last ? "" : " + i"));
+        },
+        "_v": function(node, context) {
+          context.code += "t.b(t.v(t." + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+        },
+        "_t": function(node, context) {
+          context.code += write('"' + esc(node.text) + '"');
+        },
+        "{": tripleStache,
+        "&": tripleStache
+      };
+      function tripleStache(node, context) {
+        context.code += "t.b(t.t(t." + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+      }
+      function write(s) {
+        return "t.b(" + s + ");";
+      }
+      Hogan2.walk = function(nodelist, context) {
+        var func;
+        for (var i = 0, l = nodelist.length; i < l; i++) {
+          func = Hogan2.codegen[nodelist[i].tag];
+          func && func(nodelist[i], context);
+        }
+        return context;
+      };
+      Hogan2.parse = function(tokens, text2, options) {
+        options = options || {};
+        return buildTree(tokens, "", [], options.sectionTags || []);
+      };
+      Hogan2.cache = {};
+      Hogan2.cacheKey = function(text2, options) {
+        return [text2, !!options.asString, !!options.disableLambda, options.delimiters, !!options.modelGet].join("||");
+      };
+      Hogan2.compile = function(text2, options) {
+        options = options || {};
+        var key2 = Hogan2.cacheKey(text2, options);
+        var template = this.cache[key2];
+        if (template) {
+          var partials = template.partials;
+          for (var name2 in partials) {
+            delete partials[name2].instance;
+          }
+          return template;
+        }
+        template = this.generate(this.parse(this.scan(text2, options.delimiters), text2, options), text2, options);
+        return this.cache[key2] = template;
+      };
+    })(typeof exports !== "undefined" ? exports : Hogan);
+  }
+});
+
+// node_modules/@profoundlogic/hogan/lib/template.js
+var require_template = __commonJS({
+  "node_modules/@profoundlogic/hogan/lib/template.js"(exports) {
+    var Hogan2 = {};
+    (function(Hogan3) {
+      Hogan3.Template = function(codeObj, text2, compiler, options) {
+        codeObj = codeObj || {};
+        this.r = codeObj.code || this.r;
+        this.c = compiler;
+        this.options = options || {};
+        this.text = text2 || "";
+        this.partials = codeObj.partials || {};
+        this.subs = codeObj.subs || {};
+        this.buf = "";
+      };
+      Hogan3.Template.prototype = {
+        // render: replaced by generated code.
+        r: function(context, partials, indent) {
+          return "";
+        },
+        // variable escaping
+        v: hoganEscape,
+        // triple stache
+        t: coerceToString,
+        render: function render(context, partials, indent) {
+          return this.ri([context], partials || {}, indent);
+        },
+        // render internal -- a hook for overrides that catches partials too
+        ri: function(context, partials, indent) {
+          return this.r(context, partials, indent);
+        },
+        // ensurePartial
+        ep: function(symbol, partials) {
+          var partial = this.partials[symbol];
+          var template = partials[partial.name];
+          if (partial.instance && partial.base == template) {
+            return partial.instance;
+          }
+          if (typeof template == "string") {
+            if (!this.c) {
+              throw new Error("No compiler available.");
+            }
+            template = this.c.compile(template, this.options);
+          }
+          if (!template) {
+            return null;
+          }
+          this.partials[symbol].base = template;
+          if (partial.subs) {
+            if (!partials.stackText) partials.stackText = {};
+            for (key in partial.subs) {
+              if (!partials.stackText[key]) {
+                partials.stackText[key] = this.activeSub !== void 0 && partials.stackText[this.activeSub] ? partials.stackText[this.activeSub] : this.text;
+              }
+            }
+            template = createSpecializedPartial(
+              template,
+              partial.subs,
+              partial.partials,
+              this.stackSubs,
+              this.stackPartials,
+              partials.stackText
+            );
+          }
+          this.partials[symbol].instance = template;
+          return template;
+        },
+        // tries to find a partial in the current scope and render it
+        rp: function(symbol, context, partials, indent) {
+          var partial = this.ep(symbol, partials);
+          if (!partial) {
+            return "";
+          }
+          return partial.ri(context, partials, indent);
+        },
+        // render a section
+        rs: function(context, partials, section) {
+          var tail = context[context.length - 1];
+          if (!isArray(tail)) {
+            section(context, partials, this);
+            return;
+          }
+          for (var i = 0; i < tail.length; i++) {
+            context.push(tail[i]);
+            section(context, partials, this);
+            context.pop();
+          }
+        },
+        // maybe start a section
+        s: function(val, ctx, partials, inverted, start2, end, tags) {
+          var pass;
+          if (isArray(val) && val.length === 0) {
+            return false;
+          }
+          if (typeof val == "function") {
+            val = this.ms(val, ctx, partials, inverted, start2, end, tags);
+          }
+          pass = !!val;
+          if (!inverted && pass && ctx) {
+            ctx.push(typeof val == "object" ? val : ctx[ctx.length - 1]);
+          }
+          return pass;
+        },
+        // find values with dotted names
+        d: function(key2, ctx, partials, returnFound) {
+          var found, names = key2.split("."), val = this.f(names[0], ctx, partials, returnFound), doModelGet = this.options.modelGet, cx = null;
+          if (key2 === "." && isArray(ctx[ctx.length - 2])) {
+            val = ctx[ctx.length - 1];
+          } else {
+            for (var i = 1; i < names.length; i++) {
+              found = findInScope(names[i], val, doModelGet);
+              if (found !== void 0) {
+                cx = val;
+                val = found;
+              } else {
+                val = "";
+              }
+            }
+          }
+          if (returnFound && !val) {
+            return false;
+          }
+          if (!returnFound && typeof val == "function") {
+            ctx.push(cx);
+            val = this.mv(val, ctx, partials);
+            ctx.pop();
+          }
+          return val;
+        },
+        // find values with normal names
+        f: function(key2, ctx, partials, returnFound) {
+          var val = false, v = null, found = false, doModelGet = this.options.modelGet;
+          for (var i = ctx.length - 1; i >= 0; i--) {
+            v = ctx[i];
+            val = findInScope(key2, v, doModelGet);
+            if (val !== void 0) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            return returnFound ? false : "";
+          }
+          if (!returnFound && typeof val == "function") {
+            val = this.mv(val, ctx, partials);
+          }
+          return val;
+        },
+        // higher order templates
+        ls: function(func, cx, ctx, partials, text2, tags) {
+          var oldTags = this.options.delimiters;
+          this.options.delimiters = tags;
+          this.b(this.ct(coerceToString(func.call(cx, text2, ctx)), cx, partials));
+          this.options.delimiters = oldTags;
+          return false;
+        },
+        // compile text
+        ct: function(text2, cx, partials) {
+          if (this.options.disableLambda) {
+            throw new Error("Lambda features disabled.");
+          }
+          return this.c.compile(text2, this.options).render(cx, partials);
+        },
+        // template result buffering
+        b: function(s) {
+          this.buf += s;
+        },
+        fl: function() {
+          var r = this.buf;
+          this.buf = "";
+          return r;
+        },
+        // method replace section
+        ms: function(func, ctx, partials, inverted, start2, end, tags) {
+          var textSource, cx = ctx[ctx.length - 1], result = func.call(cx);
+          if (typeof result == "function") {
+            if (inverted) {
+              return true;
+            } else {
+              textSource = this.activeSub && this.subsText && this.subsText[this.activeSub] ? this.subsText[this.activeSub] : this.text;
+              return this.ls(result, cx, ctx, partials, textSource.substring(start2, end), tags);
+            }
+          }
+          return result;
+        },
+        // method replace variable
+        mv: function(func, ctx, partials) {
+          var cx = ctx[ctx.length - 1];
+          var result = func.call(cx);
+          if (typeof result == "function") {
+            return this.ct(coerceToString(result.call(cx)), cx, partials);
+          }
+          return result;
+        },
+        sub: function(name2, context, partials, indent) {
+          var f = this.subs[name2];
+          if (f) {
+            this.activeSub = name2;
+            f(context, partials, this, indent);
+            this.activeSub = false;
+          }
+        }
+      };
+      function findInScope(key2, scope, doModelGet) {
+        var val;
+        if (scope && typeof scope == "object") {
+          if (scope[key2] !== void 0) {
+            val = scope[key2];
+          } else if (doModelGet && scope.get && typeof scope.get == "function") {
+            val = scope.get(key2);
+          }
+        }
+        return val;
+      }
+      function createSpecializedPartial(instance, subs, partials, stackSubs, stackPartials, stackText) {
+        function PartialTemplate() {
+        }
+        ;
+        PartialTemplate.prototype = instance;
+        function Substitutions() {
+        }
+        ;
+        Substitutions.prototype = instance.subs;
+        var key2;
+        var partial = new PartialTemplate();
+        partial.subs = new Substitutions();
+        partial.subsText = {};
+        partial.buf = "";
+        stackSubs = stackSubs || {};
+        partial.stackSubs = stackSubs;
+        partial.subsText = stackText;
+        for (key2 in subs) {
+          if (!stackSubs[key2]) stackSubs[key2] = subs[key2];
+        }
+        for (key2 in stackSubs) {
+          partial.subs[key2] = stackSubs[key2];
+        }
+        stackPartials = stackPartials || {};
+        partial.stackPartials = stackPartials;
+        for (key2 in partials) {
+          if (!stackPartials[key2]) stackPartials[key2] = partials[key2];
+        }
+        for (key2 in stackPartials) {
+          partial.partials[key2] = stackPartials[key2];
+        }
+        return partial;
+      }
+      var rAmp = /&/g, rLt = /</g, rGt = />/g, rApos = /\'/g, rQuot = /\"/g, hChars = /[&<>\"\']/;
+      function coerceToString(val) {
+        return String(val === null || val === void 0 ? "" : val);
+      }
+      function hoganEscape(str) {
+        str = coerceToString(str);
+        return hChars.test(str) ? str.replace(rAmp, "&amp;").replace(rLt, "&lt;").replace(rGt, "&gt;").replace(rApos, "&#39;").replace(rQuot, "&quot;") : str;
+      }
+      var isArray = Array.isArray || function(a) {
+        return Object.prototype.toString.call(a) === "[object Array]";
+      };
+    })(typeof exports !== "undefined" ? exports : Hogan2);
+  }
+});
+
+// node_modules/@profoundlogic/hogan/lib/hogan.js
+var require_hogan = __commonJS({
+  "node_modules/@profoundlogic/hogan/lib/hogan.js"(exports, module) {
+    var Hogan2 = require_compiler();
+    Hogan2.Template = require_template().Template;
+    Hogan2.template = Hogan2.Template;
+    module.exports = Hogan2;
+  }
+});
+
+// node_modules/diff2html/lib/diff2html-templates.js
+var require_diff2html_templates = __commonJS({
+  "node_modules/diff2html/lib/diff2html-templates.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.defaultTemplates = void 0;
+    var Hogan2 = __importStar(require_hogan());
+    exports.defaultTemplates = {};
+    exports.defaultTemplates["file-summary-line"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<li class="d2h-file-list-line">');
+      t.b("\n" + i);
+      t.b('    <span class="d2h-file-name-wrapper">');
+      t.b("\n" + i);
+      t.b(t.rp("<fileIcon0", c, p, "      "));
+      t.b('      <a href="#');
+      t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+      t.b('" class="d2h-file-name">');
+      t.b(t.v(t.f("fileName", c, p, 0)));
+      t.b("</a>");
+      t.b("\n" + i);
+      t.b('      <span class="d2h-file-stats">');
+      t.b("\n" + i);
+      t.b('          <span class="d2h-lines-added">');
+      t.b(t.v(t.f("addedLines", c, p, 0)));
+      t.b("</span>");
+      t.b("\n" + i);
+      t.b('          <span class="d2h-lines-deleted">');
+      t.b(t.v(t.f("deletedLines", c, p, 0)));
+      t.b("</span>");
+      t.b("\n" + i);
+      t.b("      </span>");
+      t.b("\n" + i);
+      t.b("    </span>");
+      t.b("\n" + i);
+      t.b("</li>");
+      return t.fl();
+    }, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} } }, subs: {} });
+    exports.defaultTemplates["file-summary-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<div class="d2h-file-list-wrapper ');
+      t.b(t.v(t.f("colorScheme", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('    <div class="d2h-file-list-header">');
+      t.b("\n" + i);
+      t.b('        <span class="d2h-file-list-title">Files changed (');
+      t.b(t.v(t.f("filesNumber", c, p, 0)));
+      t.b(")</span>");
+      t.b("\n" + i);
+      t.b('        <a class="d2h-file-switch d2h-hide">hide</a>');
+      t.b("\n" + i);
+      t.b('        <a class="d2h-file-switch d2h-show">show</a>');
+      t.b("\n" + i);
+      t.b("    </div>");
+      t.b("\n" + i);
+      t.b('    <ol class="d2h-file-list">');
+      t.b("\n" + i);
+      t.b("    ");
+      t.b(t.t(t.f("files", c, p, 0)));
+      t.b("\n" + i);
+      t.b("    </ol>");
+      t.b("\n" + i);
+      t.b("</div>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["generic-block-header"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b("<tr>");
+      t.b("\n" + i);
+      t.b('    <td class="');
+      t.b(t.v(t.f("lineClass", c, p, 0)));
+      t.b(" ");
+      t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+      t.b('"></td>');
+      t.b("\n" + i);
+      t.b('    <td class="');
+      t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('        <div class="');
+      t.b(t.v(t.f("contentClass", c, p, 0)));
+      t.b('">');
+      if (t.s(t.f("blockHeader", c, p, 1), c, p, 0, 156, 173, "{{ }}")) {
+        t.rs(c, p, function(c2, p2, t2) {
+          t2.b(t2.t(t2.f("blockHeader", c2, p2, 0)));
+        });
+        c.pop();
+      }
+      if (!t.s(t.f("blockHeader", c, p, 1), c, p, 1, 0, 0, "")) {
+        t.b("&nbsp;");
+      }
+      ;
+      t.b("</div>");
+      t.b("\n" + i);
+      t.b("    </td>");
+      t.b("\n" + i);
+      t.b("</tr>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["generic-empty-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b("<tr>");
+      t.b("\n" + i);
+      t.b('    <td class="');
+      t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('        <div class="');
+      t.b(t.v(t.f("contentClass", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b("            File without changes");
+      t.b("\n" + i);
+      t.b("        </div>");
+      t.b("\n" + i);
+      t.b("    </td>");
+      t.b("\n" + i);
+      t.b("</tr>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["generic-file-path"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<span class="d2h-file-name-wrapper">');
+      t.b("\n" + i);
+      t.b(t.rp("<fileIcon0", c, p, "    "));
+      t.b('    <span class="d2h-file-name">');
+      t.b(t.v(t.f("fileDiffName", c, p, 0)));
+      t.b("</span>");
+      t.b("\n" + i);
+      t.b(t.rp("<fileTag1", c, p, "    "));
+      t.b("</span>");
+      t.b("\n" + i);
+      t.b('<label class="d2h-file-collapse">');
+      t.b("\n" + i);
+      t.b('    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">');
+      t.b("\n" + i);
+      t.b("    Viewed");
+      t.b("\n" + i);
+      t.b("</label>");
+      return t.fl();
+    }, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} }, "<fileTag1": { name: "fileTag", partials: {}, subs: {} } }, subs: {} });
+    exports.defaultTemplates["generic-line"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b("<tr>");
+      t.b("\n" + i);
+      t.b('    <td class="');
+      t.b(t.v(t.f("lineClass", c, p, 0)));
+      t.b(" ");
+      t.b(t.v(t.f("type", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b("      ");
+      t.b(t.t(t.f("lineNumber", c, p, 0)));
+      t.b("\n" + i);
+      t.b("    </td>");
+      t.b("\n" + i);
+      t.b('    <td class="');
+      t.b(t.v(t.f("type", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('        <div class="');
+      t.b(t.v(t.f("contentClass", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      if (t.s(t.f("prefix", c, p, 1), c, p, 0, 162, 238, "{{ }}")) {
+        t.rs(c, p, function(c2, p2, t2) {
+          t2.b('            <span class="d2h-code-line-prefix">');
+          t2.b(t2.t(t2.f("prefix", c2, p2, 0)));
+          t2.b("</span>");
+          t2.b("\n" + i);
+        });
+        c.pop();
+      }
+      if (!t.s(t.f("prefix", c, p, 1), c, p, 1, 0, 0, "")) {
+        t.b('            <span class="d2h-code-line-prefix">&nbsp;</span>');
+        t.b("\n" + i);
+      }
+      ;
+      if (t.s(t.f("content", c, p, 1), c, p, 0, 371, 445, "{{ }}")) {
+        t.rs(c, p, function(c2, p2, t2) {
+          t2.b('            <span class="d2h-code-line-ctn">');
+          t2.b(t2.t(t2.f("content", c2, p2, 0)));
+          t2.b("</span>");
+          t2.b("\n" + i);
+        });
+        c.pop();
+      }
+      if (!t.s(t.f("content", c, p, 1), c, p, 1, 0, 0, "")) {
+        t.b('            <span class="d2h-code-line-ctn"><br></span>');
+        t.b("\n" + i);
+      }
+      ;
+      t.b("        </div>");
+      t.b("\n" + i);
+      t.b("    </td>");
+      t.b("\n" + i);
+      t.b("</tr>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["generic-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<div class="d2h-wrapper ');
+      t.b(t.v(t.f("colorScheme", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b("    ");
+      t.b(t.t(t.f("content", c, p, 0)));
+      t.b("\n" + i);
+      t.b("</div>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["icon-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<svg aria-hidden="true" class="d2h-icon d2h-added" height="16" title="added" version="1.1" viewBox="0 0 14 16"');
+      t.b("\n" + i);
+      t.b('     width="14">');
+      t.b("\n" + i);
+      t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM6 9H3V7h3V4h2v3h3v2H8v3H6V9z"></path>');
+      t.b("\n" + i);
+      t.b("</svg>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["icon-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<svg aria-hidden="true" class="d2h-icon d2h-changed" height="16" title="modified" version="1.1"');
+      t.b("\n" + i);
+      t.b('     viewBox="0 0 14 16" width="14">');
+      t.b("\n" + i);
+      t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM4 8c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3-3-1.34-3-3z"></path>');
+      t.b("\n" + i);
+      t.b("</svg>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["icon-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<svg aria-hidden="true" class="d2h-icon d2h-deleted" height="16" title="removed" version="1.1"');
+      t.b("\n" + i);
+      t.b('     viewBox="0 0 14 16" width="14">');
+      t.b("\n" + i);
+      t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM11 9H3V7h8v2z"></path>');
+      t.b("\n" + i);
+      t.b("</svg>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["icon-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<svg aria-hidden="true" class="d2h-icon d2h-moved" height="16" title="renamed" version="1.1"');
+      t.b("\n" + i);
+      t.b('     viewBox="0 0 14 16" width="14">');
+      t.b("\n" + i);
+      t.b('    <path d="M6 9H3V7h3V4l5 4-5 4V9z m8-7v12c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h12c0.55 0 1 0.45 1 1z m-1 0H1v12h12V2z"></path>');
+      t.b("\n" + i);
+      t.b("</svg>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["icon-file"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">');
+      t.b("\n" + i);
+      t.b('    <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>');
+      t.b("\n" + i);
+      t.b("</svg>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["line-by-line-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<div id="');
+      t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+      t.b('" class="d2h-file-wrapper" data-lang="');
+      t.b(t.v(t.d("file.language", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('    <div class="d2h-file-header">');
+      t.b("\n" + i);
+      t.b("    ");
+      t.b(t.t(t.f("filePath", c, p, 0)));
+      t.b("\n" + i);
+      t.b("    </div>");
+      t.b("\n" + i);
+      t.b('    <div class="d2h-file-diff">');
+      t.b("\n" + i);
+      t.b('        <div class="d2h-code-wrapper">');
+      t.b("\n" + i);
+      t.b('            <table class="d2h-diff-table">');
+      t.b("\n" + i);
+      t.b('                <tbody class="d2h-diff-tbody">');
+      t.b("\n" + i);
+      t.b("                ");
+      t.b(t.t(t.f("diffs", c, p, 0)));
+      t.b("\n" + i);
+      t.b("                </tbody>");
+      t.b("\n" + i);
+      t.b("            </table>");
+      t.b("\n" + i);
+      t.b("        </div>");
+      t.b("\n" + i);
+      t.b("    </div>");
+      t.b("\n" + i);
+      t.b("</div>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["line-by-line-numbers"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<div class="line-num1">');
+      t.b(t.v(t.f("oldNumber", c, p, 0)));
+      t.b("</div>");
+      t.b("\n" + i);
+      t.b('<div class="line-num2">');
+      t.b(t.v(t.f("newNumber", c, p, 0)));
+      t.b("</div>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["side-by-side-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<div id="');
+      t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+      t.b('" class="d2h-file-wrapper" data-lang="');
+      t.b(t.v(t.d("file.language", c, p, 0)));
+      t.b('">');
+      t.b("\n" + i);
+      t.b('    <div class="d2h-file-header">');
+      t.b("\n" + i);
+      t.b("      ");
+      t.b(t.t(t.f("filePath", c, p, 0)));
+      t.b("\n" + i);
+      t.b("    </div>");
+      t.b("\n" + i);
+      t.b('    <div class="d2h-files-diff">');
+      t.b("\n" + i);
+      t.b('        <div class="d2h-file-side-diff">');
+      t.b("\n" + i);
+      t.b('            <div class="d2h-code-wrapper">');
+      t.b("\n" + i);
+      t.b('                <table class="d2h-diff-table">');
+      t.b("\n" + i);
+      t.b('                    <tbody class="d2h-diff-tbody">');
+      t.b("\n" + i);
+      t.b("                    ");
+      t.b(t.t(t.d("diffs.left", c, p, 0)));
+      t.b("\n" + i);
+      t.b("                    </tbody>");
+      t.b("\n" + i);
+      t.b("                </table>");
+      t.b("\n" + i);
+      t.b("            </div>");
+      t.b("\n" + i);
+      t.b("        </div>");
+      t.b("\n" + i);
+      t.b('        <div class="d2h-file-side-diff">');
+      t.b("\n" + i);
+      t.b('            <div class="d2h-code-wrapper">');
+      t.b("\n" + i);
+      t.b('                <table class="d2h-diff-table">');
+      t.b("\n" + i);
+      t.b('                    <tbody class="d2h-diff-tbody">');
+      t.b("\n" + i);
+      t.b("                    ");
+      t.b(t.t(t.d("diffs.right", c, p, 0)));
+      t.b("\n" + i);
+      t.b("                    </tbody>");
+      t.b("\n" + i);
+      t.b("                </table>");
+      t.b("\n" + i);
+      t.b("            </div>");
+      t.b("\n" + i);
+      t.b("        </div>");
+      t.b("\n" + i);
+      t.b("    </div>");
+      t.b("\n" + i);
+      t.b("</div>");
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["tag-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<span class="d2h-tag d2h-added d2h-added-tag">ADDED</span>');
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["tag-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span>');
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["tag-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<span class="d2h-tag d2h-deleted d2h-deleted-tag">DELETED</span>');
+      return t.fl();
+    }, partials: {}, subs: {} });
+    exports.defaultTemplates["tag-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
+      var t = this;
+      t.b(i = i || "");
+      t.b('<span class="d2h-tag d2h-moved d2h-moved-tag">RENAMED</span>');
+      return t.fl();
+    }, partials: {}, subs: {} });
+  }
+});
+
+// node_modules/diff2html/lib/hoganjs-utils.js
+var require_hoganjs_utils = __commonJS({
+  "node_modules/diff2html/lib/hoganjs-utils.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Hogan2 = __importStar(require_hogan());
+    var diff2html_templates_1 = require_diff2html_templates();
+    var HoganJsUtils = class {
+      constructor({ compiledTemplates = {}, rawTemplates = {} }) {
+        const compiledRawTemplates = Object.entries(rawTemplates).reduce((previousTemplates, [name2, templateString]) => {
+          const compiledTemplate = Hogan2.compile(templateString, { asString: false });
+          return Object.assign(Object.assign({}, previousTemplates), { [name2]: compiledTemplate });
+        }, {});
+        this.preCompiledTemplates = Object.assign(Object.assign(Object.assign({}, diff2html_templates_1.defaultTemplates), compiledTemplates), compiledRawTemplates);
+      }
+      static compile(templateString) {
+        return Hogan2.compile(templateString, { asString: false });
+      }
+      render(namespace, view, params, partials, indent) {
+        const templateKey = this.templateKey(namespace, view);
+        try {
+          const template = this.preCompiledTemplates[templateKey];
+          return template.render(params, partials, indent);
+        } catch (_e) {
+          throw new Error(`Could not find template to render '${templateKey}'`);
+        }
+      }
+      template(namespace, view) {
+        return this.preCompiledTemplates[this.templateKey(namespace, view)];
+      }
+      templateKey(namespace, view) {
+        return `${namespace}-${view}`;
+      }
+    };
+    exports.default = HoganJsUtils;
+  }
+});
+
+// node_modules/diff2html/lib/diff2html.js
+var require_diff2html = __commonJS({
+  "node_modules/diff2html/lib/diff2html.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      var desc = Object.getOwnPropertyDescriptor(m, k);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k];
+        } };
+      }
+      Object.defineProperty(o, k2, desc);
+    }) : (function(o, m, k, k2) {
+      if (k2 === void 0) k2 = k;
+      o[k2] = m[k];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v });
+    }) : function(o, v) {
+      o["default"] = v;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar = [];
+          for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+          return ar;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    var __importDefault = exports && exports.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.defaultDiff2HtmlConfig = void 0;
+    exports.parse = parse2;
+    exports.html = html;
+    var DiffParser = __importStar(require_diff_parser());
+    var file_list_renderer_1 = require_file_list_renderer();
+    var line_by_line_renderer_1 = __importStar(require_line_by_line_renderer());
+    var side_by_side_renderer_1 = __importStar(require_side_by_side_renderer());
+    var types_1 = require_types();
+    var hoganjs_utils_1 = __importDefault(require_hoganjs_utils());
+    exports.defaultDiff2HtmlConfig = Object.assign(Object.assign(Object.assign({}, line_by_line_renderer_1.defaultLineByLineRendererConfig), side_by_side_renderer_1.defaultSideBySideRendererConfig), { outputFormat: types_1.OutputFormatType.LINE_BY_LINE, drawFileList: true });
+    function parse2(diffInput, configuration = {}) {
+      return DiffParser.parse(diffInput, Object.assign(Object.assign({}, exports.defaultDiff2HtmlConfig), configuration));
+    }
+    function html(diffInput, configuration = {}) {
+      const config2 = Object.assign(Object.assign({}, exports.defaultDiff2HtmlConfig), configuration);
+      const diffJson = typeof diffInput === "string" ? DiffParser.parse(diffInput, config2) : diffInput;
+      const hoganUtils = new hoganjs_utils_1.default(config2);
+      const { colorScheme } = config2;
+      const fileListRendererConfig = { colorScheme };
+      const fileList = config2.drawFileList ? new file_list_renderer_1.FileListRenderer(hoganUtils, fileListRendererConfig).render(diffJson) : "";
+      const diffOutput = config2.outputFormat === "side-by-side" ? new side_by_side_renderer_1.default(hoganUtils, config2).render(diffJson) : new line_by_line_renderer_1.default(hoganUtils, config2).render(diffJson);
+      return fileList + diffOutput;
+    }
+  }
+});
+
 // src/cli.ts
 import { spawnSync as spawnSync4 } from "node:child_process";
-import fs12 from "node:fs";
-import path12 from "node:path";
+import fs11 from "node:fs";
+import path11 from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 
 // src/change.ts
@@ -1934,12 +6264,12 @@ async function changeOf(cwd, source) {
   };
 }
 async function changedFiles(cwd, base, head) {
-  const fields2 = (await gitAsync(cwd, "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
+  const fields = (await gitAsync(cwd, "diff", "--name-status", "-z", "-M", "--no-ext-diff", base, head)).split("\0");
   const files3 = [];
-  for (let at = 0; at < fields2.length - 1; ) {
-    const status2 = fields2[at++] ?? "";
-    const first = fields2[at++] ?? "";
-    if (status2.startsWith("R")) files3.push({ path: fields2[at++] ?? "", from: first });
+  for (let at = 0; at < fields.length - 1; ) {
+    const status2 = fields[at++] ?? "";
+    const first = fields[at++] ?? "";
+    if (status2.startsWith("R")) files3.push({ path: fields[at++] ?? "", from: first });
     else files3.push({ path: first });
   }
   return files3;
@@ -1980,103 +6310,15 @@ function defaultTarget(cwd) {
   }
 }
 
-// src/input.ts
-import fs3 from "node:fs";
-
-// src/paths.ts
-import fs2 from "node:fs";
-import os2 from "node:os";
-import path2 from "node:path";
-var outsideOwn = (dir) => {
-  if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
-  const own = path2.join(os2.userInfo().homedir, ".local", "state", "walkthrough");
-  const full = path2.resolve(dir);
-  if (full === own || full.startsWith(own + path2.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
-  return dir;
-};
-var stateDir = () => outsideOwn(
-  process.env["WALKTHROUGH_STATE"] || path2.join(process.env["XDG_STATE_HOME"] || path2.join(os2.homedir(), ".local", "state"), "walkthrough")
-);
-var INBOX = "inbox";
-function makeInbox(dir) {
-  const inbox = path2.join(dir, INBOX);
-  fs2.mkdirSync(inbox, { recursive: true, mode: 448 });
-  return inbox;
-}
-function inState(dir) {
-  try {
-    return fs2.realpathSync(dir).startsWith(fs2.realpathSync(stateDir()) + path2.sep);
-  } catch {
-    return false;
-  }
-}
-function inInbox(file2) {
-  const parent = path2.dirname(path2.resolve(file2));
-  if (path2.basename(parent) !== INBOX || !inState(parent)) return false;
-  try {
-    const stat = fs2.lstatSync(file2, { throwIfNoEntry: false });
-    return !stat || stat.isFile();
-  } catch {
-    return false;
-  }
-}
-
-// src/input.ts
-function readInput(file2) {
-  if (file2 === void 0) return fs3.readFileSync(0, "utf8");
-  const text2 = fs3.readFileSync(file2, "utf8");
-  if (inInbox(file2)) fs3.rmSync(file2);
-  return text2;
-}
-var filled = (value) => typeof value === "string" && value.trim() !== "";
-var fieldsOf = (value) => typeof value === "object" && value !== null ? value : {};
-function parsed(text2) {
-  try {
-    return JSON.parse(text2);
-  } catch {
-    return null;
-  }
-}
-var wrongShape = (what, shape) => new Error(`${what} must be a JSON ${shape}; see walkthrough guide`);
-function parseList(text2, what, check) {
-  const list3 = parsed(text2);
-  if (!Array.isArray(list3)) throw wrongShape(what, "array");
-  return list3.map((one, at) => check(fieldsOf(one), at + 1));
-}
-function parseObject(text2, what) {
-  const object = parsed(text2);
-  if (typeof object !== "object" || object === null || Array.isArray(object)) throw wrongShape(what, "object");
-  return object;
-}
-
-// src/walkthrough.ts
-import path4 from "node:path";
-
-// src/items.ts
-var TONES = ["positive", "attention", "none"];
-var CONSEQUENCE_WORDS = 8;
-var OUTCOME_WORDS = 3;
-var STEP_ACTIONS = [
-  { id: "approve", label: "Approve", tone: "positive", outcome: "Approved" },
-  { id: "flag", label: "Flag", note: true, tone: "attention", outcome: "Flagged" }
-];
-var TONE_SHOWN = { positive: "ok", attention: "flag", none: "neu" };
-var toneOf = (actions2, id) => actions2?.find((one) => one.id === id)?.tone ?? "none";
-function stepShown(view, step, findings) {
-  const key = itemKey({ type: "step", id: step.id });
-  const decision = view.decided[key];
-  if (decision) return TONE_SHOWN[toneOf(view.actions[key], decision.action)];
-  if (view.reopened[key]) return "reo";
-  return findings > 0 || step.kind === "folded" && step.problems.length > 0 ? "find" : "un";
-}
-var itemKey = (item) => "id" in item ? `${item.type}:${item.id}` : item.type;
-var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
-var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
+// src/prune.ts
+import { spawnSync as spawnSync3 } from "node:child_process";
+import fs8 from "node:fs";
+import path8 from "node:path";
 
 // src/json-files.ts
 var import_proper_lockfile = __toESM(require_proper_lockfile(), 1);
-import fs4 from "node:fs";
-import path3 from "node:path";
+import fs2 from "node:fs";
+import path2 from "node:path";
 function readJson(file2, fallback) {
   try {
     return readSavedJson(file2) ?? fallback;
@@ -2086,27 +6328,27 @@ function readJson(file2, fallback) {
 }
 function readSavedJson(file2) {
   try {
-    return JSON.parse(fs4.readFileSync(file2, "utf8").replace(/^\uFEFF/, ""));
+    return JSON.parse(fs2.readFileSync(file2, "utf8").replace(/^\uFEFF/, ""));
   } catch (error) {
     if (error.code === "ENOENT") return void 0;
     throw new Error(`cannot read ${file2}: ${error.message}`);
   }
 }
 function writeJson(file2, value) {
-  fs4.mkdirSync(path3.dirname(file2), { recursive: true, mode: 448 });
+  fs2.mkdirSync(path2.dirname(file2), { recursive: true, mode: 448 });
   const beside = `${file2}.${String(process.pid)}.tmp`;
-  const fd = fs4.openSync(beside, "w", 384);
+  const fd = fs2.openSync(beside, "w", 384);
   try {
-    fs4.writeFileSync(fd, `${JSON.stringify(value, null, 2)}
+    fs2.writeFileSync(fd, `${JSON.stringify(value, null, 2)}
 `);
-    fs4.fsyncSync(fd);
+    fs2.fsyncSync(fd);
   } finally {
-    fs4.closeSync(fd);
+    fs2.closeSync(fd);
   }
-  fs4.renameSync(beside, file2);
+  fs2.renameSync(beside, file2);
 }
 async function locked(file2, work) {
-  fs4.mkdirSync(path3.dirname(file2), { recursive: true, mode: 448 });
+  fs2.mkdirSync(path2.dirname(file2), { recursive: true, mode: 448 });
   const release = await (0, import_proper_lockfile.lock)(file2, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
   try {
     return await work();
@@ -2115,160 +6357,50 @@ async function locked(file2, work) {
   }
 }
 
-// src/walkthrough.ts
-var MARKS = ["met", "partly", "not-met", "unchecked"];
-var file = (dir) => path4.join(dir, "walkthrough.json");
-function walkthroughDir(repo, source) {
-  const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
-  if (Buffer.byteLength(name2) > 255)
-    throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
-  return path4.join(stateDir(), repo, name2);
+// src/paths.ts
+import fs3 from "node:fs";
+import os2 from "node:os";
+import path3 from "node:path";
+var outsideOwn = (dir) => {
+  if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
+  const own = path3.join(os2.userInfo().homedir, ".local", "state", "walkthrough");
+  const full = path3.resolve(dir);
+  if (full === own || full.startsWith(own + path3.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
+  return dir;
+};
+var stateDir = () => outsideOwn(
+  process.env["WALKTHROUGH_STATE"] || path3.join(process.env["XDG_STATE_HOME"] || path3.join(os2.homedir(), ".local", "state"), "walkthrough")
+);
+var INBOX = "inbox";
+function makeInbox(dir) {
+  const inbox = path3.join(dir, INBOX);
+  fs3.mkdirSync(inbox, { recursive: true, mode: 448 });
+  return inbox;
 }
-var readWalkthrough = (dir) => readJson(file(dir), null);
-var savedWalkthrough = (dir) => readSavedJson(file(dir)) ?? null;
-function openWalkthrough(dir, source, change, labelled, carry) {
-  return locked(file(dir), async () => {
-    const saved = savedWalkthrough(dir);
-    if (saved?.head === change.head && saved.base === change.base) {
-      if (Object.entries(labelled).every(([key, value]) => saved[key] === value))
-        return { walkthrough: saved, opened: "resumed" };
-      const relabelled = { ...saved, ...labelled };
-      writeJson(file(dir), relabelled);
-      return { walkthrough: relabelled, opened: "resumed" };
-    }
-    if (saved) {
-      const moved = { ...saved, ...labelled, target: change.target, base: change.base, head: change.head };
-      const { steps: steps2, unplaced } = await carry(moved);
-      setSteps(moved, steps2);
-      if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
-      writeJson(file(dir), moved);
-      return { walkthrough: moved, opened: "moved" };
-    }
-    const walkthrough = {
-      ...source.kind === "branch" ? { kind: "branch", branch: source.branch } : { kind: "range", label: source.label },
-      target: change.target,
-      ...labelled,
-      base: change.base,
-      head: change.head,
-      steps: []
-    };
-    writeJson(file(dir), walkthrough);
-    return { walkthrough, opened: "new" };
-  });
+function inState(dir) {
+  try {
+    return fs3.realpathSync(dir).startsWith(fs3.realpathSync(stateDir()) + path3.sep);
+  } catch {
+    return false;
+  }
 }
-function update(dir, change) {
-  return locked(file(dir), async () => {
-    const walkthrough = savedWalkthrough(dir);
-    if (!walkthrough) throw new Error("there is no such walkthrough yet; run walkthrough start first");
-    const changed = await change(walkthrough);
-    writeJson(file(dir), walkthrough);
-    return changed;
-  });
+function inInbox(file2) {
+  const parent = path3.dirname(path3.resolve(file2));
+  if (path3.basename(parent) !== INBOX || !inState(parent)) return false;
+  try {
+    const stat = fs3.lstatSync(file2, { throwIfNoEntry: false });
+    return !stat || stat.isFile();
+  } catch {
+    return false;
+  }
 }
-function keepActions(walkthrough, keep) {
-  return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
-}
-function setSteps(walkthrough, steps2) {
-  walkthrough.steps = steps2;
-  delete walkthrough.unplaced;
-  walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps2.map((step) => Number(step.id)));
-  const kept = new Set(steps2.map((step) => itemKey({ type: "step", id: step.id })));
-  walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("step:") || kept.has(key));
-  if (walkthrough.checking) walkthrough.checking = steps2.map((step) => step.id).filter((id) => walkthrough.checking?.includes(id));
-}
-function recordSteps(dir, build) {
-  return update(dir, async (walkthrough) => {
-    setSteps(walkthrough, await build(walkthrough));
-    return walkthrough;
-  });
-}
-function recordChecking(dir, ids) {
-  return update(dir, (walkthrough) => {
-    const known = walkthrough.steps.map((step) => step.id);
-    const unknown = [...new Set(ids.filter((id) => !known.includes(id)))];
-    if (unknown.length)
-      throw new Error(`the walkthrough has no ${unknown.length === 1 ? "step" : "steps"} ${unknown.join(", ")}; nothing was recorded`);
-    walkthrough.checking = known.filter((id) => ids.includes(id));
-    return walkthrough.checking;
-  });
-}
-function recordChecklist(dir, build) {
-  return update(dir, (walkthrough) => {
-    const checklist2 = build(walkthrough);
-    walkthrough.checklist = checklist2;
-    const ids = checklist2.items.map((item) => item.id);
-    walkthrough.lastChecklistItem = Math.max(walkthrough.lastChecklistItem ?? 0, ...ids.map(Number));
-    const kept = new Set(ids.map((id) => itemKey({ type: "checklist", id })));
-    walkthrough.actions = keepActions(walkthrough, (key) => !key.startsWith("checklist:") || kept.has(key));
-    return checklist2;
-  });
-}
-function recordActions(dir, build) {
-  return update(dir, (walkthrough) => {
-    const recorded = build(walkthrough);
-    const named = new Map(recorded.map(({ item, actions: actions2 }) => [itemKey(item), actions2]));
-    walkthrough.actions = {
-      ...keepActions(walkthrough, (key) => !named.has(key)),
-      ...Object.fromEntries([...named].filter(([, actions2]) => actions2.length))
-    };
-    const kept = Object.entries(walkthrough.hints ?? {}).filter(([key]) => !named.has(key));
-    const given = recorded.flatMap(({ item, hint }) => hint ? [[itemKey(item), hint]] : []);
-    walkthrough.hints = Object.fromEntries([...kept, ...given]);
-    return recorded;
-  });
-}
-
-// src/checklist.ts
-function parseChecklist(text2, { steps: steps2, checklist: checklist2, lastChecklistItem = 0 }) {
-  const { title, description, items } = parseObject(text2, "the checklist");
-  if (!filled(title)) throw new Error("the checklist needs a title");
-  if (description !== void 0 && !filled(description)) throw new Error("the checklist: description must be text");
-  if (!Array.isArray(items)) throw new Error("the checklist: items must be a list");
-  const before = checklist2?.items ?? [];
-  const known = new Set(steps2.map((step) => step.id));
-  const unknown = [];
-  const kept = /* @__PURE__ */ new Set();
-  const checked = items.map((one, at) => {
-    const name2 = `item ${String(at + 1)}`;
-    const { id, status: status2, mark, text: itemText, steps: links = [] } = fieldsOf(one);
-    if (!filled(status2)) throw new Error(`${name2} needs a status`);
-    if (!filled(itemText)) throw new Error(`${name2} needs a text`);
-    if (!Array.isArray(links) || !links.every(filled)) throw new Error(`${name2}: steps must be a list of step ids`);
-    if (mark !== void 0 && !MARKS.includes(mark)) throw new Error(`${name2}: mark must be one of ${MARKS.join(", ")}`);
-    if (id !== void 0 && !filled(id))
-      throw new Error(`${name2}: id must be the id of an item, as walkthrough checklist printed it`);
-    if (id !== void 0 && !before.some((old) => old.id === id)) throw new Error(`${name2}: the checklist has no item ${id} to keep`);
-    if (id !== void 0 && kept.has(id)) throw new Error(`${name2}: item ${id} is kept twice`);
-    if (id !== void 0) kept.add(id);
-    for (const link2 of links)
-      if (!known.has(link2)) unknown.push(`${name2} links to step ${link2}, which this walkthrough does not have`);
-    return { id, status: status2, ...mark !== void 0 && { mark }, text: itemText, steps: links };
-  });
-  if (unknown.length > 0) throw new Error(`the checklist was not recorded:
-  ${unknown.join("\n  ")}`);
-  let next = Math.max(lastChecklistItem, ...before.map((old) => Number(old.id)));
-  return {
-    title,
-    ...description !== void 0 && { description },
-    items: checked.map(({ id, ...item }) => {
-      const same = id ?? before.find((old) => old.text === item.text && !kept.has(old.id))?.id ?? String(++next);
-      kept.add(same);
-      return { id: same, ...item };
-    })
-  };
-}
-
-// src/prune.ts
-import { spawnSync as spawnSync3 } from "node:child_process";
-import fs9 from "node:fs";
-import path9 from "node:path";
 
 // src/server.ts
 import { spawn } from "node:child_process";
-import crypto5 from "node:crypto";
-import fs8 from "node:fs";
+import crypto4 from "node:crypto";
+import fs7 from "node:fs";
 import http from "node:http";
-import path8 from "node:path";
+import path7 from "node:path";
 import { fileURLToPath } from "node:url";
 
 // node_modules/image-size/dist/esm/types/utils.js
@@ -2932,9 +7064,9 @@ var handlers = {
       if (line.length > 16 || line.charCodeAt(0) > 128) {
         continue;
       }
-      const [key, value] = line.split(" ");
-      if (key && value) {
-        size[key.toLowerCase()] = Number.parseInt(value, 10);
+      const [key2, value] = line.split(" ");
+      if (key2 && value) {
+        size[key2.toLowerCase()] = Number.parseInt(value, 10);
       }
       if (size.height && size.width) {
         break;
@@ -3256,56 +7388,6 @@ var typeHandlers = /* @__PURE__ */ new Map([
   ["webp", WEBP]
 ]);
 var types = Array.from(typeHandlers.keys());
-
-// node_modules/image-size/dist/esm/detector.js
-var firstBytes = /* @__PURE__ */ new Map([
-  [0, ["cur", "heif", "ico", "jp2", "jxl", "tga"]],
-  [56, ["psd"]],
-  [60, ["svg"]],
-  [66, ["bmp"]],
-  [68, ["dds"]],
-  [71, ["gif"]],
-  [73, ["tiff"]],
-  [77, ["tiff"]],
-  [80, ["pnm"]],
-  [82, ["webp"]],
-  [105, ["icns"]],
-  [137, ["png"]],
-  [171, ["ktx"]],
-  [255, ["j2c", "jpg", "jxl-stream"]]
-]);
-function detector(input) {
-  const byte = input[0];
-  const candidates = firstBytes.get(byte);
-  const predicate = (type) => typeHandlers.get(type)?.validate(input);
-  return candidates?.find(predicate) || types.find(predicate);
-}
-
-// node_modules/image-size/dist/esm/lookup.js
-var globalOptions = {
-  disabledTypes: []
-};
-function imageSize(input) {
-  const type = detector(input);
-  if (typeof type !== "undefined") {
-    if (globalOptions.disabledTypes.indexOf(type) > -1) {
-      throw new TypeError(`disabled file type: ${type}`);
-    }
-    const size = typeHandlers.get(type)?.calculate(input);
-    if (size !== void 0) {
-      size.type = size.type ?? type;
-      if (size.images && size.images.length > 1) {
-        const largestImage = size.images.reduce((largest, current2) => {
-          return current2.width * current2.height > largest.width * largest.height ? current2 : largest;
-        }, size.images[0]);
-        size.width = largestImage.width;
-        size.height = largestImage.height;
-      }
-      return size;
-    }
-  }
-  throw new TypeError(`unsupported file type: ${type}`);
-}
 
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
@@ -3896,9 +7978,9 @@ var DecodingMode;
   DecodingMode2[DecodingMode2["Strict"] = 1] = "Strict";
   DecodingMode2[DecodingMode2["Attribute"] = 2] = "Attribute";
 })(DecodingMode || (DecodingMode = {}));
-function determineBranch(decodeTree, current2, nodeIndex, char) {
-  const branchCount = (current2 & BinTrieFlags.BRANCH_LENGTH) >> 7;
-  const jumpOffset = current2 & BinTrieFlags.JUMP_TABLE;
+function determineBranch(decodeTree, current3, nodeIndex, char) {
+  const branchCount = (current3 & BinTrieFlags.BRANCH_LENGTH) >> 7;
+  const jumpOffset = current3 & BinTrieFlags.JUMP_TABLE;
   if (jumpOffset) {
     if (branchCount === 0) {
       return char === jumpOffset ? nodeIndex : -1;
@@ -3915,12 +7997,12 @@ function determineBranch(decodeTree, current2, nodeIndex, char) {
   const branchEnd = nodeIndex + packedKeySlots + branchCount;
   for (let index = 0; index < branchCount; index++) {
     const packed = decodeTree[nodeIndex + (index >> 1)];
-    const key = packed >> ((index & 1) << 3) & 255;
-    if (key === char) {
+    const key2 = packed >> ((index & 1) << 3) & 255;
+    if (key2 === char) {
       const pointerIndex = nodeIndex + packedKeySlots + index;
       return branchEnd + decodeTree[pointerIndex] & 65535;
     }
-    if (key > char)
+    if (key2 > char)
       return -1;
   }
   return -1;
@@ -4011,15 +8093,15 @@ function decodeWithTrie(input, isStrict, isAttribute) {
       }
       let bestNodeIndex = 0;
       let bestValueLength = 0;
-      let current2 = nodeIndex < 0 ? 0 : decodeTree[nodeIndex];
+      let current3 = nodeIndex < 0 ? 0 : decodeTree[nodeIndex];
       let index = entityStart + 1;
       trie: while (index < inputLength) {
         while (
           // Value-less, non-run node with a nonzero jump offset.
-          (current2 & (BinTrieFlags.VALUE_LENGTH | BinTrieFlags.FLAG13)) === 0 && (current2 & BinTrieFlags.JUMP_TABLE) !== 0
+          (current3 & (BinTrieFlags.VALUE_LENGTH | BinTrieFlags.FLAG13)) === 0 && (current3 & BinTrieFlags.JUMP_TABLE) !== 0
         ) {
-          const jumpOffset = current2 & BinTrieFlags.JUMP_TABLE;
-          const branchCount = (current2 & BinTrieFlags.BRANCH_LENGTH) >> 7;
+          const jumpOffset = current3 & BinTrieFlags.JUMP_TABLE;
+          const branchCount = (current3 & BinTrieFlags.BRANCH_LENGTH) >> 7;
           if (branchCount === 0) {
             if (input.charCodeAt(index) !== jumpOffset)
               break trie;
@@ -4033,14 +8115,14 @@ function decodeWithTrie(input, isStrict, isAttribute) {
               break trie;
             nodeIndex = nodeIndex + branchCount + stored & 65535;
           }
-          current2 = decodeTree[nodeIndex];
+          current3 = decodeTree[nodeIndex];
           index += 1;
           if (index >= inputLength)
             break trie;
         }
-        if ((current2 & (BinTrieFlags.VALUE_LENGTH | BinTrieFlags.FLAG13)) === BinTrieFlags.FLAG13) {
-          const runLength = (current2 & BinTrieFlags.BRANCH_LENGTH) >> 7;
-          if (input.charCodeAt(index) !== (current2 & BinTrieFlags.JUMP_TABLE)) {
+        if ((current3 & (BinTrieFlags.VALUE_LENGTH | BinTrieFlags.FLAG13)) === BinTrieFlags.FLAG13) {
+          const runLength = (current3 & BinTrieFlags.BRANCH_LENGTH) >> 7;
+          if (input.charCodeAt(index) !== (current3 & BinTrieFlags.JUMP_TABLE)) {
             break;
           }
           index += 1;
@@ -4063,18 +8145,18 @@ function decodeWithTrie(input, isStrict, isAttribute) {
             index += 1;
           }
           nodeIndex += 1 + (runLength >> 1);
-          current2 = decodeTree[nodeIndex];
+          current3 = decodeTree[nodeIndex];
           continue;
         }
-        const valueLength = current2 >>> 14;
+        const valueLength = current3 >>> 14;
         const char = input.charCodeAt(index);
         if (valueLength !== 0) {
           if (char === CharCodes.SEMI) {
             consumed = index - entityStart + 1;
-            value = valueLength === 1 ? String.fromCharCode(current2 & BinTrieFlags.VALUE_MASK) : readTrieValue(decodeTree, nodeIndex, valueLength);
+            value = valueLength === 1 ? String.fromCharCode(current3 & BinTrieFlags.VALUE_MASK) : readTrieValue(decodeTree, nodeIndex, valueLength);
             break;
           }
-          if (!isStrict && (current2 & BinTrieFlags.FLAG13) === 0) {
+          if (!isStrict && (current3 & BinTrieFlags.FLAG13) === 0) {
             consumed = index - entityStart;
             bestNodeIndex = nodeIndex;
             bestValueLength = valueLength;
@@ -4082,16 +8164,16 @@ function decodeWithTrie(input, isStrict, isAttribute) {
           if (valueLength === 1)
             break;
         }
-        const next = determineBranch(decodeTree, current2, nodeIndex + (valueLength || 1), char);
+        const next = determineBranch(decodeTree, current3, nodeIndex + (valueLength || 1), char);
         if (next < 0)
           break;
         nodeIndex = next;
-        current2 = decodeTree[nodeIndex];
+        current3 = decodeTree[nodeIndex];
         index += 1;
       }
       if (value === "") {
-        const finalVL = current2 >>> 14;
-        if (finalVL !== 0 && !isStrict && (current2 & BinTrieFlags.FLAG13) === 0) {
+        const finalVL = current3 >>> 14;
+        if (finalVL !== 0 && !isStrict && (current3 & BinTrieFlags.FLAG13) === 0) {
           consumed = index - entityStart;
           bestNodeIndex = nodeIndex;
           bestValueLength = finalVL;
@@ -6031,15 +10113,15 @@ function escapedSplit(str) {
   let ch = str.charCodeAt(pos);
   let isEscaped = false;
   let lastPos = 0;
-  let current2 = "";
+  let current3 = "";
   while (pos < max) {
     if (ch === 124) {
       if (!isEscaped) {
-        result.push(current2 + str.substring(lastPos, pos));
-        current2 = "";
+        result.push(current3 + str.substring(lastPos, pos));
+        current3 = "";
         lastPos = pos + 1;
       } else {
-        current2 += str.substring(lastPos, pos - 1);
+        current3 += str.substring(lastPos, pos - 1);
         lastPos = pos;
       }
     }
@@ -6047,7 +10129,7 @@ function escapedSplit(str) {
     pos++;
     ch = str.charCodeAt(pos);
   }
-  result.push(current2 + str.substring(lastPos));
+  result.push(current3 + str.substring(lastPos));
   return result;
 }
 function table(state, startLine, endLine, silent) {
@@ -8404,39 +12486,27 @@ function imagePath(markdownFile, src) {
 }
 var parser = new MarkdownItCallable();
 var imagesIn = (markdownFile, text2) => parser.parse(text2, {}).flatMap((token) => token.children ?? []).filter((token) => token.type === "image").map((token) => imagePath(markdownFile, String(token.attrGet("src") ?? "")));
-function pixelSize(bytes) {
-  try {
-    const { width, height } = imageSize(bytes);
-    return { width, height };
-  } catch {
-    return null;
-  }
-}
 
 // src/processes.ts
 import { spawnSync as spawnSync2 } from "node:child_process";
 var psStart = (pid) => spawnSync2("ps", ["-p", String(pid), "-o", "lstart="], { encoding: "utf8" }).stdout.trim();
-function alive(record) {
+function alive(record2) {
   try {
-    process.kill(record.pid, 0);
+    process.kill(record2.pid, 0);
   } catch {
     return false;
   }
-  return psStart(record.pid) === record.started;
+  return psStart(record2.pid) === record2.started;
 }
 
-// src/decisions.ts
-import crypto4 from "node:crypto";
+// src/list.ts
 import fs6 from "node:fs";
 import path6 from "node:path";
 
-// src/session.ts
+// src/review.ts
 import crypto3 from "node:crypto";
 import fs5 from "node:fs";
 import path5 from "node:path";
-
-// src/notes.ts
-import crypto2 from "node:crypto";
 
 // node_modules/diff2html/lib-esm/types.js
 var LineType;
@@ -8788,111 +12858,34 @@ function pathOf(name2) {
 }
 var parseDiff = (diff) => parse(diff).map((file2) => ({ ...file2, oldName: pathOf(file2.oldName), newName: pathOf(file2.newName) }));
 
-// src/steps.ts
-var isStepFile = (file2) => filled(file2) || typeof file2 === "object" && file2 !== null && filled(file2.path) && filled(file2.explanation);
-var isFoldedFile = (file2) => typeof file2 === "object" && file2 !== null && filled(file2.path) && filled(file2.reason);
-function parseSteps(text2) {
-  return parseList(text2, "the steps", (step, number) => {
-    const name2 = `step ${String(number)}`;
-    const { title, explanation, files: files3, folded, problems = [], assumptions = [] } = step;
-    if (!filled(title)) throw new Error(`${name2} needs a title`);
-    if (!Array.isArray(files3)) throw new Error(`${name2}: files must be a list`);
-    if (folded === true) {
-      if (!files3.every(isFoldedFile))
-        throw new Error(`${name2}: every file of a folded step needs a path and a reason`);
-      if (!Array.isArray(problems) || !problems.every(filled))
-        throw new Error(`${name2}: problems must be a list of text`);
-      return {
-        title,
-        folded,
-        files: files3.map(({ path: path13, reason }) => ({ path: path13, reason })),
-        problems
-      };
-    }
-    if (!filled(explanation)) throw new Error(`${name2} needs an explanation`);
-    if (!files3.every(isStepFile)) throw new Error(`${name2}: each file must be a path, or a path with its explanation`);
-    if (!Array.isArray(assumptions) || !assumptions.every(filled))
-      throw new Error(`${name2}: assumptions must be a list of text`);
-    return {
-      title,
-      explanation,
-      assumptions,
-      files: files3.map((file2) => typeof file2 === "string" ? file2 : { path: file2.path, explanation: file2.explanation })
-    };
-  });
+// src/lines.ts
+import crypto2 from "node:crypto";
+
+// src/input.ts
+import fs4 from "node:fs";
+function readInput(file2) {
+  if (file2 === void 0) return fs4.readFileSync(0, "utf8");
+  const text2 = fs4.readFileSync(file2, "utf8");
+  if (inInbox(file2)) fs4.rmSync(file2);
+  return text2;
 }
-var pathOf2 = (file2) => typeof file2 === "string" ? file2 : file2.path;
-var pathsOf = (step) => step.files.map(pathOf2);
-function stepIds({ steps: steps2, lastStep = 0 }, inputs) {
-  let next = Math.max(lastStep, ...steps2.map((step) => Number(step.id)));
-  const pairs = inputs.flatMap((input, at) => {
-    const files3 = new Set(pathsOf(input));
-    return steps2.map((step, old) => ({ at, old, id: step.id, shared: pathsOf(step).filter((one) => files3.has(one)).length }));
-  });
-  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
-  const ids = inputs.map(() => void 0);
-  const taken2 = /* @__PURE__ */ new Set();
-  for (const { at, id, shared } of pairs)
-    if (shared > 0 && ids[at] === void 0 && !taken2.has(id)) {
-      ids[at] = id;
-      taken2.add(id);
-    }
-  return ids.map((id) => id ?? String(++next));
-}
-function fileExplanations(files3) {
-  const explained = files3.filter((file2) => typeof file2 !== "string");
-  return explained.length ? { fileExplanations: Object.fromEntries(explained.map((file2) => [file2.path, file2.explanation])) } : {};
-}
-async function buildSteps(cwd, walkthrough, inputs) {
-  const { base, head } = walkthrough;
-  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
-  const problems = [];
-  const placed = /* @__PURE__ */ new Set();
-  for (const one of inputs.flatMap(pathsOf)) {
-    if (!changed.has(one)) problems.push(`${one} is not changed in this walkthrough`);
-    else if (placed.has(one)) problems.push(`${one} is in more than one step`);
-    placed.add(one);
+var filled = (value) => typeof value === "string" && value.trim() !== "";
+var fieldsOf = (value) => typeof value === "object" && value !== null ? value : {};
+function parsed(text2) {
+  try {
+    return JSON.parse(text2);
+  } catch {
+    return null;
   }
-  const left = [...changed.keys()].filter((one) => !placed.has(one));
-  if (left.length > 0) problems.push(`no step has ${left.join(", ")}`);
-  if (problems.length > 0) throw new Error(`the steps were not recorded:
-  ${[...new Set(problems)].join("\n  ")}`);
-  const ids = stepIds(walkthrough, inputs);
-  return Promise.all(inputs.map(async (input, at) => {
-    const common = {
-      id: ids[at] ?? "",
-      title: input.title,
-      diff: await diffOf(cwd, base, head, pathsOf(input).flatMap((one) => changed.get(one) ?? []))
-    };
-    return "folded" in input ? { ...common, kind: "folded", files: input.files, problems: input.problems } : { ...common, kind: "step", explanation: input.explanation, assumptions: input.assumptions, files: input.files.map(pathOf2), ...fileExplanations(input.files) };
-  }));
 }
-async function carrySteps(cwd, { base, head, steps: steps2 }) {
-  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
-  const diff = (files3) => diffOf(cwd, base, head, files3.flatMap((one) => changed.get(pathOf2(one)) ?? []));
-  const carried = await Promise.all(
-    steps2.map(async (step) => {
-      if (step.kind === "folded") {
-        const files4 = step.files.filter((one) => changed.has(one.path));
-        return files4.length ? { ...step, files: files4, diff: await diff(files4) } : null;
-      }
-      const files3 = step.files.filter((one) => changed.has(one));
-      return files3.length ? { ...step, files: files3, diff: await diff(files3) } : null;
-    })
-  );
-  const kept = carried.filter((step) => step !== null);
-  const placed = new Set(kept.flatMap(pathsOf));
-  return { steps: kept, unplaced: [...changed.keys()].filter((file2) => !placed.has(file2)) };
+var wrongShape = (what, shape) => new Error(`${what} must be a JSON ${shape}; see walkthrough guide`);
+function parseList(text2, what, check) {
+  const list3 = parsed(text2);
+  if (!Array.isArray(list3)) throw wrongShape(what, "array");
+  return list3.map((one, at) => check(fieldsOf(one), at + 1));
 }
 
-// src/notes.ts
-var placeOnly = ({ step, file: file2, lines, linesHash, linesText }) => ({
-  step,
-  ...file2 !== void 0 && { file: file2 },
-  ...lines && { lines },
-  ...linesHash !== void 0 && { linesHash },
-  ...linesText && { linesText }
-});
+// src/lines.ts
 var isLines = (value) => Array.isArray(value) && value.length === 2 && value.every((line) => Number.isInteger(line) && line >= 1) && value[0] <= value[1];
 var parsed2 = /* @__PURE__ */ new WeakMap();
 function shownLines(step, file2) {
@@ -8903,74 +12896,117 @@ function shownLines(step, file2) {
   const lines = shown.blocks.flatMap((block2) => block2.lines);
   return new Map(lines.flatMap((line) => line.newNumber === void 0 ? [] : [[line.newNumber, line.content.slice(1)]]));
 }
-var textOf = (shown, [first, last]) => [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
-var hashOf = (shown, lines) => crypto2.createHash("sha256").update(JSON.stringify(textOf(shown, lines))).digest("hex").slice(0, 16);
-function anchorOf({ steps: steps2 }, { step, file: file2, lines, linesHash }) {
-  if (file2 === void 0 || !lines) return steps2.some((one) => one.id === step) ? step : null;
-  const found = steps2.find((one) => pathsOf(one).includes(file2));
-  if (!found) return null;
-  const shown = shownLines(found, file2);
-  if (!shown?.has(lines[0]) || !shown.has(lines[1])) return null;
-  return linesHash === void 0 || hashOf(shown, lines) === linesHash ? found.id : null;
+var hashOf = (shown, [first, last]) => crypto2.createHash("sha256").update(JSON.stringify([...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line))).digest("hex").slice(0, 16);
+var stepOf = ({ steps: steps3 }, file2) => steps3.find((one) => one.files.includes(file2));
+function anchorOf(walkthrough, { file: file2, lines, linesHash }) {
+  const found = stepOf(walkthrough, file2);
+  const shown = found && shownLines(found, file2);
+  if (!found || !shown?.has(lines[0]) || !shown.has(lines[1])) return null;
+  return hashOf(shown, lines) === linesHash ? found.id : null;
 }
-function placeIn(walkthrough, { step, file: file2, lines }) {
-  const found = walkthrough?.steps.find((one) => one.id === step);
-  if (!found) throw new Error(`the walkthrough has no step ${String(step)}`);
-  if (file2 === void 0 && lines === void 0) return { step: found.id };
+function placeIn(walkthrough, { file: file2, lines }) {
   if (!filled(file2)) throw new Error("lines need a file");
   if (!isLines(lines)) throw new Error("a file needs lines, as [first, last]");
-  const numbers = shownLines(found, file2);
-  if (!numbers) throw new Error(`step ${found.id} does not change ${file2}`);
+  const found = walkthrough && stepOf(walkthrough, file2);
+  const shown = found && shownLines(found, file2);
+  if (!shown) throw new Error(`no step changes ${file2}`);
   const [first, last] = lines;
-  if (!numbers.has(first) || !numbers.has(last))
-    throw new Error(`lines ${String(first)}-${String(last)} of ${file2} are not in the diff of step ${found.id}`);
-  return { step: found.id, file: file2, lines: [first, last], linesHash: hashOf(numbers, [first, last]), linesText: textOf(numbers, [first, last]) };
+  if (!shown.has(first) || !shown.has(last)) throw new Error(`lines ${String(first)}-${String(last)} of ${file2} are not in its diff`);
+  return { file: file2, lines: [first, last], linesHash: hashOf(shown, [first, last]) };
 }
-function parseNotes(text2, walkthrough) {
-  return parseList(text2, "the notes", (note2, number) => {
-    const name2 = `note ${String(number)}`;
-    const { label, text: said, low = false, finding = false } = note2;
-    if (!filled(label)) throw new Error(`${name2} needs a label`);
-    if (!filled(said)) throw new Error(`${name2} needs text`);
-    if (typeof low !== "boolean") throw new Error(`${name2}: low must be true or false`);
-    if (typeof finding !== "boolean") throw new Error(`${name2}: finding must be true or false`);
-    let place;
-    try {
-      place = placeIn(walkthrough, note2);
-    } catch (error) {
-      throw new Error(`${name2}: ${error.message}`);
+
+// src/walkthrough.ts
+import path4 from "node:path";
+var CRITERION_STATUSES = ["met", "partly", "not-met", "not-checked"];
+var file = (dir) => path4.join(dir, "walkthrough.json");
+function walkthroughDir(repo, source) {
+  const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
+  if (Buffer.byteLength(name2) > 255)
+    throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
+  return path4.join(stateDir(), repo, name2);
+}
+var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
+var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
+var EARLIER_FIELDS = ["kindLabel", "commentHint", "checking", "checklist", "lastChecklistItem", "actions", "hints"];
+function current(saved) {
+  if (!saved) return null;
+  const upgraded = Object.fromEntries(Object.entries(saved).filter(([key2]) => !EARLIER_FIELDS.includes(key2)));
+  if (!saved.steps.every((step) => Array.isArray(step.look) && step.files.every((one) => typeof one === "string"))) upgraded.steps = [];
+  return upgraded;
+}
+var readWalkthrough = (dir) => current(readJson(file(dir), null));
+var savedWalkthrough = (dir) => current(readSavedJson(file(dir)) ?? null);
+function openWalkthrough(dir, source, change, pr, carry) {
+  return locked(file(dir), async () => {
+    const saved = savedWalkthrough(dir);
+    const given = pr ? { pr } : {};
+    if (saved?.head === change.head && saved.base === change.base) {
+      if (!pr || JSON.stringify(saved.pr) === JSON.stringify(pr)) return { walkthrough: saved, opened: "resumed" };
+      const relabelled = { ...saved, pr };
+      writeJson(file(dir), relabelled);
+      return { walkthrough: relabelled, opened: "resumed" };
     }
-    return { ...place, label, text: said, ...low && { low: true }, ...finding && { finding: true } };
+    if (saved) {
+      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head };
+      const { steps: steps3, unplaced } = await carry(moved);
+      setSteps(moved, steps3);
+      if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
+      writeJson(file(dir), moved);
+      return { walkthrough: moved, opened: "moved" };
+    }
+    const walkthrough = {
+      ...source.kind === "branch" ? { kind: "branch", branch: source.branch } : { kind: "range", label: source.label },
+      target: change.target,
+      ...given,
+      base: change.base,
+      head: change.head,
+      steps: []
+    };
+    writeJson(file(dir), walkthrough);
+    return { walkthrough, opened: "new" };
+  });
+}
+function updateWalkthrough(dir, change) {
+  return locked(file(dir), async () => {
+    const walkthrough = savedWalkthrough(dir);
+    if (!walkthrough) throw new Error("there is no such walkthrough yet; run walkthrough start first");
+    const changed = await change(walkthrough);
+    writeJson(file(dir), walkthrough);
+    return changed;
+  });
+}
+function setSteps(walkthrough, steps3) {
+  walkthrough.steps = steps3;
+  delete walkthrough.unplaced;
+  walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps3.map((step) => Number(step.id)));
+  if (walkthrough.reviewing) walkthrough.reviewing = steps3.map((step) => step.id).filter((id) => walkthrough.reviewing?.includes(id));
+}
+function recordSteps(dir, build) {
+  return updateWalkthrough(dir, async (walkthrough) => {
+    setSteps(walkthrough, await build(walkthrough));
+    return walkthrough;
+  });
+}
+function recordReviewing(dir, ids) {
+  return updateWalkthrough(dir, (walkthrough) => {
+    const known = walkthrough.steps.map((step) => step.id);
+    const unknown = [...new Set(ids.filter((id) => !known.includes(id)))];
+    if (unknown.length)
+      throw new Error(`the walkthrough has no ${unknown.length === 1 ? "step" : "steps"} ${unknown.join(", ")}; nothing was recorded`);
+    walkthrough.reviewing = known.filter((id) => ids.includes(id));
+    return walkthrough.reviewing;
   });
 }
 
-// src/comments.ts
-function commentsOf(conversation) {
-  const comments2 = /* @__PURE__ */ new Map();
-  for (const entry of conversation) {
-    if (entry.from !== "page") continue;
-    if (entry.kind === "comment" && entry.file !== void 0 && entry.lines) {
-      const { id, step, file: file2, lines, linesHash, linesText, text: text2 } = entry;
-      comments2.set(id, { id, step, file: file2, lines, ...linesHash !== void 0 && { linesHash }, ...linesText && { linesText }, text: text2 });
-    }
-    const kept = "comment" in entry ? comments2.get(entry.comment) : void 0;
-    if (kept && entry.kind === "edit-comment") kept.text = entry.text;
-    if (kept && entry.kind === "delete-comment") comments2.delete(kept.id);
-  }
-  return [...comments2.values()];
-}
-
-// src/session.ts
-var BACK_WITHIN_MS = 60 * 1e3;
-var LISTEN_EVERY_MS = 500;
-var HEARTBEAT_STALE_MS = 10 * 1e3;
+// src/review.ts
+var REVIEW_TYPES = ["comment", "approve", "request-changes"];
 var files = (dir) => ({
-  conversation: path5.join(dir, "conversation.jsonl"),
-  posted: path5.join(dir, "posted.json"),
+  log: path5.join(dir, "review.jsonl"),
   inbox: path5.join(dir, "inbox.jsonl"),
-  listener: path5.join(dir, "listener.json")
+  listener: path5.join(dir, "listener.json"),
+  viewed: path5.join(dir, "viewed.json")
 });
-var hold = (dir, work) => locked(path5.join(dir, "session"), work);
+var hold = (dir, work) => locked(path5.join(dir, "review"), work);
 function readLines(file2) {
   let text2 = "";
   try {
@@ -8991,141 +13027,242 @@ var append = (file2, entry) => {
 `, { mode: 384 });
 };
 var newId = () => crypto3.randomBytes(4).toString("hex");
-var stamp = () => (/* @__PURE__ */ new Date()).toISOString();
+var fingerprint = (content) => crypto3.createHash("sha256").update(content).digest("hex").slice(0, 16);
+var markedFile = (mark) => mark.slice(0, -17);
 var cleanText = (text2) => typeof text2 === "string" ? text2.trim() : "";
-var openQuestions = (conversation) => conversation.filter(
-  (entry) => entry.from === "session" && entry.question && !conversation.some((reply2) => reply2.from === "page" && reply2.kind === "reply" && reply2.to === entry.id)
-);
-function listens(file2, listener) {
-  try {
-    process.kill(listener.pid, 0);
-    const staleAfter = Number(process.env["WALKTHROUGH_HEARTBEAT_STALE_MS"]) || HEARTBEAT_STALE_MS;
-    return Date.now() - fs5.statSync(file2).mtimeMs < staleAfter;
-  } catch {
-    return false;
-  }
-}
-function presence(file2, listener, conversation) {
-  switch (listener?.state) {
-    case "starting":
-      return "working";
-    case "listening":
-      return listens(file2, listener) ? "listening" : "gone";
-    case "handed": {
-      const answered2 = listener.requests.map(
-        (id) => conversation.find((entry) => entry.from === "session" && entry.answer === id)
-      );
-      if (answered2.some((answer) => !answer)) return "working";
-      const last = Math.max(...answered2.map((answer) => Date.parse(answer?.at ?? "")));
-      const backWithin = Number(process.env["WALKTHROUGH_BACK_WITHIN_MS"]) || BACK_WITHIN_MS;
-      return Date.now() - last < backWithin ? "working" : "gone";
-    }
-    default:
-      return "gone";
-  }
-}
-var conversationOf = (dir) => readLines(files(dir).conversation);
-function sessionView(dir) {
-  const conversation = conversationOf(dir);
-  const { listener } = files(dir);
-  const state = openQuestions(conversation).length ? "needs-you" : presence(listener, readJson(listener, null), conversation);
-  return { state, conversation };
-}
-async function starting(dir) {
-  await hold(dir, () => {
-    const { listener } = files(dir);
-    const now = readJson(listener, null);
-    if (now?.state !== "listening" || !listens(listener, now)) writeJson(listener, { state: "starting" });
-  });
-}
-var KEPT_FOR_LATER = /* @__PURE__ */ new Set(["comment", "edit-comment", "delete-comment"]);
-function request(dir, fields2) {
-  const entry = { id: newId(), from: "page", at: stamp(), ...fields2 };
+var logOf = (dir) => readLines(files(dir).log);
+var WAKES = /* @__PURE__ */ new Set(["ask", "submit"]);
+function record(dir, fields) {
+  const entry = { id: newId(), at: (/* @__PURE__ */ new Date()).toISOString(), ...fields };
   return hold(dir, () => {
-    append(files(dir).conversation, entry);
-    if (!KEPT_FOR_LATER.has(entry.kind)) append(files(dir).inbox, entry);
-    return sessionView(dir);
-  });
-}
-async function ask(dir, { text: text2, ...where }) {
-  const said = cleanText(text2);
-  let place;
-  try {
-    place = placeIn(readWalkthrough(dir), where);
-  } catch {
-    return null;
-  }
-  if (!said) return null;
-  return request(dir, { kind: "ask", ...place, text: said });
-}
-async function reply(dir, to, text2) {
-  const said = cleanText(text2);
-  const conversation = conversationOf(dir);
-  const open2 = openQuestions(conversation).some((question) => question.id === to) || conversation.some((entry) => entry.from === "session" && entry.note && entry.id === to);
-  if (!said || !open2 || typeof to !== "string") return null;
-  return request(dir, { kind: "reply", to, text: said });
-}
-var postedOf = (dir) => readJson(files(dir).posted, []);
-async function markPosted(dir, ids) {
-  await hold(dir, () => {
-    const known = new Set(commentsOf(conversationOf(dir)).map((one) => one.id));
-    const unknown = ids.find((id) => !known.has(id));
-    if (unknown !== void 0) throw new Error(`the page sent no comment ${unknown}`);
-    const posted2 = postedOf(dir);
-    writeJson(files(dir).posted, [...posted2, ...ids.filter((id) => !posted2.includes(id))]);
-  });
-}
-async function comment(dir, { comment: id, text: text2, delete: deleting, ...where }) {
-  const said = cleanText(text2);
-  if (id === void 0) {
-    let place;
-    try {
-      place = placeIn(readWalkthrough(dir), where);
-    } catch {
-      return null;
-    }
-    return said && place.lines ? request(dir, { kind: "comment", ...place, text: said }) : null;
-  }
-  if (typeof id !== "string" || postedOf(dir).includes(id) || !commentsOf(conversationOf(dir)).some((one) => one.id === id)) return null;
-  if (deleting === true && text2 === void 0) return request(dir, { kind: "delete-comment", comment: id });
-  return said && deleting === void 0 ? request(dir, { kind: "edit-comment", comment: id, text: said }) : null;
-}
-async function say(dir, text2, { answer, question, choice = [], label }) {
-  const choices = choice.map((one) => one.trim());
-  if (choices.length && !question) throw new Error("--choice needs --question");
-  if (choices.some((one) => !one)) throw new Error("a choice needs text");
-  return hold(dir, () => {
-    const { conversation } = files(dir);
-    const request2 = readLines(conversation).find(
-      (entry2) => answer !== void 0 && entry2.from === "page" && entry2.id === answer
-    );
-    if (answer && !request2) throw new Error(`the page sent no request ${answer}`);
-    const onLines = request2?.kind === "ask" && request2.lines ? request2 : void 0;
-    if (label !== void 0 && !onLines) throw new Error("--as is for an answer to a question about lines");
-    const place = onLines && placeOnly(onLines);
-    const entry = {
-      id: newId(),
-      from: "session",
-      at: stamp(),
-      text: text2,
-      ...answer && { answer },
-      ...question && { question: true },
-      ...choices.length && { choices },
-      ...place && { note: { ...place, label: label?.trim() || "Answer" } }
-    };
-    append(conversation, entry);
+    append(files(dir).log, entry);
+    if (WAKES.has(entry.kind)) append(files(dir).inbox, entry);
     return entry;
   });
 }
-function note(dir, notes2) {
-  return hold(
-    dir,
-    () => notes2.map(({ text: text2, ...mark }) => {
-      const entry = { id: newId(), from: "session", at: stamp(), text: text2, note: mark };
-      append(files(dir).conversation, entry);
-      return entry;
-    })
+function replay(walkthrough, log) {
+  const comments3 = /* @__PURE__ */ new Map();
+  const roots = /* @__PURE__ */ new Map();
+  const resolved = /* @__PURE__ */ new Map();
+  const submits = [];
+  const posted2 = /* @__PURE__ */ new Map();
+  for (const event of log) {
+    switch (event.kind) {
+      case "comment":
+      case "ask": {
+        const thread = event.thread ?? event.id;
+        if (event.place && !event.thread) roots.set(event.id, event.place);
+        const said2 = { id: event.id, at: event.at, body: event.text };
+        const view = event.kind === "comment" ? { ...said2, by: event.by, pending: true } : { ...said2, by: "you", ask: true, waiting: true };
+        comments3.set(event.id, { view, thread });
+        break;
+      }
+      case "edit": {
+        const comment2 = comments3.get(event.comment);
+        if (comment2) comment2.view.body = event.text;
+        break;
+      }
+      case "delete": {
+        const comment2 = comments3.get(event.comment);
+        if (comment2) comment2.deleted = true;
+        break;
+      }
+      case "answer": {
+        const ask2 = comments3.get(event.ask);
+        if (!ask2) break;
+        delete ask2.view.waiting;
+        comments3.set(event.id, { view: { id: event.id, at: event.at, body: event.text, by: "ai", answer: true }, thread: ask2.thread });
+        break;
+      }
+      case "resolve":
+        if (!resolved.has(event.thread)) resolved.set(event.thread, void 0);
+        break;
+      case "submit":
+        submits.push(event);
+        for (const { view, deleted } of comments3.values())
+          if (view.pending && !deleted) {
+            delete view.pending;
+            view.review = event.id;
+          }
+        for (const [thread, review] of resolved) if (review === void 0) resolved.set(thread, event.id);
+        break;
+      case "posted":
+        posted2.set(event.submit, event.address);
+        break;
+    }
+  }
+  const gone = new Set([...comments3.values()].filter((one) => one.deleted && one.thread === one.view.id).map((one) => one.thread));
+  const live = [...comments3.values()].filter((one) => !one.deleted && !gone.has(one.thread));
+  const kept = live.map((one) => one.view);
+  const ownIn = (thread) => live.filter((one) => one.thread === thread).map((one) => one.view);
+  const threads3 = [
+    ...(walkthrough.threads ?? []).map(({ id, file: file2, lines, linesHash = "", resolved: was, author, at, body, replies }) => ({
+      id,
+      file: file2,
+      lines,
+      step: anchorOf(walkthrough, { file: file2, lines, linesHash }),
+      colleague: true,
+      ...(was || resolved.has(id)) && { resolved: true },
+      comments: [
+        { id, by: "colleague", author, at, body },
+        ...replies.map((reply, number) => ({ id: `${id}.${String(number + 1)}`, by: "colleague", ...reply })),
+        ...ownIn(id)
+      ]
+    })),
+    ...[...roots].filter(([id]) => !gone.has(id)).map(([id, place]) => ({ id, file: place.file, lines: place.lines, step: anchorOf(walkthrough, place), comments: ownIn(id) }))
+  ];
+  return { threads: threads3, submits, posted: posted2, resolved, kept };
+}
+function fileMarks(steps3) {
+  return Object.fromEntries(
+    steps3.flatMap(
+      (step) => parseDiff(step.diff).map((file2) => {
+        const name2 = file2.isDeleted ? file2.oldName : file2.newName;
+        return [name2, `${name2}:${fingerprint(JSON.stringify(file2))}`];
+      })
+    )
   );
+}
+function walkthroughVersion(dir) {
+  const stats = ["walkthrough.json", "review.jsonl", "viewed.json"].map((name2) => {
+    const stat = fs5.statSync(path5.join(dir, name2), { throwIfNoEntry: false });
+    return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
+  });
+  return fingerprint(stats.join(":"));
+}
+function walkthroughView(dir) {
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) return null;
+  const { threads: threads3, submits, posted: posted2, kept } = replay(walkthrough, logOf(dir));
+  const marks = readJson(files(dir).viewed, []);
+  const current3 = fileMarks(walkthrough.steps);
+  const last = submits.at(-1);
+  const showsSubmitted = last && last.head === walkthrough.head && !kept.some((one) => one.pending);
+  const address = last && posted2.get(last.id);
+  return {
+    ...walkthrough,
+    reviewing: walkthrough.reviewing ?? [],
+    threads: threads3,
+    viewed: Object.entries(current3).flatMap(([file2, mark]) => marks.includes(mark) ? [file2] : []),
+    changed: Object.entries(current3).flatMap(
+      ([file2, mark]) => !marks.includes(mark) && marks.some((one) => markedFile(one) === file2) ? [file2] : []
+    ),
+    submitted: showsSubmitted ? {
+      id: last.id,
+      type: last.type,
+      summary: last.summary,
+      comments: kept.filter((one) => one.review === last.id).length,
+      posted: posted2.has(last.id),
+      ...address !== void 0 && { address }
+    } : null
+  };
+}
+async function comment(dir, { comment: id, text: text2, delete: deleting, thread, ...where }) {
+  const said2 = cleanText(text2);
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) return false;
+  const { threads: threads3 } = replay(walkthrough, logOf(dir));
+  if (id !== void 0) {
+    const pending = threads3.flatMap((one) => one.comments).some((one) => one.id === id && one.pending);
+    if (typeof id !== "string" || !pending) return false;
+    if (deleting === true && text2 === void 0) return !!await record(dir, { kind: "delete", comment: id });
+    return !!said2 && deleting === void 0 && !!await record(dir, { kind: "edit", comment: id, text: said2 });
+  }
+  if (!said2) return false;
+  if (thread !== void 0) {
+    if (!threads3.some((one) => one.id === thread && !one.resolved)) return false;
+    return !!await record(dir, { kind: "comment", by: "you", text: said2, thread });
+  }
+  const place = placeOrNull(walkthrough, where);
+  return !!place && !!await record(dir, { kind: "comment", by: "you", text: said2, place });
+}
+var placeOrNull = (walkthrough, where) => {
+  try {
+    return placeIn(walkthrough, where);
+  } catch {
+    return null;
+  }
+};
+async function ask(dir, { text: text2, thread, ...where }) {
+  const said2 = cleanText(text2);
+  const walkthrough = readWalkthrough(dir);
+  if (!said2 || !walkthrough) return false;
+  if (thread !== void 0) {
+    if (!replay(walkthrough, logOf(dir)).threads.some((one) => one.id === thread)) return false;
+    return !!await record(dir, { kind: "ask", text: said2, thread });
+  }
+  const place = placeOrNull(walkthrough, where);
+  return !!place && !!await record(dir, { kind: "ask", text: said2, place });
+}
+async function resolve(dir, { thread }) {
+  const walkthrough = readWalkthrough(dir);
+  const found = walkthrough && replay(walkthrough, logOf(dir)).threads.find((one) => one.id === thread);
+  return !!found?.colleague && !found.resolved && !!await record(dir, { kind: "resolve", thread: found.id });
+}
+async function submit(dir, { type, summary }) {
+  const view = walkthroughView(dir);
+  if (!view || !REVIEW_TYPES.includes(type) || summary !== void 0 && typeof summary !== "string" || view.submitted)
+    return false;
+  const pending = view.threads.flatMap((one) => one.comments).filter((one) => one.pending).length;
+  if (!view.pr && type === "comment" && !pending) return false;
+  return !!await record(dir, { kind: "submit", type, summary: cleanText(summary), head: view.head });
+}
+async function markViewed(dir, { file: file2, viewed }) {
+  const walkthrough = readWalkthrough(dir);
+  const mark = walkthrough && typeof file2 === "string" ? fileMarks(walkthrough.steps)[file2] : void 0;
+  if (!mark || typeof viewed !== "boolean") return false;
+  const marks = files(dir).viewed;
+  await locked(marks, () => {
+    const kept = readJson(marks, []).filter((one) => markedFile(one) !== file2);
+    writeJson(marks, viewed ? [...kept, mark] : kept);
+  });
+  return true;
+}
+function aiComments(dir, given) {
+  return Promise.all(given.map(({ place, body }) => record(dir, { kind: "comment", by: "ai", text: body, place })));
+}
+async function answer(dir, id, text2) {
+  if (!logOf(dir).some((event) => event.kind === "ask" && event.id === id)) throw new Error(`the page asked nothing with the id ${id}`);
+  await record(dir, { kind: "answer", ask: id, text: text2 });
+}
+async function markPosted(dir, address) {
+  const log = logOf(dir);
+  const last = log.findLast((event) => event.kind === "submit");
+  if (!last || log.some((event) => event.kind === "posted" && event.submit === last.id)) throw new Error("the person has submitted no review that is not posted yet");
+  await record(dir, { kind: "posted", submit: last.id, ...address !== void 0 && { address } });
+}
+var AI_PREFIX = "[AI] ";
+function reviewComments(dir) {
+  const walkthrough = readWalkthrough(dir);
+  if (!walkthrough) return [];
+  const log = logOf(dir);
+  const { threads: threads3, submits, posted: posted2, resolved } = replay(walkthrough, log);
+  const review = submits.findLast((one) => !posted2.has(one.id))?.id;
+  const inReview = (one) => review === void 0 ? one.pending : one.review === review;
+  return [
+    ...threads3.flatMap(
+      (thread) => thread.comments.filter(inReview).map((one) => {
+        const body = one.by === "ai" ? AI_PREFIX + one.body : one.body;
+        const by = one.by === "colleague" ? one.author : one.by;
+        return one.id === thread.id ? { kind: "comment", id: one.id, by, file: thread.file, lines: thread.lines, body, ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body };
+      })
+    ),
+    ...[...resolved].filter(([, round]) => round === review).map(([thread]) => ({ kind: "resolve", thread }))
+  ];
+}
+var withoutPrefix = (body) => body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim();
+var LISTEN_EVERY_MS = 500;
+function handedAsk(dir, event) {
+  const walkthrough = readWalkthrough(dir);
+  const thread = walkthrough && replay(walkthrough, logOf(dir)).threads.find((one) => one.comments.some((said2) => said2.id === event.id));
+  const before = thread?.comments.slice(0, thread.comments.findIndex((said2) => said2.id === event.id)) ?? [];
+  return {
+    kind: "ask",
+    id: event.id,
+    text: event.text,
+    ...thread && { file: thread.file, lines: thread.lines },
+    thread: before.map((said2) => ({ by: said2.by === "colleague" ? said2.author : said2.by, body: said2.body }))
+  };
 }
 async function listen(dir, pageRunning) {
   const { inbox, listener } = files(dir);
@@ -9144,252 +13281,39 @@ async function listen(dir, pageRunning) {
       void release().finally(() => process.exit(0));
     });
   for (; ; ) {
-    const taken2 = await hold(dir, () => {
+    const taken = await hold(dir, () => {
       if (!mine()) return "replaced";
-      const requests = readLines(inbox);
-      if (!requests.length) {
-        const now = /* @__PURE__ */ new Date();
-        fs5.utimesSync(listener, now, now);
-        return null;
-      }
+      const events = readLines(inbox);
+      if (!events.length) return null;
       fs5.rmSync(inbox, { force: true });
-      writeJson(listener, { state: "handed", requests: requests.map((one) => one.id) });
-      return requests;
+      writeJson(listener, { state: "stopped" });
+      return events;
     });
-    if (taken2) return taken2;
+    if (taken) return taken;
     if (!pageRunning()) {
       await release();
       return "stopped";
     }
-    await new Promise((resolve) => setTimeout(resolve, LISTEN_EVERY_MS));
+    await new Promise((resolve2) => setTimeout(resolve2, LISTEN_EVERY_MS));
   }
-}
-
-// src/decisions.ts
-var readFile = (dir) => path6.join(dir, "read.json");
-var viewedFile = (dir) => path6.join(dir, "viewed.json");
-var fingerprint = (content) => crypto4.createHash("sha256").update(content).digest("hex").slice(0, 16);
-var isChoice = (entry) => entry.from === "page" && entry.kind === "decision";
-var taken = (choice) => choice && !("clear" in choice) ? choice : null;
-var keyOf = (value) => typeof value === "object" && value !== null ? itemKey(value) : "";
-function itemsOf({ steps: steps2, checklist: checklist2, base, head }, conversation) {
-  const items = [
-    ...steps2.map((step) => ({ item: { type: "step", id: step.id }, content: step.diff })),
-    ...conversation.flatMap(
-      (entry) => entry.from === "session" && entry.note ? [{ item: { type: "note", id: entry.id }, content: entry.text }] : []
-    ),
-    ...(checklist2?.items ?? []).map((one) => ({ item: { type: "checklist", id: one.id }, content: one.text })),
-    { item: { type: "verdict" }, content: `${base}..${head}` },
-    { item: { type: "walkthrough" }, content: `${base}..${head}` }
-  ];
-  return items.map((one) => ({ ...one, key: itemKey(one.item), on: fingerprint(one.content) }));
-}
-var toned = (action) => {
-  const own = STEP_ACTIONS.find((one) => one.id === action.id && one.label === action.label && !one.note === !action.note);
-  return own ? { ...own, ...action } : action;
-};
-var actionsOf = ({ actions: actions2 }, item) => {
-  if (item.type !== "step") return actions2?.[itemKey(item)] ?? [];
-  return actions2?.[itemKey(item)]?.map(toned) ?? STEP_ACTIONS;
-};
-function decisionsOf(walkthrough, conversation) {
-  const choices = conversation.filter(isChoice);
-  return itemsOf(walkthrough, conversation).map(({ item, key, on }) => {
-    const latest = choices.findLast((one) => itemKey(one.item) === key && one.on === on);
-    const earlier = latest ? void 0 : choices.findLast((one) => itemKey(one.item) === key);
-    return { item, key, on, actions: actionsOf(walkthrough, item), decision: taken(latest), reopened: taken(earlier) };
-  });
-}
-function walkthroughVersion(dir) {
-  const stats = ["walkthrough.json", "conversation.jsonl", "read.json", "viewed.json", "posted.json"].map((name2) => {
-    const stat = fs6.statSync(path6.join(dir, name2), { throwIfNoEntry: false });
-    return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
-  });
-  return fingerprint(stats.join(":"));
-}
-function walkthroughView(dir) {
-  const walkthrough = readWalkthrough(dir);
-  if (!walkthrough) return null;
-  const conversation = conversationOf(dir);
-  const items = decisionsOf(walkthrough, conversation);
-  const read2 = readJson(readFile(dir), []);
-  const viewed = readJson(viewedFile(dir), []);
-  return {
-    ...walkthrough,
-    actions: Object.fromEntries(items.filter((one) => one.actions.length).map((one) => [one.key, one.actions])),
-    decided: Object.fromEntries(items.map((one) => [one.key, one.decision])),
-    reopened: Object.fromEntries(items.flatMap((one) => one.reopened ? [[one.key, one.reopened]] : [])),
-    on: Object.fromEntries(items.map((one) => [one.key, one.on])),
-    read: walkthrough.steps.filter((step) => read2.includes(`${step.id}:${fingerprint(step.diff)}`)).map((step) => step.id),
-    posted: postedOf(dir),
-    viewed: Object.entries(fileMarks(walkthrough)).flatMap(([file2, mark]) => viewed.includes(mark) ? [file2] : []),
-    anchored: Object.fromEntries(
-      conversation.flatMap((entry) => {
-        const place = entry.from === "session" ? entry.note : entry.kind === "ask" || entry.kind === "comment" ? entry : void 0;
-        return place ? [[entry.id, anchorOf(walkthrough, place)]] : [];
-      })
-    )
-  };
-}
-var ITEM_TYPES = /* @__PURE__ */ new Set(["step", "note", "checklist", "verdict", "walkthrough"]);
-var wordCount = (text2) => text2.trim().split(/\s+/).length;
-var nameOfItem = (item) => "id" in item ? `${item.type === "checklist" ? "checklist item" : item.type} ${item.id}` : `the ${item.type}`;
-function parseActions(text2, walkthrough, conversation) {
-  const known = new Map(itemsOf(walkthrough, conversation).map((one) => [one.key, one.item]));
-  return parseList(text2, "the actions", ({ item, actions: actions2, hint }, number) => {
-    const fail = (problem) => new Error(`entry ${String(number)}: ${problem}`);
-    const { type } = fieldsOf(item);
-    if (typeof type !== "string" || !ITEM_TYPES.has(type))
-      throw fail("the item must be a step, a note, a checklist item, the verdict or the walkthrough");
-    const found = known.get(keyOf(item));
-    if (!found) throw fail(`the walkthrough has no ${nameOfItem(item)}`);
-    if (!Array.isArray(actions2)) throw fail("actions must be a list");
-    if (hint !== void 0 && !filled(hint)) throw fail("a hint needs words");
-    if (hint !== void 0 && "id" in found) throw fail("only the verdict and the walkthrough take a hint");
-    const ids = /* @__PURE__ */ new Set();
-    let primaryName;
-    return {
-      item: found,
-      actions: actions2.map((fields2, number2) => {
-        const name2 = `action ${String(number2 + 1)}`;
-        const { id, label, note: note2 = false, edit = false, tone, consequence, outcome, primary = false } = fieldsOf(fields2);
-        if (!filled(id)) throw fail(`${name2} needs an id`);
-        if (!filled(label)) throw fail(`${name2} needs a label`);
-        if (typeof note2 !== "boolean") throw fail(`${name2}: note must be true or false`);
-        if (typeof edit !== "boolean") throw fail(`${name2}: edit must be true or false`);
-        if (tone !== void 0 && !TONES.includes(tone)) throw fail(`${name2}: tone must be positive, attention or none`);
-        if (consequence !== void 0 && !filled(consequence)) throw fail(`${name2}: a consequence needs words`);
-        if (consequence !== void 0 && wordCount(consequence) > CONSEQUENCE_WORDS)
-          throw fail(`${name2}: a consequence is at most ${String(CONSEQUENCE_WORDS)} words`);
-        if (outcome !== void 0 && !filled(outcome)) throw fail(`${name2}: an outcome needs words`);
-        if (outcome !== void 0 && wordCount(outcome) > OUTCOME_WORDS)
-          throw fail(`${name2}: an outcome is at most ${String(OUTCOME_WORDS)} words`);
-        if (typeof primary !== "boolean") throw fail(`${name2}: primary must be true or false`);
-        if (primary && primaryName) throw fail(`${name2}: ${primaryName} is already primary, and an item has one at most`);
-        if (primary) primaryName = name2;
-        if (edit && found.type !== "note" && found.type !== "checklist")
-          throw fail(`${name2}: only a note or a checklist item has text to edit`);
-        if (ids.has(id)) throw fail(`two actions have the id ${id}`);
-        ids.add(id);
-        return {
-          id,
-          label,
-          ...note2 && { note: true },
-          ...edit && { edit: true },
-          ...tone !== void 0 && { tone },
-          ...consequence !== void 0 && { consequence: consequence.trim() },
-          ...outcome !== void 0 && { outcome: outcome.trim() },
-          ...primary && { primary: true }
-        };
-      }),
-      ...hint !== void 0 && { hint: hint.trim() }
-    };
-  });
-}
-function waitsForVerdict(walkthrough, conversation, item) {
-  if (item.type !== "walkthrough" || !actionsOf(walkthrough, { type: "verdict" }).length) return false;
-  return !decisionsOf(walkthrough, conversation).find((one) => one.item.type === "verdict")?.decision;
-}
-var CHANGED = "changed";
-var CHECKING = "checking";
-async function decide(dir, { item, action, note: note2, text: text2, clear, on }) {
-  const walkthrough = readWalkthrough(dir);
-  const conversation = conversationOf(dir);
-  const found = walkthrough && itemsOf(walkthrough, conversation).find((one) => one.key === keyOf(item));
-  if (!found) return null;
-  if (on !== void 0 && on !== found.on) return CHANGED;
-  if (found.item.type === "step" && walkthrough.checking?.includes(found.item.id)) return CHECKING;
-  if (clear !== void 0) {
-    const decided = decisionsOf(walkthrough, conversation).find((one) => one.key === found.key)?.decision;
-    if (clear !== true || !decided || action !== void 0 || note2 !== void 0 || text2 !== void 0) return null;
-    const session2 = await request(dir, { kind: "decision", item: found.item, clear: true, on: found.on });
-    return { walkthrough: walkthroughView(dir), session: session2 };
-  }
-  const offered = actionsOf(walkthrough, found.item).find((one) => one.id === action);
-  if (!offered) return null;
-  if (offered === actionsOf(walkthrough, found.item)[0] && waitsForVerdict(walkthrough, conversation, found.item)) return null;
-  if (offered.note ? note2 !== void 0 && typeof note2 !== "string" : note2 !== void 0) return null;
-  if (offered.edit ? !filled(text2) : text2 !== void 0) return null;
-  const session = await request(dir, {
-    kind: "decision",
-    item: found.item,
-    action: offered.id,
-    ...offered.note && filled(note2) && { note: cleanText(note2) },
-    ...offered.edit && { text: cleanText(text2) },
-    on: found.on
-  });
-  return { walkthrough: walkthroughView(dir), session };
-}
-function fileMarks({ steps: steps2 }) {
-  return Object.fromEntries(
-    steps2.flatMap(
-      (step) => parseDiff(step.diff).map((file2) => {
-        const name2 = file2.isDeleted ? file2.oldName : file2.newName;
-        return [name2, `${name2}:${fingerprint(JSON.stringify(file2))}`];
-      })
-    )
-  );
-}
-async function markViewed(dir, { step: stepId, file: file2, viewed, on }) {
-  const walkthrough = readWalkthrough(dir);
-  const step = walkthrough?.steps.find((one) => one.id === stepId);
-  if (!walkthrough || !step || typeof viewed !== "boolean" || typeof file2 !== "string") return null;
-  if (on !== void 0 && on !== fingerprint(step.diff)) return CHANGED;
-  const mark = fileMarks({ ...walkthrough, steps: [step] })[file2];
-  if (!mark) return null;
-  const marks = viewedFile(dir);
-  await locked(marks, () => {
-    const kept = readJson(marks, []).filter((one) => one !== mark);
-    writeJson(marks, viewed ? [...kept, mark] : kept);
-  });
-  return walkthroughView(dir);
-}
-async function markRead(dir, stepId, on) {
-  const step = readWalkthrough(dir)?.steps.find((one) => one.id === stepId);
-  if (!step) return null;
-  if (on !== void 0 && on !== fingerprint(step.diff)) return CHANGED;
-  const file2 = readFile(dir);
-  const mark = `${step.id}:${fingerprint(step.diff)}`;
-  await locked(file2, () => {
-    const read2 = readJson(file2, []);
-    if (!read2.includes(mark)) writeJson(file2, [...read2, mark]);
-  });
-  return walkthroughView(dir);
 }
 
 // src/list.ts
-import fs7 from "node:fs";
-import path7 from "node:path";
-var ACTIVITY = ["walkthrough.json", "conversation.jsonl", "read.json"];
+var ACTIVITY = ["walkthrough.json", "review.jsonl", "viewed.json"];
 function listView(repoDir2) {
-  const entries = fs7.existsSync(repoDir2) ? fs7.readdirSync(repoDir2, { withFileTypes: true }) : [];
+  const entries = fs6.existsSync(repoDir2) ? fs6.readdirSync(repoDir2, { withFileTypes: true }) : [];
   const listed = entries.flatMap((entry) => {
-    const dir = path7.join(repoDir2, entry.name);
+    const dir = path6.join(repoDir2, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
-    const conversation = conversationOf(dir);
-    const findings = (id) => conversation.filter(
-      (entry2) => entry2.from === "session" && entry2.note?.finding && entry2.answer === void 0 && view.anchored[entry2.id] === id && !view.decided[itemKey({ type: "note", id: entry2.id })]
-    ).length;
-    const segments = view.steps.map((step) => stepShown(view, step, findings(step.id)));
-    const verdict = view.decided["verdict"];
-    const changed = ACTIVITY.map((file2) => fs7.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
+    const changed = ACTIVITY.map((file2) => fs6.statSync(path6.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
-        name: nameOf(view),
-        ...view.kindLabel !== void 0 && { kind: view.kindLabel },
-        ...verdict && {
-          verdict: {
-            label: view.actions["verdict"]?.find((one) => one.id === verdict.action)?.label ?? verdict.action,
-            shown: TONE_SHOWN[toneOf(view.actions["verdict"], verdict.action)]
-          }
-        },
-        target: view.target,
-        steps: view.steps.length,
-        decided: view.steps.filter((step) => view.decided[itemKey({ type: "step", id: step.id })]).length,
-        read: view.read.length,
-        segments,
+        name: view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view),
+        files: view.steps.flatMap((step) => step.files).length,
+        viewed: view.viewed.length,
+        ...view.submitted && { submitted: view.submitted.type },
         last: new Date(Math.max(...changed)).toISOString()
       }
     ];
@@ -9397,46 +13321,30 @@ function listView(repoDir2) {
   return listed.sort((one, other) => other.last.localeCompare(one.last));
 }
 var listPage = (repoDir2) => ({
-  repo: path7.basename(repoDir2).replace(/-[0-9a-f]{8}$/, ""),
+  repo: path6.basename(repoDir2).replace(/-[0-9a-f]{8}$/, ""),
   walkthroughs: listView(repoDir2)
 });
 
 // src/viewer.ts
-var CHOICES = {
-  accent: ["ultramarine", "petrol", "berry"],
-  theme: ["system", "light", "dark"]
-};
-var PANELS = ["queue", "checklist", "explanation"];
-var DEFAULT_VIEWER = {
-  accent: "ultramarine",
-  theme: "system",
-  panels: { queue: true, checklist: false, explanation: false }
-};
-var fields = (value) => typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+var THEMES = ["system", "light", "dark"];
+var DEFAULT_VIEWER = { theme: "system" };
 function mergeViewer(base, change) {
-  const given = fields(change);
-  const result = { ...base, panels: { ...base.panels } };
-  for (const setting of Object.keys(CHOICES)) {
-    const value = given[setting];
-    if (CHOICES[setting].includes(value)) Object.assign(result, { [setting]: value });
-  }
-  const panels = fields(given["panels"]);
-  for (const panel of PANELS) if (typeof panels[panel] === "boolean") result.panels[panel] = panels[panel];
-  return result;
+  const theme = typeof change === "object" && change !== null ? change["theme"] : void 0;
+  return THEMES.includes(theme) ? { theme } : { ...base };
 }
 
 // src/words.ts
 var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
 var MAX_TEXT = 4e3;
-function tooLong(fields2) {
-  const long = Object.values(fields2).find((value) => typeof value === "string" && value.length > MAX_TEXT);
+function tooLong(fields) {
+  const long = Object.values(fields).find((value) => typeof value === "string" && value.length > MAX_TEXT);
   return long === void 0 ? null : `That text is ${String(long.length)} characters long; the most it can be is ${String(MAX_TEXT)}.`;
 }
 
 // src/server.ts
 var MAX_BODY_BYTES = 256 * 1024;
 var IDLE_MS = 30 * 60 * 1e3;
-var PAGE = path8.join(import.meta.dirname, "page");
+var PAGE = path7.join(import.meta.dirname, "page");
 var SHARED_FILES = {
   "style.css": { file: "style.css", type: "text/css; charset=utf-8" },
   "favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
@@ -9460,40 +13368,40 @@ var SECURITY_HEADERS = {
   "x-frame-options": "DENY",
   "cross-origin-resource-policy": "same-origin"
 };
-var viewerFile = () => path8.join(stateDir(), "viewer.json");
+var viewerFile = () => path7.join(stateDir(), "viewer.json");
 var readViewer = (file2 = viewerFile()) => mergeViewer(DEFAULT_VIEWER, readJson(file2, {}));
 function saveViewer(change, file2 = viewerFile()) {
   const saved = mergeViewer(readViewer(file2), change);
   writeJson(file2, saved);
   return saved;
 }
-var recordFile = (dir) => path8.join(dir, "server.json");
+var recordFile = (dir) => path7.join(dir, "server.json");
 var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
-  const file2 = path8.join(dir, "token");
+  const file2 = path7.join(dir, "token");
   try {
-    const kept = fs8.readFileSync(file2, "utf8").trim();
+    const kept = fs7.readFileSync(file2, "utf8").trim();
     if (/^[0-9a-f]{48}$/.test(kept)) return kept;
   } catch {
   }
-  const token = crypto5.randomBytes(24).toString("hex");
-  fs8.writeFileSync(file2, `${token}
+  const token = crypto4.randomBytes(24).toString("hex");
+  fs7.writeFileSync(file2, `${token}
 `, { mode: 384 });
   return token;
 }
 function serverRunning(dir) {
-  const record = readRecord(dir);
-  return !!record && alive(record);
+  const record2 = readRecord(dir);
+  return !!record2 && alive(record2);
 }
-var sleep = (ms) => new Promise((resolve) => {
-  setTimeout(resolve, ms);
+var sleep = (ms) => new Promise((resolve2) => {
+  setTimeout(resolve2, ms);
 });
 function ensureServer(dir, list3 = false) {
-  fs8.mkdirSync(dir, { recursive: true, mode: 448 });
+  fs7.mkdirSync(dir, { recursive: true, mode: 448 });
   return locked(recordFile(dir), async () => {
     const running = readRecord(dir);
     if (running && alive(running)) return running.url;
-    const log = fs8.openSync(path8.join(dir, "server.log"), "a", 384);
+    const log = fs7.openSync(path7.join(dir, "server.log"), "a", 384);
     const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
       // Not the folder start ran in, which may be a worktree removed while the page is open.
       cwd: commonDir(process.cwd()),
@@ -9501,24 +13409,24 @@ function ensureServer(dir, list3 = false) {
       stdio: ["ignore", log, log]
     });
     child.unref();
-    fs8.closeSync(log);
+    fs7.closeSync(log);
     for (const end = Date.now() + 1e4; Date.now() < end; await sleep(50)) {
-      const record = readRecord(dir);
-      if (record && record.pid === child.pid) return record.url;
+      const record2 = readRecord(dir);
+      if (record2 && record2.pid === child.pid) return record2.url;
     }
-    throw new Error(`the page server did not start; see ${path8.join(dir, "server.log")}`);
+    throw new Error(`the page server did not start; see ${path7.join(dir, "server.log")}`);
   });
 }
 async function stopServer(dir) {
-  const record = readRecord(dir);
-  if (!record || !alive(record)) {
-    fs8.rmSync(recordFile(dir), { force: true });
+  const record2 = readRecord(dir);
+  if (!record2 || !alive(record2)) {
+    fs7.rmSync(recordFile(dir), { force: true });
     return false;
   }
-  process.kill(record.pid, "SIGTERM");
-  for (const end = Date.now() + 8e3; Date.now() < end && alive(record); ) await sleep(50);
-  if (alive(record)) process.kill(record.pid, "SIGKILL");
-  fs8.rmSync(recordFile(dir), { force: true });
+  process.kill(record2.pid, "SIGTERM");
+  for (const end = Date.now() + 8e3; Date.now() < end && alive(record2); ) await sleep(50);
+  if (alive(record2)) process.kill(record2.pid, "SIGKILL");
+  fs7.rmSync(recordFile(dir), { force: true });
   return true;
 }
 function serve(dir, list3 = false) {
@@ -9529,12 +13437,11 @@ function serve(dir, list3 = false) {
   const viewer = (change) => ({ status: 200, body: saveViewer(change) });
   const routes = list3 ? { "/open": ({ id }) => open(dir, id), "/stop": stop, "/viewer": viewer } : {
     "/viewer": viewer,
-    "/decide": async (fields2) => answered(await decide(dir, fields2)),
-    "/read": async ({ step, on }) => answered(await markRead(dir, step, on)),
-    "/viewed": async (fields2) => answered(await markViewed(dir, fields2)),
-    "/ask": async (fields2) => answered(await ask(dir, fields2)),
-    "/reply": async ({ to, text: text2 }) => answered(await reply(dir, to, text2)),
-    "/comment": async (fields2) => answered(await comment(dir, fields2)),
+    "/viewed": async (fields) => answered(dir, await markViewed(dir, fields)),
+    "/comment": async (fields) => answered(dir, await comment(dir, fields)),
+    "/ask": async (fields) => answered(dir, await ask(dir, fields)),
+    "/resolve": async (fields) => answered(dir, await resolve(dir, fields)),
+    "/submit": async (fields) => answered(dir, await submit(dir, fields)),
     "/stop": stop
   };
   let seen = Date.now();
@@ -9547,7 +13454,7 @@ function serve(dir, list3 = false) {
     }
   });
   const shutDown = () => {
-    if (readRecord(dir)?.pid === process.pid) fs8.rmSync(recordFile(dir), { force: true });
+    if (readRecord(dir)?.pid === process.pid) fs7.rmSync(recordFile(dir), { force: true });
     process.exit(0);
   };
   process.on("SIGTERM", shutDown);
@@ -9559,18 +13466,18 @@ function serve(dir, list3 = false) {
   }, Math.min(idleMs / 4, 6e4));
   server.listen(0, "127.0.0.1", () => {
     const { port } = server.address();
-    const record = {
+    const record2 = {
       pid: process.pid,
       started: psStart(process.pid),
       url: `http://127.0.0.1:${String(port)}/s/${token}/`
     };
-    writeJson(recordFile(dir), record);
+    writeJson(recordFile(dir), record2);
   });
 }
-var answered = (view) => view === CHANGED ? { status: 409, body: { error: "This changed since the page showed it; look at it again." } } : view === CHECKING ? { status: 409, body: { error: "Decide after the check." } } : view ? { status: 200, body: view } : { status: 400 };
+var answered = (dir, done) => done ? { status: 200, body: walkthroughView(dir) } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
-  return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
+  return listed ? { status: 200, body: { url: await ensureServer(path7.join(repoDir2, listed.id)) } } : { status: 400 };
 }
 var logged = (error) => {
   console.error(`walkthrough server: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
@@ -9584,7 +13491,7 @@ async function inChange(base, head, file2, type) {
   const changed = (await changedFiles(process.cwd(), base, head)).map((one) => one.path);
   if (changed.includes(file2)) return true;
   return type.startsWith("image/") && changed.some(
-    (markdown) => previewType(markdown)?.startsWith("text/markdown") && imagesIn(markdown, fileAt(process.cwd(), head, markdown)?.toString("utf8") ?? "").includes(file2)
+    (markdown2) => previewType(markdown2)?.startsWith("text/markdown") && imagesIn(markdown2, fileAt(process.cwd(), head, markdown2)?.toString("utf8") ?? "").includes(file2)
   );
 }
 async function serveFileAt(dir, file2, atBase, res) {
@@ -9618,7 +13525,7 @@ function serveFile(dir, list3, what, req, res) {
   }
   const data = {
     "data/viewer.json": () => readViewer(),
-    ...list3 ? { "data/list.json": () => listPage(dir) } : { "data/session.json": () => sessionView(dir) }
+    ...list3 && { "data/list.json": () => listPage(dir) }
   };
   const view = Object.hasOwn(data, what) ? data[what] : void 0;
   if (view) {
@@ -9632,7 +13539,7 @@ function serveFile(dir, list3, what, req, res) {
     return;
   }
   res.writeHead(200, { "content-type": known.type, "cache-control": "no-store" });
-  fs8.createReadStream(path8.join(PAGE, known.file)).pipe(res);
+  fs7.createReadStream(path7.join(PAGE, known.file)).pipe(res);
 }
 function readBody(req, res, onBody) {
   let size = 0;
@@ -9660,10 +13567,10 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
   const url = new URL(req.url ?? "", "http://127.0.0.1");
   for (const [name2, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name2, value);
   const refuse = (code2) => {
-    const answer = () => res.writeHead(code2).end();
+    const answer2 = () => res.writeHead(code2).end();
     req.resume();
-    if (req.complete) answer();
-    else req.once("end", answer);
+    if (req.complete) answer2();
+    else req.once("end", answer2);
   };
   const own = ["127.0.0.1", "localhost"].map((host2) => `${host2}:${port}`);
   const { host = "", origin } = req.headers;
@@ -9677,7 +13584,7 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
   }
   const given = Buffer.from(url.searchParams.get("token") ?? "");
   const expected = Buffer.from(token);
-  const authorized = given.length === expected.length && crypto5.timingSafeEqual(given, expected);
+  const authorized = given.length === expected.length && crypto4.timingSafeEqual(given, expected);
   const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : void 0;
   if (req.method !== "POST" || !authorized || !route) {
     refuse(404);
@@ -9688,16 +13595,16 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
     return;
   }
   readBody(req, res, (body) => {
-    const fields2 = body && typeof body === "object" && !Array.isArray(body) ? body : {};
-    const problem = tooLong(fields2);
+    const fields = body && typeof body === "object" && !Array.isArray(body) ? body : {};
+    const problem = tooLong(fields);
     if (problem) {
       res.writeHead(400, JSON_HEADERS).end(JSON.stringify({ error: problem }));
       return;
     }
-    Promise.resolve().then(() => route(fields2)).then(({ status: status2, body: said, after }) => {
+    Promise.resolve().then(() => route(fields)).then(({ status: status2, body: said2, after }) => {
       if (after) res.once("finish", after);
-      if (said === void 0) res.writeHead(status2).end();
-      else res.writeHead(status2, JSON_HEADERS).end(JSON.stringify(said));
+      if (said2 === void 0) res.writeHead(status2).end();
+      else res.writeHead(status2, JSON_HEADERS).end(JSON.stringify(said2));
     }).catch((error) => {
       failRequest(res, error);
     });
@@ -9715,15 +13622,15 @@ function over(cwd, walkthrough) {
 }
 async function remove(dir, name2, why) {
   await stopServer(dir);
-  fs9.rmSync(dir, { recursive: true, force: true });
+  fs8.rmSync(dir, { recursive: true, force: true });
   return `Removed the walkthrough of ${name2}: ${why}.`;
 }
 async function prune(cwd) {
-  const repoDir2 = path9.join(stateDir(), currentRepo(cwd));
+  const repoDir2 = path8.join(stateDir(), currentRepo(cwd));
   const removed = [];
-  if (!fs9.existsSync(repoDir2)) return removed;
-  for (const entry of fs9.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
-    const dir = path9.join(repoDir2, entry.name);
+  if (!fs8.existsSync(repoDir2)) return removed;
+  for (const entry of fs8.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
+    const dir = path8.join(repoDir2, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
     if (walkthrough && why) removed.push(await remove(dir, nameOf(walkthrough), why));
@@ -9736,7 +13643,7 @@ async function pruneOne(dir, name2) {
 }
 var DAY_MS = 24 * 60 * 60 * 1e3;
 async function pruneDaily(cwd) {
-  const marker = path9.join(stateDir(), currentRepo(cwd), "last-prune.json");
+  const marker = path8.join(stateDir(), currentRepo(cwd), "last-prune.json");
   const due = await locked(marker, () => {
     const { at = "" } = readJson(marker, {});
     if (Date.now() - Date.parse(at) < DAY_MS) return false;
@@ -9747,295 +13654,172 @@ async function pruneDaily(cwd) {
 }
 
 // src/export.ts
-import crypto6 from "node:crypto";
-import fs10 from "node:fs";
-import path10 from "node:path";
-var hash = (text2) => `'sha256-${crypto6.createHash("sha256").update(text2).digest("base64")}'`;
-function inline2(html, tag, replacement) {
-  if (!html.includes(tag)) throw new Error(`the page has no ${tag} to inline`);
-  return html.replace(tag, () => replacement);
-}
-function imageSizes(dir) {
-  const walkthrough = readWalkthrough(dir);
-  if (!walkthrough) return {};
-  const sizes = {};
-  for (const file2 of walkthrough.steps.flatMap((step) => parseDiff(step.diff))) {
-    const [name2, rev] = file2.isDeleted ? [file2.oldName, walkthrough.base] : [file2.newName, walkthrough.head];
-    if (!file2.isBinary || !previewType(name2)?.startsWith("image/")) continue;
-    const bytes = fileAt(process.cwd(), rev, name2);
-    const size = bytes && pixelSize(bytes);
-    if (size) sizes[name2] = size;
-  }
-  return sizes;
-}
+var import_diff2html = __toESM(require_diff2html(), 1);
+import crypto5 from "node:crypto";
+import fs9 from "node:fs";
+import path9 from "node:path";
+var hash = (text2) => `'sha256-${crypto5.createHash("sha256").update(text2).digest("base64")}'`;
+var markdown = new MarkdownItCallable({ html: false, linkify: true }).disable("image");
+var escape2 = (text2) => text2.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
+var STATUS = { met: "Met", partly: "Partly met", "not-met": "Not met", "not-checked": "Not checked" };
+var who = (said2) => said2.by === "colleague" ? said2.author ?? "" : said2.by === "ai" ? "AI" : "You";
 function exportPage(dir) {
-  const read2 = (file2) => fs10.readFileSync(path10.join(PAGE, file2), "utf8");
-  const script = read2("app.js").replace(/<(?=!--|\/script)/gi, "\\x3C");
-  const style = read2("style.css");
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: (/* @__PURE__ */ new Date()).toISOString(), viewer: readViewer(), images: imageSizes(dir) };
-  const data = JSON.stringify(state).replaceAll("<", "\\u003c");
-  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
-  let html = read2("index.html");
-  const favicon = fs10.readFileSync(path10.join(PAGE, "favicon.svg")).toString("base64");
-  html = inline2(
-    html,
-    '<link rel="icon" href="favicon.svg" type="image/svg+xml" />\n    <link rel="apple-touch-icon" href="apple-touch-icon.png" />',
-    `<link rel="icon" href="data:image/svg+xml;base64,${favicon}" type="image/svg+xml" />`
-  );
-  html = inline2(
-    html,
-    '<link rel="stylesheet" href="style.css" />',
-    `<meta http-equiv="content-security-policy" content="${policy}" />
-    <style>${style}</style>`
-  );
-  html = inline2(
-    html,
-    '<script type="module" src="app.js"></script>',
-    `<script type="application/json" id="exported">${data}</script>
-    <script type="module">${script}</script>`
-  );
-  return html;
+  const view = walkthroughView(dir);
+  if (!view) throw new Error("there is no such walkthrough");
+  const title = view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view);
+  const steps3 = view.steps.map((step, at) => {
+    const threads3 = view.threads.filter((thread) => thread.step === step.id);
+    const comments3 = threads3.flatMap(
+      (thread) => thread.comments.map(
+        (said2) => `<li><code>${escape2(thread.file)}:${String(thread.lines[1])}</code> <strong>${escape2(who(said2))}</strong>${said2.by === "ai" && (said2.pending || said2.review) ? " <code>[AI]</code>" : ""}${markdown.render(said2.body)}</li>`
+      )
+    );
+    const diff = (0, import_diff2html.html)(parseDiff(step.diff), { outputFormat: "line-by-line", drawFileList: false, matching: "lines" });
+    return `<section class="export-step"><h2>${String(at + 1)}. ${escape2(step.title)}</h2>
+<div class="markdown">${markdown.render(step.explanation)}</div>${diff}${comments3.length ? `<ul class="export-comments">${comments3.join("")}</ul>` : ""}</section>`;
+  });
+  const criteria3 = (view.criteria ?? []).map((one) => `<li>${escape2(one.text)}: ${STATUS[one.status]}</li>`);
+  const style = fs9.readFileSync(path9.join(PAGE, "style.css"), "utf8");
+  const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="content-security-policy" content="${policy}" />
+    <title>${escape2(title)} \xB7 Walkthrough</title>
+    <style>${style}</style>
+  </head>
+  <body class="export">
+    <main class="export-main">
+      <h1>${escape2(title)}</h1>
+      ${steps3.join("\n")}
+      ${criteria3.length ? `<section class="export-step"><h2>Acceptance criteria</h2><ul>${criteria3.join("")}</ul></section>` : ""}
+    </main>
+  </body>
+</html>
+`;
 }
 
 // src/guide.ts
-var example = [
+var steps = [
   {
-    title: "Session store",
-    explanation: "Adds a store that keeps login sessions, with its test.\n\nLogin needs somewhere to keep sessions.",
-    assumptions: ["Sessions are only read by the login handler."],
-    files: [{ path: "src/session-store.ts", explanation: "Keeps sessions in memory, keyed by their id." }, "test/session-store.test.ts"]
-  },
-  {
-    title: "Regenerated API description",
-    folded: true,
-    files: [{ path: "docs/api.json", reason: "Regenerated from the session store." }],
-    problems: []
+    title: "Parse due dates in the API",
+    explanation: "Both handlers accept an optional dueDate and store it as a date or null.\n\nThe rest of the detail, shown behind More.",
+    files: ["src/api/tasks.ts", { path: "src/api/generated/client.ts", folded: "Generated from the schema" }],
+    look: [{ file: "src/api/tasks.ts", start: 26, end: 29, label: "parseDueDate" }]
   }
 ];
-var notesExample = [
-  { step: "1", label: "Risk", text: "Sessions never expire, so a stolen one works **forever**.", finding: true },
+var comments = [{ file: "src/api/tasks.ts", lines: [29, 29], body: "A typo in the date becomes null and clears it. Return 400 with the field name." }];
+var threads = [
   {
-    step: "1",
-    file: "src/session-store.ts",
-    lines: [1, 1],
-    label: "Nit",
-    text: "The name could say what is stored.",
-    low: true
+    id: "1042",
+    file: "src/api/tasks.ts",
+    lines: [22, 22],
+    author: "dana-k",
+    at: "2026-11-23T09:30:00Z",
+    body: "Does a PATCH without dueDate wipe the date?",
+    replies: [{ author: "ryo-t", at: "2026-11-24T10:00:00Z", body: "Yes. Fixing it in this PR." }]
   }
 ];
-var checklistExample = {
-  title: "Acceptance criteria",
-  description: "Each acceptance criterion from the tickets, and the steps that deliver it.",
-  items: [
-    { status: "met", mark: "met", text: "Sessions survive a restart.", steps: ["1"] },
-    { status: "not shown", mark: "not-met", text: "Expired sessions are removed.", steps: [] }
-  ]
-};
-var actionsExample = [
-  {
-    item: { type: "note", id: "5f0c2a9e" },
-    actions: [
-      { id: "accept", label: "Accept", tone: "positive", consequence: "Goes on the fix list.", outcome: "Added to fixes", primary: true },
-      { id: "edit", label: "Edit first", edit: true, tone: "positive", consequence: "You reword it first.", outcome: "Edited" },
-      { id: "drop", label: "Drop", note: true, consequence: "The author never sees it.", outcome: "Dropped" }
-    ]
-  },
-  { item: { type: "step", id: "1" }, actions: [{ id: "approve", label: "Approve", tone: "positive" }, { id: "fix", label: "Needs a fix", note: true, tone: "attention" }] },
-  {
-    item: { type: "verdict" },
-    hint: "Sent with the review.",
-    actions: [
-      { id: "approve", label: "Approve", tone: "positive" },
-      { id: "changes", label: "Request changes", tone: "attention" },
-      { id: "comment", label: "Comment" }
-    ]
-  },
-  { item: { type: "walkthrough" }, hint: "Posts your comments as one review.", actions: [{ id: "post", label: "Post my review" }] }
+var criteria = [
+  { text: "Optional due date on create and edit", status: "met" },
+  { text: "Invalid dates rejected with a clear error", status: "not-met" }
 ];
-var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--kind <label>] [--comments <text>]
+var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
   Starts or resumes a walkthrough and opens its page; nothing is checked out.
-  --kind gives the walkthrough the session's own label for what kind it is, such as "own" or "requested";
-  the page header and the list show it as given, nothing else reads it, and a later start keeps it unless it gives another.
-  --comments gives the session's own words for what becomes of the person's line comments, such as "Joins the fix list";
-  the page shows them under each comment, and a later start keeps them unless it gives others.
-  Both are start's alone: the other commands find the walkthrough without them.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
-  With --base and --head it is of that range, named by its --label, which a range needs: two changes fetched to the same name would share a walkthrough without it.
-  Either way the change runs from the merge-base of the two to the head; a change with no changed file is refused.
-  Every command below finds the walkthrough from the same options start was given, so pass them to each.
-  When the head moved since, the walkthrough goes on at the new head: each step keeps the files that still change, a step with none left is gone,
-  and start prints the changed files that no step has yet, which the page names too; record the steps again with those in new steps.
-  It prints the walkthrough's inbox, a folder for the files the session records from.
-  Example: walkthrough start --base origin/main --head feature/cart --label "Cart"
+  With --base and --head it is of that range, named by its --label.
+  --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
+  Every command below finds the walkthrough from the same source options start was given, so pass them to each.
+  When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
+  Comments on lines that changed stay in the review, detached from the diff.
+  It prints the walkthrough's inbox, the folder for the files the session records from.
 
 Recording from files
-  steps, checklist, note, actions and policy save read what they record from the file --file names, or from standard input without it; say takes its text on the command line or from --file.
-  Write each file with your file tool into the inbox start printed (walkthrough policy prints the policy's), then pass its path; the plugin lets both run without asking the person.
-  The command removes a file from the inbox once it has read it, so each recording is a new file there.
-  Pass other text on the command line in single quotes, writing a single quote in it as '\\''; anything the shell would expand or run makes the person approve the command.
+  steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
+  Write each file with your file tool into the inbox start printed, then pass its path; the command removes it once read.
+  Lines are numbered as in the file at the head, and must be in the step's diff. Text is Markdown, shown without raw HTML or images.
 
 walkthrough files
-  Prints every changed file of the walkthrough, one path per line, at its head path.
+  Prints every changed file, one path per line.
 
 walkthrough steps --file <file>
-  Records the steps, replacing those recorded before, and prints each step's id and title in order.
-  A step takes the id of the step recorded before that it shares the most files with, the earlier on a tie, unless a step sharing more took it, or else a new id; its notes and checklist links follow the id.
-  A step keeps its decisions and read mark while its diff is unchanged; when the diff changes, it is reopened until the person decides again.
-  The file is a JSON array of steps in reading order; a step shows its files in the order given.
-  Every file that walkthrough files prints must be in exactly one step; otherwise nothing is recorded and every problem is named.
-  A step, with what the session assumed rather than read ("assumptions" may be left out):
-    {"title": string, "explanation": string, "assumptions": [string, ...], "files": [path, ...]}
-  A path in a step's files may be given with a short explanation of that file, shown just above its diff, under the step's explanation:
-    {"path": path, "explanation": string}
-  A folded step, shown collapsed, with the session's reason for each file and any problems it found ("problems" may be left out):
-    {"title": string, "folded": true, "files": [{"path": path, "reason": string}, ...], "problems": [string, ...]}
-  Example:
-${JSON.stringify(example, null, 2)}
+  Records the steps in reading order, replacing those recorded before, and prints each step's id and title.
+  Every changed file must be in exactly one step; otherwise nothing is recorded and every problem is named.
+  A file is a path, or {"path": path, "folded": reason} for a generated or copied file, which arrives folded with its one-line reason.
+  "look" holds one or two pointers to what to read first, each {"file": path, "start": line, "end": line, "label": 1 to 4 words}.
+  A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
+${JSON.stringify(steps, null, 2)}
 
-walkthrough checking [<step id>...]
-  Records the steps you are still checking, such as with the review policy's reviewers, replacing those recorded before; with no ids, none.
-  It prints the set, such as "Checking 3 steps: 4, 5, 6." or "Checking no steps."; an id that names no step is refused, and nothing is recorded.
-  Recording the steps again keeps the ids that still name a step and drops the rest.
-  Why a step is being checked is yours to say; the CLI only stores the ids.
-  While a step is being checked, the page says so on the step, lists it as being checked in what is left and on the Summary, and holds its actions:
-  the person can read it, ask about it and comment on its lines, but cannot decide it, and a decision sent on it is refused, until you record the set again without it.
+walkthrough reviewing [<step id>...]
+  Records the steps the AI is still reviewing, replacing the set before; with no ids, none, and the page's "AI reviewing" goes.
 
-walkthrough note --file <file>
-  Pins notes to the page, after those pinned before, and prints each note's id.
-  The file is a JSON array of notes; their text is Markdown, shown without raw HTML or images, like all the session writes.
-  "step" is a step id as walkthrough steps printed it.
-  A note on a step, or on lines of a file in it, numbered as in the file at the head; the first and last line must be in the step's diff:
-    {"step": string, "label": string, "text": string, "low": boolean}
-    {"step": string, "file": path, "lines": [first, last], "label": string, "text": string, "low": boolean}
-  "low": true puts the note behind a count of low-priority notes; it may be left out.
-  "finding": true flags the note as a finding, whatever its label; it may be left out.
-  The page marks a finding in amber in the line gutter and on the file's overview stripe, and while a step has findings the person has not decided, its Approve steps down and the step says how many are open.
-  A finding pinned on a step after the person decided that step, and not decided itself, puts the step back in what is left with "New finding"; the step's decision stays as it was.
-  When a finding lands on a step the person has read or decided, the open page also raises a banner naming it.
-  When a note does not fit the walkthrough, nothing is recorded and the problem is named.
-  A note whose step or lines later leave the change, or whose lines change, is kept and shown as detached; a note on lines follows its file to the step that has it.
-  Example:
-${JSON.stringify(notesExample, null, 2)}
+walkthrough comment --file <file>
+  Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
+  the person can edit them. Write the body without the [AI] prefix.
+${JSON.stringify(comments, null, 2)}
 
-walkthrough checklist --file <file>
-  Records the checklist the page shows, replacing the one recorded before, and prints each item's id in order; recording the steps again or a new head keeps it.
-  The file is a JSON object with a title and items in reading order.
-  An item takes the id of the item recorded before with the same text, or else a new id; its decision and actions follow the id.
-  To keep an item whose text you changed, give it its id with "id": the person's decision on it is reopened, and no other item's.
-  Title, description, status and text are the session's own words; "description" is one optional line under the title saying what the list is for.
-  "mark" picks the icon beside the status: "met", "partly", "not-met" or "unchecked" ("mark" may be left out, which shows "unchecked").
-  An item marked "not-met", or offering actions the person has not taken, is listed with the steps left, as something that still needs the person.
-  An item's steps are the ids of the steps it links to, as walkthrough steps printed them; every id must exist, otherwise nothing is recorded ("steps" may be left out).
-  A link to a step that is later gone shows as gone.
-    {"title": string, "description": string, "items": [{"status": string, "mark": mark, "text": string, "steps": [step id, ...]}, ...]}
-    {"id": string, "status": string, "mark": mark, "text": string, "steps": [step id, ...]}   an item kept under a new text
-  Example checklist:
-${JSON.stringify(checklistExample, null, 2)}
+walkthrough threads --file <file>
+  Records colleagues' existing threads on lines, replacing those recorded before. "id" is yours, such as the code host's thread id;
+  replies and resolves the person adds come back with it. "resolved" may be given as true.
+${JSON.stringify(threads, null, 2)}
 
-walkthrough actions --file <file>
-  Records the actions the page offers on items, replacing those recorded before on each item named; other items keep theirs.
-  The file is a JSON array of items, each with its actions in the order shown; ids and labels are the session's own.
-  An item is a step, a note (by the id walkthrough note printed), a checklist item (by the id walkthrough checklist printed), the verdict or the whole walkthrough:
-    {"type": "step", "id": string}   {"type": "note", "id": string}   {"type": "checklist", "id": string}   {"type": "verdict"}   {"type": "walkthrough"}
-  An action offers the person a note with "note": true, which they may leave empty, and lets them edit the text of a note or checklist item first with "edit": true:
-    [{"item": item, "hint": string, "actions": [{"id": string, "label": string, "note": boolean, "edit": boolean, "tone": tone,
-      "consequence": string, "outcome": string, "primary": boolean}, ...]}, ...]
-  "tone" is the colour a decision with the action shows in, wherever the page shows it: "positive" green, "attention" amber, or "none" grey;
-  left out, it is "none". Pick it from the review policy; the page never guesses it from the label.
-  "consequence", at most 8 words, says where a decision with the action goes or what it costs, such as "Goes on the fix list.";
-  "outcome", at most 3 words in the past tense, is what the page shows once the person took it, such as "Added to fixes".
-  "primary": true marks the one action of an item whose consequence the page shows under its actions; an item has one at most.
-  The page shows every consequence in the action's tooltip. All three may be left out; take them from the review policy too.
-  A step with no actions offers {"id": "approve", "label": "Approve", "tone": "positive", "outcome": "Approved"} and {"id": "flag", "label": "Flag", "note": true, "tone": "attention", "outcome": "Flagged"};
-  an empty list brings these back.
-  Other items offer nothing until actions are recorded on them.
-  The page ends with a Summary, after the last step: what is decided and still open, the verdict, and the walkthrough's actions.
-  The verdict's actions are the choices of the person's verdict on the whole walkthrough, chosen only on the Summary; once chosen, the page shows it as a status in its tone.
-  The walkthrough's actions close the Summary; the first is its finishing action, which waits for a verdict while the verdict offers choices and none is chosen.
-  "hint", for the verdict or the walkthrough only, is the session's own words under its actions, such as where the verdict goes; it may be left out, and recording the item again without one drops it.
-  A note offering an action with "edit": true is a draft: it goes out as drafted, or as edited when the person takes that action, and any other action drops it; the Summary lists every draft and what goes out, and a draft is never still open.
-  A step's or checklist item's actions last while its id does.
-  When an item does not exist or an action does not fit, nothing is recorded and the problem is named.
-  Example actions, for a note with the id 5f0c2a9e:
-[
-${actionsExample.map((one) => `  ${JSON.stringify(one)}`).join(",\n")}
-]
-
-walkthrough decisions
-  Prints every item and the person's latest decision on it, one JSON line each; an undecided item has "decision": null:
-    {"item": item, "decision": {"id": string, "action": string, "note": string, "text": string} | null}
-  A reopened item, whose content changed since the person decided it, also has "reopened" with that earlier decision, in the same shape.
-  A decision stays on an item with the same id while what it was about is unchanged: a step's diff, a note's or checklist item's text, the verdict's and the walkthrough's base and head.
-  The verdict is the line with {"type": "verdict"}: its decision's action is the verdict the person chose, or null before they choose one.
-  A decision the person took back with Undo leaves the item undecided, with "decision": null and no "reopened".
+walkthrough criteria --file <file>
+  Records the acceptance criteria as checked, replacing those before; read-only on the page. status: met, partly, not-met or not-checked.
+${JSON.stringify(criteria, null, 2)}
 
 walkthrough listen
-  Waits for the person to act on the page, then prints one JSON line per thing they sent and exits:
-    {"kind": "ask", "id": string, "step": string, "text": string}   a question about a step
-    {"kind": "ask", "id": string, "step": string, "file": path, "lines": [first, last], "text": string}   a question about lines of a step; the answer is a note on those lines
-    {"kind": "reply", "id": string, "to": string, "text": string}   a reply to a question the session asked
-    {"kind": "reply", "id": string, "to": string, "text": string, "about": {"label": string, "text": string}}   a reply to a note, with that note's label and text
-    {"kind": "decision", "id": string, "item": item, "action": string, "note": string, "text": string}   an action the person took; "note" when it asks for one, "text" the edited text when it allows editing
-    {"kind": "decision", "id": string, "item": item, "clear": true}   the person took back their decision on the item with Undo; it is undecided again
-    {"kind": "decision", "id": string, "item": {"type": "verdict"}, "action": string}   the verdict the person chose, or changed to, on the Summary
-    {"kind": "stopped"}   the page was stopped or closed; nothing more will come
-  The person can change a decision until the walkthrough ends; each change comes as a new decision, and the latest counts.
-  Act on a clear as the review policy says, and answer it with say --answer like any decision.
-  The person's own line comments, their edits and their deletions never come through listen and need no answer:
-  read them all with walkthrough comments when the review policy acts on them, such as at the finishing action.
-  Files the person collapses or marks viewed are their own reading marks and never reach the session.
-  Exit code 3: another walkthrough listen took over; this one gets nothing more.
+  Waits for the person, then prints one JSON line per thing they sent and exits. Only these wake it:
+    {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
+      Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
+    {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
+      Submit review or Send to agent; read what goes out with walkthrough comments, act on it, then run walkthrough posted.
+    {"kind": "stopped"}   the page was stopped; nothing more will come
+  Comments, replies, edits, deletions, Resolve and Viewed never wake it.
+  Exit code 3: another walkthrough listen took over.
+
+walkthrough say --answer <ask id> (<text> | --file <file>)
+  Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
 
 walkthrough comments
-  Prints each of the person's comments as it is now, edits applied and deleted ones left out, one JSON line each:
-    {"id": string, "step": string, "file": path, "lines": [first, last], "text": string, "posted": true}   "posted" only once marked posted
+  Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
+    {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
+      a new thread; "outdated" only when its lines changed since
+    {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
+    {"kind": "resolve", "thread": id}   the person resolved a colleague's thread
+  An AI comment's body starts with [AI].
 
-walkthrough posted <comment id>...
-  Marks the person's comments posted, once they have gone out as the review policy says;
-  the page then shows them as posted and no longer lets the person edit or delete them.
-  An id that names no comment is refused, and nothing is marked.
-
-walkthrough say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)
-  Puts the session's Markdown on the page, from its text or the file --file names: an answer to the ask, reply or decision with that id, a question the person replies to, or else a note at the top.
-  An answer to a question about lines is a note on those lines, labelled with --as, or "Answer" without it, and say prints its id:
-  the person can reply to it like any note, and you can record actions on it.
-  Each --choice is an answer the question offers as a button; the person's choice comes back as a reply with that text.
-  Until every ask, reply and decision that listen handed over has its answer, the page shows the session working.
+walkthrough posted [--address <url>]
+  Records that the submitted review went out, and where; the page then links View review to the address.
 
 walkthrough export [--out <file>]
-  Writes the walkthrough as it is now to one read-only HTML file that opens with no server: steps, diffs, notes with their threads, the checklist, decisions and the verdict.
-  The file carries no page address or token; without --out it goes into the walkthrough's state, and the path is printed.
-  With --out the person approves the command, since it writes where it names.
+  Writes the walkthrough to one read-only HTML file: steps, explanations, diffs, comments and criteria.
 
 walkthrough policy [show | init | save --file <file>]
   The person's review policy; this compares and copies its bytes and never reads its rules.
-  With no action it prints its state and path on the first line, then the inbox to write a new version to:
-    none: there is no review policy at <path>, so the template applies.
-    template: the review policy at <path> is the unchanged template.
-    template: the review policy at <path> is an earlier unchanged template, so the current template applies.
-    yours: the review policy at <path> is the person's own.
-  show prints the policy, or the current template while it is none or a template; init copies the template there when there is none;
-  save --file <file> replaces the policy with the file, which you write in that inbox.
+  With no action it prints its state (none, template or yours) and path, then the inbox to write a new version to.
 
-walkthrough list
-  Opens a page of the repo's walkthroughs with their progress, verdict and last activity; opening one starts its page when it is not running.
-  It takes no source options; walkthrough stop --list ends it, and it stops by itself once no list page has been open for a while.
+walkthrough stop | list | stop --list | prune [<branch> | <id>]
+  stop ends the page; list opens the repo's walkthroughs; prune removes walkthroughs that are over, or the one named.
 `;
 
 // src/policy.ts
-import crypto7 from "node:crypto";
-import fs11 from "node:fs";
+import crypto6 from "node:crypto";
+import fs10 from "node:fs";
 import os3 from "node:os";
-import path11 from "node:path";
+import path10 from "node:path";
 import { parseArgs } from "node:util";
-var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
-var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
-var read = (file2) => fs11.readFileSync(file2);
+var TEMPLATE = path10.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
+var policyPath = () => path10.join(process.env["XDG_CONFIG_HOME"] || path10.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
+var read = (file2) => fs10.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
+  "04a602b5efc4cedc0336c7639cc560bc68f235c755eb6bc60d7289d274c0bc0f",
   "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
   "17882fa4836cd26b1cc3772e80b262d559d3f5dd15b6449798961d3222a607c2",
   "26442e1d66028540ef4b778ed9edec79a2bab15ba84c543fa584a4d7d611d6fc",
   "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
+  "340047c4632fcd0e7f0b6ed4257a858080b2a791c96d155fc1e0ba5f0d5caa65",
   "407a443dbc1b85beedb76b2c9d910b508486f37bbb04c9d77804d35ec4d516e0",
   "44b36f903158e8452655817542e95335695b8abac7d437d9aa4be5aacec50ffb",
   "45ae6552e2e54e8b7f2382e1479a5a7fd868b1767b6ddcf490b9388c87110907",
@@ -10052,10 +13836,10 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "fa351c4cb56f4fe0ad000357808efc82b9fcba626735b816258cc285d508487d"
 ]);
 function stateOf(policy) {
-  if (!fs11.existsSync(policy)) return "none";
+  if (!fs10.existsSync(policy)) return "none";
   const bytes = read(policy);
   if (bytes.equals(read(TEMPLATE))) return "template";
-  return TEMPLATES.has(crypto7.createHash("sha256").update(bytes).digest("hex")) ? "earlier" : "yours";
+  return TEMPLATES.has(crypto6.createHash("sha256").update(bytes).digest("hex")) ? "earlier" : "yours";
 }
 function status() {
   const policy = policyPath();
@@ -10070,8 +13854,8 @@ function status() {
 }
 function save(text2, what) {
   const policy = policyPath();
-  fs11.mkdirSync(path11.dirname(policy), { recursive: true });
-  fs11.writeFileSync(policy, text2);
+  fs10.mkdirSync(path10.dirname(policy), { recursive: true });
+  fs10.writeFileSync(policy, text2);
   console.log(`${what} ${policy}.`);
 }
 function policyCommand(args) {
@@ -10081,13 +13865,170 @@ function policyCommand(args) {
   if (action === void 0) status();
   else if (action === "show") process.stdout.write(read(stateOf(policyPath()) === "yours" ? policyPath() : TEMPLATE));
   else if (action === "init") {
-    if (fs11.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
+    if (fs10.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
     save(read(TEMPLATE), "Copied the template to");
   } else if (action === "save") {
     const text2 = readInput(values.file);
     if (!text2.trim()) throw new Error("the review policy is empty; nothing was saved");
     save(text2, "Saved the review policy at");
   } else throw new Error("usage: walkthrough policy [show | init | save --file <file>]");
+}
+
+// src/steps.ts
+var MAX_LOOK = 2;
+var LOOK_WORDS = 4;
+var wordCount = (text2) => text2.trim().split(/\s+/).length;
+function parseLook(given, name2) {
+  const { file: file2, start: start2, end, label } = fieldsOf(given);
+  if (!filled(file2)) throw new Error(`${name2} needs a file`);
+  if (!Number.isInteger(start2) || !Number.isInteger(end) || start2 < 1 || start2 > end)
+    throw new Error(`${name2} needs a start and an end line, the start first`);
+  if (!filled(label) || wordCount(label) > LOOK_WORDS) throw new Error(`${name2} needs a label of 1 to ${String(LOOK_WORDS)} words`);
+  return { file: file2, start: start2, end, label: label.trim() };
+}
+function parseSteps(text2) {
+  return parseList(text2, "the steps", (step, number) => {
+    const name2 = `step ${String(number)}`;
+    const { title, explanation, files: files3, look = [] } = step;
+    if (!filled(title)) throw new Error(`${name2} needs a title`);
+    if (!filled(explanation)) throw new Error(`${name2} needs an explanation`);
+    if (!Array.isArray(files3) || !files3.length) throw new Error(`${name2}: files must be a list of at least one file`);
+    const folded = {};
+    const paths = files3.map((file2) => {
+      if (filled(file2)) return file2;
+      const { path: path12, folded: reason } = fieldsOf(file2);
+      if (!filled(path12) || !filled(reason)) throw new Error(`${name2}: each file is a path, or a path with the reason it is folded`);
+      folded[path12] = reason.trim();
+      return path12;
+    });
+    if (!Array.isArray(look) || look.length > MAX_LOOK) throw new Error(`${name2}: look must be a list of at most ${String(MAX_LOOK)} pointers`);
+    return {
+      title,
+      explanation,
+      files: paths,
+      ...Object.keys(folded).length && { folded },
+      look: look.map((one, at) => parseLook(one, `${name2}, pointer ${String(at + 1)}`))
+    };
+  });
+}
+function stepIds({ steps: steps3, lastStep = 0 }, inputs) {
+  let next = Math.max(lastStep, ...steps3.map((step) => Number(step.id)));
+  const pairs = inputs.flatMap((input, at) => {
+    const files3 = new Set(input.files);
+    return steps3.map((step, old) => ({ at, old, id: step.id, shared: step.files.filter((one) => files3.has(one)).length }));
+  });
+  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
+  const ids = inputs.map(() => void 0);
+  const taken = /* @__PURE__ */ new Set();
+  for (const { at, id, shared } of pairs)
+    if (shared > 0 && ids[at] === void 0 && !taken.has(id)) {
+      ids[at] = id;
+      taken.add(id);
+    }
+  return ids.map((id) => id ?? String(++next));
+}
+var lookShown = (step, { file: file2, start: start2, end }) => {
+  const shown = step.files.includes(file2) ? shownLines(step, file2) : null;
+  return !!shown?.has(start2) && shown.has(end);
+};
+async function buildSteps(cwd, walkthrough, inputs) {
+  const { base, head } = walkthrough;
+  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
+  const problems = [];
+  const placed2 = /* @__PURE__ */ new Set();
+  for (const one of inputs.flatMap((input) => input.files)) {
+    if (!changed.has(one)) problems.push(`${one} is not changed in this walkthrough`);
+    else if (placed2.has(one)) problems.push(`${one} is in more than one step`);
+    placed2.add(one);
+  }
+  const left = [...changed.keys()].filter((one) => !placed2.has(one));
+  if (left.length > 0) problems.push(`no step has ${left.join(", ")}`);
+  if (problems.length > 0) throw new Error(`the steps were not recorded:
+  ${[...new Set(problems)].join("\n  ")}`);
+  const ids = stepIds(walkthrough, inputs);
+  const steps3 = await Promise.all(
+    inputs.map(async (input, at) => ({
+      id: ids[at] ?? "",
+      ...input,
+      diff: await diffOf(cwd, base, head, input.files.flatMap((one) => changed.get(one) ?? []))
+    }))
+  );
+  const astray = steps3.flatMap(
+    (step, at) => step.look.filter((one) => !lookShown(step, one)).map((one) => `step ${String(at + 1)} points to lines ${String(one.start)}-${String(one.end)} of ${one.file}, which are not in its diff`)
+  );
+  if (astray.length) throw new Error(`the steps were not recorded:
+  ${astray.join("\n  ")}`);
+  return steps3;
+}
+async function carrySteps(cwd, { base, head, steps: steps3 }) {
+  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
+  const carried = await Promise.all(
+    steps3.map(async (step) => {
+      const files3 = step.files.filter((one) => changed.has(one));
+      if (!files3.length) return null;
+      const moved = { ...step, files: files3, diff: await diffOf(cwd, base, head, files3.flatMap((one) => changed.get(one) ?? [])) };
+      return { ...moved, look: moved.look.filter((one) => lookShown(moved, one)) };
+    })
+  );
+  const kept = carried.filter((step) => step !== null);
+  const placed2 = new Set(kept.flatMap((step) => step.files));
+  return { steps: kept, unplaced: [...changed.keys()].filter((file2) => !placed2.has(file2)) };
+}
+
+// src/record.ts
+var placed = (walkthrough, where, name2) => {
+  try {
+    return placeIn(walkthrough, where);
+  } catch (error) {
+    throw new Error(`${name2}: ${error.message}`);
+  }
+};
+function parseComments(text2, walkthrough) {
+  return parseList(text2, "the comments", (fields, number) => {
+    const name2 = `comment ${String(number)}`;
+    if (!filled(fields["body"])) throw new Error(`${name2} needs a body`);
+    const body = withoutPrefix(fields["body"]);
+    if (!body) throw new Error(`${name2} needs a body`);
+    return { place: placed(walkthrough, fields, name2), body };
+  });
+}
+var isTime = (value) => filled(value) && !Number.isNaN(Date.parse(value));
+function said(fields, name2) {
+  const { author, at, body } = fields;
+  if (!filled(author)) throw new Error(`${name2} needs an author`);
+  if (!isTime(at)) throw new Error(`${name2} needs a time, such as 2026-11-23T09:30:00Z`);
+  if (!filled(body)) throw new Error(`${name2} needs a body`);
+  return { author: author.trim(), at, body };
+}
+function parseThreads(text2, walkthrough) {
+  const ids = /* @__PURE__ */ new Set();
+  return parseList(text2, "the threads", (fields, number) => {
+    const name2 = `thread ${String(number)}`;
+    const { id, replies = [], resolved = false } = fields;
+    if (!filled(id)) throw new Error(`${name2} needs an id`);
+    if (ids.has(id)) throw new Error(`${name2}: two threads have the id ${id}`);
+    ids.add(id);
+    if (typeof resolved !== "boolean") throw new Error(`${name2}: resolved must be true or false`);
+    if (!Array.isArray(replies)) throw new Error(`${name2}: replies must be a list`);
+    const { file: file2, lines, linesHash } = placed(walkthrough, fields, name2);
+    return {
+      id,
+      file: file2,
+      lines,
+      linesHash,
+      ...said(fields, name2),
+      ...resolved && { resolved: true },
+      replies: replies.map((reply, at) => said(fieldsOf(reply), `${name2}, reply ${String(at + 1)}`))
+    };
+  });
+}
+function parseCriteria(text2) {
+  return parseList(text2, "the criteria", ({ text: criterion, status: status2 }, number) => {
+    const name2 = `criterion ${String(number)}`;
+    if (!filled(criterion)) throw new Error(`${name2} needs a text`);
+    if (!CRITERION_STATUSES.includes(status2)) throw new Error(`${name2}: status must be one of ${CRITERION_STATUSES.join(", ")}`);
+    return { text: criterion.trim(), status: status2 };
+  });
 }
 
 // src/cli.ts
@@ -10116,28 +14057,21 @@ function located(args, {
   return { ...parsed3, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
 }
 async function start(args) {
-  const { cwd, source, dir, values } = located(args, { options: { kind: { type: "string" }, comments: { type: "string" } } });
-  const kind = values.kind?.trim();
-  if (kind === "") throw new Error("--kind needs a label that names the kind of walkthrough");
-  const hint = values.comments?.trim();
-  if (hint === "") throw new Error("--comments needs words that say what becomes of the person's comments");
-  const labelled = { ...kind !== void 0 && { kindLabel: kind }, ...hint !== void 0 && { commentHint: hint } };
+  const { cwd, source, dir, values } = located(args, { options: { pr: { type: "string" }, title: { type: "string" } } });
+  const number = values.pr?.trim();
+  if (number === "") throw new Error("--pr needs the number of the pull request");
+  if (values.title !== void 0 && number === void 0) throw new Error("--title goes with --pr");
+  const pr = number === void 0 ? void 0 : { number, title: values.title?.trim() || nameOf(source) };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
-  const { walkthrough, opened } = await openWalkthrough(dir, source, change, labelled, (moved) => carrySteps(cwd, moved));
-  await starting(dir);
+  const { walkthrough, opened } = await openWalkthrough(dir, source, change, pr, (moved) => carrySteps(cwd, moved));
   const inbox = makeInbox(dir);
-  const { steps: steps2 } = walkthrough;
+  const { steps: steps3 } = walkthrough;
   console.log(
-    `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps2.length, "step")}.`
+    `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps3.length, "step")}.`
   );
-  const view = walkthroughView(dir);
-  const count = (of = {}) => String(steps2.filter((step) => of[`step:${step.id}`]).length);
-  if (opened === "resumed") console.log(`Resumed: ${count(view?.decided)} of ${plural(steps2.length, "step")} decided.`);
-  if (opened === "moved" && steps2.length > 0) {
-    console.log(
-      `The head moved: ${count(view?.decided)} of ${plural(steps2.length, "step")} still decided, ${count(view?.reopened)} reopened.`
-    );
+  if (opened === "moved" && steps3.length > 0) {
+    console.log(`The head moved: ${plural(steps3.length, "step")} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
     if (left.length > 0) console.log(`In no step yet: ${left.join(", ")}. Record the steps again with these in new steps.`);
   }
@@ -10154,133 +14088,104 @@ function openPage(url, what, dir) {
     browser.status === 0 ? `${what} is open in your browser.` : `Could not open a browser; the address of ${what.toLowerCase()} is in ${dir}/server.json.`
   );
 }
-var repoDir = () => path12.join(stateDir(), currentRepo(process.cwd()));
+var repoDir = () => path11.join(stateDir(), currentRepo(process.cwd()));
 async function list2(args) {
   parseArgs2({ args, options: {} });
   openPage(await ensureServer(repoDir(), true), "The list of walkthroughs", repoDir());
 }
-function current(args, config2 = {}) {
+function current2(args, config2 = {}) {
   const found = located(args, config2);
   const walkthrough = readWalkthrough(found.dir);
   if (!walkthrough) throw new Error(`there is no walkthrough of ${nameOf(found.source)}; run walkthrough start`);
   return { ...found, walkthrough };
 }
 async function files2(args) {
-  const { base, head } = current(args).walkthrough;
-  for (const { path: path13 } of await changedFiles(process.cwd(), base, head)) console.log(path13);
+  const { base, head } = current2(args).walkthrough;
+  for (const { path: path12 } of await changedFiles(process.cwd(), base, head)) console.log(path12);
 }
 var FILE_OPTION = { options: { file: { type: "string" } } };
-async function steps(args) {
+async function steps2(args) {
   const { cwd, dir, values } = located(args, FILE_OPTION);
   const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, (walkthrough) => buildSteps(cwd, walkthrough, inputs));
-  const folded = recorded.filter((step) => step.kind === "folded").length;
-  const ids = recorded.map((step) => `${step.id} (${step.title})`).join(", ");
-  console.log(`Recorded ${plural(recorded.length, "step")}${folded ? `, ${String(folded)} of them folded` : ""}: ${ids}.`);
+  console.log(`Recorded ${plural(recorded.length, "step")}: ${recorded.map((step) => `${step.id} (${step.title})`).join(", ")}.`);
 }
-async function checking(args) {
+async function reviewing(args) {
   const { dir, positionals } = located(args, { allowPositionals: true });
-  const ids = await recordChecking(dir, positionals);
-  console.log(ids.length ? `Checking ${plural(ids.length, "step")}: ${ids.join(", ")}.` : "Checking no steps.");
+  const ids = await recordReviewing(dir, positionals);
+  console.log(ids.length ? `Reviewing ${plural(ids.length, "step")}: ${ids.join(", ")}.` : "Reviewing no steps.");
 }
-async function notes(args) {
-  const { dir, walkthrough, values } = current(args, FILE_OPTION);
-  const noted = await note(dir, parseNotes(readInput(values.file), walkthrough));
-  const list3 = noted.map((entry) => `${entry.id} (${entry.note.label})`).join(", ");
-  console.log(`Recorded ${plural(noted.length, "note")}${noted.length ? `: ${list3}` : ""}.`);
+async function commentCommand(args) {
+  const { dir, walkthrough, values } = current2(args, FILE_OPTION);
+  const recorded = await aiComments(dir, parseComments(readInput(values.file), walkthrough));
+  console.log(`Recorded ${plural(recorded.length, "comment")}${recorded.length ? `: ${recorded.map((one) => one.id).join(", ")}` : ""}.`);
 }
-async function checklist(args) {
+async function threads2(args) {
   const { dir, values } = located(args, FILE_OPTION);
   const text2 = readInput(values.file);
-  const { title, items } = await recordChecklist(dir, (walkthrough) => parseChecklist(text2, walkthrough));
-  const ids = items.map((item) => item.id).join(", ");
-  console.log(`Recorded the checklist ${title} with ${plural(items.length, "item")}${items.length ? `: ${ids}` : ""}.`);
+  const recorded = await updateWalkthrough(dir, (walkthrough) => walkthrough.threads = parseThreads(text2, walkthrough));
+  console.log(`Recorded ${plural(recorded.length, "thread")}.`);
 }
-async function actions(args) {
+async function criteria2(args) {
   const { dir, values } = located(args, FILE_OPTION);
-  const text2 = readInput(values.file);
-  const recorded = await recordActions(dir, (walkthrough) => parseActions(text2, walkthrough, conversationOf(dir)));
-  console.log(`Recorded the actions of ${plural(recorded.length, "item")}.`);
+  const recorded = parseCriteria(readInput(values.file));
+  await updateWalkthrough(dir, (walkthrough) => {
+    walkthrough.criteria = recorded;
+  });
+  console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? "criterion" : "criteria"}.`);
 }
-function decisions(args) {
-  const { dir, walkthrough } = current(args);
-  const shown = ({ id, at, action, note: note2, text: text2 }) => ({ id, at, action, note: note2, text: text2 });
-  for (const { item, decision, reopened } of decisionsOf(walkthrough, conversationOf(dir)))
-    console.log(JSON.stringify({ item, decision: decision && shown(decision), ...reopened && { reopened: shown(reopened) } }));
-}
-function comments(args) {
-  const { dir } = current(args);
-  const posted2 = postedOf(dir);
-  for (const { id, step, file: file2, lines, text: text2 } of commentsOf(conversationOf(dir)))
-    console.log(JSON.stringify({ id, step, file: file2, lines, text: text2, ...posted2.includes(id) && { posted: true } }));
+function comments2(args) {
+  const { dir } = current2(args);
+  for (const line of reviewComments(dir)) console.log(JSON.stringify(line));
 }
 async function posted(args) {
-  const { dir, positionals } = current(args, { allowPositionals: true });
-  if (!positionals.length) throw new Error("usage: walkthrough posted <comment id>...");
-  await markPosted(dir, positionals);
-  console.log(`Marked ${plural(positionals.length, "comment")} posted.`);
+  const { dir, values } = current2(args, { options: { address: { type: "string" } } });
+  const address = values.address?.trim();
+  if (address !== void 0 && !/^https?:\/\//.test(address)) throw new Error("--address must be a web address");
+  await markPosted(dir, address);
+  console.log(address ? `Recorded that the review went to ${address}.` : "Recorded that the review went out.");
 }
 function exportCommand(args) {
-  const { values, dir, walkthrough } = current(args, { options: { out: { type: "string" } } });
-  const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
-  fs12.writeFileSync(out, exportPage(dir));
+  const { values, dir, walkthrough } = current2(args, { options: { out: { type: "string" } } });
+  const out = path11.resolve(values.out ?? path11.join(dir, "export.html"));
+  fs11.writeFileSync(out, exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 async function listenCommand(args) {
-  const { dir } = current(args);
-  const taken2 = await listen(dir, () => serverRunning(dir));
-  if (taken2 === "replaced") {
+  const { dir } = current2(args);
+  const taken = await listen(dir, () => serverRunning(dir));
+  if (taken === "replaced") {
     console.error("walkthrough: another walkthrough listen took over; this one gets nothing more.");
     process.exitCode = 3;
-  } else if (taken2 === "stopped") console.log(JSON.stringify({ kind: "stopped" }));
-  else {
-    const conversation = conversationOf(dir);
-    const about = (to) => {
-      const noted = conversation.find((entry) => entry.id === to && entry.from === "session" && entry.note);
-      return noted?.from === "session" && noted.note ? { label: noted.note.label, text: noted.text } : void 0;
-    };
-    for (const request2 of taken2)
+  } else if (taken === "stopped") console.log(JSON.stringify({ kind: "stopped" }));
+  else
+    for (const event of taken)
       console.log(
-        JSON.stringify({
-          ...request2,
-          on: void 0,
-          linesHash: void 0,
-          linesText: void 0,
-          ...request2.kind === "reply" && { about: about(request2.to) }
-        })
+        JSON.stringify(
+          event.kind === "ask" ? handedAsk(dir, event) : event.kind === "submit" ? { kind: "submit", id: event.id, type: event.type, summary: event.summary } : event
+        )
       );
-  }
 }
 async function sayCommand(args) {
-  const { values, positionals, dir } = current(args, {
-    options: {
-      answer: { type: "string" },
-      as: { type: "string" },
-      question: { type: "boolean" },
-      choice: { type: "string", multiple: true },
-      file: { type: "string" }
-    },
+  const { values, positionals, dir } = current2(args, {
+    options: { answer: { type: "string" }, file: { type: "string" } },
     allowPositionals: true
   });
   if (values.file !== void 0 && positionals.length > 0) throw new Error("say takes its text or a --file, not both");
   const text2 = (values.file === void 0 ? positionals.join(" ") : readInput(values.file)).trim();
-  if (!text2)
-    throw new Error(
-      "usage: walkthrough say [--answer <request id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>)"
-    );
-  const said = await say(dir, text2, { ...values, label: values.as });
-  console.log(said.note ? `Said on the page as note ${said.id} (${said.note.label}).` : "Said on the page.");
+  if (!text2 || values.answer === void 0) throw new Error("usage: walkthrough say --answer <ask id> (<text> | --file <file>)");
+  await answer(dir, values.answer, text2);
+  console.log("Answered on the page.");
 }
 var COMMANDS = {
   start,
   files: files2,
-  steps,
-  checking,
-  note: notes,
-  checklist,
-  actions,
-  decisions,
-  comments,
+  steps: steps2,
+  reviewing,
+  comment: commentCommand,
+  threads: threads2,
+  criteria: criteria2,
+  comments: comments2,
   posted,
   list: list2,
   export: exportCommand,
@@ -10309,8 +14214,8 @@ var COMMANDS = {
     const { positionals } = parseArgs2({ args, allowPositionals: true, options: SOURCE_OPTIONS });
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === "range") throw new Error("name a branch or a range, not both");
-    const listed = readWalkthrough(dir) ? void 0 : listView(repoDir()).find((one) => one.id === positionals[0]);
-    console.log(await (listed ? pruneOne(path12.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
+    const listed = readWalkthrough(dir) ? void 0 : listView(repoDir()).find((one) => one.id === positionals[0] || decodeURIComponent(one.id) === positionals[0]);
+    console.log(await (listed ? pruneOne(path11.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = "", mode]) => {
@@ -10322,7 +14227,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--kind <label>] [--comments <text>] | guide | files | steps --file <file> | checking [<step id>...]\n    | checklist --file <file> | note --file <file> | actions --file <file> | decisions | comments | posted <comment id>... | listen\n    | say [--answer <id> [--as <label>]] [--question [--choice <answer>]...] (<text> | --file <file>) | stop | prune [<branch> | <id>]\n    | export [--out <file>] | list | stop --list | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | reviewing [<step id>...]\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {

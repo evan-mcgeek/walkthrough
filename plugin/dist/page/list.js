@@ -1,5 +1,4 @@
 // src/words.ts
-var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
 var MAX_TEXT = 4e3;
 function tooLong(fields) {
   const long = Object.values(fields).find((value) => typeof value === "string" && value.length > MAX_TEXT);
@@ -10,87 +9,56 @@ function tooLong(fields) {
 var round = { fill: "none", stroke: "currentColor", "stroke-linecap": "round", "stroke-linejoin": "round" };
 var line = (d, width = 1.7) => ["path", { d, ...round, "stroke-width": width }];
 var ring = (extra = {}) => ["circle", { cx: 8, cy: 8, r: 6.2, fill: "none", stroke: "currentColor", "stroke-width": 1.6, ...extra }];
-var block = (x, y, width, height, opacity = 1) => ["rect", { x, y, width, height, rx: 1, fill: "currentColor", ...opacity < 1 && { opacity } }];
-var frame = ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }];
 var ICONS = {
-  /** Queue and step states. */
-  unread: [ring()],
-  current: [ring(), ["circle", { cx: 8, cy: 8, r: 2.8, fill: "currentColor" }]],
-  // The tick is cut out of the disc in the canvas colour.
-  decided: [
-    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
-    ["path", { d: "M4.8 8.2l2.1 2.1 4.3-4.6", ...round, "stroke-width": 1.8, class: "knockout" }]
-  ],
-  flagged: [
-    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
-    ["path", { d: "M6 11.6V4.6h4.6l-1 1.6 1 1.6H6", ...round, "stroke-width": 1.5, class: "knockout" }]
-  ],
-  "no-tone": [
-    ["circle", { cx: 8, cy: 8, r: 7, fill: "currentColor" }],
-    ["path", { d: "M5.2 8h5.6", ...round, "stroke-width": 1.8, class: "knockout" }]
-  ],
-  reopened: [line("M13 8a5 5 0 1 1-1.6-3.7"), line("M11.8 1.8v3h-3")],
-  folded: [block(2, 3, 12, 3), block(2, 8, 12, 2, 0.55), block(2, 12, 12, 2, 0.3)],
-  message: [line("M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z", 1.5)],
-  summary: [line("M3 3.5h10M3 8h10M3 12.5h6", 1.6)],
-  /** The verdict. */
-  finish: [["path", { d: "M3.5 14V2.5M3.5 3h8.2l-1.6 2.6 1.6 2.6H3.5", ...round, "stroke-width": 1.5 }]],
-  /** Checklist statuses. */
-  met: [ring(), line("M5 8.2l2 2 4-4.3")],
-  "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
-  partly: [ring(), line("M5 8h6")],
-  unchecked: [ring({ "stroke-dasharray": "2.4 2.2" })],
-  /** Notices and session. */
-  warn: [
-    ["path", { d: "M8 2l6.5 11.5h-13z", ...round, "stroke-width": 1.5 }],
-    line("M8 6.5v3.2", 1.6),
-    ["circle", { cx: 8, cy: 11.6, r: 0.9, fill: "currentColor" }]
-  ],
-  unlink: [line("M6.5 9.5l-1.8 1.8a2 2 0 0 1-2.8-2.8L3.7 6.7M9.5 6.5l1.8-1.8a2 2 0 0 1 2.8 2.8l-1.8 1.8M5 3V1.5M3 5H1.5M11 13v1.5M13 11h1.5", 1.5)],
-  offline: [line("M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11", 1.5)],
-  ask: [
-    ring({ "stroke-width": 1.5 }),
-    line("M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3", 1.5),
-    ["circle", { cx: 8, cy: 11.4, r: 0.9, fill: "currentColor" }]
-  ],
-  spinner: [
-    ["circle", { cx: 8, cy: 8, r: 6, fill: "none", stroke: "currentColor", "stroke-opacity": 0.25, "stroke-width": 2 }],
-    line("M8 2a6 6 0 0 1 6 6", 2)
-  ],
-  /** Files and controls. */
-  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]],
-  more: [3.5, 8, 12.5].map((cx) => ["circle", { cx, cy: 8, r: 1.4, fill: "currentColor" }]),
-  "chevron-right": [line("M6 4l4 4-4 4")],
-  "chevron-down": [line("M4 6l4 4 4-4")],
-  eye: [
-    ["path", { d: "M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z", ...round, "stroke-width": 1.4 }],
-    ["circle", { cx: 8, cy: 8, r: 2, fill: "currentColor" }]
-  ],
-  plus: [line("M8 3.5v9M3.5 8h9", 1.8)],
-  /** The person's own words. */
-  own: [
-    ["circle", { cx: 8, cy: 5.6, r: 2.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
-    line("M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6", 1.5)
-  ],
-  edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
-  trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
-  previous: [line("M10 3.5L5.5 8l4.5 4.5")],
-  next: [line("M6 3.5L10.5 8 6 12.5")],
-  minus: [line("M3.5 8h9", 1.6)],
-  close: [line("M4.5 4.5l7 7M11.5 4.5l-7 7", 1.6)],
-  keyboard: [
-    ["rect", { x: 1.5, y: 3.5, width: 13, height: 9, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
-    line("M4 6.5h1M7.5 6.5h1M11 6.5h1M5 9.5h6", 1.4)
-  ],
   /** The brand's walked W: the last stroke, still to go, is lighter. */
   mark: [
     ["path", { d: "M1.6 3.2L4.6 12.8L8 5.6L11.4 12.8", ...round, "stroke-width": 2.3 }],
     ["path", { d: "M11.4 12.8L14.4 3.2", ...round, "stroke-width": 2.3, opacity: 0.4 }]
   ],
-  /** Panels, as a window with the panel's part filled. */
-  "panel-queue": [frame, block(2.6, 3.6, 3.4, 8.8)],
-  "panel-checklist": [frame, block(10, 3.6, 3.4, 8.8)],
-  "panel-explanation": [frame, block(2.6, 3.6, 5.2, 8.8), ["path", { d: "M4 6h2.4M4 8h2.4M4 10h1.6", ...round, "stroke-width": 0.9, class: "knockout" }]]
+  sidebar: [
+    ["rect", { x: 1.5, y: 2.5, width: 13, height: 11, rx: 2, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    ["rect", { x: 2.6, y: 3.6, width: 3.4, height: 8.8, rx: 0.8, fill: "currentColor" }]
+  ],
+  /** The one spinner: the dashed ring with its turning arc, while the AI works. */
+  spinner: [
+    ring({ "stroke-opacity": 0.45, "stroke-dasharray": "2.4 2.2" }),
+    line("M8 1.8a6.2 6.2 0 0 1 6.2 6.2", 1.9)
+  ],
+  more: [3.5, 8, 12.5].map((cx) => ["circle", { cx, cy: 8, r: 1.4, fill: "currentColor" }]),
+  message: [line("M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z", 1.5)],
+  own: [
+    ["circle", { cx: 8, cy: 5.6, r: 2.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
+    line("M3 13.5c.8-2.4 2.7-3.6 5-3.6s4.2 1.2 5 3.6", 1.5)
+  ],
+  summary: [line("M3 3.5h10M3 8h10M3 12.5h6", 1.6)],
+  /** A file not viewed yet; `met` doubles as a viewed one. */
+  ring: [ring()],
+  met: [ring(), line("M5 8.2l2 2 4-4.3")],
+  "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
+  partly: [ring(), line("M5 8h6")],
+  unchecked: [ring({ "stroke-dasharray": "2.4 2.2" })],
+  eye: [
+    ["path", { d: "M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z", ...round, "stroke-width": 1.4 }],
+    ["circle", { cx: 8, cy: 8, r: 2, fill: "currentColor" }]
+  ],
+  ask: [
+    ring({ "stroke-width": 1.5 }),
+    line("M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3", 1.5),
+    ["circle", { cx: 8, cy: 11.4, r: 0.9, fill: "currentColor" }]
+  ],
+  edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
+  trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
+  "chevron-right": [line("M6 4l4 4-4 4")],
+  previous: [line("M10 3.5L5.5 8l4.5 4.5")],
+  next: [line("M6 3.5L10.5 8 6 12.5")],
+  up: [line("M4 10l4-4 4 4")],
+  warn: [
+    ["path", { d: "M8 2l6.5 11.5h-13z", ...round, "stroke-width": 1.5 }],
+    line("M8 6.5v3.2", 1.6),
+    ["circle", { cx: 8, cy: 11.6, r: 0.9, fill: "currentColor" }]
+  ],
+  offline: [line("M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11", 1.5)],
+  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -110,16 +78,12 @@ function icon(name, label) {
   return svg;
 }
 
-// src/page/motion.ts
-var root = getComputedStyle(document.documentElement);
-
 // src/page/dom.ts
 function el(tag, props = {}, ...children) {
   const node = Object.assign(document.createElement(tag), props);
   node.append(...children);
   return node;
 }
-var kindView = (kind) => kind === void 0 ? [] : [el("span", { className: "kind", title: "The kind of walkthrough" }, kind)];
 function region(id) {
   const found = document.getElementById(id);
   if (!found) throw new Error(`the page has no #${id}`);
@@ -128,12 +92,6 @@ function region(id) {
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
   const box = region("alert");
-  if (message === null && box.dataset["kind"] === "own") {
-    document.body.classList.remove("unreachable");
-    return;
-  }
-  box.dataset["kind"] = "error";
-  box.className = "banner attention";
   box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
   box.hidden = message === null;
   document.body.classList.remove("unreachable");
@@ -141,8 +99,6 @@ function showAlert(message) {
 function showUnreachable({ name, reopen, retry }) {
   if (document.body.classList.contains("unreachable")) return;
   const box = region("alert");
-  box.dataset["kind"] = "error";
-  box.className = "banner attention";
   box.replaceChildren(
     icon("offline"),
     el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`),
@@ -178,26 +134,24 @@ async function post(page, route, body) {
 }
 
 // src/page/appearance.ts
-function showViewer({ accent, theme }) {
-  Object.assign(document.documentElement.dataset, { ...accent && { accent }, ...theme && { theme } });
+function showTheme(theme) {
+  document.documentElement.dataset["theme"] = theme;
 }
 async function loadViewer() {
   try {
     const answer = await fetch("data/viewer.json");
-    if (!answer.ok) return null;
-    const viewer = await answer.json();
-    showViewer(viewer);
-    return viewer;
+    if (answer.ok) {
+      const { theme } = await answer.json();
+      showTheme(theme);
+      return theme;
+    }
   } catch {
-    return null;
   }
+  return "system";
 }
-var root2 = document.documentElement;
-root2.addEventListener("transitionend", (event) => {
-  if (event.target === root2 && event.propertyName === "--accent") root2.classList.remove("accent-fade");
-});
 
 // src/page/list.ts
+var TYPES = { comment: "Comment", approve: "Approve", "request-changes": "Request changes" };
 var header = region("header");
 var main = region("main");
 var PAGE = { name: "list", reopen: "Run walkthrough list to reopen." };
@@ -229,23 +183,7 @@ function ago(iso) {
   return format.format(0, "second");
 }
 function progress(one) {
-  if (!one.steps) return el("span", { className: "list-progress" }, "Preparing");
-  const bar = el(
-    "span",
-    { className: "list-bar" },
-    ...one.segments.map((state) => {
-      const segment = el("span", { className: "segment" });
-      segment.dataset["state"] = state;
-      return segment;
-    })
-  );
-  bar.setAttribute("aria-hidden", "true");
-  return el("span", { className: "list-progress" }, bar, `${String(one.decided)} of ${plural(one.steps, "step")} decided, ${String(one.read)} read`);
-}
-function verdictStatus({ label, shown: shown2 }) {
-  const status = el("span", { className: "verdict-status", title: "Your verdict" }, icon("finish"), label);
-  status.dataset["state"] = shown2;
-  return status;
+  return el("span", { className: "list-progress" }, `${String(one.viewed)} / ${String(one.files)} files viewed`);
 }
 function row(one) {
   const name = el("button", { type: "button", className: "list-open", onclick: () => void open(one) }, one.name);
@@ -254,9 +192,9 @@ function row(one) {
     "tr",
     { role: "row" },
     // The id is what walkthrough prune takes to remove this one.
-    el("td", { role: "cell" }, el("div", { className: "list-name" }, name, ...kindView(one.kind)), el("code", { className: "list-id" }, one.id)),
+    el("td", { role: "cell" }, el("div", { className: "list-name" }, name), el("code", { className: "list-id" }, decodeURIComponent(one.id))),
     el("td", { role: "cell" }, progress(one)),
-    el("td", { role: "cell" }, ...one.verdict === void 0 ? [] : [verdictStatus(one.verdict)]),
+    el("td", { role: "cell" }, one.submitted ? TYPES[one.submitted] : ""),
     el("td", { role: "cell", className: "muted" }, el("time", { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last)))
   );
 }
@@ -271,7 +209,7 @@ function render(page) {
   const head = el(
     "tr",
     { role: "row" },
-    ...["Walkthrough", "Progress", "Verdict", "Last activity"].map((name) => el("th", { scope: "col", role: "columnheader" }, name))
+    ...["Walkthrough", "Viewed", "Review", "Last activity"].map((name) => el("th", { scope: "col", role: "columnheader" }, name))
   );
   main.replaceChildren(
     el("h1", { className: "list-title" }, "Walkthroughs"),
