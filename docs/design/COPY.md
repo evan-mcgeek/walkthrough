@@ -43,6 +43,9 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Collapse / Expand `<path>` | chevron, accessible name | |
 | Generated from the schema | folded generated file | written by the session (the reason), one line |
 | Comment on line N | line number button, accessible name | **GH** |
+| Diff / Preview | image file, switch | **GH** |
+| Before / After | image preview, under each side | |
+| Preview failed. | image preview, when an image does not load | |
 
 ## Comments and threads
 
@@ -64,6 +67,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | AI is answering | dots, accessible name | |
 | Leave a comment | composer placeholder | **GH** |
 | Cancel | composer | **GH** |
+| Update comment | composer, primary, when editing a pending comment | **GH** |
 | Add comment | composer, primary | **GH** ("Add single comment" / "Start a review": one button, the review is always pending) |
 | 1 new comment above / N new comments above | pill | |
 
@@ -137,7 +141,15 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 
 | String | Where | Note |
 |---|---|---|
+| Could not reach the list. Run walkthrough list to reopen. | banner, when the list page loses its server | |
 | Sent to the agent | Review column, your own change once sent | your own change has no review type; a pull request shows Comment, Approve or Request changes |
+
+## Alerts
+
+| String | Where | Note |
+|---|---|---|
+| That text is N characters long; the most it can be is M. | alert, when a comment or summary is over the limit | |
+| The walkthrough could not do that (N). | alert, when the server refuses with no reason | the server's own reason replaces it when it gives one |
 
 ## Strings to remove from the existing page
 
