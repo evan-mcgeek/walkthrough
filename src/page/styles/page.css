@@ -1154,6 +1154,11 @@ tr.flash td {
   overflow-wrap: anywhere;
 }
 
+.ai-tag {
+  color: var(--ink-secondary);
+  font: 600 12px var(--font-mono);
+}
+
 .avatar {
   display: grid;
   flex: none;
