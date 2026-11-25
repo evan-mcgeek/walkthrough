@@ -128,7 +128,7 @@ export class FilePane {
     const toggle = this.header.querySelector('.file-toggle');
     if (toggle) attrs(toggle, { 'aria-expanded': String(!closed), 'aria-label': `${closed ? 'Expand' : 'Collapse'} ${this.name}` });
     this.body.inert = closed;
-    const checkbox = this.header.querySelector<HTMLInputElement>('.viewed input');
+    const checkbox = this.header.querySelector<HTMLInputElement>('.viewed-toggle input');
     if (checkbox) checkbox.checked = view.viewed.includes(this.name);
     const count = commentCount(this.step.id, this.name);
     const counter = this.header.querySelector<HTMLElement>('.file-comments');
@@ -174,7 +174,7 @@ export class FilePane {
       ...(reason ? [el('span', { className: 'folded-reason', title: reason }, reason)] : []),
       el('span', { className: 'spacer' }),
       ...(this.preview ? [this.previewToggle()] : []),
-      el('label', { className: 'viewed' }, viewed, 'Viewed'),
+      el('label', { className: 'viewed-toggle' }, viewed, 'Viewed'),
     );
   }
 

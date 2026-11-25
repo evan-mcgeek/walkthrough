@@ -60,9 +60,19 @@ export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) 
 export const nameOf = (named: { kind: 'branch'; branch: string } | { kind: 'range'; label: string }) =>
   named.kind === 'branch' ? named.branch : named.label;
 
-export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
+const EARLIER_FIELDS = ['kindLabel', 'commentHint', 'checking', 'checklist', 'lastChecklistItem', 'actions', 'hints'];
+
+/** A walkthrough saved by an earlier release keeps its place and ids, but its steps, in an older shape, are recorded again. */
+function current(saved: Walkthrough | null): Walkthrough | null {
+  if (!saved) return null;
+  const upgraded = Object.fromEntries(Object.entries(saved).filter(([key]) => !EARLIER_FIELDS.includes(key))) as Walkthrough;
+  if (!saved.steps.every(step => Array.isArray(step.look) && step.files.every(one => typeof one === 'string'))) upgraded.steps = [];
+  return upgraded;
+}
+
+export const readWalkthrough = (dir: string) => current(readJson<Walkthrough | null>(file(dir), null));
 // Before a write: a saved walkthrough taken for none would be started over, giving its step ids out again.
-const savedWalkthrough = (dir: string) => (readSavedJson(file(dir)) as Walkthrough | undefined) ?? null;
+const savedWalkthrough = (dir: string) => current((readSavedJson(file(dir)) as Walkthrough | undefined) ?? null);
 
 export function openWalkthrough(
   dir: string,

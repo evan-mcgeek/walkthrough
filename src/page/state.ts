@@ -12,6 +12,8 @@ export const state = {
   render: (() => {}) as (own: boolean) => void,
   /** Counts what the page sent, so a poll that left before an answer does not put back what it replaced. */
   sends: 0,
+  /** Set when the page shows what the server never took, so the next poll fetches the view whole. */
+  stale: false,
 };
 
 export const phone = matchMedia('(max-width: 760px)');
@@ -20,7 +22,10 @@ export const phone = matchMedia('(max-width: 760px)');
 export async function send(route: string, body: Record<string, unknown>): Promise<boolean> {
   state.sends++;
   const answer = await post(PAGE, route, body);
-  if (!answer) return false;
+  if (!answer) {
+    state.stale = true;
+    return false;
+  }
   state.view = (await answer.json()) as WalkthroughView;
   state.render(true);
   return true;

@@ -20,7 +20,7 @@ test('at 390 the step list opens from the header, every control is a 44px target
   await expect(page.getByRole('heading', { level: 1, name: 'App' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Login' }).click();
-  const small = await page.locator('button:visible, a.btn:visible, .viewed:visible, .look-link:visible').evaluateAll(controls =>
+  const small = await page.locator('button:visible, a.btn:visible, .viewed-toggle:visible, .look-link:visible').evaluateAll(controls =>
     controls.filter(control => control.getBoundingClientRect().height < 44 && !control.closest('.app-header')).map(control => control.outerHTML.slice(0, 80)),
   );
   expect(small).toEqual([]);

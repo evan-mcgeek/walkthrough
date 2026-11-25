@@ -757,7 +757,7 @@ textarea {
   white-space: nowrap;
 }
 
-.viewed {
+.viewed-toggle {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -775,12 +775,12 @@ textarea {
     color var(--fast) linear;
 }
 
-.viewed input {
+.viewed-toggle input {
   margin: 0;
   accent-color: var(--ink-secondary);
 }
 
-.file.viewed .viewed {
+.file.viewed .viewed-toggle {
   background: var(--surface-tint);
   color: var(--ink);
 }
@@ -1728,8 +1728,21 @@ tr.flash td {
 
   .radio,
   .counts a,
-  .going-row a.where {
+  .review-box.done a {
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
+  }
+
+  /* The file and line link keeps its line; its target reaches 44px around it. */
+  .going-row a.where {
+    position: relative;
+  }
+
+  .going-row a.where::after {
+    position: absolute;
+    inset: -12px 0;
+    content: '';
   }
 
   .frame {
@@ -1798,7 +1811,7 @@ tr.flash td {
     max-width: calc(var(--pane, 100vw) - var(--s4));
   }
 
-  :is(.btn, .btn.small, .icon-button, .look-link, .viewed, .reply-field, .segmented button) {
+  :is(.btn, .btn.small, .icon-button, .look-link, .viewed-toggle, .reply-field, .segmented button) {
     min-height: 44px;
   }
 

@@ -383,6 +383,8 @@ function poll(): void {
   if (polling || stopped) return;
   polling = true;
   const since = state.sends;
+  if (state.stale) tag = '';
+  state.stale = false;
   fetch('data/walkthrough.json', tag ? { headers: { 'if-none-match': tag } } : {})
     .then(async answer => {
       if (document.body.classList.contains('unreachable')) showAlert(null);

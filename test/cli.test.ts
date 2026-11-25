@@ -144,6 +144,24 @@ describe('walkthrough start', () => {
     expect(repo.record(ONE_STEP).stderr).toContain(`cannot read ${saved}`);
   });
 
+  test('a walkthrough saved by an earlier release keeps its place, and its steps are recorded again', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+    repo.run('stop');
+    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'walkthrough.json');
+    const earlier = JSON.parse(fs.readFileSync(saved, 'utf8')) as { steps: Record<string, unknown>[] };
+    earlier.steps = earlier.steps.map(step => ({ ...step, look: undefined, kind: 'step', assumptions: [] }));
+    fs.writeFileSync(saved, JSON.stringify({ ...earlier, kindLabel: 'own', checklist: { title: 'Criteria', items: [] } }));
+
+    expect(repo.run('start').stdout).toContain('0 steps');
+
+    const shown = await shownAt(repo.url());
+    expect(shown.steps).toEqual([]);
+    expect(shown).not.toHaveProperty('checklist');
+    expect(repo.record(ONE_STEP).stdout).toBe('Recorded 1 step: 2 (Login).\n');
+  });
+
   test('serves no folder outside its state', () => {
     repo = makeRepo();
     const elsewhere = path.join(path.dirname(repo.dir), 'elsewhere');
