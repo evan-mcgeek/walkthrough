@@ -1,0 +1,94 @@
+// A step: its title, "Look at:", the AI's explanation, its files, then the steps before and after it.
+import type { Step } from '../walkthrough';
+import { attrs, el } from './dom';
+import { drawFiles, type FilePane, type Shows } from './files';
+import { icon } from './icons';
+import { linesLabel, markdown, state } from './state';
+
+const spinner = () => attrs(icon('spinner'), { 'aria-hidden': 'true' });
+
+export class StepPane {
+  readonly box = el('section', { className: 'step' });
+  private readonly head = el('div', { className: 'step-head' });
+  private readonly reviewing = el('p', { className: 'reviewing-line' }, spinner(), 'The AI is still reviewing this step.');
+  private readonly files: FilePane[];
+  private readonly foot = el('div', { className: 'step-foot' });
+  private more = false;
+  private drawnHead = '';
+
+  constructor(
+    readonly step: Step,
+    private readonly scroller: HTMLElement,
+  ) {
+    this.files = drawFiles(step);
+    this.box.dataset['step'] = step.id;
+    this.box.append(this.head, el('div', { className: 'files' }, ...this.files.map(pane => pane.box)), this.foot);
+  }
+
+  fileNamed(file: string): FilePane | undefined {
+    return this.files.find(pane => pane.file === file);
+  }
+
+  update(shows: Shows, go: (address: string) => void): HTMLElement[] {
+    const key = JSON.stringify([this.step.title, this.step.explanation, this.step.look, this.more]);
+    if (key !== this.drawnHead) {
+      this.drawnHead = key;
+      this.drawHead();
+    }
+    this.reviewing.hidden = !state.view.reviewing.includes(this.step.id) || !!state.view.submitted;
+    this.drawFoot(go);
+    return this.files.flatMap(pane => pane.update(shows));
+  }
+
+  private drawHead(): void {
+    const { step } = this;
+    const [first = '', ...rest] = step.explanation.trim().split(/\n\s*\n/);
+    const explanation = markdown(this.more ? step.explanation : first, 'explanation');
+    if (rest.length && !this.more) {
+      const more = el('button', { type: 'button', className: 'link more' }, 'More');
+      more.onclick = () => {
+        this.more = true;
+        this.drawHead();
+        this.head.querySelector<HTMLElement>('.explanation')?.focus();
+      };
+      (explanation.lastElementChild ?? explanation).append(' ', more);
+    }
+    explanation.tabIndex = -1;
+    const look = step.look.map(pointer =>
+      el(
+        'button',
+        { type: 'button', className: 'look-link', title: `${pointer.file} ${linesLabel([pointer.start, pointer.end])}`, onclick: () => this.fileNamed(pointer.file)?.look(pointer.start, pointer.end, this.scroller) },
+        icon('next'),
+        el('code', {}, pointer.file.split('/').slice(-2).join('/')),
+        ` ${linesLabel([pointer.start, pointer.end])} `,
+        el('span', { className: 'look-label' }, pointer.label),
+      ),
+    );
+    this.head.replaceChildren(
+      el('h1', { className: 'step-title', tabIndex: -1 }, step.title),
+      ...(look.length ? [el('div', { className: 'look' }, el('span', { className: 'look-at' }, 'Look at:'), ...look)] : []),
+      explanation,
+      this.reviewing,
+    );
+  }
+
+  private drawFoot(go: (address: string) => void): void {
+    const { steps } = state.view;
+    const at = steps.findIndex(one => one.id === this.step.id);
+    const before = steps[at - 1];
+    const after = steps[at + 1];
+    const key = JSON.stringify([before?.title, after?.title]);
+    if (this.foot.dataset['key'] === key) return;
+    this.foot.dataset['key'] = key;
+    const link = (title: string, address: string, side: 'previous' | 'next') =>
+      el(
+        'a',
+        { className: `btn step-link ${side}`, href: `#${address}`, onclick: (event: MouseEvent) => { event.preventDefault(); go(address); } },
+        ...(side === 'previous' ? [icon('previous'), el('span', {}, title)] : [el('span', {}, title), icon('next')]),
+      );
+    this.foot.replaceChildren(
+      ...(before ? [link(before.title, `step-${before.id}`, 'previous')] : [el('span')]),
+      after ? link(after.title, `step-${after.id}`, 'next') : link('Summary', 'summary', 'next'),
+    );
+  }
+}

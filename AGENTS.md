@@ -1,6 +1,12 @@
 # Working on Walkthrough
 
-## First rule: nothing specific in the tool
+## Before anything: VISION.md
+
+Read [VISION.md](VISION.md) before any feature, design brief, ticket, review or release.
+Walkthrough is GitHub's pull request review page made better by AI; every feature must pass its two-job test, and nothing on its "Not in the tool" list comes back.
+When a request does not fit the vision, say so and ask, instead of building it.
+
+## Nothing specific in the tool
 
 The CLI and the page know only git, their own state and the page (ADR 0005).
 Never put a rule about a language, package manager, file name pattern, tracker, code host, reviewer or workflow into the code.

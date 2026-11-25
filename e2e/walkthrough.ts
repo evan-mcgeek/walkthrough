@@ -1,44 +1,50 @@
 // The page under test: a walkthrough started by the real CLI in a throwaway repo, served on its own port.
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 import { makeRepo, type Repo } from '../test/helpers';
 
 export { expect };
 
-export const test = base.extend<{ start: Record<string, string>; files: Record<string, string>; repo: Repo; url: string }>({
+/** A file of `count` numbered lines, long enough to scroll through. */
+export const lines = (count: number, prefix = 'line') => Array.from({ length: count }, (_, at) => `export const ${prefix}${String(at + 1)} = ${String(at + 1)};`).join('\n') + '\n';
+
+export const test = base.extend<{ start: Record<string, string>; files: Record<string, string>; args: string[]; repo: Repo; url: string }>({
   /** Files the base has on top of the default start. */
   start: [{}, { option: true }],
   /** Files the feature branch adds on top of the default change. */
   files: [{}, { option: true }],
+  /** What start is given, such as --pr. */
+  args: [[], { option: true }],
   repo: async ({ start, files }, use) => {
     const repo = makeRepo({ start, feature: files });
     await use(repo);
     repo.run('stop');
     await repo.settled();
   },
-  url: async ({ repo, page }, use) => {
-    const started = repo.run('start');
+  url: async ({ repo, page, args }, use) => {
+    const started = repo.run('start', ...args);
     if (started.status !== 0) throw new Error(started.stderr);
     // A script blocked by the CSP or a page that throws shows up here.
     const problems: string[] = [];
-    // WebKit reports a poll that leaving the page cuts off as a page error, which says nothing about the page.
-    let leaving = false;
-    page.on('request', request => {
-      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) leaving = true;
-    });
-    page.on('load', () => {
-      leaving = false;
-    });
-    page.on('pageerror', error => {
-      if (!(leaving && /Fetch API cannot load \S+ due to access control checks/.test(error.stack ?? ''))) problems.push(error.message);
-    });
+    page.on('pageerror', error => problems.push(error.message));
     page.on('console', message => {
-      // The browser logs a 409, which the page answers by telling the person what changed.
-      if (message.type() === 'error' && !message.text().includes('status of 409')) problems.push(message.text());
+      if (message.type() === 'error') problems.push(message.text());
     });
-    await page.goto(repo.url());
-    // The page takes keys once it has drawn the walkthrough.
-    await expect(page.locator('h1')).toBeAttached();
     await use(repo.url());
     expect(problems).toEqual([]);
   },
 });
+
+/** Records `input` with the CLI and waits until the page shows the step list it draws. */
+export function record(repo: Repo, input: unknown, command = 'steps'): void {
+  const recorded = repo.record(input, command);
+  if (recorded.status !== 0) throw new Error(recorded.stderr);
+}
+
+export async function open(page: Page, url: string, address = ''): Promise<void> {
+  await page.goto(url + address);
+  await expect(page.locator('.app-header .mark')).toBeAttached();
+}
+
+/** Where `locator` sits in the page, to tell whether anything moved it. */
+export const topOf = async (page: Page, selector: string) =>
+  page.locator(selector).first().evaluate(element => element.getBoundingClientRect().top);

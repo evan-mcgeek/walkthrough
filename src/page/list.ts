@@ -1,8 +1,9 @@
 import type { Listed } from '../list';
-import { plural } from '../words';
 import { loadViewer } from './appearance';
-import { el, kindView, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
+import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon } from './icons';
+
+const TYPES = { comment: 'Comment', approve: 'Approve', 'request-changes': 'Request changes' } as const;
 
 type ListPage = { repo: string; walkthroughs: Listed[] };
 
@@ -44,25 +45,7 @@ function ago(iso: string): string {
 }
 
 function progress(one: Listed): HTMLElement {
-  if (!one.steps) return el('span', { className: 'list-progress' }, 'Preparing');
-  const bar = el(
-    'span',
-    { className: 'list-bar' },
-    ...one.segments.map(state => {
-      const segment = el('span', { className: 'segment' });
-      segment.dataset['state'] = state;
-      return segment;
-    }),
-  );
-  bar.setAttribute('aria-hidden', 'true');
-  return el('span', { className: 'list-progress' }, bar, `${String(one.decided)} of ${plural(one.steps, 'step')} decided, ${String(one.read)} read`);
-}
-
-/** The chosen verdict in its tone, as the page's header shows it. */
-function verdictStatus({ label, shown }: { label: string; shown: string }): HTMLElement {
-  const status = el('span', { className: 'verdict-status', title: 'Your verdict' }, icon('finish'), label);
-  status.dataset['state'] = shown;
-  return status;
+  return el('span', { className: 'list-progress' }, `${String(one.viewed)} / ${String(one.files)} files viewed`);
 }
 
 function row(one: Listed): HTMLTableRowElement {
@@ -73,9 +56,9 @@ function row(one: Listed): HTMLTableRowElement {
     'tr',
     { role: 'row' },
     // The id is what walkthrough prune takes to remove this one.
-    el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name, ...kindView(one.kind)), el('code', { className: 'list-id' }, one.id)),
+    el('td', { role: 'cell' }, el('div', { className: 'list-name' }, name), el('code', { className: 'list-id' }, decodeURIComponent(one.id))),
     el('td', { role: 'cell' }, progress(one)),
-    el('td', { role: 'cell' }, ...(one.verdict === undefined ? [] : [verdictStatus(one.verdict)])),
+    el('td', { role: 'cell' }, one.submitted ? TYPES[one.submitted] : ''),
     el('td', { role: 'cell', className: 'muted' }, el('time', { dateTime: one.last, title: new Date(one.last).toLocaleString() }, ago(one.last))),
   );
 }
@@ -93,7 +76,7 @@ function render(page: ListPage): void {
   const head = el(
     'tr',
     { role: 'row' },
-    ...['Walkthrough', 'Progress', 'Verdict', 'Last activity'].map(name => el('th', { scope: 'col', role: 'columnheader' }, name)),
+    ...['Walkthrough', 'Viewed', 'Review', 'Last activity'].map(name => el('th', { scope: 'col', role: 'columnheader' }, name)),
   );
   main.replaceChildren(
     el('h1', { className: 'list-title' }, 'Walkthroughs'),

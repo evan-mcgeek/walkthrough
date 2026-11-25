@@ -1,14 +1,7 @@
 // The design's motion (docs/design/DESIGN.md, Motion), played with the Web Animations API, which the strict CSP allows.
+// Under reduced motion each keeps opacity and colour only: things fade, then snap.
 
-type Timing = { ms: 'fast' | 'base' | 'slow' | number; curve: 'ease-out' | 'ease-in' | 'linear'; delay?: number; iterations?: number; fill?: FillMode };
-type Motion = {
-  key: string;
-  frames: Keyframe[];
-  timing: KeyframeAnimationOptions & { id: string };
-  start: number;
-  end: number;
-  running: Animation[];
-};
+type Timing = { ms: 'fast' | 'base' | 'slow' | number; curve: 'ease-out' | 'ease-in' | 'linear'; delay?: number; fill?: FillMode };
 
 const root = getComputedStyle(document.documentElement);
 const token = (name: string) => root.getPropertyValue(`--${name}`).trim();
@@ -18,49 +11,73 @@ export const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matc
 /** What reduced motion keeps of an element arriving. */
 export const FADE_IN: Keyframe[] = [{ opacity: 0 }, { opacity: 1 }];
 
-// The animation clock, which page timers and their fakes leave alone.
-const now = () => Number(document.timeline.currentTime ?? performance.now());
+export const duration = (ms: Timing['ms']) => (typeof ms === 'number' ? ms : Number.parseFloat(token(ms)));
 
-function options(id: string, { ms, curve, delay = 0, iterations = 1, fill = 'backwards' }: Timing) {
-  const duration = typeof ms === 'number' ? ms : Number.parseFloat(token(ms));
-  return { id, duration, delay, iterations, fill, easing: curve === 'linear' ? 'linear' : token(curve) };
+export const animate = (element: Element, id: string, frames: Keyframe[], { ms, curve, delay = 0, fill = 'backwards' }: Timing) =>
+  element.animate(frames, { id, duration: duration(ms), delay, fill, easing: curve === 'linear' ? 'linear' : token(curve) });
+
+/** Stops the motion this module plays on an element, so it shows as it is. */
+export function settle(element: Element): void {
+  for (const running of element.getAnimations()) if (running.id) running.cancel();
 }
 
-/** Plays on an element no redraw replaces. */
-export const animate = (element: Element, id: string, frames: Keyframe[], timing: Timing) => element.animate(frames, options(id, timing));
-
-const live: Motion[] = [];
-
-/**
- * Plays on every element marked `data-motion="<key>"` from the next replay until it ends, and returns how long that is;
- * an element a redraw puts in place of another goes on from the same point instead of starting over.
- */
-export function play(key: string, id: string, frames: Keyframe[], given: Timing): number {
-  const timing = options(id, given);
-  const lasts = timing.delay + timing.duration * timing.iterations;
-  const start = now();
-  // A newer motion of the same kind on the same elements takes over, as a chevron turning back does.
-  for (const older of live.filter(one => one.key === key && one.timing.id === id)) {
-    for (const running of older.running) running.cancel();
-    live.splice(live.indexOf(older), 1);
-  }
-  live.push({ key, frames, timing, start, end: start + lasts, running: [] });
-  return lasts;
+/** Fades an element out and then runs `done`, unless something stopped the fade first; a fade already going on goes on. */
+export function fadeOut(element: Element, ms: Timing['ms'], done: () => void, curve: Timing['curve'] = 'linear'): void {
+  if (element.getAnimations().some(running => running.id === 'fade-out')) return;
+  const fade = animate(element, 'fade-out', [{ opacity: 1 }, { opacity: 0 }], { ms, curve, fill: 'forwards' });
+  fade.finished.then(
+    () => {
+      done();
+      fade.cancel();
+    },
+    () => {},
+  );
 }
 
-export function replay(): void {
-  const at = now();
-  for (const motion of [...live]) {
-    if (motion.end <= at) {
-      live.splice(live.indexOf(motion), 1);
-      continue;
-    }
-    for (const target of document.querySelectorAll(`[data-motion="${CSS.escape(motion.key)}"]`)) {
-      const playing = target.getAnimations();
-      if (motion.running.some(running => playing.includes(running))) continue;
-      const running = target.animate(motion.frames, motion.timing);
-      running.currentTime = at - motion.start;
-      motion.running.push(running);
-    }
+/** A count that changed rises into place. */
+export const tick = (element: Element) =>
+  animate(element, 'tick', reduced() ? [{ opacity: 0.55 }, { opacity: 1 }] : [{ opacity: 0.55, transform: 'translateY(2px)' }, { opacity: 1, transform: 'none' }], {
+    ms: 'base',
+    curve: reduced() ? 'linear' : 'ease-out',
+  });
+
+/** Opens an element from nothing to its height, its content fading in after it starts. */
+export function grow(element: HTMLElement): void {
+  settle(element);
+  if (reduced()) {
+    animate(element, 'grow', FADE_IN, { ms: 'base', curve: 'linear' });
+    return;
   }
+  const { paddingTop, paddingBottom } = getComputedStyle(element);
+  element.classList.add('growing');
+  const opening = animate(element, 'grow', [{ height: '0px', paddingTop: '0px', paddingBottom: '0px' }, { height: `${String(element.offsetHeight)}px`, paddingTop, paddingBottom }], {
+    ms: 'slow',
+    curve: 'ease-out',
+  });
+  animate(element, 'grow-fade', FADE_IN, { ms: 'base', curve: 'linear', delay: 80 });
+  const done = () => {
+    element.classList.remove('growing');
+  };
+  opening.finished.then(done, done);
+}
+
+/** Fades an element, then closes its height, then runs `done`. */
+export function shrink(element: HTMLElement, done: () => void): void {
+  const fade = duration('fast');
+  if (reduced()) {
+    fadeOut(element, 'base', done);
+    return;
+  }
+  const { paddingTop, paddingBottom } = getComputedStyle(element);
+  element.classList.add('growing');
+  animate(element, 'shrink-fade', [{ opacity: 1 }, { opacity: 0 }], { ms: 'fast', curve: 'linear', fill: 'forwards' });
+  const closing = animate(element, 'shrink', [{ height: `${String(element.offsetHeight)}px`, paddingTop, paddingBottom }, { height: '0px', paddingTop: '0px', paddingBottom: '0px' }], {
+    ms: 'slow',
+    curve: 'ease-out',
+    delay: fade,
+    fill: 'forwards',
+  });
+  closing.finished.then(done, () => {
+    element.classList.remove('growing');
+  });
 }

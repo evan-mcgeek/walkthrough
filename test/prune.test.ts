@@ -205,6 +205,17 @@ describe('walkthrough prune', () => {
     await expect(fetch(url)).rejects.toThrow();
   });
 
+  test('takes the id as the list page shows it, decoded', () => {
+    repo = makeRepo();
+    repo.run('start', '--base', 'origin/main', '--head', 'feature/login', '--label', 'Login change');
+    repo.run('stop', '--base', 'origin/main', '--head', 'feature/login', '--label', 'Login change');
+
+    const pruned = repo.run('prune', 'range-Login change');
+
+    expect(pruned.stderr).toBe('');
+    expect(fs.existsSync(path.join(repoState(), 'range-Login%20change'))).toBe(false);
+  });
+
   test('refuses an id that names no walkthrough', () => {
     repo = makeRepo();
     repo.run('start');

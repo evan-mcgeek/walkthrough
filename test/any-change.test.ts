@@ -1,9 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import type { SessionView } from '../src/session';
-import type { WalkthroughView as Walkthrough } from '../src/decisions';
-import { git, makeRepo, ONE_STEP, type Repo } from './helpers';
+import { git, makeRepo, ONE_STEP, postTo as post, type Repo, viewAt as shownAt } from './helpers';
 
 const LOGIN = ['--base', 'origin/main', '--head', 'feature/login', '--label', 'Login'];
 
@@ -21,21 +19,6 @@ const newRepo = (...args: Parameters<typeof makeRepo>) => {
   repos.push(made);
   return made;
 };
-
-const shownAt = async (page: string) => (await (await fetch(`${page}data/walkthrough.json`)).json()) as Walkthrough;
-const sessionAt = async (page: string) => (await (await fetch(`${page}data/session.json`)).json()) as SessionView;
-const post = (page: string, route: string, body: unknown) =>
-  fetch(new URL(`${route}?token=${new URL(page).pathname.split('/')[2] ?? ''}`, page), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-async function until(what: string, done: () => Promise<boolean>, ms = 5000) {
-  for (const end = Date.now() + ms; Date.now() < end; await new Promise(resolve => setTimeout(resolve, 50)))
-    if (await done()) return;
-  throw new Error(`${what} did not happen within ${String(ms / 1000)}s`);
-}
 
 describe('walkthrough start of a range', () => {
   test('walks through the base and head it is given, from their merge-base, without checking anything out', async () => {
@@ -105,14 +88,13 @@ describe('where a walkthrough is kept', () => {
     first.run('start');
     first.record(ONE_STEP);
     const firstPage = first.url();
-    expect((await post(firstPage, '/decide', { item: { type: 'step', id: '1' }, action: 'approve' })).status).toBe(200);
+    expect((await post(firstPage, '/viewed', { file: 'app.ts', viewed: true })).status).toBe(200);
 
-    const started = second.run('start');
+    second.run('start');
 
-    expect(started.stdout).not.toContain('Resumed');
     expect((await shownAt(second.url())).steps).toEqual([]);
     expect(second.run('stop').stdout).toContain('Stopped the walkthrough page.');
-    expect((await shownAt(firstPage)).decided['step:1']).toMatchObject({ action: 'approve' });
+    expect((await shownAt(firstPage)).viewed).toEqual(['app.ts']);
   });
 
   test('every command finds the walkthrough of a range by the options start was given', async () => {
@@ -127,14 +109,9 @@ describe('where a walkthrough is kept', () => {
     expect((await shownAt(rangePage)).steps.map(step => step.title)).toEqual(['Login']);
     expect((await shownAt(branchPage)).steps.map(step => step.title)).toEqual([]);
 
-    expect(repo.run('say', ...LOGIN, 'Hello range').status).toBe(0);
-    expect((await sessionAt(rangePage)).conversation.map(entry => entry.text)).toEqual(['Hello range']);
-    expect((await sessionAt(branchPage)).conversation).toEqual([]);
-
-    const listener = repo.background('listen', ...LOGIN);
-    await until('the session listens', async () => (await sessionAt(rangePage)).state === 'listening');
-    expect((await post(rangePage, '/ask', { step: '1', text: 'Why?' })).status).toBe(200);
-    expect((await listener.ended).stdout).toContain('"text":"Why?"');
+    expect((await post(rangePage, '/ask', { file: 'app.ts', lines: [1, 1], text: 'Why?' })).status).toBe(200);
+    expect((await repo.background('listen', ...LOGIN).ended).stdout).toContain('"text":"Why?"');
+    expect((await shownAt(branchPage)).threads).toEqual([]);
 
     expect(repo.run('stop', ...LOGIN).stdout).toContain('Stopped the walkthrough page.');
     await expect(fetch(rangePage)).rejects.toThrow();

@@ -1,186 +1,98 @@
-# Walkthrough: implementation handoff
+# Walkthrough: final handoff
 
-For the agent implementing this design in the existing build. Read in this order: this file, then `DESIGN.md` (the system, as built plus this round), `PRODUCT.md` (behaviour, glossary), then the boards in `screens.html` and the interactions in `prototype.html`. The boards are the visual reference. Where this file and a board disagree, this file wins; say so in your PR.
+The build spec for the Walkthrough review page. It replaces every earlier brief, round and handover. Where a board and this file disagree, this file wins; say so in your PR.
+
+## Paste this into Claude Code
+
+> You are building the final design of the Walkthrough review page in this repository. Copy `HANDOFF.md`, `VISION.md`, `DESIGN.md`, `PRODUCT.md`, `COPY.md`, `screens.html` and `prototype.html` from the design artifact into `docs/design/`, replacing anything there. Read `HANDOFF.md` first and work through it in order. Report anything you could not match and any string over its cap.
+
+## The files
+
+| File | What it is |
+|---|---|
+| `HANDOFF.md` | This file: decisions, what to remove, what to build, and when it is done. |
+| `VISION.md` | The product in one page. GitHub's pull request review page, made better by AI. Binding, except where a founder decision below differs. |
+| `DESIGN.md` | Tokens, type, spacing, every component with measurements, motion, word caps. Sidecar tokens in `.impeccable/design.json` if present. |
+| `PRODUCT.md` | Behaviour and the glossary. |
+| `COPY.md` | Every string the page shows. Anything not in it is removed. |
+| `screens.html` | The boards: every state, light and dark, 1440 and 390. |
+| `prototype.html` | Clickable reference for interaction and motion. |
+
+## Founder decisions
+
+These override `VISION.md` where they differ.
+
+1. **The final submit happens in the app**, from Submit review on the Summary, not on GitHub.
+2. **Send to agent with no comments** is disabled while Comment is chosen, with the line "Add a comment, or choose Approve or Request changes." Choosing Approve or Request changes enables it. Your own change gets the same three review types as a pull request.
+3. **Viewed resets when a file changes:** when new commits touch a file you marked Viewed, Viewed clears, the file opens again, its tick in the step list goes back to a ring, the files-viewed count in the page header drops, and the file header shows "Changed since last view".
+4. **Ask AI stays on the page.** Your "Ask AI: …" question and the AI's answer are not pending, carry no Edit, Delete or `[AI]`, and never go out.
+5. **`[AI]` marks only the AI's pending comments**, the ones that go out with the review.
+6. **No code host is named on the page.** After submitting it says "Review submitted" and links "View review" to the address the session records.
+7. **Submit review posts a finished review**, not a pending one: the session posts it with the chosen type, the summary and every pending comment.
 
 ## Constraints that do not move
 
 - Plain HTML and CSS, framework-free TypeScript, no component library. diff2html renders diffs, restyled through classes.
-- Strict CSP: no inline `style` attributes or inline scripts in markup. Setting styles via CSSOM from your bundled script (`el.style.setProperty`, `el.animate`) is fine; `setAttribute('style', …)` is not.
-- Tokens only. Every colour is a semantic token with light and dark values (`DESIGN.md` → Colors, sidecar `.impeccable/design.json`). The accent family (`--acc`, `--acc-tx`, `--acc-bg`, `--acc-line`, `--acc-hover`, `--on-acc`) can be re-pointed per person (Ultramarine default, Petrol, Berry).
-- Spacing on the 4px scale (4, 8, 12, 16, 24, 32). 4px control corners.
-- WCAG 2.2 AA. Every icon and colour also carries words: a visible label, a tooltip, or both.
-- Motion: 120 / 200 / 320ms, ease-out `cubic-bezier(0.16,1,0.3,1)` arriving, ease-in `cubic-bezier(0.7,0,0.84,0)` leaving, one 440ms authored moment (the verdict). Every animation has a `prefers-reduced-motion` path: opacity and colour only.
-- Sample data in tests and fixtures stays the todo app adding due dates. No real names.
+- Strict CSP: no inline `style` attributes or inline scripts. CSSOM from the bundle (`el.style.setProperty`, `el.animate`) is fine; `setAttribute('style', …)` is not.
+- Tokens only, one semantic set with light and dark values; the theme follows the system unless the menu sets one. One accent, Ultramarine; no accent picker.
+- 4px spacing scale (4, 8, 12, 16, 24, 32). 4px control corners.
+- WCAG 2.2 AA. Every icon and colour also carries a word (visible, tooltip or accessible name). 44px targets at 390.
+- Motion from the one family in `DESIGN.md` → Motion, with a reduced-motion path (opacity and colour only). Start animations in the same task as the click; never start motion from `setTimeout`.
+- The page's controls are fixed and the same for everyone; no review rules live in the code. The AI speaks only in threads.
+- Fixtures use the sample todo app adding due dates. No real names.
 
-## Work items, in suggested order
+## 1. Remove from the existing page
 
-### 1. Plain words (copy only, do this first)
+Delete these, their styles, their strings and the session fields only they read:
 
-Replace on-page strings. Internal names in code and data stay as they are.
+- Approve and Flag on steps, the action bar, step decisions, decided counts, "N decided", the progress bar of decisions and its marker, "Undecided", "Changed since you decided", Change and Undo.
+- The verdict as its own choice, the header verdict status and its motion.
+- The To review queue (states, badges, sub-lines), tool windows, edge stripes, the explanation column, the "In this step" chips.
+- The Summary ledger, "Still open", "Decided", "N left · N go out".
+- Findings as their own object; note kinds; Accept, Reject, Ignore, "Add to fixes", "Not an issue"; outcomes and consequences.
+- Session status words (Listening, Working, Needs you, Gone, Offline), the Session messages page, "The session asks", being-checked notices and held actions, late-finding banners and "new" badges.
+- The checklist page and panel, the Met / Partly / Not met control and overriding.
+- Files to skim as a step, the swipe deck, Appearance and the accent picker, the Help sheet and every legend, the "Step N of M" line.
+- Session fields: action `tone`, `label`, `consequence`, `outcome`, `asks_reason`, `primary`; note `kind`, `needs_decision`.
 
-| Find | Replace |
-|---|---|
-| `3/9` beside the progress bar | `Step 4 of 9 · 3 decided`; on the Summary `Summary · 7 decided` |
-| Session status `Listening` etc. | Prefix a muted `Session` (desktop only; dropped at 390px) |
-| `Stop` / `Stop Walkthrough` | `End session` |
-| `Reopened`, `Reopened: changed since you chose X` | `Changed since you decided` (queue sub-line, tag); `Changed since you chose X.` (step); `Changed` (Summary decision column) |
-| `Folded files` (step title, queue, export) | `Files to skim` |
-| `1 assumption` / `Assumed, not read` | `1 thing assumed, not checked` / `Assumed, not checked` |
-| `Detached` | `Notes on removed code` |
-| `From the session` (queue row) | `Session messages` |
-| `Hand fixes to the author` | `Send the fix list to the session` |
-| `[AI] drafts` (Summary heading) | `Comments the session drafted` (the `[AI]` prefix on posted text stays) |
-| `Ask about this step… ( / )` | `Ask about this step…` (key goes in the tooltip) |
-| Checklist edge `Checklist 2/5` | `Checklist 2 of 5 met` |
+## 2. Build the page
 
-Full glossary: `PRODUCT.md` → Plain words.
+Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on the boards.
 
-### 2. Remove the tool panel
+- **Header (44px):** mark · the change's label (a PR as `#212` in secondary ink plus the title in sans 600; a branch in mono) · "N / M files viewed" with a 72px bar · "AI reviewing" with the spinner while the AI works · Finish review · menu (Theme, End session). At 390: mark, steps button, "N / M", the spinner alone, Finish (hidden on the Summary), menu.
+- **Step list (248px, left):** the AI's steps in reading order; under each, its files with a Viewed tick and a comment count; a spinner on steps the AI has not finished; Summary last with the pending count. At 390 it opens over the page from the steps button and closes when you pick a step.
+- **A step:** title (20px), "Look at:" with one or two pointers, one or two sentences with More, its files, then previous and next named by the steps' titles. While the AI has not finished the step: "The AI is still reviewing this step." with the spinner.
+- **Look at:** `{file, start, end, label}`, label 2–4 words. Click opens the file if folded, scrolls the range into view with 120px above, flashes it in the line-pick tone.
+- **Files:** GitHub's header in a bordered box: chevron, path, +/−, comment count, Viewed. Viewed folds the file. A generated file arrives folded with one line saying why. After new commits: "Changed since last view" (decision 3).
+- **Diff:** line numbers are buttons; click or Shift-click opens a composer under the line. Gutter bubble for a thread: ink for the AI, accent for you, muted for a colleague. Overview stripe at the right, hidden at 390.
+- **Comments and threads:** one component for everyone. Avatar, name, Pending tag, time, Edit and Delete on pending comments only; body; the foot has Reply, Ask AI, and Resolve on colleagues' threads. Composer: textarea, Ask AI, Cancel, Add comment.
+- **Ask AI:** in a thread or on picked lines. Posts "Ask AI: …", shows the AI's avatar, spinner and "Answering…", then the answer as a reply (decision 4). Only Ask AI wakes the AI.
+- **Arriving comments never move the page:** a comment landing above or in view is inserted folded and announced by "1 new comment above"; clicking scrolls to it and opens it.
+- **Summary ("Finish your review"):**
+  - Going out (N): every pending comment, one row each: avatar, `file:line` link (full path as tooltip), text up to two lines, Edit, Delete. At 390 the link sits on its own line. Empty: "No comments. Add one on a line, or answer the AI’s."
+  - "N unresolved threads" and "N files not viewed" as links that go there.
+  - Acceptance criteria, checked by the AI, read-only: icon, criterion, Met / Partly met / Not met / Not checked.
+  - The review box: summary textarea, Comment / Approve / Request changes, Submit review (pull request) or Send to agent (your own change, decision 2).
+  - After sending: the box becomes one line of what went where ("Request changes, with 5 comments, on #212." with View review, the address the session records; or "Sent to the agent"; no code host is named on the page). "Going out" becomes "Sent" without Edit or Delete; the counts row, "AI reviewing" and the step spinners go away.
+- **Menu:** Theme (System, Light, Dark) and End session. Nothing else.
 
-- Delete the tool panel, its bottom strip (`Notes / From the session / Detached`), and key 4. Panels are To review, Checklist and Explanation on keys 1 to 3; update tooltips, the shortcut list and the phone More menu.
-- Notes on removed code and session messages move to the **Session messages** page (a queue row). Its sub-line counts both: `1 file not in a step · 2 on removed code`. Page order: the changed-files-not-in-a-step notice, `From the session N`, `Notes on removed code N` (each item: label, `was on <file> line N` muted, the old line in mono, the note text; your own comments keep the accent label).
-- Board: Screens → No tool panel.
+## 3. Motion
 
-### 3. Stepper (header progress)
+Port it from `prototype.html`; specs in `DESIGN.md` → Motion. One loop only: the dashed checking spinner. Known rough edges from the last motion review, worth a look while porting: under reduced motion the Viewed fold snaps a second time near the end; a deleted Summary row can jump sideways at the start of its exit.
 
-- Current step segment: solid ink (`--tx`), 9px tall against 5px, 2px corners, regardless of the step's state. Bar uses `align-items:center`.
-- Other segments: decided `--acc`, read `--seg-read`, not read `--line`, changed-since-decided `--amb`.
-- Each segment has a tooltip: `6 Overdue styling: not read yet`.
-- Text beside it: `Step N of M · D decided` / `Summary · D decided`, `white-space:nowrap`.
-- At 390px: the bar runs full width under the header; `D decided` sits right of the step picker.
-- Motion: a single absolutely positioned ink marker walks to the current segment (`transform: translateX(i × (segment width + 3px))`, 320ms ease-out). Segment fills are pseudo-elements scaling X from the left (read: grey `::before`, decided: accent `::after`, 320ms). After a decision the marker waits 180ms so the fill reads first. On the Summary the marker fades out. Reduced motion: marker snaps, fills fade.
-- Boards: Screens → The stepper shows where you are. Interaction: Prototype.
+## 4. Done when
 
-### 4. Summary: ledger plus Finish rail
+- Nothing from section 1 is on any screen; grep the templates for the strings in `COPY.md` → "Strings to remove".
+- Every string is in `COPY.md` and within its cap (`DESIGN.md` → Words).
+- You, the AI and a colleague are told apart at a glance by avatar (and `[AI]` on comments that go out), with no legend.
+- Posting, an AI reply arriving, or a new AI comment never shifts the line you are reading (test scrolled mid-file).
+- Submit review sends one review with the chosen type and every pending comment, from the app; nothing leaves before. Send to agent follows decision 2.
+- Viewed resets as in decision 3, and the header count follows.
+- Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
 
-Replace the stacked sections (Still open / Verdict / Decided table / Flagged / Your comments / Checklist).
+## Not drawn
 
-- Head: `Summary` + `N still open` state, then one 14.5px count line.
-- Grid: `minmax(0,1fr) 288px`, 32px gap, max 1080px. At 390px one column, rail under the ledger behind a top rule.
-- **Ledger** (one `<table>`, two `<tbody>` groups: `Still open N`, `Decided N`): number (muted, tabular), state icon, title link (13.5px 500), decision in words at the right (`Approve`/`Flag` secondary ink; `Undecided`/`Being checked` muted; `Changed` amber). Under the title at 13px: the flag note in quotes; your own comments in accent text with the person icon and muted mono `file:line`; why it is open. Review requests add `Comments the session drafted` under the ledger.
-- **Finish rail** (sticky, 1px left rule, 24px padding): `Verdict`, `No verdict yet.` / `Your verdict: <label>`, the session's verdict options stacked full width as radios, the primary finishing action (disabled until a verdict), any secondary action, a 12.5px hint naming what goes where, then the checklist (compact).
-- Boards: Screens → Summary step (own change and review request, with and without verdict, 390px) and Being checked → Summary.
-
-### 5. Help sheet
-
-- `?` or More → `Help: what things mean`. Three columns: queue icons in words; progress-bar colours and the ink marker; note labels (Finding, Note, Thread, Your comment); session statuses; then keyboard shortcuts.
-- Board: Screens → Help: what things mean.
-
-### 6. Round 3 states
-
-- **Being checked:** neutral notice under the title with the dashed not-checked icon (`The session is still checking this step. Findings may still arrive.`); queue sub-line `Being checked` (muted, never amber); Approve and Flag disabled with hint `Decide once the session has checked this step.` (Ask and line comments stay live; A, F and swipe decide nothing); Summary lists it as `Being checked`.
-- **Late finding:** amber banner under the header (`New finding on step 8, <title>, which you approved.` / `3 new findings on steps 3 and 8.`) with `Go to step` and a dismiss; the decided step returns to the queue with its decided icon and amber `New finding`. On the step itself (new): an amber-wash line under the title (`A finding arrived after you approved. Your decision stays; change it if the finding matters.`), the note labelled `line N · new since you approved`, and an action bar of `Change decision`, Ask, and amber `1 new finding`.
-- **Files to skim** (folded step): collapsed summary line (chevron, `18 files` never wrapping, distinct reasons joined by ` · ` with one ellipsis, problem tag); problems shown under it even when collapsed; opened, a grid of path (max 45%) / reason (wraps) / Show diff; at 390px the reason goes under the path. Insert `<wbr>` after `/` in paths so they break cleanly. Export lists every file open with path, reason and diff; images read `Binary image · W × H · replaced`.
-- **File headers:** flush, no margin between files, opened or collapsed.
-- **Notes:** the note block is `max-width: 66ch`, so its `…` menu (`right:0`) opens at the end of the text column on step notes, line notes and notes on Files to skim.
-
-### 7. Motion (see `prototype.html`; specs in `DESIGN.md` → Motion)
-
-| Interaction | Normal | Reduced |
-|---|---|---|
-| Decide (Approve/Flag) | Row lifts as a chip (clone, float shadow) and travels into `N decided` (320ms ease-out, opacity held to 75% then linear out); original row hides (60ms); rows below close (height 320ms after 120ms); `N decided` flashes surface tint (200ms after 240ms); its new count fades in after 240ms (WAAPI `fill:'backwards'`, no timers) | Row fades 200ms, then snaps shut; no chip |
-| Verdict | Chosen label flies as a chip into the header verdict slot (transform 440ms ease-out; opacity held to 62% then linear out); slot fades in over the same 62–100% window; on a change the old label fades under it and the slot width eases | Slot fades in; old label out then new in |
-| Hide/show To review | Contents fade 100ms, width collapses 200ms after 60ms, edge button fades in after 200ms; show reverses with width 320ms | Contents fade, width snaps |
-| File collapse / Viewed | Grid rows: open 320ms, close 200ms after an 80ms content fade; chevron rotates 90° in 120ms; Viewed folds the file and reveals the `Viewed` label | Content fades, rows snap |
-| Pane swap | Old pane leaves to −12px (100ms), new enters from +12px (200ms after 100ms); the leaving pane collapses with a 1ms animation at 100ms, not a timer | Fades only |
-| Popovers | Open 120ms fade + 200ms settle from 4px up at 98% scale, from the opener's corner; close 80ms ease-in | Fade only |
-| Accent change | Registered `@property` colours cross-fade 320ms | Same |
-
-Rules learned in review: start every animation in the same task as the click (no `setTimeout` to begin motion); keep the leaving element painted until its exit ends; give layout transitions explicit selectors so broader `transition` rules don't override them.
-
-## Round 4: one traffic-light status set
-
-Boards: Screens → the five "Round 4" sections at the top (header bar, To review, Summary, checklist, Help legend). `DESIGN.md` → Colors → Status has the token table with contrast numbers.
-
-### 1. Tokens (light / dark)
-
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--ok` / `--ok-bg` | #1a7340 / #e4f4ea | #5fd38d / #15301f | decided positive, checklist met, Approve swipe chip |
-| `--amb` / `--amb-bg` | unchanged | unchanged | needs you: flagged, open finding, changed since decided, new finding, problem, partly met |
-| `--bad` / `--bad-bg` | #b3261e / #fbe7e5 | #ff8a80 / #3b1a18 | checklist not met only; `--rust` now aliases `--bad` |
-| `--neu` | #7b838d | #8a929c | decided with a tone-less action (icon and bar segment) |
-| `--live` | #3a4048 | #c3c8cf | Listening status: now secondary ink, not green |
-
-The accent no longer carries status anywhere: remove it from progress segments, queue icons and decided fills.
-
-### 2. Tone on actions
-
-- Each action the session records carries `tone: "positive" | "attention" | "none"`. Defaults: Approve positive, Flag attention. Verdict labels carry tone the same way (Approve / Ready for colleagues positive; Request changes / Needs fixes attention; Comment none).
-- A step's display state: current → `cur` (ink); decided positive → `ok`; decided attention → `flag`; decided none → `neu`; changed since decided → `reo`; undecided with an open finding or problem → `find`; anything else undecided (read or not) → `un`. Read-but-undecided has no look of its own any more (keep tracking it in data).
-
-### 3. Where it shows
-
-- **Header bar:** `ok` solid green; `flag`/`reo`/`find` amber hatched (`repeating-linear-gradient(135deg, amber 0 3px, amber@45% 3px 5px)`); `neu` outlined, no fill (`box-shadow: inset 0 0 0 1.5px var(--neu)`) so it differs from Approve by shape, not just shade; `un` faint rule-tone fill; current solid ink 9px. Segment tooltips name the step and state ("4 Parse due dates in the API: Flag, needs you"). No red in the bar.
-- **To review:** icons `ok` green filled check, `flag` amber filled flag, `find` amber triangle, `reo` amber return arrow, `neu` grey filled dash, `un` muted ring, current ink ring with dot. Sub-lines take the colour: "1 open finding", "Changed since you decided" (amber), "Checklist · not met" (red), "Checklist · partly met" (amber); inside "N decided": "Approve" green, "Flag" amber, tone-less label muted.
-- **Summary ledger:** icon and the decision word in the same colour (Approve green, Flag and Changed amber, tone-less secondary ink, Undecided muted). Open findings and problems as amber sub-lines with the triangle.
-- **Verdict:** header status and "Your verdict: <label>" and the chosen option's icon take the verdict's tone.
-- **Checklist:** status word right-aligned in the status colour: Met green, Partly met amber, Not met red, Not checked yet muted; icons circle-check, circle-minus, circle-cross, dashed ring.
-- **Swipe:** Approve chip `--ok` on `--ok-bg`; Flag stays amber.
-- **Buttons:** unchanged. Approve is never green.
-- **Help:** legend rows for every step and checklist state, the bar fills, and the ink marker.
-- **Prototype:** Approve fills the segment green, Flag fills it hatched amber.
-
-### 4. Done when
-
-- No status uses the accent; grep for `--acc` in status selectors.
-- Every coloured state also shows its icon and word; a greyscale screenshot still distinguishes every state, including the bar (solid, hatched, outlined, faint, taller ink).
-- Green appears only for decided-positive or met (plus diff washes); red only for not met.
-
-## Round 5: simple and short
-
-Boards: Screens → the ten "Round 5" sections at the top, each with Before (round 4) and After, light and dark, 1440 and 390. Every string change is in `COPY-round-5.md`; the caps and the session's slot shapes are in `DESIGN.md` → Words. The prototype is updated to the round 5 header, step, notes and action bar.
-
-### 1. Header
-Mark only; branch label (tooltip names the kind); bar; `Step 4 of 9` / `Summary`; verdict (once chosen); `Finish` with the flag icon; status dot (Listening is the dot alone, tooltip "Listening: questions reach the session now"; Working, Needs you, Session gone show their word); More holds Appearance, Help, End session.
-
-### 2. To review
-One line per row: icon, title, at most one badge (amber ⚠ + count for findings or problems, amber "new", grey count of unread on Session messages; "Being checked" is the only sub-line). Criteria are removed from the queue.
-
-### 3. A step
-No "Undecided" tag (a decided step shows its outcome tag: "Approved" green, "Flagged" amber, or the label). One-sentence explanation + `More`. Chips row replaces the facts rail (file chips with +/− and ⚠ count, notes count, criteria chips, `N assumption` chip that opens the assumptions). File headers carry ⚠ and 💬 counts that jump. Action bar: `Approve` and `Flag` with icons and key caps, Ask field with icon, `⚠ N open` link. Being checked: notice "Still checking this step. Findings may arrive." and hint "Decide after the check". Late finding: banner "New finding on step 8, which you approved." with `Go to step`.
-
-### 4. Note actions: what the session records
-For each action on a note, the session records:
-
-| Field | Type | Rule |
-|---|---|---|
-| `label` | string | ≤ 3 words, names the outcome ("Add to fixes", "Not an issue") |
-| `tone` | `"positive" \| "attention" \| "none"` | colours the outcome, never the button |
-| `consequence` | string, optional | ≤ 8 words, where it goes or what it costs ("Goes on the fix list.") |
-| `outcome` | string | ≤ 3 words, past tense, shown after deciding ("Added to fixes") |
-| `asks_reason` | boolean | opens "Why? (optional)"; empty is allowed |
-| `primary` | boolean | at most one per note; its consequence shows under the buttons |
-
-And for each note: `kind` (≤ 2 words) and `needs_decision` (boolean; false = no buttons, folds once read).
-Render: buttons neutral; the primary action's consequence as one muted line under the buttons (always, so it works without hover), every consequence in tooltips. After deciding: fold to one line with the outcome icon (check / cross / eye) in its tone, "Kind: text" muted, `Undo` and `Change`. Ignored notes stay, 75% opacity, counted nowhere. Drafts show `Edit` and `Drop`; no Post.
-
-### 5. Summary
-Count line "4 left · 8 go out". Sections: Still open (one row each with its own small buttons; click goes to the exact place), Goes out (your comments and drafts, one line each; tags only Edited/Dropped; Edit/Drop), Checklist (segmented Met/Partly/Not met; session's mark pressed; press to overrule), "N steps decided" fold. Rail: verdict, one send button, one hint. After sending: green-wash "Sent" box with one line of what went and a link. No session replies in the rail.
-
-### 6. Checklist, Session messages, Help, phone, list, export
-- Checklist page: same one-line rows with the segmented control; evidence opens under a row.
-- Session messages: unread first with an accent dot; a question opens with its answer buttons; read ones fold; "On removed code" and "Not in any step" groups.
-- Help: Icons and Keys only.
-- Phone: same trims; the swipe card shows title, one sentence, chips and the finding.
-- List page: one line per walkthrough (name, mini bar, "N left" or "Sent", verdict, time). Export: one line per step with its outcome, then flagged steps in full.
-
-### 7. Done when
-- No string exceeds its cap (DESIGN.md → Words); every "remove" in COPY-round-5.md is gone.
-- A draft, criterion, finding or message appears once per screen.
-- No list row wraps; each has its full text in a tooltip and on the item.
-- After any note action, the note shows its outcome icon and word without hover.
-
-## Done when
-
-- Every string in item 1 is gone from the page (grep the templates).
-- No element relies on colour or an icon alone; Help lists every icon and colour used.
-- Light and dark, 1440 and 390, match the boards; keyboard focus is visible everywhere; 200% zoom does not clip the header.
-- Each motion row above works in both normal and reduced motion, and repeated or interrupted clicks don't stack ghosts or leave rows half-collapsed.
-
-## Known open items
-
-- Kind label: the boards show an icon; as built it has none (ADR 0005). Keep it icon-less.
-- Round 4 boards still use flush file headers; section 5 of the round 4 brief (32px between files, tinted headers) is being built alongside and is not drawn here.
-- Not drawn: the swipe deck while a step is being checked, Session messages in the export, the Help sheet at 390px.
-- Not re-reviewed after the last change: the ink stepper marker's motion, and the decided count waiting for the chip.
+- The theme menu open, and the image diff in this design (keep Diff / Preview on a transparency checker as built).
+- The two Send to agent states and "Changed since last view" at 390 (same components, one column).
+- The prototype does not act out decisions 2 and 3; the boards show them.
+- Out of scope: a session liveness heartbeat.

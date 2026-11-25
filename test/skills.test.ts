@@ -17,10 +17,10 @@ describe('the skills', () => {
     expect(shared(requested)).toBe(shared(own));
   });
 
-  test('each starts its walkthrough with its own kind and reads only its own part of the policy', () => {
-    expect(skill('walkthrough')).toContain('walkthrough start --kind own');
+  test('only /walkthrough:pr starts a pull request, and each reads only its own part of the policy', () => {
+    expect(skill('walkthrough')).not.toContain('--pr <number>');
     expect(skill('walkthrough')).toContain('"Shared rules" and "My change"');
-    expect(skill('pr')).toContain('walkthrough start --kind requested');
+    expect(skill('pr')).toContain('--pr <number>');
     expect(skill('pr')).toContain('"Shared rules" and "Someone else\'s change"');
   });
 

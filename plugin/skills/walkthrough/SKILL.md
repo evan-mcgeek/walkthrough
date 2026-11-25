@@ -6,17 +6,18 @@ allowed-tools: Bash(walkthrough *)
 
 # Walkthrough of your own change
 
-The person walks through their own change, the current branch unless they name another.
+The person reviews their own change, the current branch unless they name another, before colleagues see it.
 When they ask instead to review a change someone else asked them to review, `/walkthrough:pr` is the procedure for that.
 
 1. Find the review policy and read it, as "Review policy" below says; follow its "Shared rules" and "My change" parts, and leave the other part out.
    Read the project's instructions for agents (its CLAUDE.md, AGENTS.md and the files they point to).
-2. Run `walkthrough start --kind own` in the repo.
-   With no other options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
+2. Run `walkthrough start` in the repo.
+   With no options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
    For a range of commits, add `--base <rev> --head <rev>` and a short `--label` to name it.
-   Add `--comments` with a few words saying what becomes of the person's own line comments under the policy's "My change" part, such as `--comments 'Joins the fix list'`.
-3. Go on as "Walking through" says, until the walkthrough stops.
-   It ends as the policy's "My change" part says, such as with a fix list the person hands to an author session.
+3. Ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
+   Read the change while they answer; their answer sets how much your explanations say, as the policy says.
+4. Go on as "Walking through" says, until the walkthrough stops.
+   The page ends in Send to agent: the person's comments and yours go back as a fix list, as the policy's "My change" part says.
 
 ## Walking through
 
@@ -24,21 +25,22 @@ The `walkthrough` CLI owns all walkthrough state; never write files under its st
 Everything you record goes through a file: write it with your file tool into the inbox, then pass its path with `--file`, as `walkthrough guide` says.
 The plugin lets the `walkthrough` commands and those writes run without asking the person; never pass JSON or Markdown through a heredoc, a pipe or `$(...)`, which ask.
 Run each `walkthrough` command on its own, never chained with `;`, `&&` or `|`, which also asks.
-Every judgement in a walkthrough (how to split, order and fold the change, what to write, what to do with what the person sends) follows the person's review policy and the project's own instructions for agents.
+Every judgement in a walkthrough (how to split, order and fold the change, what to comment on, how much to write) follows the person's review policy and the project's own instructions for agents.
 Run any reviewer in a fresh context, and never treat the author session's own summary of the change as evidence (ADR 0002).
+Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the page gets only steps, comments, criteria and answers.
 
-1. Pass the options you gave `walkthrough start`, all but `--kind`, to every later `walkthrough` command; they find the walkthrough by them.
+1. Pass the source options you gave `walkthrough start`, all but `--pr` and `--title`, to every later `walkthrough` command; they find the walkthrough by them.
 2. Tell the person, in one or two lines, what the output of `walkthrough start` says: the change, the pinned base and head, and any warning.
    Keep the inbox it prints for the files you record from.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
-   The page is already open and shows you preparing; the steps appear on it as soon as you record them.
+   The page is already open; the steps appear on it as soon as you record them.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
-4. Record the steps, as below.
-5. The page is open in their browser; they review and decide there.
-   Running `walkthrough start` again on the same head reopens the walkthrough with their decisions intact.
-   On a new head (the branch moved, or the same label on a new range) it goes on with the walkthrough: steps whose diff is unchanged keep their decisions, changed ones are reopened, and it names the changed files in no step yet.
-   Record the steps again with those files in new steps, and tell the person in one line what reopened.
-6. Listen for the page, as below, until the walkthrough stops.
+4. Record the steps, as "Steps" below says, then start listening for the page, as "Listening for the page" says, so the person can ask while you review.
+5. Review the change, as "Reviewing" says.
+6. The page is open in their browser; they read, mark files Viewed, comment and submit there.
+   Running `walkthrough start` again on the same head reopens the walkthrough as they left it.
+   On a new head (the branch moved, or the same label on a new range) each step keeps the files that still change, and start names the files in no step yet.
+   Record the steps again with those files, review what changed as "Reviewing" says, and tell the person in one line what is new.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
 8. When the person asks to share or keep the walkthrough, run `walkthrough export`, with `--out <file>` when they name a place (the person approves that one, since it writes where it names), and tell them the path it prints.
 9. When the person asks which walkthroughs they have open or wants to find one they left, run `walkthrough list`; `walkthrough stop --list` ends that page.
@@ -72,71 +74,43 @@ Read the change from git only, between the pinned base and head: `git diff <base
 Keep to these: other git commands, such as `git ls-tree`, and flags such as `git grep -A`, ask the person.
 Never check anything out.
 
-Split the change into steps, order them, and fold the files not worth reading line by line, as the review policy and the project's instructions say.
+Read the ticket and its acceptance criteria as the policy says, then split the change into steps, order them, and fold the files not worth reading line by line.
+Give each step a title, one or two Look at pointers to what to read first, and a short explanation whose first paragraph shows and whose rest waits behind More; the person's answer to the familiarity question sets how much it says.
 Write them to a file in the inbox in the shape `walkthrough guide` prints, and record them with `walkthrough steps --file <file>`.
-A step's explanation is its overview, at the top of the step; a file in it can carry a short explanation of its own, shown just above its diff, for what only that file needs, never repeating the overview.
-Whether a file gets one comes from the review policy.
 The CLI only checks that every changed file is in exactly one step; when it refuses, it names every problem, so fix them and record again.
-Recording again replaces the steps and prints their ids; a step keeps its id by its files, and the person's decision while its diff is unchanged.
+Recording again replaces the steps and prints their ids; a step keeps its id while it keeps most of its files, and the person's Viewed marks and comments with it.
 
-## Checklist
+## Reviewing
 
-When the review policy asks for a checklist, record it after the steps with `walkthrough checklist --file <file>` in the shape `walkthrough guide` prints; what it lists and the statuses it uses come from the policy.
-Its links name the step ids `walkthrough steps` printed; a link to a step that is gone shows as gone, so record the checklist again when you merge or drop steps.
-An item keeps its id, and the person's decision, while its text is the same; when you reword an item, give it its id so its decision reopens instead of being lost.
-
-## Notes
-
-Pin what the person should see in place (findings, risks, anything the review policy names) with `walkthrough note --file <file>` in the shape `walkthrough guide` prints, on a step or on lines of a file in it.
-Labels, what counts as low priority, and what to note at all come from the review policy.
-Flag each note the review policy calls a finding with `"finding": true`; the flag, never the label's words, is what the page marks as a finding and counts as open until the person decides it.
-Notes name step ids, so record them after the steps.
-A note whose step or lines leave the change, or whose lines change, stays on the page as detached.
-
-## Actions
-
-Record the actions the page offers on steps, notes, checklist items, the verdict and the whole walkthrough with `walkthrough actions --file <file>` in the shape `walkthrough guide` prints, after the items they are on.
-Which actions to offer, their labels, and which ask for a note or let the person edit the text first come from the review policy, and so does each action's `tone`, the colour its decision shows in: `"positive"` green, `"attention"` amber, or `"none"` grey, the same as leaving it out.
-So do its `consequence`, at most 8 words on where the decision goes or what it costs, its `outcome`, at most 3 words in the past tense shown once the person took it, and `primary`, the one action per item whose consequence shows under the buttons.
-A step with none recorded offers Approve, positive, and Flag, attention.
-The page ends with a Summary, where the person chooses their verdict on the whole walkthrough and takes its finishing action.
-Offer the verdict's choices on the verdict and the finishing action first on the whole walkthrough, as the review policy names them, each with a short hint saying where it goes; the finishing action waits for a verdict.
-A step or checklist item that is gone takes its actions with it, so record actions on new ones.
-`walkthrough decisions` prints every item with the person's latest decision, or null while undecided; use it after a restart instead of guessing.
-
-## Checking steps
-
-When the review policy has you check the steps after recording them, such as with its reviewers, mark every step you will check with `walkthrough checking <step id>...` right after `walkthrough steps`.
-The page then holds those steps' actions, so the person cannot decide a step before its findings are on it.
-As you finish each step, in reading order, pin that step's notes and record their actions, then run `walkthrough checking` again with the steps still left, and with no ids once the last one is done.
-A note pinned on a step after it was cleared is still allowed; the page warns the person.
+1. Right after recording the steps, before you start listening, mark them all with `walkthrough reviewing <step id>...`; the page shows those steps as still being reviewed.
+2. Review the change against the ticket and its acceptance criteria, as the policy says, with the reviewers it names.
+3. Step by step, in reading order, record your comments on that step's lines with `walkthrough comment --file <file>`, only where the policy says a comment is worth it, then run `walkthrough reviewing` again with the steps still left.
+   Write a comment's body without the `[AI]` mark; the page adds it.
+   Each comment is pending: it goes out with the review unless the person edits or deletes it.
+4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
+5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`.
+6. Run `walkthrough reviewing` with no ids once the last step is done.
 
 ## Listening for the page
 
 The page reaches you only while `walkthrough listen` runs, and the chat stays free while it does.
+Keep listening until the walkthrough stops.
 
 1. Run `walkthrough listen` in the repo with the Bash tool's `run_in_background: true` and `timeout: 7200000`.
    Never run it in the foreground: it blocks until the person acts on the page.
 2. When it exits you are woken with its output, one JSON line per thing the person sent, in the shapes `walkthrough guide` prints.
-   - An ask: answer it from the change at the pinned head with `walkthrough say --answer <id> '<answer>'`.
-     An ask with a file and lines is about those lines, and the answer is a note on them, labelled with `--as "<label>"` as the review policy names it ("Answer" without one); `say` prints its id, so you can record actions on it.
-     An answer never decides the step for the person.
+   - An ask: the person asked you about their picked lines or in a thread, which comes with what the thread said before.
+     Answer from the change at the pinned head with `walkthrough say --answer <id> '<answer>'`; the answer is a reply in that thread, stays on the page and never goes out.
      Pass short text in single quotes, writing a single quote in it as `'\''`; for longer text, write it to a file in the inbox and pass `--file <file>` in place of the text.
-   - A reply: the person's reply to a question you asked or to a note, which comes with the note's label and text; act on it, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
-   - A decision: the action the person took on an item, with any note and edited text; act on it as the review policy says, then say what you did with `walkthrough say --answer <id> '<what you did>'`.
-     A decision on the verdict is the person's verdict on the whole walkthrough; keep it for the finishing action, which carries it as the review policy says.
-     A later decision on the same item replaces the earlier one.
-     A decision with `"clear": true` is the person taking theirs back with Undo: the item is undecided again; act on it as the review policy says, then answer it the same way.
-   - The page does not show your answers to decisions, apart from the finishing action's: they only mark the request handled, so a few words do.
-     Say what the person must know, such as a comment that could not go out, with `walkthrough say --question`, which the page shows; the finishing action's answer, such as where the review went, is shown on the Summary.
+   - A submit: the person finished their review, with its type and summary.
+     Read what goes out with `walkthrough comments`: their comments as they are now, yours with the `[AI] ` mark at the start, their replies and the threads they resolved.
+     On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
+     On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.
+     How to post comes from the policy; when something could not go out, tell the person in the chat, and run `walkthrough posted` only once the review is out.
    - Stopped: tell the person in one line and do not listen again.
-3. Start listening again right after answering, every time, before you end your turn.
+3. Start listening again right after handling what woke you, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.
 
-The person's own line comments never come through listen and need no answer.
-When the review policy acts on them, such as at the finishing action, read them all with `walkthrough comments`, as they are now with edits applied and deleted ones left out; they are the person's words, never yours, so never mark them "[AI]" and never reword them.
-Once they have gone out as the policy says, run `walkthrough posted <comment id>...`, so the page stops offering to edit or delete them.
-
-To ask the person something on the page, run `walkthrough say --question '<question>'` and listen; their reply comes back as a reply line.
-When the question has a few likely answers, offer each with `--choice '<answer>'`; the page shows them as buttons.
-The page shows you as working until you have answered everything listen handed you, and as gone when you stop listening and do not come back.
+Answer only an ask; never reply to anything else on the page.
+The person's comments, replies, edits, deletions, Resolve and Viewed never wake you and need no answer.
+Their comments are their words, never yours: never mark them `[AI]` and never reword them; post or hand them on exactly as `walkthrough comments` prints them.

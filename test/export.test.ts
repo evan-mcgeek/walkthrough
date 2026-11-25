@@ -16,7 +16,8 @@ describe('walkthrough export', () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    repo.record([{ step: '1', file: 'login.ts', lines: [1, 1], label: 'Risk', text: 'Everyone gets in.' }], 'note');
+    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.' }], 'comment');
+    repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria');
     const out = path.join(path.dirname(repo.dir), 'login.html');
 
     const exported = repo.run('export', '--out', out);
@@ -25,11 +26,10 @@ describe('walkthrough export', () => {
     expect(exported.stdout).toContain(`Exported the walkthrough of feature/login to ${out}.`);
     const html = fs.readFileSync(out, 'utf8');
     expect(html).toContain('Everyone gets in.');
-    expect(html).toContain('export const login = () => true;');
-    expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; script-src 'sha256-/);
-    expect(html).not.toMatch(/<(script|link|img)\b[^>]*\b(src|href)="(?!data:)/i);
-    // The favicon travels inside the file, after the policy that allows it.
-    expect(html).toMatch(/content-security-policy[\s\S]*<link rel="icon" href="data:image\/svg\+xml;base64,/);
+    expect(html).toContain('Logs in: Partly met');
+    expect(html).toContain('login = () =&gt; true;');
+    expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
+    expect(html).not.toMatch(/<(script|link|img)\b/i);
     // The self-hosted code font travels inside the file.
     expect(html).toContain('font-src data:');
     expect(html).toContain('data:font/woff2;base64,');
@@ -48,15 +48,6 @@ describe('walkthrough export', () => {
     expect(out.startsWith(repo.state)).toBe(true);
     expect(fs.existsSync(out)).toBe(true);
     expect(repo.run('start').stdout).not.toContain('uncommitted');
-  });
-
-  test('walkthrough guide names export and list', () => {
-    repo = makeRepo();
-
-    const guide = repo.run('guide').stdout;
-
-    expect(guide).toContain('walkthrough export [--out <file>]');
-    expect(guide).toContain('walkthrough stop --list ends it');
   });
 
   test('of a walkthrough never started is refused', () => {

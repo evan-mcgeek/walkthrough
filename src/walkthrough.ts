@@ -1,34 +1,32 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
 import type { Change, Source } from './change';
-import { type Action, type Item, itemKey, nameOf } from './items';
+import type { Lines } from './lines';
 import { locked, readJson, readSavedJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
-export type FoldedFile = { path: string; reason: string };
-export type Step = { id: string; title: string; diff: string } & (
-  | {
-      kind: 'step';
-      explanation: string;
-      assumptions: string[];
-      files: string[];
-      /** The session's short explanation of a file, by its path, for the files it gave one. */
-      fileExplanations?: Record<string, string>;
-    }
-  | { kind: 'folded'; files: FoldedFile[]; problems: string[] }
-);
-/** The icon the page shows beside an item's status; the session chooses it, since a status is its own free text. */
-export const MARKS = ['met', 'partly', 'not-met', 'unchecked'] as const;
-export type Mark = (typeof MARKS)[number];
-export type ChecklistItem = { id: string; status: string; mark?: Mark; text: string; steps: string[] };
-export type Checklist = { title: string; description?: string; items: ChecklistItem[] };
+/** One of the lines the AI points the person to first: `start` to `end` of `file`, named in a few words. */
+export type Look = { file: string; start: number; end: number; label: string };
+export type Step = {
+  id: string;
+  title: string;
+  explanation: string;
+  files: string[];
+  /** The one-line reason a generated or copied file arrives folded, by its path. */
+  folded?: Record<string, string>;
+  look: Look[];
+  diff: string;
+};
+export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;
+export type Criterion = { text: string; status: (typeof CRITERION_STATUSES)[number] };
+export type Said = { author: string; at: string; body: string };
+/** A colleague's thread already on the change, by the id the session gave it. */
+export type Thread = Said & { id: string; file: string; lines: Lines; resolved?: true; replies: Said[]; linesHash?: string };
 export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
-  /** The session's own name for the kind of walkthrough, which the page shows and nothing reads. */
-  kindLabel?: string;
-  /** The session's own words for what becomes of the person's comments, which the page shows under each. */
-  commentHint?: string;
+  /** Set for a pull request: the review goes out with Submit review, else to the agent. */
+  pr?: { number: string; title: string };
   base: string;
   head: string;
   /** Empty until the session records its steps. */
@@ -37,14 +35,10 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   unplaced?: string[];
   /** The highest step id given out, so the id of a step gone is never given again. */
   lastStep?: number;
-  /** The ids of the steps the session is still checking, in reading order; why is the session's own. */
-  checking?: string[];
-  checklist?: Checklist;
-  /** The highest checklist item id given out, never given again. */
-  lastChecklistItem?: number;
-  actions?: Record<string, Action[]>;
-  /** The session's words under the verdict's or the walkthrough's actions, such as where the verdict goes, by item key. */
-  hints?: Record<string, string>;
+  /** The ids of the steps the AI is still reviewing, in reading order. */
+  reviewing?: string[];
+  criteria?: Criterion[];
+  threads?: Thread[];
 };
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
@@ -60,32 +54,45 @@ export function walkthroughDir(repo: string, source: Source): string {
   return path.join(stateDir(), repo, name);
 }
 
-export const readWalkthrough = (dir: string) => readJson<Walkthrough | null>(file(dir), null);
+/** A range's target is a commit when its base named no branch. */
+export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target);
+
+export const nameOf = (named: { kind: 'branch'; branch: string } | { kind: 'range'; label: string }) =>
+  named.kind === 'branch' ? named.branch : named.label;
+
+const EARLIER_FIELDS = ['kindLabel', 'commentHint', 'checking', 'checklist', 'lastChecklistItem', 'actions', 'hints'];
+
+/** A walkthrough saved by an earlier release keeps its place and ids, but its steps, in an older shape, are recorded again. */
+function current(saved: Walkthrough | null): Walkthrough | null {
+  if (!saved) return null;
+  const upgraded = Object.fromEntries(Object.entries(saved).filter(([key]) => !EARLIER_FIELDS.includes(key))) as Walkthrough;
+  if (!saved.steps.every(step => Array.isArray(step.look) && step.files.every(one => typeof one === 'string'))) upgraded.steps = [];
+  return upgraded;
+}
+
+export const readWalkthrough = (dir: string) => current(readJson<Walkthrough | null>(file(dir), null));
 // Before a write: a saved walkthrough taken for none would be started over, giving its step ids out again.
-const savedWalkthrough = (dir: string) => (readSavedJson(file(dir)) as Walkthrough | undefined) ?? null;
+const savedWalkthrough = (dir: string) => current((readSavedJson(file(dir)) as Walkthrough | undefined) ?? null);
 
 export function openWalkthrough(
   dir: string,
   source: Source,
   change: Change,
-  /** The session's labels given to this start; a label left out keeps the one given before. */
-  labelled: Pick<Walkthrough, 'kindLabel' | 'commentHint'>,
+  /** Given to this start; left out, the one given before stays. */
+  pr: Walkthrough['pr'],
   carry: (moved: Walkthrough) => Promise<{ steps: Step[]; unplaced: string[] }>,
-): Promise<{
-  walkthrough: Walkthrough;
-  opened: 'new' | 'resumed' | 'moved';
-}> {
+): Promise<{ walkthrough: Walkthrough; opened: 'new' | 'resumed' | 'moved' }> {
   return locked(file(dir), async () => {
     const saved = savedWalkthrough(dir);
+    const given = pr ? { pr } : {};
     if (saved?.head === change.head && saved.base === change.base) {
-      if (Object.entries(labelled).every(([key, value]) => saved[key as keyof typeof labelled] === value))
-        return { walkthrough: saved, opened: 'resumed' };
-      const relabelled = { ...saved, ...labelled };
+      if (!pr || JSON.stringify(saved.pr) === JSON.stringify(pr)) return { walkthrough: saved, opened: 'resumed' };
+      const relabelled = { ...saved, pr };
       writeJson(file(dir), relabelled);
       return { walkthrough: relabelled, opened: 'resumed' };
     }
     if (saved) {
-      const moved = { ...saved, ...labelled, target: change.target, base: change.base, head: change.head };
+      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head };
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
       // Before any steps, the page shows the session preparing them instead.
@@ -96,7 +103,7 @@ export function openWalkthrough(
     const walkthrough: Walkthrough = {
       ...(source.kind === 'branch' ? { kind: 'branch', branch: source.branch } : { kind: 'range', label: source.label }),
       target: change.target,
-      ...labelled,
+      ...given,
       base: change.base,
       head: change.head,
       steps: [],
@@ -106,7 +113,7 @@ export function openWalkthrough(
   });
 }
 
-function update<T>(dir: string, change: (walkthrough: Walkthrough) => T | Promise<T>): Promise<T> {
+export function updateWalkthrough<T>(dir: string, change: (walkthrough: Walkthrough) => T | Promise<T>): Promise<T> {
   return locked(file(dir), async () => {
     const walkthrough = savedWalkthrough(dir);
     if (!walkthrough) throw new Error('there is no such walkthrough yet; run walkthrough start first');
@@ -116,61 +123,28 @@ function update<T>(dir: string, change: (walkthrough: Walkthrough) => T | Promis
   });
 }
 
-function keepActions(walkthrough: Walkthrough, keep: (key: string) => boolean): Record<string, Action[]> {
-  return Object.fromEntries(Object.entries(walkthrough.actions ?? {}).filter(([key]) => keep(key)));
-}
-
 function setSteps(walkthrough: Walkthrough, steps: Step[]) {
   walkthrough.steps = steps;
   delete walkthrough.unplaced;
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps.map(step => Number(step.id)));
-  const kept = new Set(steps.map(step => itemKey({ type: 'step', id: step.id })));
-  walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('step:') || kept.has(key));
-  if (walkthrough.checking) walkthrough.checking = steps.map(step => step.id).filter(id => walkthrough.checking?.includes(id));
+  if (walkthrough.reviewing) walkthrough.reviewing = steps.map(step => step.id).filter(id => walkthrough.reviewing?.includes(id));
 }
 
 export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Promise<Step[]>): Promise<Walkthrough> {
-  return update(dir, async walkthrough => {
+  return updateWalkthrough(dir, async walkthrough => {
     setSteps(walkthrough, await build(walkthrough));
     return walkthrough;
   });
 }
 
-/** Replaces the steps the session is still checking; an id that names no step records nothing. */
-export function recordChecking(dir: string, ids: string[]): Promise<string[]> {
-  return update(dir, walkthrough => {
+/** Replaces the steps the AI is still reviewing; an id that names no step records nothing. */
+export function recordReviewing(dir: string, ids: string[]): Promise<string[]> {
+  return updateWalkthrough(dir, walkthrough => {
     const known = walkthrough.steps.map(step => step.id);
     const unknown = [...new Set(ids.filter(id => !known.includes(id)))];
     if (unknown.length)
       throw new Error(`the walkthrough has no ${unknown.length === 1 ? 'step' : 'steps'} ${unknown.join(', ')}; nothing was recorded`);
-    walkthrough.checking = known.filter(id => ids.includes(id));
-    return walkthrough.checking;
-  });
-}
-
-export function recordChecklist(dir: string, build: (walkthrough: Walkthrough) => Checklist): Promise<Checklist> {
-  return update(dir, walkthrough => {
-    const checklist = build(walkthrough);
-    walkthrough.checklist = checklist;
-    const ids = checklist.items.map(item => item.id);
-    walkthrough.lastChecklistItem = Math.max(walkthrough.lastChecklistItem ?? 0, ...ids.map(Number));
-    const kept = new Set(ids.map(id => itemKey({ type: 'checklist', id })));
-    walkthrough.actions = keepActions(walkthrough, key => !key.startsWith('checklist:') || kept.has(key));
-    return checklist;
-  });
-}
-
-export function recordActions(dir: string, build: (walkthrough: Walkthrough) => { item: Item; actions: Action[]; hint?: string }[]) {
-  return update(dir, walkthrough => {
-    const recorded = build(walkthrough);
-    const named = new Map(recorded.map(({ item, actions }) => [itemKey(item), actions]));
-    walkthrough.actions = {
-      ...keepActions(walkthrough, key => !named.has(key)),
-      ...Object.fromEntries([...named].filter(([, actions]) => actions.length)),
-    };
-    const kept = Object.entries(walkthrough.hints ?? {}).filter(([key]) => !named.has(key));
-    const given = recorded.flatMap(({ item, hint }): [string, string][] => (hint ? [[itemKey(item), hint]] : []));
-    walkthrough.hints = Object.fromEntries([...kept, ...given]);
-    return recorded;
+    walkthrough.reviewing = known.filter(id => ids.includes(id));
+    return walkthrough.reviewing;
   });
 }

@@ -14,4 +14,4 @@ A step being checked gets the page's third loop: the faded dashed ring with a so
 - [ ] Repeated or interrupted clicks stack no ghosts and leave no row half-collapsed
 - [ ] The designer's open items checked: the 5px shift after Viewed under reduced motion; closing a popover, changing the verdict twice, note actions, reopening a Viewed file, fast repeated decisions
 
-**Status:** ready-for-agent
+**Status:** wontfix (replaced by 59 to 64 after the rescope to VISION.md)
