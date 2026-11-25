@@ -61,7 +61,7 @@ describe('walkthrough guide', () => {
   test('prints the new shapes, and the steps it gives as an example are recorded as they are', () => {
     repo = makeRepo();
     const guide = repo.run('guide').stdout;
-    for (const shape of ['walkthrough reviewing', 'walkthrough comment --file', 'walkthrough threads --file', 'walkthrough criteria --file', '{"kind": "submit"', 'walkthrough say --answer'])
+    for (const shape of ['walkthrough open', 'walkthrough ready', 'walkthrough comment --file', 'walkthrough threads --file', 'walkthrough criteria --file', '{"kind": "submit"', 'walkthrough say --answer'])
       expect(guide).toContain(shape);
     for (const gone of ['checklist', 'decisions', 'actions', '--question', 'note --file']) expect(guide).not.toContain(gone);
 

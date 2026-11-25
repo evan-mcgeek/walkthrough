@@ -14,12 +14,13 @@ import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import { parseComments, parseCriteria, parseThreads } from './record';
-import { aiComments, answer, handedAsk, listen, markPosted, reviewComments } from './review';
+import { aiComments, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments } from './review';
 import {
+  markOpened,
+  markReady,
   nameOf,
   openWalkthrough,
   readWalkthrough,
-  recordReviewing,
   recordSteps,
   targetName,
   updateWalkthrough,
@@ -83,7 +84,23 @@ async function start(args: string[]): Promise<void> {
       `Warning: ${plural(change.uncommitted, 'uncommitted change')} ${change.uncommitted === 1 ? 'is' : 'are'} left out of this walkthrough.`,
     );
   console.log(`Write what you record to files in ${inbox} and pass each with --file.`);
+  // A listen left from before is not this session's, which the page waits for until it is ready.
+  if (walkthrough.ready === false) await forgetStoppedListener(dir);
+  await ensureServer(dir);
+  console.log('The page is not open yet; walkthrough open opens it.');
+}
+
+async function openCommand(args: string[]): Promise<void> {
+  const { dir } = current(args);
+  await markOpened(dir);
   openPage(await ensureServer(dir), 'The page', dir);
+}
+
+async function ready(args: string[]): Promise<void> {
+  const { dir } = current(args);
+  const opened = await markReady(dir);
+  console.log('The walkthrough is ready; the page shows it whole.');
+  if (!opened) openPage(await ensureServer(dir), 'The page', dir);
 }
 
 // The address carries the page's token, so it goes to the browser and is not printed.
@@ -122,12 +139,6 @@ async function steps(args: string[]): Promise<void> {
   const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
   console.log(`Recorded ${plural(recorded.length, 'step')}: ${recorded.map(step => `${step.id} (${step.title})`).join(', ')}.`);
-}
-
-async function reviewing(args: string[]): Promise<void> {
-  const { dir, positionals } = located(args, { allowPositionals: true });
-  const ids = await recordReviewing(dir, positionals);
-  console.log(ids.length ? `Reviewing ${plural(ids.length, 'step')}: ${ids.join(', ')}.` : 'Reviewing no steps.');
 }
 
 async function commentCommand(args: string[]): Promise<void> {
@@ -204,7 +215,8 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   start,
   files,
   steps,
-  reviewing,
+  open: openCommand,
+  ready,
   comment: commentCommand,
   threads,
   criteria,
@@ -252,7 +264,7 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | reviewing [<step id>...]\n' +
+        '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n' +
         '    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n' +
         '    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
         '    | policy [show | init | save --file <file>]\n' +

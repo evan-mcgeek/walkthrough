@@ -20,11 +20,12 @@ function moveHead(files: Record<string, string>) {
 }
 
 describe('a new head', () => {
-  test('keeps the steps by their files, clears Viewed on a changed file and detaches comments on lines that changed', async () => {
+  test('makes the walkthrough not ready again; keeps the steps by their files, clears Viewed on a changed file and detaches comments on lines that changed', async () => {
     repo = makeRepo();
     repo.run('start');
     repo.record([LOGIN, APP]);
     const page = repo.url();
+    expect(repo.run('ready').status).toBe(0);
     for (const file of ['login.ts', 'app.ts']) {
       await postTo(page, '/viewed', { file, viewed: true });
       await postTo(page, '/comment', { file, lines: [1, 1], text: `On ${file}.` });
@@ -36,6 +37,9 @@ describe('a new head', () => {
 
     expect(started.stdout).toContain('In no step yet: cart.ts.');
     const view = await viewAt(page);
+    expect(view.ready).toBe(false);
+    expect(view.changedFiles.map(one => one.path).sort()).toEqual(['app.ts', 'cart.ts', 'login.ts']);
+    expect(repo.run('ready').stderr).toContain('these files are in no step yet: cart.ts');
     expect(view.steps.map(step => [step.id, step.title])).toEqual([['1', 'Login'], ['2', 'App']]);
     expect(view.viewed).toEqual(['login.ts']);
     expect(view.changed).toEqual(['app.ts']);
@@ -45,5 +49,7 @@ describe('a new head', () => {
     expect(repo.record([{ title: 'Cart', explanation: 'Cart.', files: ['cart.ts'] }, LOGIN, APP]).stdout).toBe(
       'Recorded 3 steps: 3 (Cart), 1 (Login), 2 (App).\n',
     );
+    expect(repo.run('ready').status).toBe(0);
+    expect((await viewAt(page)).ready).toBe(true);
   });
 });

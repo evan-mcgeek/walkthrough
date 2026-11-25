@@ -14,6 +14,7 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   record(repo, STEPS);
   await open(page, url);
 
+  await expect(page).toHaveTitle('feature/login · Walkthrough');
   await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
   await expect(page.getByText('The rest of it.')).toBeHidden();
   await page.getByRole('button', { name: 'More' }).click();
@@ -36,6 +37,7 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   fs.writeFileSync(path.join(repo.dir, 'tasks.ts'), lines(61, 'task'));
   git(repo.dir, 'commit', '-am', 'One more task');
   repo.run('start');
+  repo.run('ready');
 
   await expect(file.getByText('Changed since last view')).toBeVisible();
   await expect(file).not.toHaveClass(/closed/);

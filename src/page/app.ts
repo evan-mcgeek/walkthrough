@@ -5,8 +5,9 @@ import { chooseTheme, loadViewer } from './appearance';
 import { attrs, el, postQuietly, region, showAlert, showUnreachable } from './dom';
 import { pick } from './files';
 import { icon } from './icons';
-import { animate, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
-import { ago, aiReviewing, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile } from './state';
+import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
+import { Opening, openingNav } from './opening';
+import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile } from './state';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
 
@@ -29,19 +30,21 @@ const summary = new SummaryPane(target => {
 });
 /** What arrived where it would have moved the page, folded until the pill opens it. */
 let arrived: HTMLElement[] = [];
+/** Shown until the walkthrough is ready. */
+let opening: Opening | null = null;
 
 const stepAddress = (id: string) => `step-${id}`;
 const firstAddress = () => (state.view.steps[0] ? stepAddress(state.view.steps[0].id) : '');
 
-type At = { kind: 'summary' } | { kind: 'step'; pane: StepPane } | { kind: 'preparing' };
+type At = { kind: 'summary' } | { kind: 'step'; pane: StepPane } | { kind: 'opening' };
 
 /** The step or Summary the address names; a step gone falls back to the first. */
 function current(): At {
   const address = decodeURIComponent(location.hash.slice(1));
-  if (!state.view.steps.length) return { kind: 'preparing' };
+  if (!state.view.ready) return { kind: 'opening' };
   if (address === 'summary') return { kind: 'summary' };
   const step = state.view.steps.find(one => stepAddress(one.id) === address) ?? state.view.steps[0];
-  return step ? { kind: 'step', pane: paneOf(step.id) } : { kind: 'preparing' };
+  return step ? { kind: 'step', pane: paneOf(step.id) } : { kind: 'opening' };
 }
 
 function paneOf(id: string): StepPane {
@@ -78,7 +81,8 @@ function moved(): void {
     settle(shown);
     shown.removeAttribute('inert');
     shown.removeAttribute('aria-hidden');
-    const leaving = old instanceof HTMLElement && !old.classList.contains('preparing');
+    // The Opening leaves by itself.
+    const leaving = old instanceof HTMLElement && !old.classList.contains('opening');
     if (leaving) leave(old, scrolled);
     const still = reduced();
     animate(shown, 'pane-enter', still ? FADE_IN : [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }], {
@@ -178,10 +182,11 @@ const filesViewed = el(
   attrs(el('span', { className: 'bar' }, viewedFill), { 'aria-hidden': 'true' }),
   el('span', { className: 'count' }, viewedNumber, viewedTotal, el('span', { className: 'long' }, ' files viewed')),
 );
-const reviewingNow = attrs(
-  el('span', { className: 'ai-reviewing', title: 'The AI is still reviewing; comments may arrive' }, icon('spinner'), el('span', { className: 'long' }, 'AI reviewing')),
-  { role: 'status', 'aria-label': 'AI reviewing' },
-);
+const filesChanged = el('span', { className: 'files-changed', hidden: true });
+const reviewingNow = attrs(el('span', { className: 'ai-reviewing' }, icon('spinner'), el('span', { className: 'long' }, 'AI reviewing')), {
+  role: 'status',
+  'aria-label': 'AI reviewing',
+});
 const finish = attrs(
   el('a', { className: 'btn primary small finish', href: '#summary', title: 'Go to the Summary (G S)' }, el('span', { className: 'long' }, 'Finish review'), el('span', { className: 'short' }, 'Finish')),
   { 'aria-label': 'Finish review' },
@@ -200,6 +205,7 @@ header.append(
   }),
   changeLabel,
   filesViewed,
+  filesChanged,
   el('span', { className: 'spacer' }),
   finish,
   attrs(el('button', { type: 'button', className: 'icon-button menu-button', onclick: toggleMenu }, icon('more')), {
@@ -223,6 +229,13 @@ function drawHeader(onSummary: boolean): void {
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
   }
+  // The tab says the AI is still reviewing, so it reads from the tab strip; a static mark, since background tabs barely animate.
+  const reviewing = !view.ready && !view.sessionGone;
+  const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
+  if (document.title !== title) document.title = title;
+  const favicon = reviewing ? 'favicon-reviewing.svg' : 'favicon.svg';
+  const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (icon && icon.getAttribute('href') !== favicon) icon.setAttribute('href', favicon);
   const files = allFiles().length;
   const viewed = view.viewed.length;
   viewedTotal.data = ` / ${String(files)}`;
@@ -232,10 +245,15 @@ function drawHeader(onSummary: boolean): void {
     if (shownViewed !== undefined) tick(viewedNumber);
     shownViewed = viewed;
   }
-  finish.hidden = onSummary;
-  if (aiReviewing()) {
+  const ready = view.ready;
+  filesViewed.hidden = !ready;
+  filesChanged.hidden = ready;
+  const changed = view.changedFiles.length;
+  if (!ready) filesChanged.replaceChildren(el('span', {}, plural(changed, 'file'), el('span', { className: 'long' }, ' changed')));
+  finish.hidden = onSummary || !ready;
+  if (!ready && !view.sessionGone) {
     settle(reviewingNow);
-    if (!reviewingNow.isConnected) filesViewed.after(reviewingNow);
+    if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
   } else if (reviewingNow.isConnected)
     fadeOut(reviewingNow, 'base', () => {
       reviewingNow.remove();
@@ -334,7 +352,7 @@ async function endSession(): Promise<void> {
 // The step list is drawn again only when the steps change; Viewed, counts, spinners and the current row change in place.
 let drawnNav = '';
 type NavFile = { file: string; row: HTMLElement; tick: HTMLElement; count: HTMLElement; shown: number };
-let navSteps: { id: string; row: HTMLElement; spinner: HTMLElement; files: NavFile[] }[] = [];
+let navSteps: { id: string; row: HTMLElement; files: NavFile[] }[] = [];
 const pendingCount = el('span', { className: 'file-count' });
 const summaryRow = navLink('summary', 'step-row summary-row', icon('summary'), el('span', { className: 'step-name' }, 'Summary'), pendingCount);
 summaryRow.dataset['key'] = 'summary';
@@ -355,7 +373,6 @@ function buildNav(): void {
   navSteps = state.view.steps.map((step, index) => {
     const row = navLink(stepAddress(step.id), 'step-row', el('span', { className: 'step-number' }, String(index + 1)), el('span', { className: 'step-name', title: step.title }, step.title));
     row.dataset['key'] = `step:${step.id}`;
-    const spinner = attrs(el('span', { className: 'step-reviewing', title: 'AI still reviewing this step' }, icon('spinner')), { role: 'img', 'aria-label': 'AI still reviewing this step' });
     const files = step.files.map(file => {
       const tick = attrs(el('span', { className: 'viewed-tick' }, icon('ring'), icon('met')), { role: 'img' });
       const count = el('span', { className: 'file-count' }, icon('message'), '');
@@ -367,7 +384,7 @@ function buildNav(): void {
       };
       return { file, row: fileRow, tick, count, shown: -1 };
     });
-    return { id: step.id, row, spinner, files };
+    return { id: step.id, row, files };
   });
   const items = navSteps.map(({ row, files }) => el('li', {}, row, el('ul', { className: 'file-list' }, ...files.map(one => el('li', {}, one.row)))));
   nav.replaceChildren(el('ol', { className: 'steps' }, ...items), summaryRow);
@@ -377,22 +394,22 @@ function buildNav(): void {
 
 function drawNav(at: At): void {
   const { view } = state;
+  if (at.kind === 'opening') {
+    const key = view.sessionGone ? 'gone' : 'opening';
+    if (key !== drawnNav) nav.replaceChildren(...openingNav());
+    drawnNav = key;
+    shownPending = undefined;
+    return;
+  }
   const key = JSON.stringify(view.steps.map(step => [step.id, step.title, step.files]));
   if (key !== drawnNav) {
     drawnNav = key;
     buildNav();
   }
   const here = at.kind === 'step' ? at.pane.step.id : at.kind;
-  for (const { id, row, spinner, files } of navSteps) {
+  for (const { id, row, files } of navSteps) {
     if (here === id) row.setAttribute('aria-current', 'page');
     else row.removeAttribute('aria-current');
-    if (view.reviewing.includes(id) && !view.submitted) {
-      settle(spinner);
-      if (!spinner.isConnected) row.append(spinner);
-    } else if (spinner.isConnected)
-      fadeOut(spinner, 'base', () => {
-        spinner.remove();
-      });
     for (const one of files) {
       const seen = view.viewed.includes(one.file);
       one.row.classList.toggle('viewed', seen);
@@ -423,8 +440,16 @@ function render(own: boolean, navigated = false): void {
   drawNav(at);
   document.body.dataset['view'] = at.kind;
   const anchor = navigated ? null : readingAnchor();
-  if (at.kind === 'preparing') {
-    if (!content.querySelector('.preparing')) content.replaceChildren(attrs(el('div', { className: 'preparing' }, icon('mark')), { 'aria-busy': 'true' }));
+  const old = content.firstElementChild;
+  // Everything recorded before ready shows in place, never behind the pill.
+  const fromOpening = !!opening && old === opening.box;
+  if (at.kind === 'opening') {
+    opening ??= new Opening();
+    opening.update();
+    if (old !== opening.box) {
+      content.replaceChildren(opening.box);
+      main.scrollTop = 0;
+    }
   } else if (at.kind === 'summary') {
     summary.update();
     if (content.firstElementChild !== summary.box) content.replaceChildren(summary.box);
@@ -432,12 +457,40 @@ function render(own: boolean, navigated = false): void {
     if (content.firstElementChild !== at.pane.box) content.replaceChildren(at.pane.box);
     const bottom = main.getBoundingClientRect().bottom;
     // Something landing above the bottom of what the reader sees would push what they read.
-    const shows = (element: Element) => !own && element.getBoundingClientRect().top < bottom;
+    const shows = (element: Element) => !own && !fromOpening && element.getBoundingClientRect().top < bottom;
     arrived.push(...at.pane.update(shows, go));
   }
+  if (fromOpening && content.firstElementChild !== old) leaveOpening();
   if (anchor?.element.isConnected) main.scrollTop += anchor.element.getBoundingClientRect().top - anchor.top;
   drawPill();
   for (const time of content.querySelectorAll<HTMLTimeElement>('time.comment-time')) time.textContent = ago(time.dateTime);
+}
+
+/** The Opening fades out, then the walkthrough enters as a step does. */
+function leaveOpening(): void {
+  const leaving = opening;
+  const shown = content.firstElementChild;
+  if (!leaving || !shown) return;
+  opening = null;
+  if (!location.hash && firstAddress()) history.replaceState(null, '', `#${firstAddress()}`);
+  attrs(leaving.box, { inert: '', 'aria-hidden': 'true' });
+  content.append(leaving.box);
+  const scrolled = main.scrollTop;
+  main.scrollTop = 0;
+  const at = `translateY(${String(-scrolled)}px)`;
+  animate(leaving.box, 'pane-leave', [{ opacity: 1, transform: at }, { opacity: 0, transform: at }], { ms: 'fast', curve: 'ease-in', fill: 'forwards' }).finished.then(
+    () => {
+      leaving.stop();
+      leaving.box.remove();
+    },
+    () => {},
+  );
+  const still = reduced();
+  animate(shown, 'pane-enter', still ? FADE_IN : [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }], {
+    ms: 'base',
+    curve: still ? 'linear' : 'ease-out',
+    delay: duration('fast'),
+  });
 }
 
 state.render = own => {
@@ -458,7 +511,7 @@ document.addEventListener('keydown', event => {
   }
   const typing = event.target instanceof HTMLElement && event.target.closest('input, textarea, [contenteditable]');
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
-  if (pendingKey === 'g' && event.key === 's' && state.view.steps.length) go('summary');
+  if (pendingKey === 'g' && event.key === 's' && state.view.ready) go('summary');
   pendingKey = event.key === 'g' ? 'g' : '';
 });
 

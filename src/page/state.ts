@@ -41,9 +41,6 @@ export const threadsIn = (step: string, file: string) => state.view.threads.filt
 export const commentCount = (step: string, file: string) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
 export const unresolved = () => state.view.threads.filter(one => one.colleague && !one.resolved && one.step !== null);
 export const notViewed = () => allFiles().filter(file => !state.view.viewed.includes(file));
-/** Still at work: no steps yet, files waiting for a step, or steps it has not finished, until the review is submitted. */
-export const aiReviewing = () =>
-  !state.view.submitted && (!state.view.steps.length || !!state.view.unplaced?.length || state.view.reviewing.length > 0);
 
 /** Who started a thread, which its gutter mark and stripe tick show. */
 export const threadBy = (thread: ThreadView) => (thread.colleague ? 'colleague' : (thread.comments[0]?.by ?? 'you'));

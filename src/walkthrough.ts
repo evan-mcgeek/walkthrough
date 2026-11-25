@@ -35,8 +35,10 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   unplaced?: string[];
   /** The highest step id given out, so the id of a step gone is never given again. */
   lastStep?: number;
-  /** The ids of the steps the AI is still reviewing, in reading order. */
-  reviewing?: string[];
+  /** False until the session runs `ready`; a walkthrough saved without it is ready. */
+  ready?: boolean;
+  /** Set once the page was opened in the browser. */
+  opened?: true;
   criteria?: Criterion[];
   threads?: Thread[];
 };
@@ -60,7 +62,7 @@ export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) 
 export const nameOf = (named: { kind: 'branch'; branch: string } | { kind: 'range'; label: string }) =>
   named.kind === 'branch' ? named.branch : named.label;
 
-const EARLIER_FIELDS = ['kindLabel', 'commentHint', 'checking', 'checklist', 'lastChecklistItem', 'actions', 'hints'];
+const EARLIER_FIELDS = ['kindLabel', 'commentHint', 'checking', 'checklist', 'lastChecklistItem', 'actions', 'hints', 'reviewing'];
 
 /** A walkthrough saved by an earlier release keeps its place and ids, but its steps, in an older shape, are recorded again. */
 function current(saved: Walkthrough | null): Walkthrough | null {
@@ -92,7 +94,7 @@ export function openWalkthrough(
       return { walkthrough: relabelled, opened: 'resumed' };
     }
     if (saved) {
-      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head };
+      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
       // Before any steps, the page shows the session preparing them instead.
@@ -107,6 +109,7 @@ export function openWalkthrough(
       base: change.base,
       head: change.head,
       steps: [],
+      ready: false,
     };
     writeJson(file(dir), walkthrough);
     return { walkthrough, opened: 'new' };
@@ -127,7 +130,6 @@ function setSteps(walkthrough: Walkthrough, steps: Step[]) {
   walkthrough.steps = steps;
   delete walkthrough.unplaced;
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps.map(step => Number(step.id)));
-  if (walkthrough.reviewing) walkthrough.reviewing = steps.map(step => step.id).filter(id => walkthrough.reviewing?.includes(id));
 }
 
 export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Promise<Step[]>): Promise<Walkthrough> {
@@ -137,14 +139,20 @@ export function recordSteps(dir: string, build: (walkthrough: Walkthrough) => Pr
   });
 }
 
-/** Replaces the steps the AI is still reviewing; an id that names no step records nothing. */
-export function recordReviewing(dir: string, ids: string[]): Promise<string[]> {
+/** Marks the review ready once every changed file is in a step; says whether the page was ever opened before. */
+export function markReady(dir: string): Promise<boolean> {
   return updateWalkthrough(dir, walkthrough => {
-    const known = walkthrough.steps.map(step => step.id);
-    const unknown = [...new Set(ids.filter(id => !known.includes(id)))];
-    if (unknown.length)
-      throw new Error(`the walkthrough has no ${unknown.length === 1 ? 'step' : 'steps'} ${unknown.join(', ')}; nothing was recorded`);
-    walkthrough.reviewing = known.filter(id => ids.includes(id));
-    return walkthrough.reviewing;
+    if (!walkthrough.steps.length) throw new Error('record the steps before the walkthrough is ready');
+    const left = walkthrough.unplaced ?? [];
+    if (left.length) throw new Error(`these files are in no step yet: ${left.join(', ')}; record the steps again with them`);
+    walkthrough.ready = true;
+    const opened = walkthrough.opened === true;
+    walkthrough.opened = true;
+    return opened;
   });
 }
+
+export const markOpened = (dir: string) =>
+  updateWalkthrough(dir, walkthrough => {
+    walkthrough.opened = true;
+  });

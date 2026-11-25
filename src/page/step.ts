@@ -1,16 +1,13 @@
 // A step: its title, "Look at:", the AI's explanation, its files, then the steps before and after it.
 import type { Step } from '../walkthrough';
-import { attrs, el } from './dom';
+import { el } from './dom';
 import { drawFiles, type FilePane, type Shows } from './files';
 import { icon } from './icons';
 import { linesLabel, markdown, state } from './state';
 
-const spinner = () => attrs(icon('spinner'), { 'aria-hidden': 'true' });
-
 export class StepPane {
   readonly box = el('section', { className: 'step' });
   private readonly head = el('div', { className: 'step-head' });
-  private readonly reviewing = el('p', { className: 'reviewing-line' }, spinner(), 'The AI is still reviewing this step.');
   private readonly files: FilePane[];
   private readonly foot = el('div', { className: 'step-foot' });
   private more = false;
@@ -35,7 +32,6 @@ export class StepPane {
       this.drawnHead = key;
       this.drawHead();
     }
-    this.reviewing.hidden = !state.view.reviewing.includes(this.step.id) || !!state.view.submitted;
     this.drawFoot(go);
     return this.files.flatMap(pane => pane.update(shows));
   }
@@ -68,7 +64,6 @@ export class StepPane {
       el('h1', { className: 'step-title', tabIndex: -1 }, step.title),
       ...(look.length ? [el('div', { className: 'look' }, el('span', { className: 'look-at' }, 'Look at:'), ...look)] : []),
       explanation,
-      this.reviewing,
     );
   }
 

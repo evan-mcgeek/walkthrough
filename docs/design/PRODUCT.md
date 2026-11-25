@@ -32,7 +32,7 @@ A GitHub reviewer needs no help page, legend or hint. Every review concept is Gi
 - Runs locally; one page per walkthrough.
 - The AI asks, once, in the Claude Code chat (not on the page), how well the person knows the feature, with four answers from "I know it well" to "It's new to me"; the answer sets how much it explains.
 - The AI reads the ticket, splits the change into steps, gives each step "Look at" pointers and a short explanation, and leaves its comments on lines as pending review comments marked `[AI]`. Colleagues' existing threads show on their lines.
-- While the AI is still reviewing, the header shows one small indicator, and steps it has not finished show the same turning ring in the step list.
+- The page opens near the end of the review and shows the AI at its desk until the review is ready; then the whole walkthrough appears at once.
 
 ## Capabilities and Constraints
 
