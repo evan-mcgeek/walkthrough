@@ -7,7 +7,7 @@ Cut the suites to VISION principle 10: one CLI test per command, and about six p
 
 **Design:** VISION.md
 
-- [ ] `npm test` runs in a few minutes on a laptop and on CI
-- [ ] No spec covers a removed concept
+- [x] `npm test` runs in a few minutes on a laptop and on CI
+- [x] No spec covers a removed concept
 
-**Status:** ready-for-agent
+**Status:** done

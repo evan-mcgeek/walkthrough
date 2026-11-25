@@ -7,7 +7,7 @@ Port the motion in prototype.html (DESIGN.md, Motion) to what the page now has, 
 
 **Design:** docs/design/prototype.html, DESIGN.md
 
-- [ ] Every motion in DESIGN.md runs, and reduced motion keeps opacity and colour only
-- [ ] One loop only: the reviewing spinner
+- [x] Every motion in DESIGN.md runs, and reduced motion keeps opacity and colour only
+- [x] One loop only: the reviewing spinner
 
-**Status:** ready-for-agent
+**Status:** done
