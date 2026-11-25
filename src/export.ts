@@ -1,63 +1,59 @@
-// A walkthrough as one read-only HTML file: the page itself with its script, style and state inlined, opened with no server.
+// A walkthrough as one read-only HTML file that opens with no server: its steps, explanations, diffs, comments and criteria.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileAt } from './change';
-import { walkthroughView } from './decisions';
+import { html as diffHtml } from 'diff2html';
+import MarkdownIt from 'markdown-it';
 import { parseDiff } from './diff';
-import { pixelSize, type PixelSize, previewType } from './preview';
-import { PAGE, readViewer } from './server';
-import { sessionView } from './session';
-import { readWalkthrough } from './walkthrough';
+import { type CommentView, walkthroughView } from './review';
+import { PAGE } from './server';
+import { nameOf } from './walkthrough';
 
 const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
+// Raw HTML in what the session or a person wrote shows as text.
+const markdown = new MarkdownIt({ html: false, linkify: true }).disable('image');
+const escape = (text: string) =>
+  text.replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char] ?? char);
 
-function inline(html: string, tag: string, replacement: string): string {
-  if (!html.includes(tag)) throw new Error(`the page has no ${tag} to inline`);
-  return html.replace(tag, () => replacement);
-}
+const STATUS = { met: 'Met', partly: 'Partly met', 'not-met': 'Not met', 'not-checked': 'Not checked' } as const;
 
-/** Each changed image's pixel size by path, as it is at the head or, deleted, at the base: the export has no server to load it from. */
-function imageSizes(dir: string): Record<string, PixelSize> {
-  const walkthrough = readWalkthrough(dir);
-  if (!walkthrough) return {};
-  const sizes: Record<string, PixelSize> = {};
-  for (const file of walkthrough.steps.flatMap(step => parseDiff(step.diff))) {
-    const [name, rev] = file.isDeleted ? [file.oldName, walkthrough.base] : [file.newName, walkthrough.head];
-    if (!file.isBinary || !previewType(name)?.startsWith('image/')) continue;
-    const bytes = fileAt(process.cwd(), rev, name);
-    const size = bytes && pixelSize(bytes);
-    if (size) sizes[name] = size;
-  }
-  return sizes;
-}
+const who = (said: CommentView) => (said.by === 'colleague' ? (said.author ?? '') : said.by === 'ai' ? 'AI' : 'You');
 
 export function exportPage(dir: string): string {
-  const read = (file: string) => fs.readFileSync(path.join(PAGE, file), 'utf8');
-  // `<!--` or `</script` in a string or regex would end or confuse the inline script; `\x3C` reads as `<` in both.
-  const script = read('app.js').replace(/<(?=!--|\/script)/gi, '\\x3C');
-  const style = read('style.css');
-  const state = { walkthrough: walkthroughView(dir), session: sessionView(dir), at: new Date().toISOString(), viewer: readViewer(), images: imageSizes(dir) };
-  // The state is data and never runs, so a `<` in it cannot end its element.
-  const data = JSON.stringify(state).replaceAll('<', '\\u003c');
-  const policy = `default-src 'none'; script-src ${hash(script)}; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
-  let html = read('index.html');
-  // A file opened on its own has no server for the icons, so the favicon travels inside it.
-  const favicon = fs.readFileSync(path.join(PAGE, 'favicon.svg')).toString('base64');
-  html = inline(
-    html,
-    '<link rel="icon" href="favicon.svg" type="image/svg+xml" />\n    <link rel="apple-touch-icon" href="apple-touch-icon.png" />',
-    `<link rel="icon" href="data:image/svg+xml;base64,${favicon}" type="image/svg+xml" />`,
-  );
-  html = inline(
-    html,
-    '<link rel="stylesheet" href="style.css" />',
-    `<meta http-equiv="content-security-policy" content="${policy}" />\n    <style>${style}</style>`,
-  );
-  html = inline(
-    html,
-    '<script type="module" src="app.js"></script>',
-    `<script type="application/json" id="exported">${data}</script>\n    <script type="module">${script}</script>`,
-  );
-  return html;
+  const view = walkthroughView(dir);
+  if (!view) throw new Error('there is no such walkthrough');
+  const title = view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view);
+  const steps = view.steps.map((step, at) => {
+    const threads = view.threads.filter(thread => thread.step === step.id);
+    const comments = threads.flatMap(thread =>
+      thread.comments.map(
+        said =>
+          `<li><code>${escape(thread.file)}:${String(thread.lines[1])}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}${markdown.render(said.body)}</li>`,
+      ),
+    );
+    const diff = diffHtml(parseDiff(step.diff), { outputFormat: 'line-by-line', drawFileList: false, matching: 'lines' });
+    return `<section class="export-step"><h2>${String(at + 1)}. ${escape(step.title)}</h2>
+<div class="markdown">${markdown.render(step.explanation)}</div>${diff}${comments.length ? `<ul class="export-comments">${comments.join('')}</ul>` : ''}</section>`;
+  });
+  const criteria = (view.criteria ?? []).map(one => `<li>${escape(one.text)}: ${STATUS[one.status]}</li>`);
+  const style = fs.readFileSync(path.join(PAGE, 'style.css'), 'utf8');
+  const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="content-security-policy" content="${policy}" />
+    <title>${escape(title)} · Walkthrough</title>
+    <style>${style}</style>
+  </head>
+  <body class="export">
+    <main class="export-main">
+      <h1>${escape(title)}</h1>
+      ${steps.join('\n')}
+      ${criteria.length ? `<section class="export-step"><h2>Acceptance criteria</h2><ul>${criteria.join('')}</ul></section>` : ''}
+    </main>
+  </body>
+</html>
+`;
 }

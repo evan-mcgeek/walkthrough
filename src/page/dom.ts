@@ -1,6 +1,5 @@
 import { tooLong } from '../words';
 import { icon } from './icons';
-import { animate, FADE_IN, reduced } from './motion';
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -12,99 +11,22 @@ export function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** A native select with the drawn chevron in place of the browser's arrow. */
-export function selectBox(select: HTMLSelectElement): HTMLElement {
-  return el('div', { className: 'select' }, select, icon('chevron-down'));
-}
-
-/** The session's label for the kind of walkthrough, as it gave it; none without one. */
-export const kindView = (kind: string | undefined) =>
-  kind === undefined ? [] : [el('span', { className: 'kind', title: 'The kind of walkthrough' }, kind)];
-
 export function region(id: string): HTMLElement {
   const found = document.getElementById(id);
   if (!found) throw new Error(`the page has no #${id}`);
   return found;
 }
 
-/**
- * A popover that holds the focus while open (Appearance, Help): Escape or a click outside closes it,
- * and the focus goes back to what `returnTo` finds then, as a redraw may have replaced the control that opened it.
- */
-export function openDialog(label: string, returnTo: () => Element | null, ...content: Node[]): HTMLDialogElement {
-  const heading = el('h2', { className: 'popover-head', id: `dialog-${label.toLowerCase().replace(/\W+/g, '-')}` });
-  heading.append(label);
-  const dialog = el('dialog', { className: 'popover' }, heading, ...content);
-  dialog.setAttribute('aria-labelledby', heading.id);
-  // A click on the dialog itself, not on what it holds, landed on its backdrop.
-  dialog.addEventListener('click', event => {
-    if (event.target === dialog) dialog.close();
-  });
-  dialog.addEventListener('close', () => {
-    const back = returnTo();
-    if (back instanceof HTMLElement) back.focus();
-    // Closed at once; what was open stays drawn, inert, while it fades.
-    dialog.inert = true;
-    dialog.setAttribute('aria-hidden', 'true');
-    dialog.classList.add('leaving');
-    const out = animate(dialog, 'popover-out', [{ opacity: 1 }, { opacity: 0 }], { ms: 80, curve: 'ease-in', fill: 'forwards' });
-    out.finished.then(() => { dialog.remove(); }, () => { dialog.remove(); });
-  });
-  document.body.append(dialog);
-  dialog.showModal();
-  animate(dialog, 'popover-in', FADE_IN, { ms: 'fast', curve: 'linear' });
-  if (!reduced()) animate(dialog, 'popover-settle', [{ transform: 'translateY(-4px) scale(0.98)' }, { transform: 'none' }], { ms: 'base', curve: 'ease-out' });
-  return dialog;
-}
-
-/** Radio buttons as one tab stop, moved through with the arrow keys; `choose` takes the value picked. */
-export function radioGroup<T extends string>(label: string, options: readonly (readonly [T, string])[], chosen: T, choose: (value: T) => void): HTMLElement {
-  const radios = options.map(([value, name]) => {
-    const radio = el('button', { type: 'button', className: 'radio', tabIndex: value === chosen ? 0 : -1 }, name);
-    radio.setAttribute('role', 'radio');
-    radio.setAttribute('aria-checked', String(value === chosen));
-    radio.dataset['value'] = value;
-    // A dialog opening on the group puts the focus on what is chosen.
-    radio.autofocus = value === chosen;
-    radio.onclick = () => {
-      pick(value);
-    };
-    return radio;
-  });
-  const pick = (value: T) => {
-    for (const radio of radios) {
-      const on = radio.dataset['value'] === value;
-      radio.setAttribute('aria-checked', String(on));
-      radio.tabIndex = on ? 0 : -1;
-      if (on) radio.focus();
-    }
-    choose(value);
-  };
-  const group = el('div', { className: 'radios' }, ...radios);
-  group.setAttribute('role', 'radiogroup');
-  group.setAttribute('aria-label', label);
-  group.onkeydown = event => {
-    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
-    if (step === undefined) return;
-    event.preventDefault();
-    const at = radios.findIndex(radio => radio === document.activeElement);
-    const next = options[(at + step + options.length) % options.length];
-    if (next) pick(next[0]);
-  };
-  return group;
+/** Sets attributes no property covers, such as ARIA. */
+export function attrs<T extends Element>(node: T, given: Record<string, string>): T {
+  for (const [name, value] of Object.entries(given)) node.setAttribute(name, value);
+  return node;
 }
 
 const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {
   const box = region('alert');
-  // A banner the page raised on its own stays until the person dismisses it.
-  if (message === null && box.dataset['kind'] === 'own') {
-    document.body.classList.remove('unreachable');
-    return;
-  }
-  box.dataset['kind'] = 'error';
-  box.className = 'banner attention';
   box.replaceChildren(...(message === null ? [] : [icon('warn'), el('span', {}, message)]));
   box.hidden = message === null;
   document.body.classList.remove('unreachable');
@@ -118,8 +40,6 @@ export function showUnreachable({ name, reopen, retry }: PageName): void {
   // Drawn once: a banner redrawn on every failed poll is announced again and takes the focus off Retry.
   if (document.body.classList.contains('unreachable')) return;
   const box = region('alert');
-  box.dataset['kind'] = 'error';
-  box.className = 'banner attention';
   box.replaceChildren(
     icon('offline'),
     el('span', { className: 'banner-text' }, el('strong', {}, `Could not reach the ${name}.`), ` ${reopen}`),

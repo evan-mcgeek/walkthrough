@@ -1,0 +1,1893 @@
+/* The review page (docs/design/DESIGN.md, Components): header, step list, step, files, threads, Summary and menu. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: 400 13px/1.4 var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.walkthrough {
+  display: grid;
+  grid-template-rows: 44px auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+body.walkthrough > .app-header {
+  grid-row: 1;
+}
+
+body.walkthrough > .banner {
+  grid-row: 2;
+}
+
+body.walkthrough > .frame {
+  grid-row: 3;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+code {
+  font: 500 0.92em var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--line-pick-gutter);
+}
+
+input,
+textarea {
+  caret-color: var(--accent);
+}
+
+.icon {
+  flex: none;
+  display: block;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Buttons: 30px, 4px corners; small 26px; 44px targets at phone width. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 13px/1 var(--font-ui);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--fast) linear,
+    transform var(--fast) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--surface-tint);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.small {
+  min-height: 26px;
+  padding: 0 var(--s2);
+  font-size: 12.5px;
+}
+
+.btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 18%);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.btn.primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.btn.ghost {
+  border-color: transparent;
+  background: none;
+  color: var(--ink-secondary);
+}
+
+.btn.ghost:hover {
+  background: var(--surface-tint);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+.btn.primary:disabled:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  min-height: 26px;
+  padding: var(--s1);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--muted);
+}
+
+.icon-button:hover {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.icon-button .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.counter {
+  display: inline-block;
+  padding: 0 var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-tint);
+  color: var(--muted);
+  font: 500 12px/18px var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one spinner turns; under reduced motion it stands still. */
+.icon-spinner {
+  animation: spin 1.2s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Banner: a failure the page cannot fix by itself. */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--amber-wash);
+  color: var(--ink);
+}
+
+.banner > .icon {
+  color: var(--amber);
+}
+
+.unreachable .frame,
+.unreachable .app-header > :not(.mark) {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Header: 44px. */
+
+.app-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  height: 44px;
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--canvas);
+}
+
+.app-header .mark,
+.app-header .logo .icon {
+  color: var(--accent);
+}
+
+.app-header .mark .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.change-label {
+  min-width: 0;
+  overflow: hidden;
+  font: 600 13.5px/1.4 var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change-label.branch {
+  font: 500 12.5px/1.4 var(--font-mono);
+}
+
+.pr-number {
+  color: var(--ink-secondary);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.files-viewed,
+.ai-reviewing {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--ink-secondary);
+  font: 400 12.5px/1.4 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ai-reviewing {
+  gap: 6px;
+}
+
+.ai-reviewing .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.files-viewed .bar {
+  display: inline-block;
+  width: 72px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--rule);
+}
+
+.files-viewed .bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ink-secondary);
+  transition: width var(--slow) var(--ease-out);
+}
+
+.steps-button,
+.short {
+  display: none !important;
+}
+
+.finish {
+  flex: none;
+}
+
+/* Menu: Theme and End session, floating under its button. */
+
+.menu {
+  position: absolute;
+  top: 40px;
+  right: var(--s4);
+  z-index: 30;
+  min-width: 168px;
+  padding: var(--s1);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  box-shadow: var(--shadow-float);
+}
+
+.menu-label {
+  margin: 0;
+  padding: 6px var(--s2) var(--s1);
+  color: var(--muted);
+  font: 500 12px/1.4 var(--font-ui);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 var(--s2) 0 26px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  text-align: left;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--surface-tint);
+  outline-offset: -2px;
+}
+
+.menu-item[aria-checked='true'] {
+  background-image: radial-gradient(circle at 13px 50%, var(--accent) 0 3px, transparent 3.5px);
+  font-weight: 600;
+}
+
+.menu hr {
+  margin: var(--s1) 0;
+  border: 0;
+  border-top: 1px solid var(--rule-soft);
+}
+
+/* The two panes: the step list where a file tree usually sits, then the open step. */
+
+.frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 0;
+}
+
+.step-list {
+  overflow: auto;
+  padding: var(--s3) var(--s2);
+  border-right: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.steps,
+.file-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps > li {
+  margin-bottom: var(--s2);
+}
+
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 6px var(--s2);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font: 600 13px/1.4 var(--font-ui);
+  text-decoration: none;
+  transition:
+    background-color var(--fast) linear,
+    box-shadow var(--fast) linear;
+}
+
+.step-row:hover,
+.file-row:hover {
+  background: var(--surface-tint);
+}
+
+.step-row[aria-current='page'] {
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.step-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+  font: 600 11px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.step-row[aria-current='page'] .step-number {
+  background: var(--ink);
+  color: var(--canvas);
+}
+
+.step-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-reviewing .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--s2) 3px 34px;
+  border-radius: var(--r-xs);
+  color: var(--ink-secondary);
+  font: 400 12px/1.5 var(--font-mono);
+  font-variant-ligatures: none;
+  text-decoration: none;
+}
+
+.file-row > .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.file-row.viewed > .icon {
+  color: var(--ink-secondary);
+}
+
+.file-row.viewed .file-name {
+  color: var(--muted);
+}
+
+.file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-secondary);
+  font: 600 11.5px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.file-count .icon {
+  width: 12px;
+  height: 12px;
+  color: var(--muted);
+}
+
+.summary-row {
+  margin-top: var(--s3);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--rule);
+  border-radius: 0;
+  font-weight: 500;
+}
+
+.summary-row > .icon {
+  width: 16px;
+  color: var(--ink-secondary);
+}
+
+.summary-row[aria-current='page'] {
+  border-radius: var(--r-md);
+  font-weight: 600;
+}
+
+/* The open step or the Summary. */
+
+.main {
+  position: relative;
+  overflow: auto;
+  padding: var(--s5) var(--s6);
+  overflow-anchor: none;
+}
+
+.content > * {
+  min-width: 0;
+}
+
+.preparing {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+  color: var(--accent);
+}
+
+.preparing .icon {
+  width: 20px;
+  height: 20px;
+  animation: pulse 1.4s var(--ease-out) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.step-head {
+  margin-bottom: var(--s4);
+}
+
+.step-title {
+  margin: 0 0 var(--s2);
+  font: 650 20px/1.25 var(--font-ui);
+  letter-spacing: -0.01em;
+}
+
+.step-title:focus {
+  outline: none;
+}
+
+.look {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px var(--s2);
+  margin: 0 0 var(--s2);
+  font-size: 13px;
+}
+
+.look-at {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.look-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px var(--s2) 2px 6px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-sm);
+  background: var(--canvas);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--fast) linear;
+}
+
+.look-link:hover {
+  background: var(--accent-wash);
+}
+
+.look-link .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.look-link code {
+  font-size: 12px;
+}
+
+.look-label {
+  color: var(--ink-secondary);
+}
+
+.explanation {
+  max-width: 72ch;
+  font: 400 15px/1.6 var(--font-ui);
+}
+
+.explanation:focus {
+  outline: none;
+}
+
+.reviewing-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--s2) 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.reviewing-line .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Files: a header in a bordered box; the body folds by grid rows. */
+
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.file {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--canvas);
+}
+
+.file-header {
+  position: sticky;
+  top: calc(-1 * var(--s5));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 40px;
+  padding: 0 var(--s3) 0 var(--s2);
+  border-bottom: 1px solid var(--rule);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.file.closed .file-header {
+  border-bottom-color: transparent;
+  border-radius: var(--r-lg);
+}
+
+.file-toggle .icon {
+  transition: transform var(--fast) var(--ease-out);
+}
+
+.file-toggle[aria-expanded='true'] .icon {
+  transform: rotate(90deg);
+}
+
+.file-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 400 12.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--base) linear;
+}
+
+.file.viewed .file-path {
+  color: var(--muted);
+}
+
+.file-stats {
+  flex: none;
+  font: 400 12px/1.4 var(--font-mono);
+}
+
+.file-stats .added {
+  color: var(--ok);
+}
+
+.file-stats .deleted {
+  color: var(--bad);
+}
+
+.file-comments {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink-secondary);
+  font: 600 12px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.file-comments .icon {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.changed-tag {
+  flex: none;
+  padding: 1px var(--s2);
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font: 500 12px/1.4 var(--font-ui);
+  white-space: nowrap;
+}
+
+.folded-reason {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewed-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 3px var(--s2);
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    background-color var(--fast) linear,
+    color var(--fast) linear;
+}
+
+.viewed-toggle input {
+  margin: 0;
+  accent-color: var(--ink-secondary);
+}
+
+.file.viewed .viewed-toggle {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.segmented {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+
+.segmented button {
+  min-height: 24px;
+  padding: 0 var(--s2);
+  border: 0;
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.file-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--slow) var(--ease-out);
+}
+
+.file.closed .file-body {
+  grid-template-rows: 0fr;
+  transition-duration: var(--base);
+}
+
+.file-inner {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  padding-right: 10px;
+  transition: opacity var(--base) linear 80ms;
+}
+
+.file.closed .file-inner {
+  opacity: 0;
+  transition: opacity 80ms linear;
+}
+
+.diff-scroll {
+  overflow-x: auto;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  scrollbar-width: thin;
+}
+
+.overview-stripe {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 100%;
+  border-left: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.overview-stripe rect {
+  shape-rendering: crispEdges;
+}
+
+.overview-stripe .run-add {
+  fill: var(--stripe-add);
+  opacity: 0.55;
+}
+
+.overview-stripe .run-del {
+  fill: var(--stripe-del);
+  opacity: 0.6;
+}
+
+.overview-stripe .tick {
+  fill: var(--muted);
+}
+
+.overview-stripe .tick.you {
+  fill: var(--accent);
+}
+
+
+/* The diff, as diff2html draws it line by line, restyled to the tokens. */
+
+.d2h-file-diff {
+  overflow: visible;
+}
+
+.d2h-diff-table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  font: var(--text-code);
+  font-variant-ligatures: none;
+}
+
+.d2h-diff-table td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.d2h-code-linenumber {
+  position: relative;
+  width: 92px;
+  min-width: 92px;
+  color: var(--muted);
+  font-size: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* diff2html puts line breaks between the two numbers; the cell's zero font size keeps them from showing as a space. */
+.line-num1,
+.line-num2 {
+  display: inline-block;
+  width: 46px;
+  min-height: 21px;
+  padding: 0 var(--s2);
+  font-size: 12.5px;
+  text-align: right;
+  vertical-align: top;
+}
+
+.line-num2[role='button'] {
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.line-num2[role='button']:hover {
+  color: var(--accent-text);
+}
+
+.line-num2[role='button']:focus-visible {
+  outline-offset: -2px;
+}
+
+.d2h-code-line {
+  display: flex;
+  padding: 0 var(--s4) 0 var(--s2);
+  white-space: pre;
+}
+
+.d2h-code-line-prefix {
+  flex: none;
+  width: 14px;
+}
+
+.d2h-code-line-ctn {
+  white-space: pre;
+}
+
+.d2h-code-line ins,
+.d2h-code-line del {
+  border-radius: 2px;
+  text-decoration: none;
+}
+
+.d2h-code-line ins {
+  background: light-dark(#b9e5c6, #1f4a2e);
+}
+
+.d2h-code-line del {
+  background: light-dark(#f4c4bf, #5a2626);
+}
+
+td.d2h-ins {
+  background: var(--diff-add);
+}
+
+td.d2h-code-linenumber.d2h-ins {
+  background: var(--diff-add-gutter);
+  color: var(--ink-secondary);
+}
+
+td.d2h-del {
+  background: var(--diff-del);
+}
+
+td.d2h-code-linenumber.d2h-del {
+  background: var(--diff-del-gutter);
+  color: var(--ink-secondary);
+}
+
+td.d2h-info {
+  color: var(--muted);
+}
+
+td.d2h-info .d2h-code-line {
+  font-size: 12px;
+}
+
+tr.picked td {
+  background: var(--line-pick);
+}
+
+tr.picked td.d2h-code-linenumber {
+  background: var(--line-pick-gutter);
+}
+
+tr.picked .line-num2 {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+tr.flash td {
+  animation: flash 1400ms var(--ease-out);
+}
+
+@keyframes flash {
+  0%,
+  30% {
+    background: var(--line-pick-gutter);
+  }
+}
+
+.gutter-mark {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+}
+
+.gutter-mark .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.gutter-mark.ai {
+  color: var(--ink);
+}
+
+.gutter-mark.you {
+  color: var(--accent-text);
+}
+
+.gutter-mark.colleague {
+  color: var(--muted);
+}
+
+/* Threads: one component for everyone, under its line, kept in view while the diff scrolls sideways. */
+
+.thread-row > td {
+  padding: var(--s3) var(--s4) var(--s3) 60px;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--canvas);
+  font: 400 14px/1.55 var(--font-ui);
+  white-space: normal;
+}
+
+.thread-row.arriving {
+  display: none;
+}
+
+.thread {
+  position: sticky;
+  left: 60px;
+  max-width: min(760px, calc(var(--pane, 100vw) - 92px));
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+}
+
+.thread.resolved {
+  opacity: 0.75;
+}
+
+.comment {
+  display: flex;
+  gap: 10px;
+  padding: 10px var(--s3);
+}
+
+.comment + .comment {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.comment.arriving {
+  display: none;
+}
+
+.comment-ai {
+  background: color-mix(in srgb, var(--surface) 70%, var(--canvas));
+}
+
+.comment-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: 2px;
+  font-size: 12.5px;
+}
+
+.comment-name {
+  font-weight: 600;
+}
+
+.comment-time {
+  color: var(--muted);
+}
+
+.comment-actions {
+  display: inline-flex;
+  gap: 2px;
+  margin: -4px 0 -4px auto;
+}
+
+.pending-tag {
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  border-radius: var(--r-pill);
+  color: var(--amber);
+  font: 600 12px/1.4 var(--font-ui);
+}
+
+.comment-text {
+  overflow-wrap: anywhere;
+}
+
+.ai-tag {
+  color: var(--ink-secondary);
+  font: 600 12px var(--font-mono);
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font: 700 10px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+}
+
+.avatar-you {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.avatar-ai {
+  border-radius: var(--r-xs);
+  background: var(--ink);
+  color: var(--canvas);
+}
+
+.avatar-colleague {
+  background: var(--surface-tint);
+  color: var(--ink-secondary);
+}
+
+.answering {
+  align-items: center;
+}
+
+.answering-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.answering-text .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.arrive {
+  animation: arrive var(--slow) var(--ease-out) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.grow {
+  animation: grow var(--slow) var(--ease-out) both;
+}
+
+@keyframes grow {
+  from {
+    opacity: 0;
+  }
+}
+
+.thread-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-top: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.thread-foot.composing {
+  display: block;
+  background: var(--canvas);
+}
+
+.composer-line .thread {
+  padding: 10px var(--s3);
+}
+
+.reply-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-xs);
+  background: var(--canvas);
+  color: var(--muted);
+  text-align: left;
+  cursor: text;
+}
+
+.composer-text {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  padding: var(--s2) 10px;
+  border: 1px solid var(--control-edge);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  color: var(--ink);
+  font: 400 14px/1.5 var(--font-ui);
+  resize: vertical;
+}
+
+.composer-text::placeholder {
+  color: var(--muted);
+}
+
+.composer-text:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+  outline: none;
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+.new-pill {
+  position: sticky;
+  /* Under a file header stuck at the top of the pane. */
+  top: 28px;
+  z-index: 5;
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0 0;
+  padding: 6px var(--s3) 6px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--canvas);
+  box-shadow: var(--shadow-float);
+  color: var(--ink);
+  font: 600 13px/1.4 var(--font-ui);
+  animation: pill-in var(--base) var(--ease-out);
+}
+
+@keyframes pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Previous and next, named by the steps' titles. */
+
+.step-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule-soft);
+}
+
+.step-link {
+  min-width: 0;
+  max-width: 48%;
+  color: var(--accent-text);
+}
+
+.step-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Previews of Markdown and images, kept as built. */
+
+.preview {
+  padding: var(--s4);
+}
+
+.image-compare {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+}
+
+.image-compare figure {
+  margin: 0;
+}
+
+.image-box {
+  padding: var(--s2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, var(--surface-tint) 25%, transparent 25%, transparent 75%, var(--surface-tint) 75%),
+    linear-gradient(45deg, var(--surface-tint) 25%, transparent 25%, transparent 75%, var(--surface-tint) 75%);
+  background-position:
+    0 0,
+    8px 8px;
+  background-size: 16px 16px;
+}
+
+.image-box img {
+  display: block;
+  max-width: 100%;
+}
+
+.image-compare figcaption {
+  margin-top: var(--s1);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.preview .inserted {
+  background: var(--diff-add);
+}
+
+/* Markdown, as the AI and people write it. */
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown :is(p, ul, ol, pre, table, blockquote) {
+  margin: 0 0 var(--s3);
+}
+
+.markdown :is(ul, ol) {
+  padding-left: 22px;
+}
+
+.markdown li + li {
+  margin-top: var(--s1);
+}
+
+.markdown li::marker {
+  color: var(--muted);
+}
+
+.markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: var(--s5) 0 var(--s2);
+  font: 650 15px/1.4 var(--font-ui);
+}
+
+.markdown :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  background: var(--surface-tint);
+  font-size: 0.86em;
+}
+
+.markdown pre {
+  padding: var(--s2) var(--s3);
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.markdown blockquote {
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-secondary);
+}
+
+.markdown a {
+  color: var(--accent-text);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.markdown table {
+  border-collapse: collapse;
+}
+
+.markdown :is(th, td) {
+  padding: var(--s1) 10px;
+  border: 1px solid var(--rule);
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-center {
+  text-align: center;
+}
+
+.align-right {
+  text-align: right;
+}
+
+/* The Summary: what goes out, what is left and the criteria beside the review box. */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--s6);
+  align-items: start;
+  max-width: 1120px;
+  margin-top: var(--s4);
+}
+
+.summary-section {
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.summary-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--s2);
+  color: var(--ink-secondary);
+  font: 650 13px/1.4 var(--font-ui);
+}
+
+.section-note {
+  margin-left: 6px;
+  color: var(--muted);
+  font: 400 12px/1.4 var(--font-ui);
+}
+
+.going-out,
+.criteria {
+  margin: var(--s2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.going-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 13.5px;
+}
+
+.going-row .avatar {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  font-size: 9px;
+}
+
+.going-row .where {
+  flex: none;
+  width: 120px;
+  overflow: hidden;
+  color: var(--accent-text);
+  font: 400 11.5px/20px var(--font-mono);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.going-row span.where {
+  color: var(--muted);
+}
+
+.going-row .row-text {
+  display: -webkit-box;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.empty {
+  margin: var(--s2) 0 0;
+  color: var(--muted);
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  margin: var(--s3) 0 0;
+}
+
+.counts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.counts a:hover {
+  text-decoration: underline;
+}
+
+.counts .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.criterion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 13.5px;
+}
+
+.criterion-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.criterion-word {
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.criterion.met :is(.icon, .criterion-word) {
+  color: var(--ok);
+}
+
+.criterion.partly :is(.icon, .criterion-word) {
+  color: var(--amber);
+}
+
+.criterion.not-met :is(.icon, .criterion-word) {
+  color: var(--bad);
+}
+
+.criterion.not-checked :is(.icon, .criterion-word) {
+  color: var(--muted);
+}
+
+.review-box {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--canvas);
+}
+
+.review-box .section-head {
+  margin: 0;
+}
+
+.radios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 13.5px;
+}
+
+.radio input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.btn.wide {
+  width: 100%;
+}
+
+.review-note {
+  margin: calc(-1 * var(--s1)) 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.review-box.done {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  border-color: transparent;
+  background: var(--ok-bg);
+}
+
+.review-box.done > .icon {
+  margin-top: 2px;
+  color: var(--ok);
+}
+
+.review-box.done strong {
+  color: var(--ok);
+}
+
+.review-box.done p {
+  margin: 2px 0 6px;
+  font-size: 13.5px;
+}
+
+.review-box.done a {
+  color: var(--accent-text);
+  font-size: 13px;
+}
+
+.review-box.arrive > .icon {
+  animation: pop var(--slow) var(--ease-out) 160ms both;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+/* The export: the walkthrough as one read-only document. */
+
+.export-main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--s6);
+}
+
+.export-main h1 {
+  font: 650 20px/1.25 var(--font-ui);
+}
+
+.export-step h2 {
+  font: 650 17px/1.4 var(--font-ui);
+}
+
+.export-step .d2h-file-wrapper {
+  margin: var(--s4) 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  overflow-x: auto;
+}
+
+.export-step .d2h-file-header {
+  padding: var(--s2) var(--s3);
+  background: var(--surface);
+  font: 400 12.5px var(--font-mono);
+}
+
+.export-step .d2h-file-header :is(.d2h-icon, .d2h-tag) {
+  display: none;
+}
+
+/* Phone: one column; the step list opens over the page from the header; 44px targets. */
+
+@media (max-width: 760px) {
+  .app-header {
+    gap: var(--s2);
+    padding: 0 var(--s3);
+  }
+
+  .steps-button,
+  .short {
+    display: inline-grid !important;
+  }
+
+  .long,
+  .change-label,
+  .files-viewed .bar {
+    display: none !important;
+  }
+
+  .app-header :is(.btn, .icon-button),
+  .menu-item {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* The header keeps Finish small to the eye; its target reaches the header's full 44px. */
+  .app-header .btn.small {
+    position: relative;
+    min-height: 32px;
+  }
+
+  .app-header .btn.small::after {
+    position: absolute;
+    inset: -6px -4px;
+    content: '';
+  }
+
+  .radio,
+  .counts a,
+  .review-box.done a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* The file and line link keeps its line; its target reaches 44px around it. */
+  .going-row a.where {
+    position: relative;
+  }
+
+  .going-row a.where::after {
+    position: absolute;
+    inset: -12px 0;
+    content: '';
+  }
+
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step-list {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    border-right: 0;
+  }
+
+  .drawer-open .step-list {
+    display: block;
+  }
+
+  .step-row,
+  .file-row {
+    min-height: 44px;
+  }
+
+  .main {
+    padding: var(--s4);
+  }
+
+  .step-title {
+    font-size: 19px;
+  }
+
+  .file-header {
+    top: calc(-1 * var(--s4));
+    flex-wrap: wrap;
+    padding: var(--s1) var(--s2);
+  }
+
+  /* The path takes the first line whole; counts and Viewed go under it. */
+  .file-path {
+    flex: 1 1 calc(100% - 56px);
+  }
+
+  .file-header .folded-reason {
+    flex-basis: 100%;
+    padding-left: 52px;
+  }
+
+  .overview-stripe {
+    display: none;
+  }
+
+  .new-pill {
+    top: 84px;
+  }
+
+  .file-inner {
+    padding-right: 0;
+  }
+
+  .thread-row > td {
+    padding: var(--s3) var(--s2);
+  }
+
+  .thread {
+    left: var(--s2);
+    max-width: calc(var(--pane, 100vw) - var(--s4));
+  }
+
+  :is(.btn, .btn.small, .icon-button, .look-link, .viewed-toggle, .reply-field, .segmented button) {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    min-width: 44px;
+  }
+
+  .composer-row {
+    flex-wrap: wrap;
+  }
+
+  .summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s4);
+  }
+
+  .going-row {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    column-gap: 10px;
+    row-gap: 2px;
+  }
+
+  .going-row .avatar {
+    grid-row: 1 / span 2;
+  }
+
+  .going-row .where {
+    width: auto;
+    grid-column: 2;
+  }
+
+  .going-row .row-text {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .going-row .comment-actions {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
+  .review-box {
+    position: static;
+  }
+
+  .step-link {
+    max-width: 48%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-spinner,
+  .preparing .icon {
+    animation: none;
+  }
+
+  .btn:active {
+    transform: none;
+  }
+
+  .file-toggle .icon {
+    transition: none;
+  }
+
+  .file-body,
+  .file.closed .file-body {
+    transition: grid-template-rows 1ms linear var(--fast);
+  }
+
+  .arrive,
+  .new-pill {
+    animation: grow var(--base) linear both;
+  }
+
+  .review-box.arrive > .icon {
+    animation: none;
+  }
+}

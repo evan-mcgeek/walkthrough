@@ -11,9 +11,8 @@ import { locked, readJson, writeJson } from './json-files';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
-import { CHANGED, CHECKING, decide, markRead, markViewed, walkthroughVersion, walkthroughView } from './decisions';
 import { listPage, listView } from './list';
-import { ask, comment, reply, sessionView } from './session';
+import { ask, comment, markViewed, resolve, submit, walkthroughVersion, walkthroughView } from './review';
 import { readWalkthrough } from './walkthrough';
 import { DEFAULT_VIEWER, mergeViewer, type Viewer } from './viewer';
 import { tooLong } from './words';
@@ -135,12 +134,11 @@ export function serve(dir: string, list = false): void {
     ? { '/open': ({ id }) => open(dir, id), '/stop': stop, '/viewer': viewer }
     : {
         '/viewer': viewer,
-        '/decide': async fields => answered(await decide(dir, fields)),
-        '/read': async ({ step, on }) => answered(await markRead(dir, step, on)),
-        '/viewed': async fields => answered(await markViewed(dir, fields)),
-        '/ask': async fields => answered(await ask(dir, fields)),
-        '/reply': async ({ to, text }) => answered(await reply(dir, to, text)),
-        '/comment': async fields => answered(await comment(dir, fields)),
+        '/viewed': async fields => answered(dir, await markViewed(dir, fields)),
+        '/comment': async fields => answered(dir, await comment(dir, fields)),
+        '/ask': async fields => answered(dir, await ask(dir, fields)),
+        '/resolve': async fields => answered(dir, await resolve(dir, fields)),
+        '/submit': async fields => answered(dir, await submit(dir, fields)),
         '/stop': stop,
       };
   let seen = Date.now();
@@ -175,14 +173,8 @@ export function serve(dir: string, list = false): void {
   });
 }
 
-const answered = (view: object | typeof CHANGED | typeof CHECKING | null): Answer =>
-  view === CHANGED
-    ? { status: 409, body: { error: 'This changed since the page showed it; look at it again.' } }
-    : view === CHECKING
-      ? { status: 409, body: { error: 'Decide after the check.' } }
-      : view
-      ? { status: 200, body: view }
-      : { status: 400 };
+/** Answers with the view as it is now, so the page shows what it sent at once. */
+const answered = (dir: string, done: boolean): Answer => (done ? { status: 200, body: walkthroughView(dir) } : { status: 400 });
 
 async function open(repoDir: string, id: unknown): Promise<Answer> {
   const listed = listView(repoDir).find(one => one.id === id);
@@ -255,7 +247,7 @@ function serveFile(dir: string, list: boolean, what: string, req: http.IncomingM
   }
   const data: Record<string, () => unknown> = {
     'data/viewer.json': () => readViewer(),
-    ...(list ? { 'data/list.json': () => listPage(dir) } : { 'data/session.json': () => sessionView(dir) }),
+    ...(list && { 'data/list.json': () => listPage(dir) }),
   };
   const view = Object.hasOwn(data, what) ? data[what] : undefined;
   if (view) {

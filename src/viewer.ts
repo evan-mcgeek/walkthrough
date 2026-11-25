@@ -1,35 +1,12 @@
-// How the person likes the page to look and which panels it shows, shared by every walkthrough, the list and an export.
+// How the person likes the page to look, shared by every walkthrough and the list.
 
-export const CHOICES = {
-  accent: ['ultramarine', 'petrol', 'berry'],
-  theme: ['system', 'light', 'dark'],
-} as const;
+export const THEMES = ['system', 'light', 'dark'] as const;
+export type Viewer = { theme: (typeof THEMES)[number] };
 
-/** The page's tool windows, in the order of the keys 1 to 3 that show and hide them. */
-export const PANELS = ['queue', 'checklist', 'explanation'] as const;
-export type Panel = (typeof PANELS)[number];
+export const DEFAULT_VIEWER: Viewer = { theme: 'system' };
 
-type Choices = typeof CHOICES;
-export type Viewer = { [Setting in keyof Choices]: Choices[Setting][number] } & { panels: Record<Panel, boolean> };
-
-export const DEFAULT_VIEWER: Viewer = {
-  accent: 'ultramarine',
-  theme: 'system',
-  panels: { queue: true, checklist: false, explanation: false },
-};
-
-const fields = (value: unknown): Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-
-/** `base` with each setting `change` gives a known value for; anything else is ignored. */
+/** `base` with the theme `change` gives, when it is a known one; anything else is ignored. */
 export function mergeViewer(base: Viewer, change: unknown): Viewer {
-  const given = fields(change);
-  const result: Viewer = { ...base, panels: { ...base.panels } };
-  for (const setting of Object.keys(CHOICES) as (keyof Choices)[]) {
-    const value = given[setting];
-    if ((CHOICES[setting] as readonly unknown[]).includes(value)) Object.assign(result, { [setting]: value });
-  }
-  const panels = fields(given['panels']);
-  for (const panel of PANELS) if (typeof panels[panel] === 'boolean') result.panels[panel] = panels[panel];
-  return result;
+  const theme = typeof change === 'object' && change !== null ? (change as Record<string, unknown>)['theme'] : undefined;
+  return THEMES.includes(theme as Viewer['theme']) ? { theme: theme as Viewer['theme'] } : { ...base };
 }
