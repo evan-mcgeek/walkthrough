@@ -118,6 +118,7 @@ Keep listening until the walkthrough stops.
      On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.
      How to post comes from the policy; when something could not go out, tell the person in the chat, and run `walkthrough posted` only once the review is out.
+     Then, when the policy asks you to learn from the review, read `walkthrough comments --all`: a comment of yours with "deleted" was deleted, and one with "wrote" was reworded from what you wrote; save a policy change the person agrees to with `walkthrough policy save --file <file>`, writing the whole policy from `walkthrough policy show`.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after handling what woke you, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.

@@ -33,6 +33,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - A step is one idea rather than one file, and may span several files.
 - Steps are ordered by dependency, so each builds on what I have already read; within a layer, what is called comes before what calls it.
+- Where the order is otherwise free, put the step that most needs my attention early rather than last.
+- When the change is too big to walk through well, say so in the chat before recording steps, suggest how to split it, and go on only when I say so.
 - A test goes into the step whose behaviour it proves, never into a step of its own; a step without tests says so in its explanation.
 - Files nobody writes by hand (regenerated, copied in from elsewhere, recorded test output) are folded, each with the reason in a few words.
   Check each folded file against the files it comes from, and comment on a mismatch.
@@ -55,6 +57,11 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - Run reviewers in a fresh context that sees only the change at the pinned head, the ticket, the project and this policy.
 - For a change of fewer than 300 changed lines, run one reviewer that covers the project's rules and these concerns: contracts, error handling, state, tests.
 - For a larger change, run one reviewer for the project's rules, which quotes the rule behind each finding, and one for each of those concerns.
+- Whatever its size, a change that touches sign-in, permissions, money, personal data, stored data's shape or anything hard to undo gets the larger set.
+- Pick each run's model by the worst that its files or its question could break.
+- A smaller model (today Sonnet) for a run whose files cannot change behaviour, data or security, such as presentation, wording, docs or comments, and for a run that judges only style, structure or simplicity.
+- Every other run, and the run that checks the findings, uses the session's own model.
+- When unsure, the session's own model.
 - A finding states a concrete failure: what input or state leads to what wrong result, at which file and lines.
 - Give all the findings at once to a second fresh-context agent, which confirms or refutes each against the code at the head.
 - A finding that goes against a convention in the project's instructions is settled; leave it out.
@@ -82,6 +89,11 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - My comments and replies are mine: never mark them "[AI]", never reword them, and follow my edits and deletions.
 - Your comments I kept go out with their "[AI]" mark, as I left them.
+
+### Learning from my review
+
+- Once my review has gone out, look at the comments of yours I deleted or reworded.
+- Only when they share a cause that would come up again, suggest in the chat one line for this policy that would have left them out or worded them my way, and change the policy only when I agree; otherwise say nothing.
 
 ## My change
 

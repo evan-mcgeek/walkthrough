@@ -13068,7 +13068,7 @@ function replay(walkthrough, log) {
         if (event.place && !event.thread) roots.set(event.id, event.place);
         const said2 = { id: event.id, at: event.at, body: event.text };
         const view = event.kind === "comment" ? { ...said2, by: event.by, pending: true } : { ...said2, by: "you", ask: true, waiting: true };
-        comments3.set(event.id, { view, thread });
+        comments3.set(event.id, { view, thread, wrote: event.text });
         break;
       }
       case "edit": {
@@ -13085,7 +13085,7 @@ function replay(walkthrough, log) {
         const ask2 = comments3.get(event.ask);
         if (!ask2) break;
         delete ask2.view.waiting;
-        comments3.set(event.id, { view: { id: event.id, at: event.at, body: event.text, by: "ai", answer: true }, thread: ask2.thread });
+        comments3.set(event.id, { view: { id: event.id, at: event.at, body: event.text, by: "ai", answer: true }, thread: ask2.thread, wrote: event.text });
         break;
       }
       case "resolve":
@@ -13125,7 +13125,9 @@ function replay(walkthrough, log) {
     })),
     ...[...roots].filter(([id]) => !gone.has(id)).map(([id, place]) => ({ id, file: place.file, lines: place.lines, step: anchorOf(walkthrough, place), comments: ownIn(id) }))
   ];
-  return { threads: threads3, submits, posted: posted2, resolved, kept };
+  const wrote = new Map([...comments3].map(([id, one]) => [id, one.wrote]));
+  const dropped = [...comments3.values()].filter((one) => one.deleted && one.view.by === "ai" && roots.has(one.view.id)).map((one) => ({ ...one, place: roots.get(one.view.id) }));
+  return { threads: threads3, submits, posted: posted2, resolved, kept, wrote, dropped };
 }
 function fileMarks(steps3) {
   return Object.fromEntries(
@@ -13252,17 +13254,19 @@ function reviewComments(dir, all = false) {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
   const log = logOf(dir);
-  const { threads: threads3, submits, posted: posted2, resolved } = replay(walkthrough, log);
+  const { threads: threads3, submits, posted: posted2, resolved, wrote, dropped } = replay(walkthrough, log);
   const review = submits.findLast((one) => !posted2.has(one.id))?.id;
+  const reworded = (one) => all && one.by === "ai" && wrote.get(one.id) !== one.body ? { wrote: AI_PREFIX + (wrote.get(one.id) ?? "") } : {};
   const inReview = (one) => all ? one.pending === true || one.review !== void 0 : review === void 0 ? one.pending : one.review === review;
   return [
     ...threads3.flatMap(
       (thread) => thread.comments.filter(inReview).map((one) => {
         const body = one.by === "ai" ? AI_PREFIX + one.body : one.body;
         const by = one.by === "colleague" ? one.author : one.by;
-        return one.id === thread.id ? { kind: "comment", id: one.id, by, file: thread.file, lines: thread.lines, body, ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body };
+        return one.id === thread.id ? { kind: "comment", id: one.id, by, file: thread.file, lines: thread.lines, body, ...reworded(one), ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body, ...reworded(one) };
       })
     ),
+    ...(all ? dropped : []).map(({ view, wrote: text2, place }) => ({ kind: "comment", id: view.id, by: "ai", file: place.file, lines: place.lines, body: AI_PREFIX + text2, deleted: true })),
     ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: "resolve", thread }))
   ];
 }
@@ -13823,7 +13827,8 @@ walkthrough say --answer <ask id> (<text> | --file <file>)
 
 walkthrough comments [--all]
   Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
-  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved.
+  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved,
+  then each comment of yours the person deleted, with "deleted": true; one of yours they reworded carries "wrote", what you wrote.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
       a new thread; "outdated" only when its lines changed since
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
@@ -13870,6 +13875,7 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813",
   "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
   "c89e17025c15f4a8a307dfe9592ada903dbe8aa8d2853b04a4c591b8ad31c124",
+  "cb297b6ef136a939ba2feeff2b2b8bfdb1f40198d734abbeb10b0aa229990e2e",
   "db5b3659a66f85035f2d88cd736295dee60a1e20e9a714c470a40af11b8eaef4",
   "e6d323edff72a83d70cc1cd901d1b1ec6d5a07530bd4d8f63194db09b8a23571",
   "f19c5bc5ed0114e350a43a510d0edbcdfa071fade96a6d0c1caace5cf192dccf",
