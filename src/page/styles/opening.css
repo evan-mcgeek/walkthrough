@@ -27,6 +27,7 @@
 
 .opening-line code {
   font: 500 13.5px/1 var(--font-mono);
+  white-space: nowrap;
 }
 
 .opening-failed {

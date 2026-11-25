@@ -82,6 +82,7 @@ walkthrough listen
     {"kind": "stopped"}   the page was stopped; nothing more will come
   Comments, replies, edits, deletions, Resolve and Viewed never wake it.
   Exit code 3: another walkthrough listen took over.
+  Until ready, the page says the session stopped once a listen ran and none has run for 15 seconds, so start it again at once.
 
 walkthrough say --answer <ask id> (<text> | --file <file>)
   Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
