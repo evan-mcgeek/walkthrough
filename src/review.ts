@@ -343,14 +343,14 @@ export async function markPosted(dir: string, address?: string): Promise<void> {
 
 const AI_PREFIX = '[AI] ';
 
-/** What goes out: the latest submitted review not yet posted, or else what is pending, as one line each. */
-export function reviewComments(dir: string): Record<string, unknown>[] {
+/** What goes out: the latest submitted review not yet posted, or else what is pending, as one line each; with `all`, every one ever made. */
+export function reviewComments(dir: string, all = false): Record<string, unknown>[] {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
   const log = logOf(dir);
   const { threads, submits, posted, resolved } = replay(walkthrough, log);
   const review = submits.findLast(one => !posted.has(one.id))?.id;
-  const inReview = (one: CommentView) => (review === undefined ? one.pending : one.review === review);
+  const inReview = (one: CommentView) => (all ? one.pending === true || one.review !== undefined : review === undefined ? one.pending : one.review === review);
   return [
     ...threads.flatMap(thread =>
       thread.comments.filter(inReview).map(one => {
@@ -361,7 +361,7 @@ export function reviewComments(dir: string): Record<string, unknown>[] {
           : { kind: 'reply', id: one.id, by, thread: thread.id, body };
       }),
     ),
-    ...[...resolved].filter(([, round]) => round === review).map(([thread]) => ({ kind: 'resolve', thread })),
+    ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: 'resolve', thread })),
   ];
 }
 
