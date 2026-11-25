@@ -99,13 +99,13 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | N files changed | header, while the review is not ready | replaces the viewed count |
 | AI reviewing | header indicator with the spinner, while the review is not ready | |
 | Steps appear here when the AI is done. | step list, while the review is not ready | |
-| No steps yet. | step list, if preparing failed | |
+| No steps yet. | step list, once the session stopped before ready | |
 | Preparing the walkthrough | main pane title | |
 | The AI is finishing its review of the N changed files. The walkthrough opens here when it’s ready, usually within a minute. | under the title | |
 | N changed files | file list heading | **GH** |
-| The AI couldn’t prepare the walkthrough | title, if preparing failed | |
-| It stopped before the first step. Nothing was posted. Try again; the files below are unchanged. | under the error title | |
-| Try again | primary button, if preparing failed | |
+| The AI couldn’t prepare the walkthrough | title, once the session stopped before ready | |
+| The Claude Code session stopped before the review was done. Nothing was posted. Run `<command>` again to pick it up. | under the error title | `<command>` in mono: `/walkthrough:pr <number>` for a pull request, else `/walkthrough` |
+| Copy command | small secondary button under it | copies the command; reads "Copied" for 2 seconds after a click |
 | Wait, what?! · Hmm… · Nice. | the desk scene’s speech bubbles (decorative; the SVG’s accessible name is “The AI at its desk, reading the change”) | |
 
 ## Strings to remove from the existing page

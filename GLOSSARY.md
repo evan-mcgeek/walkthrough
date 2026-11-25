@@ -35,9 +35,9 @@ One or two pointers in a step to the lines to read first, each with a label of a
 A file the agent marked as not worth reading line by line, such as a generated one; it arrives folded with the agent's one-line reason.
 _Avoid_: Mechanical file, files to skim
 
-**AI reviewing**:
-The steps the session is still reviewing, so its comments on them may still arrive.
-_Avoid_: Being checked
+**Opening**:
+What the page shows until the session runs `walkthrough ready`: the AI at its desk, "AI reviewing" in the header and the changed files; then the whole walkthrough appears at once.
+_Avoid_: Being checked, loading screen
 
 ### Comments and threads
 

@@ -33,14 +33,14 @@ Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the 
 2. Tell the person, in one or two lines, what the output of `walkthrough start` says: the change, the pinned base and head, and any warning.
    Keep the inbox it prints for the files you record from.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
-   The page is already open; the steps appear on it as soon as you record them.
+   The page is not open yet; tell the person it opens when the review is nearly done.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
-4. Record the steps, as "Steps" below says, then start listening for the page, as "Listening for the page" says, so the person can ask while you review.
+4. Record the steps, as "Steps" below says, then start listening for the page, as "Listening for the page" says; while you review, the page takes a running listen as the sign that you are still at work.
 5. Review the change, as "Reviewing" says.
-6. The page is open in their browser; they read, mark files Viewed, comment and submit there.
-   Running `walkthrough start` again on the same head reopens the walkthrough as they left it.
-   On a new head (the branch moved, or the same label on a new range) each step keeps the files that still change, and start names the files in no step yet.
-   Record the steps again with those files, review what changed as "Reviewing" says, and tell the person in one line what is new.
+6. Once the walkthrough is ready, the person reads, marks files Viewed, comments and submits on the page.
+   Running `walkthrough start` again on the same head resumes the walkthrough as they left it; run `walkthrough open` if they need the page again.
+   On a new head (the branch moved, or the same label on a new range) the walkthrough is not ready again, each step keeps the files that still change, and start names the files in no step yet.
+   Record the steps again with those files, review what changed as "Reviewing" says, skipping `walkthrough open` while their page is still open, and tell the person in one line what is new.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
 8. When the person asks to share or keep the walkthrough, run `walkthrough export`, with `--out <file>` when they name a place (the person approves that one, since it writes where it names), and tell them the path it prints.
 9. When the person asks which walkthroughs they have open or wants to find one they left, run `walkthrough list`; `walkthrough stop --list` ends that page.
@@ -82,14 +82,19 @@ Recording again replaces the steps and prints their ids; a step keeps its id whi
 
 ## Reviewing
 
-1. Right after recording the steps, before you start listening, mark them all with `walkthrough reviewing <step id>...`; the page shows those steps as still being reviewed.
-2. Review the change against the ticket and its acceptance criteria, as the policy says, with the reviewers it names.
-3. Step by step, in reading order, record your comments on that step's lines with `walkthrough comment --file <file>`, only where the policy says a comment is worth it, then run `walkthrough reviewing` again with the steps still left.
+Until you run `walkthrough ready`, the page shows the AI at work and the changed files, not the steps; on ready it shows the whole walkthrough at once.
+
+1. Review the change against the ticket and its acceptance criteria, as the policy says, with the reviewers it names.
+   While you review, tell the person how it goes in a line or two in the chat, such as which reviewers run and when they report.
+2. Once the reviewers have reported, or your own review is done when the policy names none, run `walkthrough open`; the page opens on the AI at work while you record the rest.
+   When the person asks to see the page before that, run it at once.
+3. Step by step, in reading order, record your comments on that step's lines with `walkthrough comment --file <file>`, only where the policy says a comment is worth it.
    Write a comment's body without the `[AI]` mark; the page adds it.
    Each comment is pending: it goes out with the review unless the person edits or deletes it.
 4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
 5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`.
-6. Run `walkthrough reviewing` with no ids once the last step is done.
+6. Run `walkthrough ready` once every comment, thread and criterion is recorded; it opens the page too if it was never opened.
+   A comment you record after that lands on the page while the person reads.
 
 ## Listening for the page
 
