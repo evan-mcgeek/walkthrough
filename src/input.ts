@@ -29,9 +29,3 @@ export function parseList<T>(text: string, what: string, check: (fields: Record<
   if (!Array.isArray(list)) throw wrongShape(what, 'array');
   return list.map((one: unknown, at) => check(fieldsOf(one), at + 1));
 }
-
-export function parseObject(text: string, what: string): Record<string, unknown> {
-  const object = parsed(text);
-  if (typeof object !== 'object' || object === null || Array.isArray(object)) throw wrongShape(what, 'object');
-  return object as Record<string, unknown>;
-}

@@ -105,10 +105,6 @@ export class FilePane {
       }
   }
 
-  rowOf(line: number): HTMLTableRowElement | undefined {
-    return this.rows.get(line);
-  }
-
   thread(id: string): { row: HTMLTableRowElement; box: ThreadBox } | undefined {
     return this.threads.get(id);
   }
