@@ -120,7 +120,8 @@ npm run lint    # type check and ESLint
 Rules for working on the code are in [`AGENTS.md`](AGENTS.md), the design in [`docs/design/`](docs/design/), the decisions in [`docs/adr/`](docs/adr/).
 
 To release, label a pull request to `main` with `release`.
-When it merges, CI runs the tests, builds the plugin and pushes it to the `release` branch, which is what the marketplace installs.
+When it merges, CI tests it, builds it onto the `release` branch the marketplace installs from, and tags it with a GitHub Release.
+More in [`docs/releasing.md`](docs/releasing.md).
 
 ## License
 
