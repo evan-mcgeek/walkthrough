@@ -1,12 +1,19 @@
-# Every pull request to main checks the plugin, its skills and hooks, and the marketplace manifest the way Claude Code reads them, and runs every test in every browser.
+# Every pull request to main checks the plugin, its skills and hooks, and the marketplace manifest the way Claude Code
+# reads them, and runs the lint and the tests in Chromium. A newer push cancels the run before it; run it by hand on main
+# when in doubt.
 name: Validate plugin
 
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
