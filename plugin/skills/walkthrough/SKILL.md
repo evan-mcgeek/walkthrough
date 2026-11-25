@@ -89,6 +89,7 @@ Recording again replaces the steps and prints their ids; a step keeps its id whi
 Until you run `walkthrough ready`, the page shows the AI at work and the changed files, not the steps; on ready it shows the whole walkthrough at once.
 
 1. Review the change against the ticket and its acceptance criteria, as the policy says, with the reviewers it names.
+   Before any reviewer starts, measure the change as the policy says and tell the person the size and the runs the policy names for it, such as "173 changed lines: one reviewer, then one check of its findings, as the policy says"; run exactly those.
    While you review, tell the person how it goes in a line or two in the chat, such as which reviewers run and when they report.
 2. Once the reviewers have reported, or your own review is done when the policy names none, run `walkthrough open`; the page opens on the AI at work while you record the rest.
    When the person asks to see the page before that, run it at once.
