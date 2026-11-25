@@ -32,18 +32,17 @@ export function showAlert(message: string | null): void {
   document.body.classList.remove('unreachable');
 }
 
-/** `retry` asks the server again at once; without it the page only keeps trying on its own. */
-export type PageName = { name: string; reopen: string; retry?: () => void };
+/** A page that says in a banner how to reopen it, or one that handles losing its server with `lost`. */
+export type PageName = { name: string; reopen: string } | { name: string; lost: () => void };
 
 /** Says the server is gone and dims the page behind the banner until it answers again. */
-export function showUnreachable({ name, reopen, retry }: PageName): void {
+export function showUnreachable({ name, reopen }: { name: string; reopen: string }): void {
   // Drawn once: a banner redrawn on every failed poll is announced again and takes the focus off Retry.
   if (document.body.classList.contains('unreachable')) return;
   const box = region('alert');
   box.replaceChildren(
     icon('offline'),
     el('span', { className: 'banner-text' }, el('strong', {}, `Could not reach the ${name}.`), ` ${reopen}`),
-    ...(retry ? [el('button', { type: 'button', className: 'btn small', onclick: retry }, 'Retry now')] : []),
   );
   box.hidden = false;
   document.body.classList.add('unreachable');
@@ -76,7 +75,8 @@ export async function post(page: PageName, route: string, body: Record<string, u
     showAlert(typeof said.error === 'string' ? said.error : `The ${page.name} could not do that (${String(answer.status)}).`);
     return null;
   } catch {
-    showUnreachable(page);
+    if ('lost' in page) page.lost();
+    else showUnreachable(page);
     return null;
   }
 }

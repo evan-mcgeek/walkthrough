@@ -2,16 +2,13 @@
 import type { CommentView, ReviewType, ThreadView } from '../review';
 import type { Criterion } from '../walkthrough';
 import { attrs, el } from './dom';
+import { sentLine, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
 import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, unresolved } from './state';
 import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
 import { avatar } from './threads';
 
-const TYPES: [ReviewType, string][] = [
-  ['comment', 'Comment'],
-  ['approve', 'Approve'],
-  ['request-changes', 'Request changes'],
-];
+const TYPES = Object.entries(TYPE_NAMES) as [ReviewType, string][];
 const CRITERIA: Record<Criterion['status'], [IconName, string]> = {
   met: ['met', 'Met'],
   partly: ['partly', 'Partly met'],
@@ -36,7 +33,10 @@ export class SummaryPane {
   /** The review box fading out while the review is sent. */
   private sentBox: { box: HTMLElement; fading: Animation } | null = null;
 
-  constructor(private readonly reveal: (target: Reveal) => void) {}
+  constructor(
+    private readonly reveal: (target: Reveal) => void,
+    private readonly end: () => void,
+  ) {}
 
   update(): void {
     const { view } = state;
@@ -60,7 +60,7 @@ export class SummaryPane {
       ...(submitted ? [] : this.counts()),
     );
     const left = el('div', { className: 'summary-lists' }, going, ...this.criteria());
-    const right = el('div', { className: 'review-side' }, submitted ? this.done(submitted.comments) : this.reviewBox());
+    const right = el('div', { className: 'review-side' }, submitted ? this.done() : this.reviewBox());
     this.box.replaceChildren(el('h1', { className: 'step-title', tabIndex: -1 }, 'Summary'), el('div', { className: 'summary-grid' }, left, right));
     if (submitted && this.shownSent === false) this.arrive(right);
     this.shownSent = !!submitted;
@@ -175,17 +175,16 @@ export class SummaryPane {
     area.oninput = () => {
       this.draft = area.value;
     };
-    const blocked = () => own && this.type === 'comment' && pendingComments().length === 0;
-    const submit = el('button', { type: 'button', className: 'btn primary wide', disabled: blocked() || this.sending }, own ? 'Send to agent' : 'Submit review');
-    const note = el('p', { className: 'review-note', hidden: !blocked() }, 'Add a comment, or choose Approve or Request changes.');
+    // Your own change has no review type: it goes to the agent with its comments, so it needs one.
+    const blocked = own && pendingComments().length === 0;
+    const submit = el('button', { type: 'button', className: 'btn primary wide', disabled: blocked || this.sending }, own ? 'Send to agent' : 'Submit review');
+    const note = el('p', { className: 'review-note', hidden: !blocked }, 'Add a comment to send it to the agent.');
     attrs(submit, { 'aria-describedby': 'review-note' });
     note.id = 'review-note';
     const radios = TYPES.map(([value, label]) => {
       const radio = el('input', { type: 'radio', name: 'review-type', value, checked: value === this.type });
       radio.onchange = () => {
         this.type = value;
-        submit.disabled = blocked();
-        note.hidden = !blocked();
       };
       return el('label', { className: 'radio' }, radio, label);
     });
@@ -199,7 +198,7 @@ export class SummaryPane {
         fill: 'forwards',
       });
       this.sentBox = { box, fading };
-      const done = await send('submit', { type: this.type, summary: this.draft.trim() });
+      const done = await send('submit', { ...(!own && { type: this.type }), summary: this.draft.trim() });
       this.sending = false;
       if (done) this.draft = '';
       else {
@@ -212,24 +211,18 @@ export class SummaryPane {
       { className: 'review-box' },
       el('h2', { className: 'section-head' }, 'Finish your review'),
       area,
-      attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' }),
+      ...(own ? [] : [attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' })]),
       submit,
       note,
     );
     return box;
   }
 
-  private done(count: number): HTMLElement {
-    const { view } = state;
-    const submitted = view.submitted;
-    const type = TYPES.find(([value]) => value === submitted?.type)?.[1] ?? '';
-    const lines = view.pr
-      ? [
-          el('strong', {}, 'Review submitted'),
-          el('p', {}, `${type}, with ${plural(count, 'comment')}, on #${view.pr.number}.`),
-          ...(submitted?.address ? [el('a', { href: submitted.address, target: '_blank', rel: 'noopener noreferrer' }, 'View review')] : []),
-        ]
-      : [el('strong', {}, 'Sent to the agent'), ...(count ? [el('p', {}, `${plural(count, 'comment')}; it fixes them in the Claude Code chat.`)] : [])];
+  private done(): HTMLElement {
+    const end = el('button', { type: 'button', className: 'btn small ghost', onclick: this.end }, 'End session');
+    const lines = state.view.pr
+      ? [el('strong', {}, 'Review submitted'), el('p', {}, sentLine()), el('p', { className: 'outcome-actions' }, ...viewReview(), end)]
+      : [el('strong', {}, 'Sent to the agent'), el('p', {}, `${sentLine()} The agent is fixing them; follow along there.`), el('p', { className: 'outcome-actions' }, end)];
     return attrs(el('div', { className: 'review-box done' }, icon('met'), el('div', {}, ...lines)), { role: 'status' });
   }
 }

@@ -27,7 +27,8 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
     const problems: string[] = [];
     page.on('pageerror', error => problems.push(error.message));
     page.on('console', message => {
-      if (message.type() === 'error') problems.push(message.text());
+      // A request that never reached a server, as a test that takes the server away causes, is not the page's fault.
+      if (message.type() === 'error' && !message.text().startsWith('Failed to load resource: net::ERR_')) problems.push(message.text());
     });
     await use(repo.url());
     expect(problems).toEqual([]);

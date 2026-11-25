@@ -1,10 +1,9 @@
 // The Opening: what the page shows until the session runs `walkthrough ready`, or the session gone before it did.
 import { attrs, el } from './dom';
 import { deskScene } from './desk';
+import { commandBox } from './end';
 import { icon } from './icons';
 import { plural, state } from './state';
-
-const COPIED_MS = 2000;
 
 export class Opening {
   readonly box = el('div', { className: 'opening' });
@@ -46,18 +45,6 @@ export class Opening {
   }
 
   private failed(): HTMLElement {
-    const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : '/walkthrough';
-    const copy = attrs(el('button', { type: 'button', className: 'btn small' }, 'Copy command'), { 'aria-live': 'polite' });
-    let shown = 0;
-    copy.onclick = () => {
-      void navigator.clipboard.writeText(command).then(() => {
-        copy.textContent = 'Copied';
-        clearTimeout(shown);
-        shown = window.setTimeout(() => {
-          copy.textContent = 'Copy command';
-        }, COPIED_MS);
-      });
-    };
     return attrs(
       el(
         'div',
@@ -67,8 +54,9 @@ export class Opening {
           'div',
           {},
           el('h1', { className: 'opening-title' }, 'The AI couldn’t prepare the walkthrough'),
-          el('p', { className: 'opening-line' }, 'The Claude Code session stopped before the review was done. Nothing was posted. Run ', el('code', {}, command), ' again to pick it up.'),
-          el('p', { className: 'opening-actions' }, copy),
+          el('p', { className: 'opening-line' }, 'It stopped before the review was done. Nothing was posted.'),
+          el('p', { className: 'end-line opening-lead' }, 'Start it over in your agent:'),
+          commandBox(),
         ),
       ),
       { role: 'status' },

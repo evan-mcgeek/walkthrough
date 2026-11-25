@@ -93,7 +93,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Fix list
 
 - When I send to agent, give me one fix list in the chat, ready to paste into the author session.
-- Head it with my review type and my summary, then each comment with its file and lines and its words as they are.
+- Head it with my summary, then each comment with its file and lines and its words as they are.
 - The author session makes the fixes; the walkthrough session's work ends at the fix list.
 
 ## Someone else's change

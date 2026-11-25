@@ -2,7 +2,8 @@
 import type { WalkthroughView } from '../review';
 import type { Viewer } from '../viewer';
 import { chooseTheme, loadViewer } from './appearance';
-import { attrs, el, postQuietly, region, showAlert, showUnreachable } from './dom';
+import { attrs, el, postQuietly, region, showAlert } from './dom';
+import { type Ending, endScreen } from './end';
 import { pick } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
@@ -25,9 +26,14 @@ new ResizeObserver(() => {
 let theme: Viewer['theme'] = 'system';
 let stopped = false;
 const panes = new Map<string, { key: string; pane: StepPane }>();
-const summary = new SummaryPane(target => {
-  reveal(target);
-});
+const summary = new SummaryPane(
+  target => {
+    reveal(target);
+  },
+  () => {
+    endSession();
+  },
+);
 /** What arrived where it would have moved the page, folded until the pill opens it. */
 let arrived: HTMLElement[] = [];
 /** Shown until the walkthrough is ready. */
@@ -230,7 +236,7 @@ function drawHeader(onSummary: boolean): void {
     changeLabel = fresh;
   }
   // The tab says the AI is still reviewing, so it reads from the tab strip; a static mark, since background tabs barely animate.
-  const reviewing = !view.ready && !view.sessionGone;
+  const reviewing = !view.ready && !view.sessionGone && !ending;
   const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   if (document.title !== title) document.title = title;
   const favicon = reviewing ? 'favicon-reviewing.svg' : 'favicon.svg';
@@ -314,7 +320,7 @@ function toggleMenu(): void {
       { className: 'menu' },
       attrs(el('div', {}, el('p', { className: 'menu-label', id: 'menu-theme' }, 'Theme'), ...themes), { role: 'group', 'aria-labelledby': 'menu-theme' }),
       el('hr'),
-      item('End session', 'menuitem', () => void endSession()),
+      item('End session', 'menuitem', endSession),
     ),
     { role: 'menu', 'aria-label': 'Menu' },
   );
@@ -342,11 +348,48 @@ document.addEventListener('pointerdown', event => {
   if (menu && event.target instanceof Node && !menu.contains(event.target) && !button?.contains(event.target)) closeMenu(false);
 });
 
-async function endSession(): Promise<void> {
-  await postQuietly('stop', {});
+/** The farewell shows before the server stops, as the page draws it from what it holds; nothing needs a confirm, as all of it is saved. */
+function endSession(): void {
   stopped = true;
   clearInterval(poller);
-  showUnreachable(PAGE);
+  showEnd('ended');
+  void postQuietly('stop', {});
+}
+
+const endPage = el('main', { className: 'end-page', hidden: true });
+document.body.append(endPage);
+let ending: { kind: Ending; stop: () => void; scrolled: [number, number] } | null = null;
+
+/** Puts the farewell or the lost session in place of the walkthrough, which stays as it was underneath. */
+function showEnd(kind: Ending): void {
+  if (ending?.kind === kind) return;
+  ending?.stop();
+  closeMenu(false);
+  showDrawer(false);
+  showAlert(null);
+  const screen = endScreen(kind, poll);
+  ending = { kind, stop: screen.stop, scrolled: ending?.scrolled ?? [main.scrollTop, nav.scrollTop] };
+  endPage.replaceChildren(screen.box);
+  endPage.hidden = false;
+  endPage.scrollTop = 0;
+  document.body.classList.add('ended');
+  drawHeader(current().kind === 'summary');
+  endPage.querySelector<HTMLElement>('.end-title')?.focus({ preventScroll: true });
+}
+
+/** The server answered again: the walkthrough comes back where it was. */
+function hideEnd(): void {
+  if (!ending) return;
+  const [mainTop, navTop] = ending.scrolled;
+  ending.stop();
+  ending = null;
+  endPage.hidden = true;
+  endPage.replaceChildren();
+  document.body.classList.remove('ended');
+  main.scrollTop = mainTop;
+  nav.scrollTop = navTop;
+  render(true);
+  content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
 }
 
 // The step list is drawn again only when the steps change; Viewed, counts, spinners and the current row change in place.
@@ -511,12 +554,15 @@ document.addEventListener('keydown', event => {
   }
   const typing = event.target instanceof HTMLElement && event.target.closest('input, textarea, [contenteditable]');
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
-  if (pendingKey === 'g' && event.key === 's' && state.view.ready) go('summary');
+  if (pendingKey === 'g' && event.key === 's' && state.view.ready && !ending) go('summary');
   pendingKey = event.key === 'g' ? 'g' : '';
 });
 
 const POLL_MS = 1500;
+// One failed poll can be a blip; the second says the session isn't running.
+const LOST_AFTER = 2;
 let polling = false;
+let failed = 0;
 let tag = '';
 
 function poll(): void {
@@ -527,22 +573,26 @@ function poll(): void {
   state.stale = false;
   fetch('data/walkthrough.json', tag ? { headers: { 'if-none-match': tag } } : {})
     .then(async answer => {
-      if (document.body.classList.contains('unreachable')) showAlert(null);
-      if (answer.status === 304 || since !== state.sends) return;
-      if (!answer.ok) throw new Error(String(answer.status));
-      tag = answer.headers.get('etag') ?? '';
-      state.view = (await answer.json()) as WalkthroughView;
-      render(false);
+      if (answer.status !== 304 && !answer.ok) throw new Error(String(answer.status));
+      if (stopped) return;
+      failed = 0;
+      const fresh = answer.status !== 304 && since === state.sends;
+      if (fresh) {
+        tag = answer.headers.get('etag') ?? '';
+        state.view = (await answer.json()) as WalkthroughView;
+      }
+      if (ending) hideEnd();
+      else if (fresh) render(false);
     })
     .catch(() => {
-      showUnreachable(PAGE);
+      if (!stopped && ++failed >= LOST_AFTER) showEnd('lost');
     })
     .finally(() => {
       polling = false;
     });
 }
 
-PAGE.retry = poll;
+PAGE.lost = poll;
 theme = await loadViewer();
 const first = await fetch('data/walkthrough.json');
 tag = first.headers.get('etag') ?? '';

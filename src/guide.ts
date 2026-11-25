@@ -78,7 +78,8 @@ walkthrough listen
     {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
       Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
     {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
-      Submit review or Send to agent; read what goes out with walkthrough comments, act on it, then run walkthrough posted.
+      Submit review or Send to agent; "type" only on a pull request, as your own change has none.
+      Read what goes out with walkthrough comments, act on it, then run walkthrough posted.
     {"kind": "stopped"}   the page was stopped; nothing more will come
   Comments, replies, edits, deletions, Resolve and Viewed never wake it.
   Exit code 3: another walkthrough listen took over.

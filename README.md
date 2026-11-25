@@ -55,7 +55,7 @@ Nothing is ever checked out, and uncommitted edits are left out with a warning.
 4. You read, mark files Viewed, comment, edit or delete the AI's comments, reply and resolve.
    For a question, use Ask AI in a thread; the answer stays on the page and never goes out.
 5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them.
-   Pick Comment, Approve or Request changes and submit.
+   On a pull request, pick Comment, Approve or Request changes and submit.
 
 While the AI finishes its review, the page shows it at its desk:
 

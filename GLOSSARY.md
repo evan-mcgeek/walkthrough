@@ -62,8 +62,8 @@ The person's mark on a file they have read, which folds it; it clears when new c
 The page's last entry, the code host's "Finish your review" made visible: every pending comment that goes out, the unresolved threads and files not viewed as counts, the acceptance criteria, and the review box.
 
 **Review**:
-What the person submits from the Summary: a type (Comment, Approve or Request changes), a summary and every pending comment.
-On a pull request the session posts it to the code host as one finished review; on the person's own change it goes to the agent as a fix list.
+What the person submits from the Summary: a summary and every pending comment, and on a pull request a type (Comment, Approve or Request changes).
+On a pull request the session posts it to the code host as one finished review; on the person's own change it goes to the agent as a fix list, with no type.
 _Avoid_: Verdict, decision
 
 **Acceptance criteria**:

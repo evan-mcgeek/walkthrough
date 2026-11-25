@@ -4,7 +4,8 @@ import type { Step } from '../walkthrough';
 import { type PageName, post } from './dom';
 import { renderMarkdown } from './markdown';
 
-export const PAGE: PageName = { name: 'walkthrough', reopen: 'Run /walkthrough to reopen.' };
+/** A request that never reached the server asks it again at once, so a server gone shows as soon as polls show it. */
+export const PAGE = { name: 'walkthrough', lost: () => {} } satisfies PageName;
 
 export const state = {
   view: undefined as unknown as WalkthroughView,

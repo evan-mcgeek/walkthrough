@@ -107,7 +107,7 @@ Keep listening until the walkthrough stops.
    - An ask: the person asked you about their picked lines or in a thread, which comes with what the thread said before.
      Answer from the change at the pinned head with `walkthrough say --answer <id> '<answer>'`; the answer is a reply in that thread, stays on the page and never goes out.
      Pass short text in single quotes, writing a single quote in it as `'\''`; for longer text, write it to a file in the inbox and pass `--file <file>` in place of the text.
-   - A submit: the person finished their review, with its type and summary.
+   - A submit: the person finished their review, with its summary, and on a pull request its type.
      Read what goes out with `walkthrough comments`: their comments as they are now, yours with the `[AI] ` mark at the start, their replies and the threads they resolved.
      On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.

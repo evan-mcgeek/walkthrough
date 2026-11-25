@@ -57,6 +57,12 @@ const ICONS = {
   ],
   offline: [line('M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11', 1.5)],
   file: [['path', { d: 'M4 1.8h5l3 3v9.4H4z M9 1.8v3h3', ...round, 'stroke-width': 1.5 }]],
+  info: [ring(), line('M8 7.3v3.9'), ['circle', { cx: 8, cy: 4.9, r: 0.95, fill: 'currentColor' }]],
+  copy: [
+    ['rect', { x: 5.5, y: 5.5, width: 8, height: 8, rx: 1.6, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5 }],
+    line('M10.5 3.5v-.4A1.1 1.1 0 0 0 9.4 2H3.1A1.1 1.1 0 0 0 2 3.1v6.3a1.1 1.1 0 0 0 1.1 1.1h.4', 1.5),
+  ],
+  external: [line('M9 3h4v4M13 3L7.5 8.5M11.5 9.5v2.4a1.1 1.1 0 0 1-1.1 1.1H4.1A1.1 1.1 0 0 1 3 11.9V5.6a1.1 1.1 0 0 1 1.1-1.1h2.4', 1.5)],
 } satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;
