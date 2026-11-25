@@ -5,7 +5,7 @@ import { chooseTheme, loadViewer } from './appearance';
 import { attrs, el, postQuietly, region, showAlert, showUnreachable } from './dom';
 import { pick } from './files';
 import { icon } from './icons';
-import { animate, FADE_IN, reduced } from './motion';
+import { animate, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
 import { ago, aiReviewing, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile } from './state';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
@@ -59,23 +59,56 @@ function paneOf(id: string): StepPane {
 function go(address: string): void {
   pick(null);
   if (decodeURIComponent(location.hash.slice(1)) !== address) history.pushState(null, '', `#${address}`);
-  document.body.classList.remove('drawer-open');
+  showDrawer(false);
   moved();
 }
 
-/** After moving to another step or the Summary: what was held opens, the pane enters, and the page starts at its top. */
+/** After moving to another step or the Summary: what was held opens, the old pane leaves, the new one enters, and the page starts at its top. */
 function moved(): void {
   for (const one of arrived) one.classList.remove('arriving');
   arrived = [];
+  const old = content.firstElementChild;
+  const scrolled = main.scrollTop;
+  // Stopped while still in the page: a pane taken out of it no longer lists what plays on it.
+  if (old) settle(old);
   render(true, true);
   main.scrollTop = 0;
   const shown = content.firstElementChild;
-  if (shown)
-    animate(shown, 'pane-enter', reduced() ? FADE_IN : [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }], {
+  if (shown && shown !== old) {
+    settle(shown);
+    shown.removeAttribute('inert');
+    shown.removeAttribute('aria-hidden');
+    const leaving = old instanceof HTMLElement && !old.classList.contains('preparing');
+    if (leaving) leave(old, scrolled);
+    const still = reduced();
+    animate(shown, 'pane-enter', still ? FADE_IN : [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }], {
       ms: 'base',
-      curve: reduced() ? 'linear' : 'ease-out',
+      curve: still ? 'linear' : 'ease-out',
+      delay: leaving ? LEAVE_MS : 0,
     });
+  }
   content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
+}
+
+const LEAVE_MS = 100;
+
+/** The pane moved away from stays where it was read and leaves to the left, then goes. */
+function leave(old: HTMLElement, scrolled: number): void {
+  attrs(old, { inert: '', 'aria-hidden': 'true' });
+  content.append(old);
+  const at = `translateY(${String(-scrolled)}px)`;
+  const still = reduced();
+  const leaving = animate(old, 'pane-leave', [{ opacity: 1, transform: at }, { opacity: 0, transform: still ? at : `${at} translateX(-12px)` }], {
+    ms: LEAVE_MS,
+    curve: still ? 'linear' : 'ease-in',
+    fill: 'forwards',
+  });
+  leaving.finished.then(
+    () => {
+      if (content.firstElementChild !== old) old.remove();
+    },
+    () => {},
+  );
 }
 
 function reveal({ thread: id, edit, file }: Reveal): void {
@@ -89,13 +122,15 @@ function reveal({ thread: id, edit, file }: Reveal): void {
   const shown = thread && pane.thread(thread.id);
   const target = shown ? shown.row : pane.box;
   main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
+  // A pane still leaving would scroll along with the one landing here.
+  for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
   if (shown && edit) shown.box.edit(edit);
 }
 
 /** The first thing at or below the top of the pane, to keep where it is while the page changes around it. */
 function readingAnchor(): { element: Element; top: number } | null {
   const top = main.getBoundingClientRect().top;
-  for (const element of content.querySelectorAll('.step-head, .file-header, tr, .step-foot')) {
+  for (const element of content.firstElementChild?.querySelectorAll('.step-head, .file-header, tr, .step-foot') ?? []) {
     const box = element.getBoundingClientRect();
     if (box.height && box.bottom > top) return { element, top: box.top };
   }
@@ -105,91 +140,116 @@ function readingAnchor(): { element: Element; top: number } | null {
 function drawPill(): void {
   arrived = arrived.filter(one => one.isConnected && one.classList.contains('arriving'));
   const count = arrived.reduce((sum, one) => sum + Math.max(1, one.querySelectorAll('.comment').length), 0);
-  pill.hidden = count === 0;
-  pill.replaceChildren(icon('up'), count === 1 ? '1 new comment above' : `${String(count)} new comments above`);
+  if (count) {
+    settle(pill);
+    pill.hidden = false;
+    pill.replaceChildren(icon('up'), count === 1 ? '1 new comment above' : `${String(count)} new comments above`);
+  } else if (!pill.hidden)
+    fadeOut(
+      pill,
+      'fast',
+      () => {
+        pill.hidden = true;
+      },
+      'ease-in',
+    );
 }
 
 pill.onclick = () => {
   const [first] = arrived;
-  for (const one of arrived) {
-    one.classList.remove('arriving');
-    one.classList.add('grow');
-  }
+  for (const one of arrived) one.classList.remove('arriving');
+  for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
   drawPill();
-  if (first) main.scrollTop += first.getBoundingClientRect().top - main.getBoundingClientRect().top - 120;
+  if (first)
+    main.scrollTo({
+      top: main.scrollTop + first.getBoundingClientRect().top - main.getBoundingClientRect().top - 120,
+      behavior: reduced() ? 'instant' : 'smooth',
+    });
 };
 
-let drawnHeader = '';
+// The header is drawn once and changed in place, so its count, bar and indicator can move.
+const viewedFill = el('i');
+const viewedNumber = el('span', { className: 'viewed-number' });
+const viewedTotal = document.createTextNode('');
+const filesViewed = el(
+  'span',
+  { className: 'files-viewed' },
+  attrs(el('span', { className: 'bar' }, viewedFill), { 'aria-hidden': 'true' }),
+  el('span', { className: 'count' }, viewedNumber, viewedTotal, el('span', { className: 'long' }, ' files viewed')),
+);
+const reviewingNow = attrs(
+  el('span', { className: 'ai-reviewing', title: 'The AI is still reviewing; comments may arrive' }, icon('spinner'), el('span', { className: 'long' }, 'AI reviewing')),
+  { role: 'status', 'aria-label': 'AI reviewing' },
+);
+const finish = attrs(
+  el('a', { className: 'btn primary small finish', href: '#summary', title: 'Go to the Summary (G S)' }, el('span', { className: 'long' }, 'Finish review'), el('span', { className: 'short' }, 'Finish')),
+  { 'aria-label': 'Finish review' },
+);
+finish.onclick = event => {
+  event.preventDefault();
+  go('summary');
+};
+let changeLabel: HTMLElement = el('span');
+header.append(
+  attrs(el('span', { className: 'mark' }, icon('mark')), { 'aria-hidden': 'true' }),
+  attrs(el('button', { type: 'button', className: 'icon-button steps-button', onclick: toggleDrawer }, icon('sidebar')), {
+    'aria-label': 'Steps and files',
+    'aria-expanded': 'false',
+    'aria-controls': 'nav',
+  }),
+  changeLabel,
+  filesViewed,
+  el('span', { className: 'spacer' }),
+  finish,
+  attrs(el('button', { type: 'button', className: 'icon-button menu-button', onclick: toggleMenu }, icon('more')), {
+    'aria-label': 'Menu',
+    'aria-haspopup': 'menu',
+    'aria-expanded': 'false',
+  }),
+);
+let drawnLabel = '';
+let shownViewed: number | undefined;
 
 function drawHeader(onSummary: boolean): void {
   const { view } = state;
+  const name = view.kind === 'branch' ? view.branch : view.label;
+  const label = JSON.stringify([view.pr, name]);
+  if (label !== drawnLabel) {
+    drawnLabel = label;
+    const fresh = view.pr
+      ? el('span', { className: 'change-label', title: `#${view.pr.number} ${view.pr.title}` }, el('span', { className: 'pr-number' }, `#${view.pr.number}`), ` ${view.pr.title}`)
+      : el('code', { className: 'change-label branch', title: name }, name);
+    changeLabel.replaceWith(fresh);
+    changeLabel = fresh;
+  }
   const files = allFiles().length;
   const viewed = view.viewed.length;
-  const reviewing = aiReviewing();
-  const name = view.kind === 'branch' ? view.branch : view.label;
-  const key = JSON.stringify([view.pr, name, files, viewed, reviewing, onSummary]);
-  if (key === drawnHeader) return;
-  drawnHeader = key;
-  const focused = document.activeElement instanceof HTMLElement && header.contains(document.activeElement) ? document.activeElement.dataset['key'] : undefined;
-  const fill = el('i');
-  fill.style.setProperty('width', `${String(files ? (viewed / files) * 100 : 0)}%`);
-  const label = view.pr
-    ? el('span', { className: 'change-label', title: `#${view.pr.number} ${view.pr.title}` }, el('span', { className: 'pr-number' }, `#${view.pr.number}`), ` ${view.pr.title}`)
-    : el('code', { className: 'change-label branch', title: name }, name);
-  const steps = attrs(el('button', { type: 'button', className: 'icon-button steps-button', onclick: toggleDrawer }, icon('sidebar')), {
-    'aria-label': 'Steps and files',
-    'aria-expanded': String(document.body.classList.contains('drawer-open')),
-    'aria-controls': 'nav',
-  });
-  steps.dataset['key'] = 'steps';
-  const finish = el(
-    'a',
-    { className: 'btn primary small finish', href: '#summary', title: 'Go to the Summary (G S)', hidden: onSummary },
-    el('span', { className: 'long' }, 'Finish review'),
-    el('span', { className: 'short' }, 'Finish'),
-  );
-  attrs(finish, { 'aria-label': 'Finish review' });
-  finish.onclick = event => {
-    event.preventDefault();
-    go('summary');
-  };
-  finish.dataset['key'] = 'finish';
-  const more = attrs(
-    el('button', { type: 'button', className: 'icon-button menu-button', onclick: toggleMenu }, icon('more')),
-    { 'aria-label': 'Menu', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
-  );
-  more.dataset['key'] = 'menu';
-  const reviewingNow = reviewing
-    ? [
-        attrs(el('span', { className: 'ai-reviewing', title: 'The AI is still reviewing; comments may arrive' }, icon('spinner'), el('span', { className: 'long' }, 'AI reviewing')), {
-          role: 'status',
-          'aria-label': 'AI reviewing',
-        }),
-      ]
-    : [];
-  closeMenu(false);
-  header.replaceChildren(
-    attrs(el('span', { className: 'mark' }, icon('mark')), { 'aria-hidden': 'true' }),
-    steps,
-    label,
-    el(
-      'span',
-      { className: 'files-viewed' },
-      attrs(el('span', { className: 'bar' }, fill), { 'aria-hidden': 'true' }),
-      el('span', { className: 'count' }, `${String(viewed)} / ${String(files)}`, el('span', { className: 'long' }, ' files viewed')),
-    ),
-    ...reviewingNow,
-    el('span', { className: 'spacer' }),
-    finish,
-    more,
-  );
-  if (focused !== undefined) header.querySelector<HTMLElement>(`[data-key="${focused}"]`)?.focus();
+  viewedTotal.data = ` / ${String(files)}`;
+  viewedFill.style.setProperty('width', `${String(files ? (viewed / files) * 100 : 0)}%`);
+  if (viewed !== shownViewed) {
+    viewedNumber.textContent = String(viewed);
+    if (shownViewed !== undefined) tick(viewedNumber);
+    shownViewed = viewed;
+  }
+  finish.hidden = onSummary;
+  if (aiReviewing()) {
+    settle(reviewingNow);
+    if (!reviewingNow.isConnected) filesViewed.after(reviewingNow);
+  } else if (reviewingNow.isConnected)
+    fadeOut(reviewingNow, 'base', () => {
+      reviewingNow.remove();
+    });
+}
+
+function showDrawer(open: boolean): void {
+  document.body.classList.toggle('drawer-open', open);
+  header.querySelector('.steps-button')?.setAttribute('aria-expanded', String(open));
 }
 
 function toggleDrawer(): void {
-  const open = document.body.classList.toggle('drawer-open');
-  header.querySelector('.steps-button')?.setAttribute('aria-expanded', String(open));
+  const open = !document.body.classList.contains('drawer-open');
+  showDrawer(open);
   if (open) nav.querySelector<HTMLElement>('[aria-current="page"]')?.focus();
 }
 
@@ -271,62 +331,89 @@ async function endSession(): Promise<void> {
   showUnreachable(PAGE);
 }
 
+// The step list is drawn again only when the steps change; Viewed, counts, spinners and the current row change in place.
 let drawnNav = '';
+type NavFile = { file: string; row: HTMLElement; tick: HTMLElement; count: HTMLElement; shown: number };
+let navSteps: { id: string; row: HTMLElement; spinner: HTMLElement; files: NavFile[] }[] = [];
+const pendingCount = el('span', { className: 'file-count' });
+const summaryRow = navLink('summary', 'step-row summary-row', icon('summary'), el('span', { className: 'step-name' }, 'Summary'), pendingCount);
+summaryRow.dataset['key'] = 'summary';
+let shownPending: number | undefined;
 
-function drawNav(at: At): void {
-  const { view } = state;
-  const here = at.kind === 'step' ? at.pane.step.id : at.kind;
-  const counts = view.steps.map(step => step.files.map(file => commentCount(step.id, file)));
-  const pending = pendingComments().length;
-  const key = JSON.stringify([view.steps.map(step => [step.id, step.title, step.files]), view.viewed, view.reviewing, !!view.submitted, counts, pending, here]);
-  if (key === drawnNav) return;
-  drawnNav = key;
+function navLink(address: string, className: string, ...children: (Node | string)[]): HTMLAnchorElement {
+  const row = el('a', { className, href: `#${address}` }, ...children);
+  row.onclick = event => {
+    event.preventDefault();
+    go(address);
+  };
+  return row;
+}
+
+function buildNav(): void {
   const focused = document.activeElement instanceof HTMLElement && nav.contains(document.activeElement) ? document.activeElement.dataset['key'] : undefined;
   const scrolled = nav.scrollTop;
-  const link = (address: string, className: string, ...children: (Node | string)[]) => {
-    const row = el('a', { className, href: `#${address}` }, ...children);
-    row.onclick = event => {
-      event.preventDefault();
-      go(address);
-    };
-    return row;
-  };
-  const steps = view.steps.map((step, index) => {
-    const reviewing = view.reviewing.includes(step.id) && !view.submitted;
-    const row = link(
-      stepAddress(step.id),
-      'step-row',
-      el('span', { className: 'step-number' }, String(index + 1)),
-      el('span', { className: 'step-name', title: step.title }, step.title),
-      ...(reviewing ? [attrs(el('span', { className: 'step-reviewing', title: 'AI still reviewing this step' }, icon('spinner')), { role: 'img', 'aria-label': 'AI still reviewing this step' })] : []),
-    );
+  navSteps = state.view.steps.map((step, index) => {
+    const row = navLink(stepAddress(step.id), 'step-row', el('span', { className: 'step-number' }, String(index + 1)), el('span', { className: 'step-name', title: step.title }, step.title));
     row.dataset['key'] = `step:${step.id}`;
-    if (here === step.id) row.setAttribute('aria-current', 'page');
-    const files = step.files.map((file, at) => {
-      const seen = view.viewed.includes(file);
-      const count = counts[index]?.[at] ?? 0;
-      const fileRow = el(
-        'a',
-        { className: `file-row${seen ? ' viewed' : ''}`, href: `#${stepAddress(step.id)}`, title: file },
-        icon(seen ? 'met' : 'ring', seen ? 'Viewed' : 'Not viewed'),
-        el('span', { className: 'file-name' }, baseName(file)),
-        ...(count ? [el('span', { className: 'file-count', title: plural(count, 'comment') }, icon('message'), String(count))] : []),
-      );
+    const spinner = attrs(el('span', { className: 'step-reviewing', title: 'AI still reviewing this step' }, icon('spinner')), { role: 'img', 'aria-label': 'AI still reviewing this step' });
+    const files = step.files.map(file => {
+      const tick = attrs(el('span', { className: 'viewed-tick' }, icon('ring'), icon('met')), { role: 'img' });
+      const count = el('span', { className: 'file-count' }, icon('message'), '');
+      const fileRow = el('a', { className: 'file-row', href: `#${stepAddress(step.id)}`, title: file }, tick, el('span', { className: 'file-name' }, baseName(file)), count);
       fileRow.dataset['key'] = `file:${file}`;
       fileRow.onclick = event => {
         event.preventDefault();
         reveal({ file });
       };
-      return el('li', {}, fileRow);
+      return { file, row: fileRow, tick, count, shown: -1 };
     });
-    return el('li', { className: here === step.id ? 'current' : '' }, row, el('ul', { className: 'file-list' }, ...files));
+    return { id: step.id, row, spinner, files };
   });
-  const last = link('summary', 'step-row summary-row', icon('summary'), el('span', { className: 'step-name' }, 'Summary'), el('span', { className: 'file-count' }, String(pending)));
-  last.dataset['key'] = 'summary';
-  if (here === 'summary') last.setAttribute('aria-current', 'page');
-  nav.replaceChildren(el('ol', { className: 'steps' }, ...steps), last);
+  const items = navSteps.map(({ row, files }) => el('li', {}, row, el('ul', { className: 'file-list' }, ...files.map(one => el('li', {}, one.row)))));
+  nav.replaceChildren(el('ol', { className: 'steps' }, ...items), summaryRow);
   nav.scrollTop = scrolled;
   if (focused !== undefined) nav.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();
+}
+
+function drawNav(at: At): void {
+  const { view } = state;
+  const key = JSON.stringify(view.steps.map(step => [step.id, step.title, step.files]));
+  if (key !== drawnNav) {
+    drawnNav = key;
+    buildNav();
+  }
+  const here = at.kind === 'step' ? at.pane.step.id : at.kind;
+  for (const { id, row, spinner, files } of navSteps) {
+    if (here === id) row.setAttribute('aria-current', 'page');
+    else row.removeAttribute('aria-current');
+    if (view.reviewing.includes(id) && !view.submitted) {
+      settle(spinner);
+      if (!spinner.isConnected) row.append(spinner);
+    } else if (spinner.isConnected)
+      fadeOut(spinner, 'base', () => {
+        spinner.remove();
+      });
+    for (const one of files) {
+      const seen = view.viewed.includes(one.file);
+      one.row.classList.toggle('viewed', seen);
+      one.tick.setAttribute('aria-label', seen ? 'Viewed' : 'Not viewed');
+      const count = commentCount(id, one.file);
+      if (count === one.shown) continue;
+      one.count.hidden = count === 0;
+      one.count.title = plural(count, 'comment');
+      one.count.lastChild?.replaceWith(String(count));
+      if (one.shown > 0 && count > 0) tick(one.count);
+      one.shown = count;
+    }
+  }
+  if (here === 'summary') summaryRow.setAttribute('aria-current', 'page');
+  else summaryRow.removeAttribute('aria-current');
+  const pending = pendingComments().length;
+  if (pending !== shownPending) {
+    pendingCount.textContent = String(pending);
+    if (shownPending !== undefined) tick(pendingCount);
+    shownPending = pending;
+  }
 }
 
 /** Redraws what changed, keeping the line being read where it is; `own` for what the person did, which shows in place. */
@@ -359,7 +446,7 @@ state.render = own => {
 
 window.addEventListener('popstate', moved);
 phone.addEventListener('change', () => {
-  document.body.classList.remove('drawer-open');
+  showDrawer(false);
 });
 
 let pendingKey = '';

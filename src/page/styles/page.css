@@ -314,6 +314,10 @@ textarea {
   background: var(--rule);
 }
 
+.viewed-number {
+  display: inline-block;
+}
+
 .files-viewed .bar i {
   display: block;
   height: 100%;
@@ -477,14 +481,35 @@ textarea {
   text-decoration: none;
 }
 
-.file-row > .icon {
+/* The Viewed tick: a ring that turns into a check. */
+.viewed-tick {
+  display: inline-grid;
+  flex: none;
+}
+
+.viewed-tick > .icon {
+  grid-area: 1 / 1;
   width: 13px;
   height: 13px;
   color: var(--muted);
+  transition:
+    opacity var(--base) linear,
+    transform var(--base) var(--ease-out);
 }
 
-.file-row.viewed > .icon {
+.viewed-tick > .icon-met {
+  opacity: 0;
+  transform: scale(0.6);
   color: var(--ink-secondary);
+}
+
+.file-row.viewed .icon-met {
+  opacity: 1;
+  transform: none;
+}
+
+.file-row.viewed .icon-ring {
+  opacity: 0;
 }
 
 .file-row.viewed .file-name {
@@ -497,6 +522,7 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color var(--base) linear;
 }
 
 .file-count {
@@ -514,11 +540,14 @@ textarea {
   color: var(--muted);
 }
 
+/* The Summary sits behind a rule, apart from the steps. */
+.steps {
+  margin-bottom: var(--s3);
+  padding-bottom: var(--s1);
+  border-bottom: 1px solid var(--rule);
+}
+
 .summary-row {
-  margin-top: var(--s3);
-  padding-top: var(--s2);
-  border-top: 1px solid var(--rule);
-  border-radius: 0;
   font-weight: 500;
 }
 
@@ -528,7 +557,6 @@ textarea {
 }
 
 .summary-row[aria-current='page'] {
-  border-radius: var(--r-md);
   font-weight: 600;
 }
 
@@ -539,10 +567,22 @@ textarea {
   overflow: auto;
   padding: var(--s5) var(--s6);
   overflow-anchor: none;
+  scrollbar-gutter: stable;
+}
+
+/* The pane moved away from and the one moved to share the place while one leaves and the other enters. */
+.content {
+  display: grid;
 }
 
 .content > * {
+  grid-area: 1 / 1;
   min-width: 0;
+}
+
+/* Clips what opens or closes by its height while it moves. */
+.growing {
+  overflow: clip;
 }
 
 .preparing {
@@ -555,18 +595,6 @@ textarea {
 .preparing .icon {
   width: 20px;
   height: 20px;
-  animation: pulse 1.4s var(--ease-out) infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.25;
-  }
-
-  40% {
-    opacity: 1;
-  }
 }
 
 .step-head {
@@ -679,11 +707,16 @@ textarea {
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   background: var(--surface);
   font-size: 13px;
+  transition: border-color var(--fast) linear;
 }
 
 .file.closed .file-header {
   border-bottom-color: transparent;
   border-radius: var(--r-lg);
+  /* The bottom corners round once the body has closed. */
+  transition:
+    border-color var(--fast) linear,
+    border-radius 0s linear calc(var(--base) + 80ms);
 }
 
 .file-toggle .icon {
@@ -816,6 +849,7 @@ textarea {
 .file.closed .file-body {
   grid-template-rows: 0fr;
   transition-duration: var(--base);
+  transition-delay: 80ms;
 }
 
 .file-inner {
@@ -1005,13 +1039,9 @@ tr.flash td {
 }
 
 .gutter-mark {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
+  display: inline-grid;
+  margin-right: var(--s2);
+  vertical-align: -2px;
 }
 
 .gutter-mark .icon {
@@ -1034,12 +1064,18 @@ tr.flash td {
 /* Threads: one component for everyone, under its line, kept in view while the diff scrolls sideways. */
 
 .thread-row > td {
-  padding: var(--s3) var(--s4) var(--s3) 60px;
-  border-top: 1px solid var(--rule-soft);
-  border-bottom: 1px solid var(--rule-soft);
+  padding: 0;
   background: var(--canvas);
   font: 400 14px/1.55 var(--font-ui);
   white-space: normal;
+}
+
+/* What opens and closes under the line; flow-root keeps the thread's margins inside its height. */
+.thread-cell {
+  display: flow-root;
+  padding: 0 var(--s4) 0 60px;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
 }
 
 .thread-row.arriving {
@@ -1049,6 +1085,7 @@ tr.flash td {
 .thread {
   position: sticky;
   left: 60px;
+  margin: var(--s3) 0;
   max-width: min(760px, calc(var(--pane, 100vw) - 92px));
   overflow: hidden;
   border: 1px solid var(--rule);
@@ -1117,11 +1154,6 @@ tr.flash td {
   overflow-wrap: anywhere;
 }
 
-.ai-tag {
-  color: var(--ink-secondary);
-  font: 600 12px var(--font-mono);
-}
-
 .avatar {
   display: grid;
   flex: none;
@@ -1173,15 +1205,11 @@ tr.flash td {
 @keyframes arrive {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateY(4px);
   }
 }
 
-.grow {
-  animation: grow var(--slow) var(--ease-out) both;
-}
-
-@keyframes grow {
+@keyframes fade-in {
   from {
     opacity: 0;
   }
@@ -1574,9 +1602,19 @@ tr.flash td {
   color: var(--muted);
 }
 
-.review-box {
+/* The review box, or the note that replaces it, stays in view; while one fades out the other fades in over it. */
+.review-side {
   position: sticky;
   top: 0;
+  display: grid;
+}
+
+.review-side > * {
+  grid-area: 1 / 1;
+  align-self: start;
+}
+
+.review-box {
   display: flex;
   flex-direction: column;
   gap: var(--s3);
@@ -1643,17 +1681,11 @@ tr.flash td {
 .review-box.done a {
   color: var(--accent-text);
   font-size: 13px;
+  text-decoration: none;
 }
 
-.review-box.arrive > .icon {
-  animation: pop var(--slow) var(--ease-out) 160ms both;
-}
-
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
+.review-box.done a:hover {
+  text-decoration: underline;
 }
 
 /* The export: the walkthrough as one read-only document. */
@@ -1774,20 +1806,93 @@ tr.flash td {
     font-size: 19px;
   }
 
+  /* Chevron, path, counts and Viewed keep one line, the path cut short; anything else goes on its own line under it. */
   .file-header {
     top: calc(-1 * var(--s4));
-    flex-wrap: wrap;
-    padding: var(--s1) var(--s2);
+    display: grid;
+    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto;
+    row-gap: 0;
+    padding: 0 var(--s2) 0 0;
   }
 
-  /* The path takes the first line whole; counts and Viewed go under it. */
+  .file-toggle {
+    grid-area: 1 / 1;
+  }
+
   .file-path {
-    flex: 1 1 calc(100% - 56px);
+    grid-area: 1 / 2;
   }
 
-  .file-header .folded-reason {
-    flex-basis: 100%;
-    padding-left: 52px;
+  .file-stats {
+    grid-area: 1 / 3;
+  }
+
+  .file-comments {
+    grid-area: 1 / 4;
+  }
+
+  .file-header > .spacer {
+    grid-area: 1 / 5;
+  }
+
+  .viewed-toggle {
+    grid-area: 1 / 6;
+  }
+
+  .file-header :is(.changed-tag, .folded-reason, .segmented) {
+    grid-column: 2 / -1;
+    justify-self: start;
+    max-width: 100%;
+    margin-bottom: var(--s2);
+  }
+
+  .changed-tag {
+    grid-row: 2;
+  }
+
+  .folded-reason {
+    grid-row: 3;
+  }
+
+  .file-header .segmented {
+    grid-row: 4;
+  }
+
+  /* Viewed and the Look at links keep the board's pill size to the eye; their targets reach 44px around it. */
+  :is(.viewed-toggle, .look-link),
+  :is(.viewed-toggle, .look-link):hover,
+  .file.viewed .viewed-toggle {
+    position: relative;
+    z-index: 0;
+    border-color: transparent;
+    background: none;
+  }
+
+  :is(.viewed-toggle, .look-link)::before {
+    position: absolute;
+    inset: 8px 0;
+    z-index: -1;
+    border: 1px solid var(--control-edge);
+    border-radius: var(--r-xs);
+    background: var(--canvas);
+    content: '';
+  }
+
+  .file.viewed .viewed-toggle::before {
+    background: var(--surface-tint);
+  }
+
+  .look {
+    row-gap: 0;
+  }
+
+  .look-link::before {
+    border-color: var(--accent-line);
+    border-radius: var(--r-sm);
+  }
+
+  .look-link:hover::before {
+    background: var(--accent-wash);
   }
 
   .overview-stripe {
@@ -1802,8 +1907,8 @@ tr.flash td {
     padding-right: 0;
   }
 
-  .thread-row > td {
-    padding: var(--s3) var(--s2);
+  .thread-cell {
+    padding: 0 var(--s2);
   }
 
   .thread {
@@ -1854,7 +1959,7 @@ tr.flash td {
     grid-row: 1 / span 2;
   }
 
-  .review-box {
+  .review-side {
     position: static;
   }
 
@@ -1863,9 +1968,9 @@ tr.flash td {
   }
 }
 
+/* Reduced motion keeps opacity and colour: things fade, then snap, and the spinner stands still. */
 @media (prefers-reduced-motion: reduce) {
-  .icon-spinner,
-  .preparing .icon {
+  .icon-spinner {
     animation: none;
   }
 
@@ -1877,17 +1982,37 @@ tr.flash td {
     transition: none;
   }
 
+  /* A file's content fades, then its body, header edge and corners snap together. */
   .file-body,
   .file.closed .file-body {
     transition: grid-template-rows 1ms linear var(--fast);
   }
 
-  .arrive,
-  .new-pill {
-    animation: grow var(--base) linear both;
+  .file-inner {
+    transition: opacity var(--base) linear var(--fast);
   }
 
-  .review-box.arrive > .icon {
-    animation: none;
+  .file.closed .file-inner {
+    transition: opacity var(--fast) linear;
+  }
+
+  .file-header,
+  .file.closed .file-header {
+    transition:
+      border-color 1ms linear var(--fast),
+      border-radius 1ms linear var(--fast);
+  }
+
+  .viewed-tick > .icon {
+    transform: none !important;
+  }
+
+  .files-viewed .bar i {
+    transition: none;
+  }
+
+  .arrive,
+  .new-pill {
+    animation: fade-in var(--base) linear both;
   }
 }

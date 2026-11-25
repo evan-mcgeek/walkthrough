@@ -24,7 +24,7 @@ export function avatar(comment: Pick<CommentView, 'by' | 'author'>): HTMLElement
 /** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it. */
 export function commentBody(comment: CommentView): HTMLElement {
   const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text');
-  if (goesOut(comment)) (body.querySelector('p') ?? body).prepend(el('code', { className: 'ai-tag' }, '[AI]'), ' ');
+  if (goesOut(comment)) (body.querySelector('p') ?? body).prepend(el('span', { className: 'ai-tag' }, '[AI]'), ' ');
   return body;
 }
 
@@ -142,11 +142,11 @@ export class ThreadBox {
     if (waiting && !this.answering)
       this.answering = el(
         'div',
-        { className: 'comment answering' },
+        { className: 'comment answering arrive' },
         avatar({ by: 'ai' }),
         el('span', { className: 'answering-text' }, attrs(icon('spinner'), { role: 'img', 'aria-label': 'AI is answering' }), 'Answering…'),
       );
-    if (waiting && this.answering) this.list.append(this.answering);
+    if (waiting && this.answering && this.list.lastElementChild !== this.answering) this.list.append(this.answering);
     if (!waiting) {
       this.answering?.remove();
       this.answering = null;
