@@ -376,13 +376,13 @@ Small, tight radii. 4px on every control (buttons, inputs, icon buttons, inline 
 - **Review type:** three native radios, Comment, Approve, Request changes, accent-coloured, no descriptions.
 
 ### Header
-44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; while the AI is still reviewing, the checking spinner and "AI reviewing" in 12.5px secondary ink (it fades out when the AI finishes); then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", the spinner without its word, Finish (not on the Summary), menu.
+44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", Finish (not on the Summary), menu.
 
 ### Step list
-248px on the surface tone where GitHub has its file tree. Each step is a row: a 18px numbered circle (ink-filled for the current step), the title cut with an ellipsis, and the checking spinner while the AI has not finished it. Under each step, its files in 12px mono with a Viewed tick (a muted ring, or a check in secondary ink when viewed; a viewed file's name goes muted) and a comment count with a bubble icon. The Summary is the last row, behind a rule, with the count of pending comments. Nothing else: no states, sub-lines or badges.
+248px on the surface tone where GitHub has its file tree. Each step is a row: a 18px numbered circle (ink-filled for the current step), the title cut with an ellipsis. Under each step, its files in 12px mono with a Viewed tick (a muted ring, or a check in secondary ink when viewed; a viewed file's name goes muted) and a comment count with a bubble icon. The Summary is the last row, behind a rule, with the count of pending comments. Nothing else: no states, sub-lines or badges.
 
 ### Step
-The title (20px; no step-number line above it: the step list shows where you are), "Look at:" with one or two links, one or two sentences of explanation at 15px/1.6 with More, then the files. At the foot, previous and next step as secondary buttons named by the steps' titles. While the AI has not finished the step, one muted line under the explanation: the spinner and "The AI is still reviewing this step."
+The title (20px; no step-number line above it: the step list shows where you are), "Look at:" with one or two links, one or two sentences of explanation at 15px/1.6 with More, then the files. At the foot, previous and next step as secondary buttons named by the steps' titles.
 
 ### Look at
 "Look at:" in 600 ink, then each pointer as a 24px link pill: a 1px accent-line border, 5px corners, a small arrow, the file name in mono and the line range in accent text, and two to four words naming the spot in secondary ink. Clicking opens the file if it is folded, scrolls the lines into view with 120px of context above, and flashes the range in the line-pick tone (fading over 1.4s).
@@ -421,14 +421,13 @@ The same page in one column: the step list opens from the header's steps button;
 Kept: Diff / Preview, before and after side by side on a transparency checker.
 
 ### Motion
-One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (header, step list, criteria being checked, and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the first step exists and pauses while the tab is hidden or the scene is offscreen.
+One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (the Opening's header and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the review is ready and pauses while the tab is hidden or the scene is offscreen.
 - **Steps:** sequential pane swap: the old step leaves to −12px over 100ms, the new one enters from +12px over 200ms after 100ms.
 - **Files:** fold by grid rows (open 320ms; close 200ms after an 80ms content fade), chevron turning 90° in 120ms; Viewed folds the file, the tree's ring turns into a check (200ms, scale from .6), and the count ticks while the header bar grows (320ms).
 - **Look at:** the main pane scrolls smoothly to the range, then the lines flash in the line-pick tone and fade over 1.4s.
 - **A comment growing in place:** a composer or a new comment opens by grid rows (320ms) with its content fading in after 80ms; the AI's reply replaces its "Answering…" row, fading and rising 4px (320ms).
 - **New-comment pill:** fades and drops 6px into place (200ms).
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
-- **AI reviewing:** the indicator and the step list's rings fade out (200ms) when the AI finishes.
 - **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the first step arrives, the opening block fades out (120ms ease-in) and the step enters with the usual pane swap.
 - **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles.
 
