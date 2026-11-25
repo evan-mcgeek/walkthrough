@@ -78,12 +78,13 @@ function moved(): void {
     settle(shown);
     shown.removeAttribute('inert');
     shown.removeAttribute('aria-hidden');
-    if (old instanceof HTMLElement && !old.classList.contains('preparing')) leave(old, scrolled);
+    const leaving = old instanceof HTMLElement && !old.classList.contains('preparing');
+    if (leaving) leave(old, scrolled);
     const still = reduced();
     animate(shown, 'pane-enter', still ? FADE_IN : [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }], {
       ms: 'base',
       curve: still ? 'linear' : 'ease-out',
-      delay: old ? LEAVE_MS : 0,
+      delay: leaving ? LEAVE_MS : 0,
     });
   }
   content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
