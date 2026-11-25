@@ -14,7 +14,7 @@ import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import { parseComments, parseCriteria, parseThreads } from './record';
-import { aiComments, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments } from './review';
+import { aiComments, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments, walkthroughView } from './review';
 import {
   markOpened,
   markReady,
@@ -74,6 +74,10 @@ async function start(args: string[]): Promise<void> {
   console.log(
     `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps.length, 'step')}.`,
   );
+  if (opened === 'resumed') {
+    const line = reviewedLine(dir);
+    if (line) console.log(line);
+  }
   if (opened === 'moved' && steps.length > 0) {
     console.log(`The head moved: ${plural(steps.length, 'step')} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
@@ -88,6 +92,16 @@ async function start(args: string[]): Promise<void> {
   if (walkthrough.ready === false) await forgetStoppedListener(dir);
   await ensureServer(dir);
   console.log('The page is not open yet; walkthrough open opens it.');
+}
+
+/** What a ready walkthrough at this head already holds, so the session reopens it rather than reviews it again. */
+function reviewedLine(dir: string): string | undefined {
+  const view = walkthroughView(dir);
+  if (!view?.ready) return undefined;
+  const { submitted } = view;
+  const pending = view.threads.flatMap(thread => thread.comments).filter(one => one.pending).length;
+  const where = submitted ? (view.pr ? 'in the submitted review' : 'sent to the agent') : 'pending';
+  return `Already reviewed at this head: ${plural(submitted ? submitted.comments : pending, 'comment')} ${where}.`;
 }
 
 async function openCommand(args: string[]): Promise<void> {
@@ -164,8 +178,8 @@ async function criteria(args: string[]): Promise<void> {
 }
 
 function comments(args: string[]): void {
-  const { dir } = current(args);
-  for (const line of reviewComments(dir)) console.log(JSON.stringify(line));
+  const { dir, values } = current(args, { options: { all: { type: 'boolean' } } });
+  for (const line of reviewComments(dir, values.all)) console.log(JSON.stringify(line));
 }
 
 async function posted(args: string[]): Promise<void> {

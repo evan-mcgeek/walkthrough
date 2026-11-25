@@ -14,7 +14,7 @@ When they ask instead to review a change someone else asked them to review, `/wa
 2. Run `walkthrough start` in the repo.
    With no options it walks through the current branch; if the person names the branch their change targets, add `--target <branch>`.
    For a range of commits, add `--base <rev> --head <rev>` and a short `--label` to name it.
-3. Ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
+3. Unless start printed "Already reviewed at this head", ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
    Read the change while they answer; their answer sets how much your explanations say, as the policy says.
 4. Go on as "Walking through" says, until the walkthrough stops.
    The page ends in Send to agent: the person's comments and yours go back as a fix list, as the policy's "My change" part says.
@@ -34,6 +34,10 @@ Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the 
    Keep the inbox it prints for the files you record from.
    A warning about uncommitted changes means those edits are not in the walkthrough; say so plainly.
    The page is not open yet; tell the person it opens when the review is nearly done.
+   When start prints "Already reviewed at this head", the walkthrough is ready from an earlier session: record no steps and do not review it again.
+   Tell the person in one line what that line says, run `walkthrough open`, and start listening for the page, as "Listening for the page" says.
+   If start also warned about uncommitted changes, add one line: commit them for the AI to review what changed.
+   If the person asks in the chat to review it again, read `walkthrough comments --all` first, then review as "Reviewing" says without repeating a comment already there.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
 4. Record the steps, as "Steps" below says, then start listening for the page, as "Listening for the page" says; while you review, the page takes a running listen as the sign that you are still at work.
 5. Review the change, as "Reviewing" says.
@@ -107,7 +111,7 @@ Keep listening until the walkthrough stops.
    - An ask: the person asked you about their picked lines or in a thread, which comes with what the thread said before.
      Answer from the change at the pinned head with `walkthrough say --answer <id> '<answer>'`; the answer is a reply in that thread, stays on the page and never goes out.
      Pass short text in single quotes, writing a single quote in it as `'\''`; for longer text, write it to a file in the inbox and pass `--file <file>` in place of the text.
-   - A submit: the person finished their review, with its type and summary.
+   - A submit: the person finished their review, with its summary, and on a pull request its type.
      Read what goes out with `walkthrough comments`: their comments as they are now, yours with the `[AI] ` mark at the start, their replies and the threads they resolved.
      On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.

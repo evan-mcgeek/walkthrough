@@ -15,7 +15,7 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   const main = page.locator('#main');
 
   await expect(main.getByRole('heading', { level: 1, name: 'Preparing the walkthrough' })).toBeVisible();
-  await expect(main.getByText('The AI is finishing its review of the 2 changed files.')).toBeVisible();
+  await expect(main.getByText('The AI is finishing its review, usually within a minute.')).toBeVisible();
   await expect(main.locator('.changed-files li')).toHaveText([/app\.ts\s*\+1 −1/, /login\.ts\s*\+1 −0/]);
   await expect(page.locator('.files-changed')).toHaveText('2 files changed');
   await expect(page.getByRole('status', { name: 'AI reviewing' })).toBeVisible();
@@ -61,7 +61,10 @@ test('once the session stops listening before ready, the page says so and how to
   await open(page, url);
 
   await expect(page.getByRole('heading', { level: 1, name: 'The AI couldn’t prepare the walkthrough' })).toBeVisible();
-  await expect(page.getByText('The Claude Code session stopped before the review was done. Nothing was posted. Run /walkthrough again to pick it up.')).toBeVisible();
+  await expect(page.getByText('It stopped before the review was done. Nothing was posted.')).toBeVisible();
+  await expect(page.getByText('Start it over in your agent:')).toBeVisible();
+  await expect(page.locator('.opening .command code')).toHaveText('/walkthrough');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByText('No steps yet.')).toBeVisible();
   await expect(page.locator('.desk-scene')).toHaveCount(0);
   await expect(page.locator('.ai-reviewing')).toHaveCount(0);

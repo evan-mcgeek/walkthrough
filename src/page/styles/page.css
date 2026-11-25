@@ -1652,16 +1652,6 @@ tr.flash td {
   font-size: 13.5px;
 }
 
-.review-box.done a {
-  color: var(--accent-text);
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.review-box.done a:hover {
-  text-decoration: underline;
-}
-
 /* The export: the walkthrough as one read-only document. */
 
 .export-main {
@@ -1733,8 +1723,7 @@ tr.flash td {
   }
 
   .radio,
-  .counts a,
-  .review-box.done a {
+  .counts a {
     display: inline-flex;
     align-items: center;
     min-height: 44px;

@@ -10,7 +10,8 @@ export type Listed = {
   name: string;
   files: number;
   viewed: number;
-  submitted?: ReviewType;
+  /** The review type, or `sent` for your own change, which has none. */
+  submitted?: ReviewType | 'sent';
   last: string;
 };
 
@@ -19,7 +20,7 @@ const ACTIVITY = ['walkthrough.json', 'review.jsonl', 'viewed.json'];
 
 export function listView(repoDir: string): Listed[] {
   const entries = fs.existsSync(repoDir) ? fs.readdirSync(repoDir, { withFileTypes: true }) : [];
-  const listed = entries.flatMap(entry => {
+  const listed = entries.flatMap((entry): Listed[] => {
     const dir = path.join(repoDir, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
@@ -30,7 +31,7 @@ export function listView(repoDir: string): Listed[] {
         name: view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view),
         files: view.steps.flatMap(step => step.files).length,
         viewed: view.viewed.length,
-        ...(view.submitted && { submitted: view.submitted.type }),
+        ...(view.submitted && { submitted: view.submitted.type ?? 'sent' }),
         last: new Date(Math.max(...changed)).toISOString(),
       },
     ];

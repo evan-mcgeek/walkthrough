@@ -94,6 +94,7 @@ describe('the review', () => {
       { kind: 'resolve', thread: '1042' },
     ]);
 
+    expect((await postTo(page, '/submit', { summary: 'No type.' })).status).toBe(400);
     expect((await postTo(page, '/submit', { type: 'request-changes', summary: 'Two things.' })).status).toBe(200);
     expect((await postTo(page, '/submit', { type: 'approve' })).status).toBe(400);
     expect((await postTo(page, '/comment', { comment: ai?.id, delete: true })).status).toBe(400);
@@ -106,12 +107,19 @@ describe('the review', () => {
     expect(repo.run('posted').stderr).toContain('no review that is not posted');
   });
 
-  test('your own change goes to the agent with comments, or with Approve or Request changes', async () => {
+  test('your own change goes to the agent with its comments and no review type', async () => {
     const page = started();
 
-    expect((await postTo(page, '/submit', { type: 'comment', summary: '' })).status).toBe(400);
-    expect((await postTo(page, '/submit', { type: 'approve', summary: '' })).status).toBe(200);
-    expect((await viewAt(page)).submitted).toMatchObject({ type: 'approve', comments: 0 });
+    expect((await postTo(page, '/submit', { summary: '' })).status).toBe(400);
+    expect((await postTo(page, '/comment', { file: 'login.ts', lines: [1, 1], text: 'Nit.' })).status).toBe(200);
+    expect((await postTo(page, '/submit', { type: 'approve', summary: '' })).status).toBe(400);
+    expect((await postTo(page, '/submit', { summary: 'Fix these.' })).status).toBe(200);
+    const { submitted } = await viewAt(page);
+    expect(submitted).toMatchObject({ summary: 'Fix these.', comments: 1 });
+    expect(submitted).not.toHaveProperty('type');
+
+    const { stdout } = await repo.background('listen').ended;
+    expect(lines(stdout)).toEqual([{ kind: 'submit', id: expect.any(String) as unknown, summary: 'Fix these.' }]);
   });
 
   test('before ready, the session counts as gone once its listen ran and none has been alive for 15 seconds', async () => {

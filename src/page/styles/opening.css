@@ -44,10 +44,6 @@
   color: var(--bad);
 }
 
-.opening-actions {
-  margin: var(--s4) 0 0;
-}
-
 .changed-files {
   margin-top: var(--s6);
   overflow: hidden;

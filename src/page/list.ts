@@ -3,14 +3,14 @@ import { loadViewer } from './appearance';
 import { el, type PageName, post as postTo, region, showAlert, showUnreachable } from './dom';
 import { icon } from './icons';
 
-const TYPES = { comment: 'Comment', approve: 'Approve', 'request-changes': 'Request changes' } as const;
+const TYPES = { comment: 'Comment', approve: 'Approve', 'request-changes': 'Request changes', sent: 'Sent to the agent' } as const;
 
 type ListPage = { repo: string; walkthroughs: Listed[] };
 
 const header = region('header');
 const main = region('main');
 
-const PAGE: PageName = { name: 'list', reopen: 'Run walkthrough list to reopen.' };
+const PAGE = { name: 'list', reopen: 'Run walkthrough list to reopen.' } satisfies PageName;
 const post = (route: string, body: Record<string, unknown>) => postTo(PAGE, route, body);
 
 async function open(one: Listed): Promise<void> {

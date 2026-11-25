@@ -42,7 +42,7 @@ A GitHub reviewer needs no help page, legend or hint. Every review concept is Gi
 - **The AI speaks in threads only.** It comments on lines and answers when asked. It never replies to a comment that was not a question to it, and the human's comments never wake it.
 - **Comments arriving while you read** never move what you are reading: a new comment above or inside the view waits behind a "1 new comment above" pill and opens in place when you choose.
 - **The Summary** is GitHub's "Finish your review" made visible: every pending comment that will go out, one line each with Edit, Delete and a link to its line; unresolved threads and files not yet viewed as counts that link to them; the acceptance criteria as the AI assessed them (read-only); then the summary box, Comment / Approve / Request changes, and Submit review. After submitting, one line says what went and where.
-- **Your own change:** the same page; the Summary has the summary box and "Send to agent", and your comments go back to the agent to fix.
+- **Your own change:** the same page; the Summary has the summary box and "Send to agent" with no review type, and your comments go back to the agent to fix.
 - **The human decides:** nothing reaches GitHub or the author until the human submits.
 - **Fixed controls:** the page's controls, labels and colours are the same for everyone. No language, code host, tracker or workflow rules live in the code (ADR 0005); the person's review policy holds them.
 - Built as plain HTML and CSS with a framework-free TypeScript page; strict CSP; diffs by diff2html restyled through classes.

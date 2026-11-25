@@ -34,6 +34,8 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
   A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
   Comments on lines that changed stay in the review, detached from the diff.
   It prints the walkthrough's inbox, the folder for the files the session records from.
+  Resuming a ready walkthrough at the same head, it prints "Already reviewed at this head: N comments pending.",
+  or "in the submitted review" or "sent to the agent" in place of "pending", from what it saved.
 
 Recording from files
   steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
@@ -78,7 +80,8 @@ walkthrough listen
     {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
       Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
     {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
-      Submit review or Send to agent; read what goes out with walkthrough comments, act on it, then run walkthrough posted.
+      Submit review or Send to agent; "type" only on a pull request, as your own change has none.
+      Read what goes out with walkthrough comments, act on it, then run walkthrough posted.
     {"kind": "stopped"}   the page was stopped; nothing more will come
   Comments, replies, edits, deletions, Resolve and Viewed never wake it.
   Exit code 3: another walkthrough listen took over.
@@ -87,8 +90,9 @@ walkthrough listen
 walkthrough say --answer <ask id> (<text> | --file <file>)
   Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
 
-walkthrough comments
+walkthrough comments [--all]
   Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
+  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
       a new thread; "outdated" only when its lines changed since
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above

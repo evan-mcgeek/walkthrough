@@ -25,7 +25,7 @@ export type Event = Logged &
     | { kind: 'delete'; comment: string }
     | { kind: 'answer'; ask: string; text: string }
     | { kind: 'resolve'; thread: string }
-    | { kind: 'submit'; type: ReviewType; summary: string; head: string }
+    | { kind: 'submit'; type?: ReviewType; summary: string; head: string }
     | { kind: 'posted'; submit: string; address?: string }
   );
 
@@ -55,7 +55,8 @@ export type ThreadView = {
   resolved?: true;
   comments: CommentView[];
 };
-export type Submitted = { id: string; type: ReviewType; summary: string; comments: number; posted: boolean; address?: string };
+/** `type` only on a pull request: your own change goes to the agent without one. */
+export type Submitted = { id: string; type?: ReviewType; summary: string; comments: number; posted: boolean; address?: string };
 type WithoutThreads<T> = T extends unknown ? Omit<T, 'threads'> : never;
 export type WalkthroughView = WithoutThreads<Walkthrough> & {
   ready: boolean;
@@ -244,7 +245,7 @@ export function walkthroughView(dir: string): WalkthroughView | null {
     submitted: showsSubmitted
       ? {
           id: last.id,
-          type: last.type,
+          ...(last.type && { type: last.type }),
           summary: last.summary,
           comments: kept.filter(one => one.review === last.id).length,
           posted: posted.has(last.id),
@@ -301,14 +302,13 @@ export async function resolve(dir: string, { thread }: Record<string, unknown>):
   return !!found?.colleague && !found.resolved && !!(await record(dir, { kind: 'resolve', thread: found.id }));
 }
 
-/** Your own change goes to the agent only with something to fix or a decision: no comments and Comment sends nothing. */
+/** A pull request's review has a type; your own change goes to the agent with its comments and no type. */
 export async function submit(dir: string, { type, summary }: Record<string, unknown>): Promise<boolean> {
   const view = walkthroughView(dir);
-  if (!view || !REVIEW_TYPES.includes(type as ReviewType) || (summary !== undefined && typeof summary !== 'string') || view.submitted)
-    return false;
-  const pending = view.threads.flatMap(one => one.comments).filter(one => one.pending).length;
-  if (!view.pr && type === 'comment' && !pending) return false;
-  return !!(await record(dir, { kind: 'submit', type: type as ReviewType, summary: cleanText(summary), head: view.head }));
+  if (!view || (summary !== undefined && typeof summary !== 'string') || view.submitted) return false;
+  const pending = view.threads.flatMap(one => one.comments).some(one => one.pending);
+  if (view.pr ? !REVIEW_TYPES.includes(type as ReviewType) : type !== undefined || !pending) return false;
+  return !!(await record(dir, { kind: 'submit', ...(view.pr && { type: type as ReviewType }), summary: cleanText(summary), head: view.head }));
 }
 
 export async function markViewed(dir: string, { file, viewed }: Record<string, unknown>): Promise<boolean> {
@@ -343,14 +343,14 @@ export async function markPosted(dir: string, address?: string): Promise<void> {
 
 const AI_PREFIX = '[AI] ';
 
-/** What goes out: the latest submitted review not yet posted, or else what is pending, as one line each. */
-export function reviewComments(dir: string): Record<string, unknown>[] {
+/** What goes out: the latest submitted review not yet posted, or else what is pending, as one line each; with `all`, every one ever made. */
+export function reviewComments(dir: string, all = false): Record<string, unknown>[] {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
   const log = logOf(dir);
   const { threads, submits, posted, resolved } = replay(walkthrough, log);
   const review = submits.findLast(one => !posted.has(one.id))?.id;
-  const inReview = (one: CommentView) => (review === undefined ? one.pending : one.review === review);
+  const inReview = (one: CommentView) => (all ? one.pending === true || one.review !== undefined : review === undefined ? one.pending : one.review === review);
   return [
     ...threads.flatMap(thread =>
       thread.comments.filter(inReview).map(one => {
@@ -361,7 +361,7 @@ export function reviewComments(dir: string): Record<string, unknown>[] {
           : { kind: 'reply', id: one.id, by, thread: thread.id, body };
       }),
     ),
-    ...[...resolved].filter(([, round]) => round === review).map(([thread]) => ({ kind: 'resolve', thread })),
+    ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: 'resolve', thread })),
   ];
 }
 

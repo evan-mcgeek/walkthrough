@@ -41,19 +41,3 @@ test.describe('a pull request', () => {
     await expect(page.getByRole('link', { name: 'View review' })).toHaveAttribute('href', 'https://example.test/review/7');
   });
 });
-
-test('your own change: Send to agent waits for a comment, Approve or Request changes', async ({ page, repo, url }) => {
-  record(repo, ONE_STEP);
-  await open(page, url, '#summary');
-
-  await expect(page.getByText('No comments. Add one on a line, or answer the AI’s.')).toBeVisible();
-  const send = page.getByRole('button', { name: 'Send to agent' });
-  await expect(send).toBeDisabled();
-  await expect(page.getByText('Add a comment, or choose Approve or Request changes.')).toBeVisible();
-
-  await page.getByRole('radio', { name: 'Approve' }).check();
-  await expect(send).toBeEnabled();
-  await expect(page.getByText('Add a comment, or choose Approve or Request changes.')).toBeHidden();
-  await send.click();
-  await expect(page.getByText('Sent to the agent')).toBeVisible();
-});
