@@ -122,6 +122,28 @@ describe('the review', () => {
     expect(lines(stdout)).toEqual([{ kind: 'submit', id: expect.any(String) as unknown, summary: 'Fix these.' }]);
   });
 
+  test('comments --all shows the AI comments the person deleted and what the AI first wrote in those they reworded', async () => {
+    const page = started();
+    repo.record(
+      [
+        { file: 'login.ts', lines: [1, 1], body: 'Kept.' },
+        { file: 'login.ts', lines: [1, 1], body: 'Reworded.' },
+        { file: 'app.ts', lines: [1, 1], body: 'Dropped.' },
+      ],
+      'comment',
+    );
+    const ids = Object.fromEntries(lines(repo.run('comments').stdout).map(one => [one.body as string, one.id as string]));
+    expect((await postTo(page, '/comment', { comment: ids['[AI] Reworded.'], text: 'Said better.' })).status).toBe(200);
+    expect((await postTo(page, '/comment', { comment: ids['[AI] Dropped.'], delete: true })).status).toBe(200);
+
+    expect(lines(repo.run('comments').stdout).map(one => one.body)).toEqual(['[AI] Kept.', '[AI] Said better.']);
+    expect(lines(repo.run('comments', '--all').stdout)).toEqual([
+      expect.objectContaining({ body: '[AI] Kept.' }),
+      expect.objectContaining({ body: '[AI] Said better.', wrote: '[AI] Reworded.' }),
+      expect.objectContaining({ by: 'ai', file: 'app.ts', lines: [1, 1], body: '[AI] Dropped.', deleted: true }),
+    ]);
+  });
+
   test('before ready, the session counts as gone once its listen ran and none has been alive for 15 seconds', async () => {
     const page = started();
     const listener = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'listener.json');

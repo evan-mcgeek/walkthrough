@@ -92,7 +92,8 @@ walkthrough say --answer <ask id> (<text> | --file <file>)
 
 walkthrough comments [--all]
   Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
-  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved.
+  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved,
+  then each comment of yours the person deleted, with "deleted": true; one of yours they reworded carries "wrote", what you wrote.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
       a new thread; "outdated" only when its lines changed since
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above

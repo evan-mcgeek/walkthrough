@@ -121,7 +121,7 @@ export function record(dir: string, fields: Fields<Event>): Promise<Event> {
   });
 }
 
-type Comment = { view: CommentView; thread: string; deleted?: true };
+type Comment = { view: CommentView; thread: string; deleted?: true; wrote: string };
 
 /** The review as the log builds it: each thread with its comments, and the submits in order. */
 function replay(walkthrough: Walkthrough, log: Event[]) {
@@ -138,7 +138,7 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
         if (event.place && !event.thread) roots.set(event.id, event.place);
         const said = { id: event.id, at: event.at, body: event.text };
         const view: CommentView = event.kind === 'comment' ? { ...said, by: event.by, pending: true } : { ...said, by: 'you', ask: true, waiting: true };
-        comments.set(event.id, { view, thread });
+        comments.set(event.id, { view, thread, wrote: event.text });
         break;
       }
       case 'edit': {
@@ -155,7 +155,7 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
         const ask = comments.get(event.ask);
         if (!ask) break;
         delete ask.view.waiting;
-        comments.set(event.id, { view: { id: event.id, at: event.at, body: event.text, by: 'ai', answer: true }, thread: ask.thread });
+        comments.set(event.id, { view: { id: event.id, at: event.at, body: event.text, by: 'ai', answer: true }, thread: ask.thread, wrote: event.text });
         break;
       }
       case 'resolve':
@@ -198,7 +198,9 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
       .filter(([id]) => !gone.has(id))
       .map(([id, place]): ThreadView => ({ id, file: place.file, lines: place.lines, step: anchorOf(walkthrough, place), comments: ownIn(id) })),
   ];
-  return { threads, submits, posted, resolved, kept };
+  const wrote = new Map([...comments].map(([id, one]) => [id, one.wrote]));
+  const dropped = [...comments.values()].filter(one => one.deleted && one.view.by === 'ai' && roots.has(one.view.id)).map(one => ({ ...one, place: roots.get(one.view.id) as Place }));
+  return { threads, submits, posted, resolved, kept, wrote, dropped };
 }
 
 // A mark follows the file's own diff, so it outlives the file moving between steps but not the file changing.
@@ -348,8 +350,9 @@ export function reviewComments(dir: string, all = false): Record<string, unknown
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
   const log = logOf(dir);
-  const { threads, submits, posted, resolved } = replay(walkthrough, log);
+  const { threads, submits, posted, resolved, wrote, dropped } = replay(walkthrough, log);
   const review = submits.findLast(one => !posted.has(one.id))?.id;
+  const reworded = (one: CommentView) => (all && one.by === 'ai' && wrote.get(one.id) !== one.body ? { wrote: AI_PREFIX + (wrote.get(one.id) ?? '') } : {});
   const inReview = (one: CommentView) => (all ? one.pending === true || one.review !== undefined : review === undefined ? one.pending : one.review === review);
   return [
     ...threads.flatMap(thread =>
@@ -357,10 +360,11 @@ export function reviewComments(dir: string, all = false): Record<string, unknown
         const body = one.by === 'ai' ? AI_PREFIX + one.body : one.body;
         const by = one.by === 'colleague' ? one.author : one.by;
         return one.id === thread.id
-          ? { kind: 'comment', id: one.id, by, file: thread.file, lines: thread.lines, body, ...(thread.step === null && { outdated: true }) }
-          : { kind: 'reply', id: one.id, by, thread: thread.id, body };
+          ? { kind: 'comment', id: one.id, by, file: thread.file, lines: thread.lines, body, ...reworded(one), ...(thread.step === null && { outdated: true }) }
+          : { kind: 'reply', id: one.id, by, thread: thread.id, body, ...reworded(one) };
       }),
     ),
+    ...(all ? dropped : []).map(({ view, wrote: text, place }) => ({ kind: 'comment', id: view.id, by: 'ai', file: place.file, lines: place.lines, body: AI_PREFIX + text, deleted: true })),
     ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: 'resolve', thread })),
   ];
 }
