@@ -138,6 +138,11 @@ describe('the review', () => {
     repo.run('start');
     expect(fs.existsSync(listener)).toBe(false);
     expect((await viewAt(page)).sessionGone).toBe(false);
+
+    // A listen from an older release records its pid only.
+    fs.writeFileSync(listener, JSON.stringify({ state: 'listening', pid: process.pid }));
+    ago(20);
+    expect((await viewAt(page)).sessionGone).toBe(false);
   });
 
   test('records the criteria, and refuses what does not fit', async () => {

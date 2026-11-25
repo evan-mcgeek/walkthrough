@@ -368,7 +368,8 @@ export function reviewComments(dir: string): Record<string, unknown>[] {
 /** The text of an AI comment as it is stored: the page shows `[AI]` itself. */
 export const withoutPrefix = (body: string) => (body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim());
 
-type Listener = { state: 'listening'; pid: number; started: string } | { state: 'stopped' };
+// A listen from an older release records no start time.
+type Listener = { state: 'listening'; pid: number; started?: string } | { state: 'stopped' };
 const LISTEN_EVERY_MS = 500;
 // Long enough for the session to start listen again after it handled what woke it.
 const LISTEN_GAP_MS = 15_000;
