@@ -14,3 +14,6 @@ The marketplace installs from the `release` branch, so an install or `claude plu
 
 If a release stops part-way, run the workflow by hand on `main` (Actions, Release, Run workflow).
 It releases the version in `package.json` when that version has no tag yet.
+
+A pull request from a fork gets a read-only token, so merging one labelled `release` cannot publish.
+Release from a branch in this repository: merge the fork's work first, then open the version bump from your own branch.

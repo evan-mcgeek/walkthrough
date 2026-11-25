@@ -5,3 +5,4 @@ plugin/dist/
 test-results/
 playwright-report/
 .claude/
+.scratch/
