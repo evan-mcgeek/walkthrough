@@ -9,7 +9,6 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | `<branch>` / `#<N> <title>` | header label | branch in mono; number in secondary ink, title in sans |
 | `<branch>` · Walkthrough / `#<N> <title>` · Walkthrough | browser tab title | tells open walkthroughs apart |
 | N / M files viewed | header progress | **GH** |
-| AI reviewing | header indicator, while the AI is still reviewing | tooltip: "The AI is still reviewing; comments may arrive" |
 | Finish review | header, primary | **GH** ("Finish your review"); tooltip "Go to the Summary (G S)" |
 | Theme | menu | System, Light, Dark |
 | End session | menu | |
@@ -23,7 +22,6 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | `<file name>` | file row | tooltip: full path |
 | Viewed / Not viewed | file tick, accessible name | **GH** |
 | N comment(s) | comment count, tooltip | **GH** |
-| AI still reviewing this step | spinner tooltip | |
 | Summary | last row | |
 
 ## A step
@@ -33,7 +31,6 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Look at: | before the pointers | |
 | `<file>` `<lines>` `<2–4 words>` | each pointer | written by the AI |
 | More | after the explanation | |
-| The AI is still reviewing this step. | under the explanation, while it is | |
 | `<previous step title>` / `<next step title>` | step-to-step links | |
 
 ## Files
@@ -94,6 +91,22 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | View review | after submitting | links to the address the session records; no code host is named on the page |
 | Sent to the agent | own change, after sending | |
 | N comments; it fixes them in the Claude Code chat. | own change, after sending | |
+
+## Opening
+
+| String | Where | Note |
+|---|---|---|
+| N files changed | header, while the review is not ready | replaces the viewed count |
+| AI reviewing | header indicator with the spinner, while the review is not ready | |
+| Steps appear here when the AI is done. | step list, while the review is not ready | |
+| No steps yet. | step list, if preparing failed | |
+| Preparing the walkthrough | main pane title | |
+| The AI is finishing its review of the N changed files. The walkthrough opens here when it’s ready, usually within a minute. | under the title | |
+| N changed files | file list heading | **GH** |
+| The AI couldn’t prepare the walkthrough | title, if preparing failed | |
+| It stopped before the first step. Nothing was posted. Try again; the files below are unchanged. | under the error title | |
+| Try again | primary button, if preparing failed | |
+| Wait, what?! · Hmm… · Nice. | the desk scene’s speech bubbles (decorative; the SVG’s accessible name is “The AI at its desk, reading the change”) | |
 
 ## Strings to remove from the existing page
 

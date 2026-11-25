@@ -29,6 +29,8 @@ These override `VISION.md` where they differ.
 5. **`[AI]` marks only the AI's pending comments**, the ones that go out with the review.
 6. **No code host is named on the page.** After submitting it says "Review submitted" and links "View review" to the address the session records.
 7. **Submit review posts a finished review**, not a pending one: the session posts it with the chosen type, the summary and every pending comment.
+8. **The page opens near the end of the review.** `walkthrough start` does not open the browser; the session opens it with `walkthrough open` once its reviewers have reported, and the Opening (desk scene) plays while it records the comments and criteria.
+9. **The Opening lasts until the review is ready**, not until the first step: `walkthrough ready` shows the whole walkthrough at once, with every step, AI comment and criterion in. So nothing arrives while you read except Ask AI answers and a new head: "AI reviewing", the step spinners and "The AI is still reviewing this step." are not built, and the step list's opening line reads "Steps appear here when the AI is done." The failure state ("The AI couldn't prepare the walkthrough", Try again) is not built: the page has no signal that the session stopped.
 
 ## Constraints that do not move
 
@@ -74,6 +76,8 @@ Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on 
   - Acceptance criteria, checked by the AI, read-only: icon, criterion, Met / Partly met / Not met / Not checked.
   - The review box: summary textarea, Comment / Approve / Request changes, Submit review (pull request) or Send to agent (your own change, decision 2).
   - After sending: the box becomes one line of what went where ("Request changes, with 5 comments, on #212." with View review, the address the session records; or "Sent to the agent"; no code host is named on the page). "Going out" becomes "Sent" without Edit or Delete; the counts row, "AI reviewing" and the step spinners go away.
+- **Opening (before the first step):** see `DESIGN.md` → Components → Opening and the board "Opening a review". The header shows "N files changed", "AI preparing steps" and no Finish review; the step list shows the line "Steps appear here as the AI writes them." and three placeholder rows; the main pane shows the desk scene, "Preparing the walkthrough", one sentence, and the changed files with +/−. When the review is ready (decision 9) the whole walkthrough replaces all of this. If preparing fails: "The AI couldn't prepare the walkthrough", one sentence, Try again. The page needs only the PR's file list (path, additions, deletions), which it already has.
+- **The desk scene:** copy the SVG and its CSS from `screens.html` (`.desk6`, keyframes `cd6`, `rh6`, `re6`, `hap6`, `sm6`, `mo6`, `bh6`, `cb6`, `ck6`, `b16`, `b26`, `b36`, `m16`, `m26`; source of truth for timings is the 24s story in `DESIGN.md`). Add the class `rdpause` to its container when `document.hidden` is true or an `IntersectionObserver` reports it offscreen, and remove it when visible again. Remove the scene from the DOM once the walkthrough is shown.
 - **Menu:** Theme (System, Light, Dark) and End session. Nothing else.
 
 ## 3. Motion
@@ -94,5 +98,6 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. One loop only: t
 
 - The theme menu open, and the image diff in this design (keep Diff / Preview on a transparency checker as built).
 - The two Send to agent states and "Changed since last view" at 390 (same components, one column).
-- The prototype does not act out decisions 2 and 3; the boards show them.
+- The prototype does not act out decisions 2 and 3 or the opening; the boards show them.
+- The opening scene was reviewed frame by frame (seeked keyframes), not as a recorded run: check real-time playback, the exit into the first step, and pausing when hidden.
 - Out of scope: a session liveness heartbeat.

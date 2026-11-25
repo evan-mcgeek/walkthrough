@@ -407,7 +407,11 @@ GitHub's "Finish your review" made visible, two columns 32px apart up to 1120px:
 - **Finish your review** (sticky box, 340px): the summary textarea, the three review-type radios, and Submit review. The final submit happens here, in the app (founder decision; this overrides VISION.md's "submit there"). On your own change: the textarea, the same three radios, and Send to agent. With no comments, Send to agent is disabled while Comment is chosen, with one muted line under it: "Add a comment, or choose Approve or Request changes."; choosing Approve or Request changes enables it. The Going out list then reads "No comments. Add one on a line, or answer the AI’s."
 - **After submitting:** the box becomes a green-wash note: a check, "Review submitted to GitHub", one line ("Request changes, with 5 comments, on PR #212.") and View on GitHub; on your own change, "Sent to the agent" and "5 comments; it fixes them in the Claude Code chat." The Going out heading becomes "Sent" and loses its Edit and Delete.
 
-### Menu
+### Opening (before the first step)
+Until the AI's first step exists, the main pane holds, top-left in the step column: the desk scene (344 by 192, 280 wide at 390), the title "Preparing the walkthrough", one sentence on what is happening and how long it usually takes, then the changed files as GitHub lists them (a bordered box: "N changed files +A −D", one mono path per row with its +/−). The header shows "N files changed" instead of the viewed count, "AI preparing steps" with the spinner, and no Finish review. The step list says "Steps appear here as the AI writes them." above three static placeholder rows (`rule`-tone bars, no shimmer), and Summary with 0. If it fails: the error icon, "The AI couldn't prepare the walkthrough", one sentence, Try again (primary), and the same file list; no spinner, no scene.
+
+**The desk scene.** The AI's own avatar (the ink rounded square) with a body, at a desk, reading code bars in the diff colours on a monitor; inline SVG, coloured only by tokens, so it follows the theme (the robot is ink in light, near-white in dark). One 24s story: reads → spots a red line ("Wait, what?!") → leans in ("Hmm…") → types; an `AI` badge lands on the line → reads on → green lines: three nods, a check, "Nice." → the screen fades and the story starts again. Speech bubbles are 11.5px sans 600 in a bordered bubble above the head.
+
 The header's … opens a small menu: Theme (System, Light, Dark) and End session. Nothing else.
 
 ### Phone (390)
@@ -417,7 +421,7 @@ The same page in one column: the step list opens from the header's steps button;
 Kept: Diff / Preview, before and after side by side on a transparency checker.
 
 ### Motion
-One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: only the checking spinner (header, step list, criteria being checked, and the AI answering in a thread).
+One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (header, step list, criteria being checked, and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the first step exists and pauses while the tab is hidden or the scene is offscreen.
 - **Steps:** sequential pane swap: the old step leaves to −12px over 100ms, the new one enters from +12px over 200ms after 100ms.
 - **Files:** fold by grid rows (open 320ms; close 200ms after an 80ms content fade), chevron turning 90° in 120ms; Viewed folds the file, the tree's ring turns into a check (200ms, scale from .6), and the count ticks while the header bar grows (320ms).
 - **Look at:** the main pane scrolls smoothly to the range, then the lines flash in the line-pick tone and fade over 1.4s.
@@ -425,7 +429,8 @@ One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezie
 - **New-comment pill:** fades and drops 6px into place (200ms).
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
 - **AI reviewing:** the indicator and the step list's rings fade out (200ms) when the AI finishes.
-- **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still.
+- **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the first step arrives, the opening block fades out (120ms ease-in) and the step enters with the usual pane swap.
+- **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles.
 
 
 ## Words
