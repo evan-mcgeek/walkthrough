@@ -8,6 +8,7 @@ import type { Step } from '../walkthrough';
 import { attrs, el } from './dom';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
+import { grow, reduced } from './motion';
 import { commentCount, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
 
@@ -17,11 +18,13 @@ export let picked: { step: string; file: string; start: number; end: number } | 
 export function pick(next: typeof picked): void {
   picked = next;
   state.render(true);
-  const area = next && document.querySelector<HTMLElement>('.composer-line textarea');
-  if (area) {
-    area.focus({ preventScroll: true });
-    area.scrollIntoView({ block: 'nearest' });
-  }
+  const cell = next && document.querySelector<HTMLElement>('.composer-line .thread-cell');
+  if (!cell) return;
+  cell.querySelector('textarea')?.focus({ preventScroll: true });
+  // The composer is still opening, so this scrolls to where its foot will be.
+  const scroller = cell.closest('.main');
+  const below = cell.getBoundingClientRect().top + cell.scrollHeight - (scroller?.getBoundingClientRect().bottom ?? innerHeight);
+  if (scroller && below > 0) scroller.scrollBy({ top: below, behavior: reduced() ? 'instant' : 'smooth' });
 }
 
 /** Files the person opened or folded themselves, by path; the others fold while viewed, generated or large. */
@@ -44,6 +47,8 @@ export class FilePane {
   private readonly threads = new Map<string, { row: HTMLTableRowElement; box: ThreadBox }>();
   private readonly stripe = document.createElementNS(SVG, 'svg');
   private composerRow: HTMLTableRowElement | null = null;
+  /** Whether the threads were drawn before, so what is new since then can arrive. */
+  private drawn = false;
   private readonly name: string;
   private readonly changedLines: number;
   private previewing = false;
@@ -89,7 +94,7 @@ export class FilePane {
     const first = this.rows.get(start);
     if (!first) return;
     const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
-    scroller.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
     for (const [line, row] of this.rows)
       if (line >= start && line <= end) {
         // Restarted in this task, so a second click flashes again.
@@ -261,19 +266,23 @@ export class FilePane {
     for (const thread of here) {
       const anchor = this.rows.get(thread.lines[1]);
       if (!anchor) continue;
+      const held = !closed && shows(anchor);
       const kept = this.threads.get(thread.id);
       if (kept) {
         const fresh = kept.box.update(thread);
-        if (!closed && shows(anchor)) arrived.push(...fresh.map(hold));
+        if (held) arrived.push(...fresh.map(hold));
+        else for (const one of fresh) one.classList.add('arrive');
         continue;
       }
       const box = new ThreadBox(thread);
-      const row = el('tr', { className: 'thread-row' }, el('td', { colSpan: 2 }, box.box));
+      const row = threadRow(box.box);
       row.dataset['thread'] = thread.id;
       this.placeAfter(anchor, row);
       this.threads.set(thread.id, { row, box });
-      if (!closed && shows(anchor)) arrived.push(hold(row));
+      if (held) arrived.push(hold(row));
+      else if (this.drawn) for (const one of box.box.querySelectorAll('.comment')) one.classList.add('arrive');
     }
+    this.drawn = true;
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
     this.drawStripe();
@@ -288,7 +297,8 @@ export class FilePane {
 
   private markThread(thread: ThreadView): void {
     const row = this.rows.get(thread.lines[1]);
-    const cell = row?.querySelector('.d2h-code-linenumber');
+    // Inside the line number, so the mark sits just before it and never on the old number.
+    const cell = row?.querySelector('.line-num2');
     if (!row || !cell) return;
     const by = threadBy(thread);
     if (!cell.querySelector('.gutter-mark'))
@@ -324,9 +334,12 @@ export class FilePane {
         pick(null);
       },
     });
-    this.composerRow = el('tr', { className: 'thread-row composer-line' }, el('td', { colSpan: 2 }, el('div', { className: 'thread' }, box)));
+    this.composerRow = threadRow(el('div', { className: 'thread' }, box));
+    this.composerRow.classList.add('composer-line');
     this.composerRow.dataset['lines'] = key ?? '';
     this.placeAfter(anchor, this.composerRow);
+    const cell = this.composerRow.querySelector<HTMLElement>('.thread-cell');
+    if (cell) grow(cell);
   }
 
   private previewBox(parsed: DiffFile): HTMLElement | null {
@@ -386,6 +399,9 @@ export class FilePane {
     box.classList.add('markdown');
   }
 }
+
+/** A row under a diff line holding a thread or the composer; the cell is what opens and closes. */
+const threadRow = (content: HTMLElement) => el('tr', { className: 'thread-row' }, el('td', { colSpan: 2 }, el('div', { className: 'thread-cell' }, content)));
 
 /** A row or comment that arrived where it would move the page: folded until the pill opens it. */
 function hold(element: HTMLElement): HTMLElement {
