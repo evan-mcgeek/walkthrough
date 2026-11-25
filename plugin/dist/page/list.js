@@ -58,7 +58,13 @@ var ICONS = {
     ["circle", { cx: 8, cy: 11.6, r: 0.9, fill: "currentColor" }]
   ],
   offline: [line("M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11", 1.5)],
-  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]]
+  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]],
+  info: [ring(), line("M8 7.3v3.9"), ["circle", { cx: 8, cy: 4.9, r: 0.95, fill: "currentColor" }]],
+  copy: [
+    ["rect", { x: 5.5, y: 5.5, width: 8, height: 8, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
+    line("M10.5 3.5v-.4A1.1 1.1 0 0 0 9.4 2H3.1A1.1 1.1 0 0 0 2 3.1v6.3a1.1 1.1 0 0 0 1.1 1.1h.4", 1.5)
+  ],
+  external: [line("M9 3h4v4M13 3L7.5 8.5M11.5 9.5v2.4a1.1 1.1 0 0 1-1.1 1.1H4.1A1.1 1.1 0 0 1 3 11.9V5.6a1.1 1.1 0 0 1 1.1-1.1h2.4", 1.5)]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -96,13 +102,12 @@ function showAlert(message) {
   box.hidden = message === null;
   document.body.classList.remove("unreachable");
 }
-function showUnreachable({ name, reopen, retry }) {
+function showUnreachable({ name, reopen }) {
   if (document.body.classList.contains("unreachable")) return;
   const box = region("alert");
   box.replaceChildren(
     icon("offline"),
-    el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`),
-    ...retry ? [el("button", { type: "button", className: "btn small", onclick: retry }, "Retry now")] : []
+    el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`)
   );
   box.hidden = false;
   document.body.classList.add("unreachable");
@@ -128,7 +133,8 @@ async function post(page, route, body) {
     showAlert(typeof said.error === "string" ? said.error : `The ${page.name} could not do that (${String(answer.status)}).`);
     return null;
   } catch {
-    showUnreachable(page);
+    if ("lost" in page) page.lost();
+    else showUnreachable(page);
     return null;
   }
 }
@@ -151,7 +157,7 @@ async function loadViewer() {
 }
 
 // src/page/list.ts
-var TYPES = { comment: "Comment", approve: "Approve", "request-changes": "Request changes" };
+var TYPES = { comment: "Comment", approve: "Approve", "request-changes": "Request changes", sent: "Sent to the agent" };
 var header = region("header");
 var main = region("main");
 var PAGE = { name: "list", reopen: "Run walkthrough list to reopen." };

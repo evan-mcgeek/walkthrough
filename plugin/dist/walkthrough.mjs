@@ -13166,7 +13166,7 @@ function walkthroughView(dir) {
     ),
     submitted: showsSubmitted ? {
       id: last.id,
-      type: last.type,
+      ...last.type && { type: last.type },
       summary: last.summary,
       comments: kept.filter((one) => one.review === last.id).length,
       posted: posted2.has(last.id),
@@ -13218,11 +13218,10 @@ async function resolve(dir, { thread }) {
 }
 async function submit(dir, { type, summary }) {
   const view = walkthroughView(dir);
-  if (!view || !REVIEW_TYPES.includes(type) || summary !== void 0 && typeof summary !== "string" || view.submitted)
-    return false;
-  const pending = view.threads.flatMap((one) => one.comments).filter((one) => one.pending).length;
-  if (!view.pr && type === "comment" && !pending) return false;
-  return !!await record(dir, { kind: "submit", type, summary: cleanText(summary), head: view.head });
+  if (!view || summary !== void 0 && typeof summary !== "string" || view.submitted) return false;
+  const pending = view.threads.flatMap((one) => one.comments).some((one) => one.pending);
+  if (view.pr ? !REVIEW_TYPES.includes(type) : type !== void 0 || !pending) return false;
+  return !!await record(dir, { kind: "submit", ...view.pr && { type }, summary: cleanText(summary), head: view.head });
 }
 async function markViewed(dir, { file: file2, viewed }) {
   const walkthrough = readWalkthrough(dir);
@@ -13249,13 +13248,13 @@ async function markPosted(dir, address) {
   await record(dir, { kind: "posted", submit: last.id, ...address !== void 0 && { address } });
 }
 var AI_PREFIX = "[AI] ";
-function reviewComments(dir) {
+function reviewComments(dir, all = false) {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
   const log = logOf(dir);
   const { threads: threads3, submits, posted: posted2, resolved } = replay(walkthrough, log);
   const review = submits.findLast((one) => !posted2.has(one.id))?.id;
-  const inReview = (one) => review === void 0 ? one.pending : one.review === review;
+  const inReview = (one) => all ? one.pending === true || one.review !== void 0 : review === void 0 ? one.pending : one.review === review;
   return [
     ...threads3.flatMap(
       (thread) => thread.comments.filter(inReview).map((one) => {
@@ -13264,7 +13263,7 @@ function reviewComments(dir) {
         return one.id === thread.id ? { kind: "comment", id: one.id, by, file: thread.file, lines: thread.lines, body, ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body };
       })
     ),
-    ...[...resolved].filter(([, round]) => round === review).map(([thread]) => ({ kind: "resolve", thread }))
+    ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: "resolve", thread }))
   ];
 }
 var withoutPrefix = (body) => body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim();
@@ -13342,7 +13341,7 @@ function listView(repoDir2) {
         name: view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view),
         files: view.steps.flatMap((step) => step.files).length,
         viewed: view.viewed.length,
-        ...view.submitted && { submitted: view.submitted.type },
+        ...view.submitted && { submitted: view.submitted.type ?? "sent" },
         last: new Date(Math.max(...changed)).toISOString()
       }
     ];
@@ -13766,6 +13765,8 @@ var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --
   A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
   Comments on lines that changed stay in the review, detached from the diff.
   It prints the walkthrough's inbox, the folder for the files the session records from.
+  Resuming a ready walkthrough at the same head, it prints "Already reviewed at this head: N comments pending.",
+  or "in the submitted review" or "sent to the agent" in place of "pending", from what it saved.
 
 Recording from files
   steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
@@ -13810,7 +13811,8 @@ walkthrough listen
     {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
       Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
     {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
-      Submit review or Send to agent; read what goes out with walkthrough comments, act on it, then run walkthrough posted.
+      Submit review or Send to agent; "type" only on a pull request, as your own change has none.
+      Read what goes out with walkthrough comments, act on it, then run walkthrough posted.
     {"kind": "stopped"}   the page was stopped; nothing more will come
   Comments, replies, edits, deletions, Resolve and Viewed never wake it.
   Exit code 3: another walkthrough listen took over.
@@ -13819,8 +13821,9 @@ walkthrough listen
 walkthrough say --answer <ask id> (<text> | --file <file>)
   Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
 
-walkthrough comments
+walkthrough comments [--all]
   Prints what goes out, one JSON line each: the review submitted and not yet posted, or else what is pending.
+  With --all, every comment and reply you and the person made, pending or sent, and every thread resolved.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
       a new thread; "outdated" only when its lines changed since
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
@@ -13867,6 +13870,7 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813",
   "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
   "c89e17025c15f4a8a307dfe9592ada903dbe8aa8d2853b04a4c591b8ad31c124",
+  "db5b3659a66f85035f2d88cd736295dee60a1e20e9a714c470a40af11b8eaef4",
   "e6d323edff72a83d70cc1cd901d1b1ec6d5a07530bd4d8f63194db09b8a23571",
   "f19c5bc5ed0114e350a43a510d0edbcdfa071fade96a6d0c1caace5cf192dccf",
   "f74fac0a569c470d0bbdc07d5fa375e6cb824e2090c50ce77163fe8201df686b",
@@ -14107,6 +14111,10 @@ async function start(args) {
   console.log(
     `Walkthrough of ${nameOf(source)} against ${targetName(change.target)}: ${short(change.base)}..${short(change.head)}, ${plural(steps3.length, "step")}.`
   );
+  if (opened === "resumed") {
+    const line = reviewedLine(dir);
+    if (line) console.log(line);
+  }
   if (opened === "moved" && steps3.length > 0) {
     console.log(`The head moved: ${plural(steps3.length, "step")} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
@@ -14120,6 +14128,14 @@ async function start(args) {
   if (walkthrough.ready === false) await forgetStoppedListener(dir);
   await ensureServer(dir);
   console.log("The page is not open yet; walkthrough open opens it.");
+}
+function reviewedLine(dir) {
+  const view = walkthroughView(dir);
+  if (!view?.ready) return void 0;
+  const { submitted } = view;
+  const pending = view.threads.flatMap((thread) => thread.comments).filter((one) => one.pending).length;
+  const where = submitted ? view.pr ? "in the submitted review" : "sent to the agent" : "pending";
+  return `Already reviewed at this head: ${plural(submitted ? submitted.comments : pending, "comment")} ${where}.`;
 }
 async function openCommand(args) {
   const { dir } = current2(args);
@@ -14180,8 +14196,8 @@ async function criteria2(args) {
   console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? "criterion" : "criteria"}.`);
 }
 function comments2(args) {
-  const { dir } = current2(args);
-  for (const line of reviewComments(dir)) console.log(JSON.stringify(line));
+  const { dir, values } = current2(args, { options: { all: { type: "boolean" } } });
+  for (const line of reviewComments(dir, values.all)) console.log(JSON.stringify(line));
 }
 async function posted(args) {
   const { dir, values } = current2(args, { options: { address: { type: "string" } } });

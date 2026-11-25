@@ -692,7 +692,13 @@ var ICONS = {
     ["circle", { cx: 8, cy: 11.6, r: 0.9, fill: "currentColor" }]
   ],
   offline: [line("M2 6a9 9 0 0 1 12 0M4.3 8.5a5.6 5.6 0 0 1 7.4 0M6.6 11a2.2 2.2 0 0 1 2.8 0M2.5 2.5l11 11", 1.5)],
-  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]]
+  file: [["path", { d: "M4 1.8h5l3 3v9.4H4z M9 1.8v3h3", ...round, "stroke-width": 1.5 }]],
+  info: [ring(), line("M8 7.3v3.9"), ["circle", { cx: 8, cy: 4.9, r: 0.95, fill: "currentColor" }]],
+  copy: [
+    ["rect", { x: 5.5, y: 5.5, width: 8, height: 8, rx: 1.6, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }],
+    line("M10.5 3.5v-.4A1.1 1.1 0 0 0 9.4 2H3.1A1.1 1.1 0 0 0 2 3.1v6.3a1.1 1.1 0 0 0 1.1 1.1h.4", 1.5)
+  ],
+  external: [line("M9 3h4v4M13 3L7.5 8.5M11.5 9.5v2.4a1.1 1.1 0 0 1-1.1 1.1H4.1A1.1 1.1 0 0 1 3 11.9V5.6a1.1 1.1 0 0 1 1.1-1.1h2.4", 1.5)]
 };
 var SVG = "http://www.w3.org/2000/svg";
 function icon(name, label) {
@@ -729,20 +735,19 @@ function attrs(node, given) {
 }
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
-  const box = region("alert");
-  box.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
-  box.hidden = message === null;
+  const box2 = region("alert");
+  box2.replaceChildren(...message === null ? [] : [icon("warn"), el("span", {}, message)]);
+  box2.hidden = message === null;
   document.body.classList.remove("unreachable");
 }
-function showUnreachable({ name, reopen, retry }) {
+function showUnreachable({ name, reopen }) {
   if (document.body.classList.contains("unreachable")) return;
-  const box = region("alert");
-  box.replaceChildren(
+  const box2 = region("alert");
+  box2.replaceChildren(
     icon("offline"),
-    el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`),
-    ...retry ? [el("button", { type: "button", className: "btn small", onclick: retry }, "Retry now")] : []
+    el("span", { className: "banner-text" }, el("strong", {}, `Could not reach the ${name}.`), ` ${reopen}`)
   );
-  box.hidden = false;
+  box2.hidden = false;
   document.body.classList.add("unreachable");
 }
 var send = (route, body) => fetch(`/${route}?token=${token}`, {
@@ -767,7 +772,8 @@ async function post(page, route, body) {
     showAlert(typeof said.error === "string" ? said.error : `The ${page.name} could not do that (${String(answer.status)}).`);
     return null;
   } catch {
-    showUnreachable(page);
+    if ("lost" in page) page.lost();
+    else showUnreachable(page);
     return null;
   }
 }
@@ -793,2956 +799,44 @@ function chooseTheme(theme2) {
   void postQuietly("viewer", { theme: theme2 });
 }
 
-// node_modules/diff2html/lib-esm/types.js
-var LineType;
-(function(LineType2) {
-  LineType2["INSERT"] = "insert";
-  LineType2["DELETE"] = "delete";
-  LineType2["CONTEXT"] = "context";
-})(LineType || (LineType = {}));
-var OutputFormatType = {
-  LINE_BY_LINE: "line-by-line",
-  SIDE_BY_SIDE: "side-by-side"
+// src/page/desk.ts
+var SCENE = `<svg class="desk6" viewBox="0 -20 344 192" width="344" height="192" role="img" aria-label="The AI at its desk, reading the change"><defs><clipPath id="scr6"><rect x="32" y="30" width="152" height="92" rx="3"/></clipPath></defs><path class="stand" d="M100 130h16l4 16h-24z"/><line class="dk" x1="84" y1="148" x2="132" y2="148"/><rect class="mon" x="24" y="22" width="168" height="108" rx="9"/><g clip-path="url(#scr6)"><g class="cd"><rect class="bh" x="33" y="133.5" width="150" height="10.5" rx="2"/><rect class="sn" x="36" y="38" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="37.75" width="70" height="3.5" rx="1.75"/><rect class="sn" x="36" y="47" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="46.75" width="92" height="3.5" rx="1.75"/><rect class="sn" x="36" y="56" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="55.75" width="64" height="3.5" rx="1.75"/><rect class="sn" x="36" y="65" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="74" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="73.75" width="84" height="3.5" rx="1.75"/><rect class="sn" x="36" y="83" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="82.75" width="58" height="3.5" rx="1.75"/><rect class="sn" x="36" y="92" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="91.75" width="76" height="3.5" rx="1.75"/><rect class="sn" x="36" y="101" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="100.75" width="40" height="3.5" rx="1.75"/><rect class="sn" x="36" y="110" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="109.75" width="22" height="3.5" rx="1.75"/><rect class="sn" x="36" y="119" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="128" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="127.75" width="88" height="3.5" rx="1.75"/><rect class="sn" x="36" y="137" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="136.75" width="96" height="3.5" rx="1.75"/><rect class="sn" x="36" y="146" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="145.75" width="60" height="3.5" rx="1.75"/><rect class="sn" x="36" y="155" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="154.75" width="18" height="3.5" rx="1.75"/><rect class="sn" x="36" y="164" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="173" width="8" height="3" rx="1.5"/><rect class="sl sa" x="52" y="172.75" width="74" height="3.5" rx="1.75"/><rect class="sn" x="36" y="182" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="181.75" width="90" height="3.5" rx="1.75"/><rect class="sn" x="36" y="191" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="190.75" width="66" height="3.5" rx="1.75"/><rect class="sn" x="36" y="200" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="199.75" width="82" height="3.5" rx="1.75"/><rect class="sn" x="36" y="209" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="208.75" width="20" height="3.5" rx="1.75"/><rect class="sn" x="36" y="218" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="227" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="226.75" width="62" height="3.5" rx="1.75"/><rect class="sn" x="36" y="236" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="235.75" width="86" height="3.5" rx="1.75"/><rect class="sn" x="36" y="245" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="244.75" width="54" height="3.5" rx="1.75"/><rect class="sn" x="36" y="254" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="253.75" width="16" height="3.5" rx="1.75"/><rect class="sn" x="36" y="263" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="272" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="271.75" width="72" height="3.5" rx="1.75"/><rect class="sn" x="36" y="281" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="280.75" width="48" height="3.5" rx="1.75"/><g class="cb"><rect class="cbr" x="160" y="132" width="20" height="13" rx="3.5"/><text class="cbt" x="170" y="141.4" text-anchor="middle">AI</text></g><g class="ck"><circle class="ckc" cx="172" cy="184" r="7"/><path class="ckp" d="M168.6 184.2l2.3 2.3 4-4.3"/></g></g></g><rect class="rb" x="214" y="98" width="64" height="70" rx="18"/><g class="rh"><line class="ant" x1="246" y1="40" x2="246" y2="29"/><circle class="ink" cx="246" cy="27" r="3.6"/><rect class="ink" x="210" y="40" width="72" height="60" rx="17"/><g class="re"><rect class="eye" x="220" y="58" width="9" height="13" rx="4.5"/><rect class="eye" x="241" y="58" width="9" height="13" rx="4.5"/></g><g class="rhap"><path class="hap" d="M220 68q4.5-8 9 0"/><path class="hap" d="M241 68q4.5-8 9 0"/></g><ellipse class="rmo" cx="236" cy="86" rx="5" ry="4"/><path class="rsm" d="M229 84q6 6 13 0"/></g><rect class="kb" x="146" y="141" width="62" height="7" rx="2.5"/><line class="dk" x1="8" y1="148" x2="312" y2="148"/><rect class="under" x="0" y="149" width="320" height="23"/><rect class="ink m1" x="158" y="131" width="17" height="13" rx="6.5"/><rect class="ink m2" x="182" y="131" width="17" height="13" rx="6.5"/><g class="bub b1"><path class="bb" d="M258 -18h74a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-66l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="295.0" y="-2" text-anchor="middle">Wait, what?!</text></g><g class="bub b2"><path class="bb" d="M258 -18h40a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-32l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="278.0" y="-2" text-anchor="middle">Hmm\u2026</text></g><g class="bub b3"><path class="bb" d="M258 -18h36a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-28l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="276.0" y="-2" text-anchor="middle">Nice.</text></g></svg>`;
+var DESK = `<path class="stand" d="M100 130h16l4 16h-24z"/><line class="dk" x1="84" y1="148" x2="132" y2="148"/><rect class="mon" x="24" y="22" width="168" height="108" rx="9"/><rect class="off" x="32" y="30" width="152" height="92" rx="3"/><rect class="rb" x="214" y="98" width="64" height="70" rx="18"/>`;
+var HEAD = `<line class="ant" x1="246" y1="40" x2="246" y2="29"/><circle class="ink" cx="246" cy="27" r="3.6"/><rect class="ink" x="210" y="40" width="72" height="60" rx="17"/>`;
+var FRONT = `<rect class="kb" x="146" y="141" width="62" height="7" rx="2.5"/><line class="dk" x1="8" y1="148" x2="312" y2="148"/><rect class="under" x="0" y="149" width="344" height="23"/><rect class="ink" x="170" y="131" width="17" height="13" rx="6.5"/>`;
+var FACES = {
+  happy: `<path class="hap" d="M220 66q4.5-8 9 0"/><path class="hap" d="M241 66q4.5-8 9 0"/><path class="smile" d="M229 82q6 6 13 0"/>`,
+  plain: `<rect class="eye" x="222" y="58" width="9" height="13" rx="4.5"/><rect class="eye" x="243" y="58" width="9" height="13" rx="4.5"/><path class="smile" d="M231 84q5 3.5 10 0"/>`
 };
-var LineMatchingType = {
-  LINES: "lines",
-  WORDS: "words",
-  NONE: "none"
-};
-var DiffStyleType = {
-  WORD: "word",
-  CHAR: "char"
-};
-var ColorSchemeType;
-(function(ColorSchemeType2) {
-  ColorSchemeType2["AUTO"] = "auto";
-  ColorSchemeType2["DARK"] = "dark";
-  ColorSchemeType2["LIGHT"] = "light";
-})(ColorSchemeType || (ColorSchemeType = {}));
-
-// node_modules/diff2html/lib-esm/utils.js
-var specials = [
-  "-",
-  "[",
-  "]",
-  "/",
-  "{",
-  "}",
-  "(",
-  ")",
-  "*",
-  "+",
-  "?",
-  ".",
-  "\\",
-  "^",
-  "$",
-  "|"
-];
-var regex = RegExp("[" + specials.join("\\") + "]", "g");
-function escapeForRegExp(str) {
-  return str.replace(regex, "\\$&");
-}
-function unifyPath(path) {
-  return path ? path.replace(/\\/g, "/") : path;
-}
-function hashCode(text2) {
-  let i, chr, len;
-  let hash = 0;
-  for (i = 0, len = text2.length; i < len; i++) {
-    chr = text2.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
-  }
-  return hash;
-}
-function max(arr) {
-  const length = arr.length;
-  let max2 = -Infinity;
-  for (let i = 0; i < length; i++) {
-    max2 = Math.max(max2, arr[i]);
-  }
-  return max2;
-}
-
-// node_modules/diff2html/lib-esm/diff-parser.js
-function getExtension(filename, language) {
-  const filenameParts = filename.split(".");
-  return filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : language;
-}
-function startsWithAny(str, prefixes) {
-  return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
-}
-var baseDiffFilenamePrefixes = ["a/", "b/", "i/", "w/", "c/", "o/"];
-function getFilename(line2, linePrefix, extraPrefix) {
-  const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes, extraPrefix] : baseDiffFilenamePrefixes;
-  const FilenameRegExp = linePrefix ? new RegExp(`^${escapeForRegExp(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
-  const [, filename = ""] = FilenameRegExp.exec(line2) || [];
-  const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
-  const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
-  return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
-}
-function getSrcFilename(line2, srcPrefix) {
-  return getFilename(line2, "---", srcPrefix);
-}
-function getDstFilename(line2, dstPrefix) {
-  return getFilename(line2, "+++", dstPrefix);
-}
-function parse(diffInput, config2 = {}) {
-  const files = [];
-  let currentFile = null;
-  let currentBlock = null;
-  let oldLine = null;
-  let oldLine2 = null;
-  let newLine = null;
-  let possibleOldName = null;
-  let possibleNewName = null;
-  const oldFileNameHeader = "--- ";
-  const newFileNameHeader = "+++ ";
-  const hunkHeaderPrefix = "@@";
-  const oldMode = /^old mode (\d{6})/;
-  const newMode = /^new mode (\d{6})/;
-  const deletedFileMode = /^deleted file mode (\d{6})/;
-  const newFileMode = /^new file mode (\d{6})/;
-  const copyFrom = /^copy from "?(.+)"?/;
-  const copyTo = /^copy to "?(.+)"?/;
-  const renameFrom = /^rename from "?(.+)"?/;
-  const renameTo = /^rename to "?(.+)"?/;
-  const similarityIndex = /^similarity index (\d+)%/;
-  const dissimilarityIndex = /^dissimilarity index (\d+)%/;
-  const index = /^index ([\da-z]+)\.\.([\da-z]+)\s*(\d{6})?/;
-  const binaryFiles = /^Binary files (.*) and (.*) differ/;
-  const binaryDiff = /^GIT binary patch/;
-  const combinedIndex = /^index ([\da-z]+),([\da-z]+)\.\.([\da-z]+)/;
-  const combinedMode = /^mode (\d{6}),(\d{6})\.\.(\d{6})/;
-  const combinedNewFile = /^new file mode (\d{6})/;
-  const combinedDeletedFile = /^deleted file mode (\d{6}),(\d{6})/;
-  const diffLines = diffInput.replace(/\\ No newline at end of file/g, "").replace(/\r\n?/g, "\n").split("\n");
-  function saveBlock() {
-    if (currentBlock !== null && currentFile !== null) {
-      currentFile.blocks.push(currentBlock);
-      currentBlock = null;
-    }
-  }
-  function saveFile() {
-    if (currentFile !== null) {
-      if (!currentFile.oldName && possibleOldName !== null) {
-        currentFile.oldName = possibleOldName;
-      }
-      if (!currentFile.newName && possibleNewName !== null) {
-        currentFile.newName = possibleNewName;
-      }
-      if (currentFile.newName) {
-        files.push(currentFile);
-        currentFile = null;
-      }
-    }
-    possibleOldName = null;
-    possibleNewName = null;
-  }
-  function startFile() {
-    saveBlock();
-    saveFile();
-    currentFile = {
-      blocks: [],
-      deletedLines: 0,
-      addedLines: 0
-    };
-  }
-  function startBlock(line2) {
-    saveBlock();
-    let values;
-    if (currentFile !== null) {
-      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line2)) {
-        currentFile.isCombined = false;
-        oldLine = parseInt(values[1], 10);
-        newLine = parseInt(values[2], 10);
-      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line2)) {
-        currentFile.isCombined = true;
-        oldLine = parseInt(values[1], 10);
-        oldLine2 = parseInt(values[2], 10);
-        newLine = parseInt(values[3], 10);
-      } else {
-        if (line2.startsWith(hunkHeaderPrefix)) {
-          console.error("Failed to parse lines, starting in 0!");
-        }
-        oldLine = 0;
-        newLine = 0;
-        currentFile.isCombined = false;
-      }
-    }
-    currentBlock = {
-      lines: [],
-      oldStartLine: oldLine,
-      oldStartLine2: oldLine2,
-      newStartLine: newLine,
-      header: line2
-    };
-  }
-  function createLine(line2) {
-    if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
-      return;
-    const currentLine = {
-      content: line2
-    };
-    const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
-    const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
-    if (startsWithAny(line2, addedPrefixes)) {
-      currentFile.addedLines++;
-      currentLine.type = LineType.INSERT;
-      currentLine.oldNumber = void 0;
-      currentLine.newNumber = newLine++;
-    } else if (startsWithAny(line2, deletedPrefixes)) {
-      currentFile.deletedLines++;
-      currentLine.type = LineType.DELETE;
-      currentLine.oldNumber = oldLine++;
-      currentLine.newNumber = void 0;
-    } else {
-      currentLine.type = LineType.CONTEXT;
-      currentLine.oldNumber = oldLine++;
-      currentLine.newNumber = newLine++;
-    }
-    currentBlock.lines.push(currentLine);
-  }
-  function existHunkHeader(line2, lineIdx) {
-    let idx = lineIdx;
-    while (idx < diffLines.length - 3) {
-      if (line2.startsWith("diff")) {
-        return false;
-      }
-      if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
-        return true;
-      }
-      idx++;
-    }
-    return false;
-  }
-  diffLines.forEach((line2, lineIndex) => {
-    if (!line2 || line2.startsWith("*")) {
-      return;
-    }
-    let values;
-    const prevLine = diffLines[lineIndex - 1];
-    const nxtLine = diffLines[lineIndex + 1];
-    const afterNxtLine = diffLines[lineIndex + 2];
-    if (line2.startsWith("diff --git") || line2.startsWith("diff --combined")) {
-      startFile();
-      const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
-      if (values = gitDiffStart.exec(line2)) {
-        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
-        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
-      }
-      if (currentFile === null) {
-        throw new Error("Where is my file !!!");
-      }
-      currentFile.isGitDiff = true;
-      return;
-    }
-    if (line2.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
-      startFile();
-      const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
-      if (values = unixDiffBinaryStart.exec(line2)) {
-        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
-        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
-      }
-      if (currentFile === null) {
-        throw new Error("Where is my file !!!");
-      }
-      currentFile.isBinary = true;
-      return;
-    }
-    if (!currentFile || !currentFile.isGitDiff && currentFile && line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
-      startFile();
-    }
-    if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
-      return;
-    }
-    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line2.length > config2.diffMaxLineLength)) {
-      currentFile.isTooBig = true;
-      currentFile.addedLines = 0;
-      currentFile.deletedLines = 0;
-      currentFile.blocks = [];
-      currentBlock = null;
-      const message = typeof config2.diffTooBigMessage === "function" ? config2.diffTooBigMessage(files.length) : "Diff too big to be displayed";
-      startBlock(message);
-      return;
-    }
-    if (line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line2.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
-      if (currentFile && !currentFile.oldName && line2.startsWith("--- ") && (values = getSrcFilename(line2, config2.srcPrefix))) {
-        currentFile.oldName = values;
-        currentFile.language = getExtension(currentFile.oldName, currentFile.language);
-        return;
-      }
-      if (currentFile && !currentFile.newName && line2.startsWith("+++ ") && (values = getDstFilename(line2, config2.dstPrefix))) {
-        currentFile.newName = values;
-        currentFile.language = getExtension(currentFile.newName, currentFile.language);
-        return;
-      }
-    }
-    if (currentFile && (line2.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
-      startBlock(line2);
-      return;
-    }
-    if (currentBlock && (line2.startsWith("+") || line2.startsWith("-") || line2.startsWith(" "))) {
-      createLine(line2);
-      return;
-    }
-    const doesNotExistHunkHeader = !existHunkHeader(line2, lineIndex);
-    if (currentFile === null) {
-      throw new Error("Where is my file !!!");
-    }
-    if (values = oldMode.exec(line2)) {
-      currentFile.oldMode = values[1];
-    } else if (values = newMode.exec(line2)) {
-      currentFile.newMode = values[1];
-    } else if (values = deletedFileMode.exec(line2)) {
-      currentFile.deletedFileMode = values[1];
-      currentFile.isDeleted = true;
-    } else if (values = newFileMode.exec(line2)) {
-      currentFile.newFileMode = values[1];
-      currentFile.isNew = true;
-    } else if (values = copyFrom.exec(line2)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.oldName = values[1];
-      }
-      currentFile.isCopy = true;
-    } else if (values = copyTo.exec(line2)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.newName = values[1];
-      }
-      currentFile.isCopy = true;
-    } else if (values = renameFrom.exec(line2)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.oldName = values[1];
-      }
-      currentFile.isRename = true;
-    } else if (values = renameTo.exec(line2)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.newName = values[1];
-      }
-      currentFile.isRename = true;
-    } else if (values = binaryFiles.exec(line2)) {
-      currentFile.isBinary = true;
-      currentFile.oldName = getFilename(values[1], void 0, config2.srcPrefix);
-      currentFile.newName = getFilename(values[2], void 0, config2.dstPrefix);
-      startBlock("Binary file");
-    } else if (binaryDiff.test(line2)) {
-      currentFile.isBinary = true;
-      startBlock(line2);
-    } else if (values = similarityIndex.exec(line2)) {
-      currentFile.unchangedPercentage = parseInt(values[1], 10);
-    } else if (values = dissimilarityIndex.exec(line2)) {
-      currentFile.changedPercentage = parseInt(values[1], 10);
-    } else if (values = index.exec(line2)) {
-      currentFile.checksumBefore = values[1];
-      currentFile.checksumAfter = values[2];
-      if (values[3])
-        currentFile.mode = values[3];
-    } else if (values = combinedIndex.exec(line2)) {
-      currentFile.checksumBefore = [values[2], values[3]];
-      currentFile.checksumAfter = values[1];
-    } else if (values = combinedMode.exec(line2)) {
-      currentFile.oldMode = [values[2], values[3]];
-      currentFile.newMode = values[1];
-    } else if (values = combinedNewFile.exec(line2)) {
-      currentFile.newFileMode = values[1];
-      currentFile.isNew = true;
-    } else if (values = combinedDeletedFile.exec(line2)) {
-      currentFile.deletedFileMode = values[1];
-      currentFile.isDeleted = true;
-    }
+var robot = (inner) => `<svg class="desk6 bye6" viewBox="0 -20 344 192" width="344" height="192" aria-hidden="true">${DESK}${inner}</svg>`;
+var waving = (face) => robot(`<g>${HEAD}<g>${FACES[face]}</g></g>${FRONT}<g class="wave"><rect class="ink" x="292" y="56" width="17" height="21" rx="8"/></g>`);
+var ASLEEP = robot(
+  `<g class="nod">${HEAD}<g><path class="hap" d="M220 66h9"/><path class="hap" d="M241 66h9"/></g><g class="zz"><text class="z1" x="284" y="34">z</text><text class="z2" x="296" y="20">z</text></g></g>${FRONT}<rect class="ink" x="196" y="131" width="17" height="13" rx="6.5"/>`
+);
+var byeScene = (mood) => scene(mood === "asleep" ? ASLEEP : waving(mood));
+var deskScene = () => scene(SCENE);
+function scene(markup) {
+  const box2 = document.createElement("div");
+  box2.className = "desk-scene";
+  box2.innerHTML = markup;
+  let offscreen = false;
+  const pause = () => box2.classList.toggle("rdpause", document.hidden || offscreen);
+  const seen = new IntersectionObserver(([entry]) => {
+    offscreen = !entry?.isIntersecting;
+    pause();
   });
-  saveBlock();
-  saveFile();
-  return files;
-}
-
-// node_modules/diff/libesm/diff/base.js
-var Diff = class {
-  diff(oldStr, newStr, options = {}) {
-    let callback;
-    if (typeof options === "function") {
-      callback = options;
-      options = {};
-    } else if ("callback" in options) {
-      callback = options.callback;
-    }
-    const oldString = this.castInput(oldStr, options);
-    const newString = this.castInput(newStr, options);
-    const oldTokens = this.removeEmpty(this.tokenize(oldString, options));
-    const newTokens = this.removeEmpty(this.tokenize(newString, options));
-    return this.diffWithOptionsObj(oldTokens, newTokens, options, callback);
-  }
-  diffWithOptionsObj(oldTokens, newTokens, options, callback) {
-    var _a;
-    const done = (value) => {
-      value = this.postProcess(value, options);
-      if (callback) {
-        setTimeout(function() {
-          callback(value);
-        }, 0);
-        return void 0;
-      } else {
-        return value;
-      }
-    };
-    const newLen = newTokens.length, oldLen = oldTokens.length;
-    let editLength = 1;
-    let maxEditLength = newLen + oldLen;
-    if (options.maxEditLength != null) {
-      maxEditLength = Math.min(maxEditLength, options.maxEditLength);
-    }
-    const maxExecutionTime = (_a = options.timeout) !== null && _a !== void 0 ? _a : Infinity;
-    const abortAfterTimestamp = Date.now() + maxExecutionTime;
-    const bestPath = [{ oldPos: -1, lastComponent: void 0 }];
-    let newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options);
-    if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
-      return done(this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens));
-    }
-    let minDiagonalToConsider = -Infinity, maxDiagonalToConsider = Infinity;
-    const execEditLength = () => {
-      for (let diagonalPath = Math.max(minDiagonalToConsider, -editLength); diagonalPath <= Math.min(maxDiagonalToConsider, editLength); diagonalPath += 2) {
-        let basePath;
-        const removePath = bestPath[diagonalPath - 1], addPath = bestPath[diagonalPath + 1];
-        if (removePath) {
-          bestPath[diagonalPath - 1] = void 0;
-        }
-        let canAdd = false;
-        if (addPath) {
-          const addPathNewPos = addPath.oldPos - diagonalPath;
-          canAdd = addPath && 0 <= addPathNewPos && addPathNewPos < newLen;
-        }
-        const canRemove = removePath && removePath.oldPos + 1 < oldLen;
-        if (!canAdd && !canRemove) {
-          bestPath[diagonalPath] = void 0;
-          continue;
-        }
-        if (!canRemove || canAdd && removePath.oldPos < addPath.oldPos) {
-          basePath = this.addToPath(addPath, true, false, 0, options);
-        } else {
-          basePath = this.addToPath(removePath, false, true, 1, options);
-        }
-        newPos = this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options);
-        if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
-          return done(this.buildValues(basePath.lastComponent, newTokens, oldTokens)) || true;
-        } else {
-          bestPath[diagonalPath] = basePath;
-          if (basePath.oldPos + 1 >= oldLen) {
-            maxDiagonalToConsider = Math.min(maxDiagonalToConsider, diagonalPath - 1);
-          }
-          if (newPos + 1 >= newLen) {
-            minDiagonalToConsider = Math.max(minDiagonalToConsider, diagonalPath + 1);
-          }
-        }
-      }
-      editLength++;
-    };
-    if (callback) {
-      (function exec() {
-        setTimeout(function() {
-          if (editLength > maxEditLength || Date.now() > abortAfterTimestamp) {
-            return callback(void 0);
-          }
-          if (!execEditLength()) {
-            exec();
-          }
-        }, 0);
-      })();
-    } else {
-      while (editLength <= maxEditLength && Date.now() <= abortAfterTimestamp) {
-        const ret = execEditLength();
-        if (ret) {
-          return ret;
-        }
-      }
-    }
-  }
-  addToPath(path, added, removed, oldPosInc, options) {
-    const last = path.lastComponent;
-    if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
-      return {
-        oldPos: path.oldPos + oldPosInc,
-        lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
-      };
-    } else {
-      return {
-        oldPos: path.oldPos + oldPosInc,
-        lastComponent: { count: 1, added, removed, previousComponent: last }
-      };
-    }
-  }
-  extractCommon(basePath, newTokens, oldTokens, diagonalPath, options) {
-    const newLen = newTokens.length, oldLen = oldTokens.length;
-    let oldPos = basePath.oldPos, newPos = oldPos - diagonalPath, commonCount = 0;
-    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options)) {
-      newPos++;
-      oldPos++;
-      commonCount++;
-      if (options.oneChangePerToken) {
-        basePath.lastComponent = { count: 1, previousComponent: basePath.lastComponent, added: false, removed: false };
-      }
-    }
-    if (commonCount && !options.oneChangePerToken) {
-      basePath.lastComponent = { count: commonCount, previousComponent: basePath.lastComponent, added: false, removed: false };
-    }
-    basePath.oldPos = oldPos;
-    return newPos;
-  }
-  equals(left, right, options) {
-    if (options.comparator) {
-      return options.comparator(left, right);
-    } else {
-      return left === right || !!options.ignoreCase && left.toLowerCase() === right.toLowerCase();
-    }
-  }
-  removeEmpty(array) {
-    const ret = [];
-    for (let i = 0; i < array.length; i++) {
-      if (array[i]) {
-        ret.push(array[i]);
-      }
-    }
-    return ret;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  castInput(value, options) {
-    return value;
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  tokenize(value, options) {
-    return Array.from(value);
-  }
-  join(chars) {
-    return chars.join("");
-  }
-  postProcess(changeObjects, options) {
-    return changeObjects;
-  }
-  get useLongestToken() {
-    return false;
-  }
-  buildValues(lastComponent, newTokens, oldTokens) {
-    const components = [];
-    let nextComponent;
-    while (lastComponent) {
-      components.push(lastComponent);
-      nextComponent = lastComponent.previousComponent;
-      delete lastComponent.previousComponent;
-      lastComponent = nextComponent;
-    }
-    components.reverse();
-    const componentLen = components.length;
-    let componentPos = 0, newPos = 0, oldPos = 0;
-    for (; componentPos < componentLen; componentPos++) {
-      const component = components[componentPos];
-      if (!component.removed) {
-        if (!component.added && this.useLongestToken) {
-          let value = newTokens.slice(newPos, newPos + component.count);
-          value = value.map(function(value2, i) {
-            const oldValue = oldTokens[oldPos + i];
-            return oldValue.length > value2.length ? oldValue : value2;
-          });
-          component.value = this.join(value);
-        } else {
-          component.value = this.join(newTokens.slice(newPos, newPos + component.count));
-        }
-        newPos += component.count;
-        if (!component.added) {
-          oldPos += component.count;
-        }
-      } else {
-        component.value = this.join(oldTokens.slice(oldPos, oldPos + component.count));
-        oldPos += component.count;
-      }
-    }
-    return components;
-  }
-};
-
-// node_modules/diff/libesm/diff/character.js
-var CharacterDiff = class extends Diff {
-};
-var characterDiff = new CharacterDiff();
-function diffChars(oldStr, newStr, options) {
-  return characterDiff.diff(oldStr, newStr, options);
-}
-
-// node_modules/diff/libesm/util/string.js
-function longestCommonPrefix(str1, str2) {
-  let i;
-  for (i = 0; i < str1.length && i < str2.length; i++) {
-    if (str1[i] != str2[i]) {
-      return str1.slice(0, i);
-    }
-  }
-  return str1.slice(0, i);
-}
-function longestCommonSuffix(str1, str2) {
-  let i;
-  if (!str1 || !str2 || str1[str1.length - 1] != str2[str2.length - 1]) {
-    return "";
-  }
-  for (i = 0; i < str1.length && i < str2.length; i++) {
-    if (str1[str1.length - (i + 1)] != str2[str2.length - (i + 1)]) {
-      return str1.slice(-i);
-    }
-  }
-  return str1.slice(-i);
-}
-function replacePrefix(string, oldPrefix, newPrefix) {
-  if (string.slice(0, oldPrefix.length) != oldPrefix) {
-    throw Error(`string ${JSON.stringify(string)} doesn't start with prefix ${JSON.stringify(oldPrefix)}; this is a bug`);
-  }
-  return newPrefix + string.slice(oldPrefix.length);
-}
-function replaceSuffix(string, oldSuffix, newSuffix) {
-  if (!oldSuffix) {
-    return string + newSuffix;
-  }
-  if (string.slice(-oldSuffix.length) != oldSuffix) {
-    throw Error(`string ${JSON.stringify(string)} doesn't end with suffix ${JSON.stringify(oldSuffix)}; this is a bug`);
-  }
-  return string.slice(0, -oldSuffix.length) + newSuffix;
-}
-function removePrefix(string, oldPrefix) {
-  return replacePrefix(string, oldPrefix, "");
-}
-function removeSuffix(string, oldSuffix) {
-  return replaceSuffix(string, oldSuffix, "");
-}
-function maximumOverlap(string1, string2) {
-  return string2.slice(0, overlapCount(string1, string2));
-}
-function overlapCount(a, b) {
-  let startA = 0;
-  if (a.length > b.length) {
-    startA = a.length - b.length;
-  }
-  let endB = b.length;
-  if (a.length < b.length) {
-    endB = a.length;
-  }
-  const map2 = Array(endB);
-  let k = 0;
-  map2[0] = 0;
-  for (let j = 1; j < endB; j++) {
-    if (b[j] == b[k]) {
-      map2[j] = map2[k];
-    } else {
-      map2[j] = k;
-    }
-    while (k > 0 && b[j] != b[k]) {
-      k = map2[k];
-    }
-    if (b[j] == b[k]) {
-      k++;
-    }
-  }
-  k = 0;
-  for (let i = startA; i < a.length; i++) {
-    while (k > 0 && a[i] != b[k]) {
-      k = map2[k];
-    }
-    if (a[i] == b[k]) {
-      k++;
-    }
-  }
-  return k;
-}
-function segment(string, segmenter) {
-  const parts = [];
-  for (const segmentObj of Array.from(segmenter.segment(string))) {
-    const segment2 = segmentObj.segment;
-    if (parts.length && /\s/.test(parts[parts.length - 1]) && /\s/.test(segment2)) {
-      parts[parts.length - 1] += segment2;
-    } else {
-      parts.push(segment2);
-    }
-  }
-  return parts;
-}
-function trailingWs(string, segmenter) {
-  if (segmenter) {
-    return leadingAndTrailingWs(string, segmenter)[1];
-  }
-  let i;
-  for (i = string.length - 1; i >= 0; i--) {
-    if (!string[i].match(/\s/)) {
-      break;
-    }
-  }
-  return string.substring(i + 1);
-}
-function leadingWs(string, segmenter) {
-  if (segmenter) {
-    return leadingAndTrailingWs(string, segmenter)[0];
-  }
-  const match = string.match(/^\s*/);
-  return match ? match[0] : "";
-}
-function leadingAndTrailingWs(string, segmenter) {
-  if (!segmenter) {
-    return [leadingWs(string), trailingWs(string)];
-  }
-  if (segmenter.resolvedOptions().granularity != "word") {
-    throw new Error('The segmenter passed must have a granularity of "word"');
-  }
-  const segments = segment(string, segmenter);
-  const firstSeg = segments[0];
-  const lastSeg = segments[segments.length - 1];
-  const head = /\s/.test(firstSeg) ? firstSeg : "";
-  const tail = /\s/.test(lastSeg) ? lastSeg : "";
-  return [head, tail];
-}
-
-// node_modules/diff/libesm/diff/word.js
-var extendedWordChars = "a-zA-Z0-9_\\u{AD}\\u{C0}-\\u{D6}\\u{D8}-\\u{F6}\\u{F8}-\\u{2C6}\\u{2C8}-\\u{2D7}\\u{2DE}-\\u{2FF}\\u{1E00}-\\u{1EFF}";
-var tokenizeIncludingWhitespace = new RegExp(`[${extendedWordChars}]+|\\s+|[^${extendedWordChars}]`, "ug");
-var WordDiff = class extends Diff {
-  equals(left, right, options) {
-    if (options.ignoreCase) {
-      left = left.toLowerCase();
-      right = right.toLowerCase();
-    }
-    return left.trim() === right.trim();
-  }
-  tokenize(value, options = {}) {
-    let parts;
-    if (options.intlSegmenter) {
-      const segmenter = options.intlSegmenter;
-      if (segmenter.resolvedOptions().granularity != "word") {
-        throw new Error('The segmenter passed must have a granularity of "word"');
-      }
-      parts = segment(value, segmenter);
-    } else {
-      parts = value.match(tokenizeIncludingWhitespace) || [];
-    }
-    const tokens = [];
-    let prevPart = null;
-    parts.forEach((part) => {
-      if (/\s/.test(part)) {
-        if (prevPart == null) {
-          tokens.push(part);
-        } else {
-          tokens.push(tokens.pop() + part);
-        }
-      } else if (prevPart != null && /\s/.test(prevPart)) {
-        if (tokens[tokens.length - 1] == prevPart) {
-          tokens.push(tokens.pop() + part);
-        } else {
-          tokens.push(prevPart + part);
-        }
-      } else {
-        tokens.push(part);
-      }
-      prevPart = part;
-    });
-    return tokens;
-  }
-  join(tokens) {
-    return tokens.map((token3, i) => {
-      if (i == 0) {
-        return token3;
-      } else {
-        return token3.replace(/^\s+/, "");
-      }
-    }).join("");
-  }
-  postProcess(changes, options) {
-    if (!changes || options.oneChangePerToken) {
-      return changes;
-    }
-    let lastKeep = null;
-    let insertion = null;
-    let deletion = null;
-    changes.forEach((change) => {
-      if (change.added) {
-        insertion = change;
-      } else if (change.removed) {
-        deletion = change;
-      } else {
-        if (insertion || deletion) {
-          dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, change, options.intlSegmenter);
-        }
-        lastKeep = change;
-        insertion = null;
-        deletion = null;
-      }
-    });
-    if (insertion || deletion) {
-      dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options.intlSegmenter);
-    }
-    return changes;
-  }
-};
-var wordDiff = new WordDiff();
-function dedupeWhitespaceInChangeObjects(startKeep, deletion, insertion, endKeep, segmenter) {
-  if (deletion && insertion) {
-    const [oldWsPrefix, oldWsSuffix] = leadingAndTrailingWs(deletion.value, segmenter);
-    const [newWsPrefix, newWsSuffix] = leadingAndTrailingWs(insertion.value, segmenter);
-    if (startKeep) {
-      const commonWsPrefix = longestCommonPrefix(oldWsPrefix, newWsPrefix);
-      startKeep.value = replaceSuffix(startKeep.value, newWsPrefix, commonWsPrefix);
-      deletion.value = removePrefix(deletion.value, commonWsPrefix);
-      insertion.value = removePrefix(insertion.value, commonWsPrefix);
-    }
-    if (endKeep) {
-      const commonWsSuffix = longestCommonSuffix(oldWsSuffix, newWsSuffix);
-      endKeep.value = replacePrefix(endKeep.value, newWsSuffix, commonWsSuffix);
-      deletion.value = removeSuffix(deletion.value, commonWsSuffix);
-      insertion.value = removeSuffix(insertion.value, commonWsSuffix);
-    }
-  } else if (insertion) {
-    if (startKeep) {
-      const ws = leadingWs(insertion.value, segmenter);
-      insertion.value = insertion.value.substring(ws.length);
-    }
-    if (endKeep) {
-      const ws = leadingWs(endKeep.value, segmenter);
-      endKeep.value = endKeep.value.substring(ws.length);
-    }
-  } else if (startKeep && endKeep) {
-    const newWsFull = leadingWs(endKeep.value, segmenter), [delWsStart, delWsEnd] = leadingAndTrailingWs(deletion.value, segmenter);
-    const newWsStart = longestCommonPrefix(newWsFull, delWsStart);
-    deletion.value = removePrefix(deletion.value, newWsStart);
-    const newWsEnd = longestCommonSuffix(removePrefix(newWsFull, newWsStart), delWsEnd);
-    deletion.value = removeSuffix(deletion.value, newWsEnd);
-    endKeep.value = replacePrefix(endKeep.value, newWsFull, newWsEnd);
-    startKeep.value = replaceSuffix(startKeep.value, newWsFull, newWsFull.slice(0, newWsFull.length - newWsEnd.length));
-  } else if (endKeep) {
-    const endKeepWsPrefix = leadingWs(endKeep.value, segmenter);
-    const deletionWsSuffix = trailingWs(deletion.value, segmenter);
-    const overlap = maximumOverlap(deletionWsSuffix, endKeepWsPrefix);
-    deletion.value = removeSuffix(deletion.value, overlap);
-  } else if (startKeep) {
-    const startKeepWsSuffix = trailingWs(startKeep.value, segmenter);
-    const deletionWsPrefix = leadingWs(deletion.value, segmenter);
-    const overlap = maximumOverlap(startKeepWsSuffix, deletionWsPrefix);
-    deletion.value = removePrefix(deletion.value, overlap);
-  }
-}
-var WordsWithSpaceDiff = class extends Diff {
-  tokenize(value) {
-    const regex2 = new RegExp(`(\\r?\\n)|[${extendedWordChars}]+|[^\\S\\n\\r]+|[^${extendedWordChars}]`, "ug");
-    return value.match(regex2) || [];
-  }
-};
-var wordsWithSpaceDiff = new WordsWithSpaceDiff();
-function diffWordsWithSpace(oldStr, newStr, options) {
-  return wordsWithSpaceDiff.diff(oldStr, newStr, options);
-}
-
-// node_modules/diff2html/lib-esm/rematch.js
-function levenshtein(a, b) {
-  if (a.length === 0) {
-    return b.length;
-  }
-  if (b.length === 0) {
-    return a.length;
-  }
-  const matrix = [];
-  let i;
-  for (i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  let j;
-  for (j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-  for (i = 1; i <= b.length; i++) {
-    for (j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
-      }
-    }
-  }
-  return matrix[b.length][a.length];
-}
-function newDistanceFn(str) {
-  return (x, y) => {
-    const xValue = str(x).trim();
-    const yValue = str(y).trim();
-    const lev = levenshtein(xValue, yValue);
-    return lev / (xValue.length + yValue.length);
-  };
-}
-function newMatcherFn(distance2) {
-  function findBestMatch(a, b, cache = /* @__PURE__ */ new Map()) {
-    let bestMatchDist = Infinity;
-    let bestMatch;
-    for (let i = 0; i < a.length; ++i) {
-      for (let j = 0; j < b.length; ++j) {
-        const cacheKey = JSON.stringify([a[i], b[j]]);
-        let md;
-        if (!(cache.has(cacheKey) && (md = cache.get(cacheKey)))) {
-          md = distance2(a[i], b[j]);
-          cache.set(cacheKey, md);
-        }
-        if (md < bestMatchDist) {
-          bestMatchDist = md;
-          bestMatch = { indexA: i, indexB: j, score: bestMatchDist };
-        }
-      }
-    }
-    return bestMatch;
-  }
-  function group(a, b, level = 0, cache = /* @__PURE__ */ new Map()) {
-    const bm = findBestMatch(a, b, cache);
-    if (!bm || a.length + b.length < 3) {
-      return [[a, b]];
-    }
-    const a1 = a.slice(0, bm.indexA);
-    const b1 = b.slice(0, bm.indexB);
-    const aMatch = [a[bm.indexA]];
-    const bMatch = [b[bm.indexB]];
-    const tailA = bm.indexA + 1;
-    const tailB = bm.indexB + 1;
-    const a2 = a.slice(tailA);
-    const b2 = b.slice(tailB);
-    const group1 = group(a1, b1, level + 1, cache);
-    const groupMatch = group(aMatch, bMatch, level + 1, cache);
-    const group2 = group(a2, b2, level + 1, cache);
-    let result = groupMatch;
-    if (bm.indexA > 0 || bm.indexB > 0) {
-      result = group1.concat(result);
-    }
-    if (a.length > tailA || b.length > tailB) {
-      result = result.concat(group2);
-    }
-    return result;
-  }
-  return group;
-}
-
-// node_modules/diff2html/lib-esm/render-utils.js
-var CSSLineClass = {
-  INSERTS: "d2h-ins",
-  DELETES: "d2h-del",
-  CONTEXT: "d2h-cntx",
-  INFO: "d2h-info",
-  INSERT_CHANGES: "d2h-ins d2h-change",
-  DELETE_CHANGES: "d2h-del d2h-change"
-};
-var defaultRenderConfig = {
-  matching: LineMatchingType.NONE,
-  matchWordsThreshold: 0.25,
-  maxLineLengthHighlight: 1e4,
-  diffStyle: DiffStyleType.WORD,
-  colorScheme: ColorSchemeType.LIGHT
-};
-var separator = "/";
-var distance = newDistanceFn((change) => change.value);
-var matcher = newMatcherFn(distance);
-function isDevNullName(name) {
-  return name.indexOf("dev/null") !== -1;
-}
-function removeInsElements(line2) {
-  return line2.replace(/(<ins[^>]*>((.|\n)*?)<\/ins>)/g, "");
-}
-function removeDelElements(line2) {
-  return line2.replace(/(<del[^>]*>((.|\n)*?)<\/del>)/g, "");
-}
-function toCSSClass(lineType) {
-  switch (lineType) {
-    case LineType.CONTEXT:
-      return CSSLineClass.CONTEXT;
-    case LineType.INSERT:
-      return CSSLineClass.INSERTS;
-    case LineType.DELETE:
-      return CSSLineClass.DELETES;
-  }
-}
-function colorSchemeToCss(colorScheme) {
-  switch (colorScheme) {
-    case ColorSchemeType.DARK:
-      return "d2h-dark-color-scheme";
-    case ColorSchemeType.AUTO:
-      return "d2h-auto-color-scheme";
-    case ColorSchemeType.LIGHT:
-    default:
-      return "d2h-light-color-scheme";
-  }
-}
-function prefixLength(isCombined) {
-  return isCombined ? 2 : 1;
-}
-function escapeForHtml(str) {
-  return str.slice(0).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;");
-}
-function deconstructLine(line2, isCombined, escape2 = true) {
-  const indexToSplit = prefixLength(isCombined);
+  seen.observe(box2);
+  document.addEventListener("visibilitychange", pause);
+  pause();
   return {
-    prefix: line2.substring(0, indexToSplit),
-    content: escape2 ? escapeForHtml(line2.substring(indexToSplit)) : line2.substring(indexToSplit)
-  };
-}
-function filenameDiff(file) {
-  const oldFilename = unifyPath(file.oldName);
-  const newFilename = unifyPath(file.newName);
-  if (oldFilename !== newFilename && !isDevNullName(oldFilename) && !isDevNullName(newFilename)) {
-    const prefixPaths = [];
-    const suffixPaths = [];
-    const oldFilenameParts = oldFilename.split(separator);
-    const newFilenameParts = newFilename.split(separator);
-    const oldFilenamePartsSize = oldFilenameParts.length;
-    const newFilenamePartsSize = newFilenameParts.length;
-    let i = 0;
-    let j = oldFilenamePartsSize - 1;
-    let k = newFilenamePartsSize - 1;
-    while (i < j && i < k) {
-      if (oldFilenameParts[i] === newFilenameParts[i]) {
-        prefixPaths.push(newFilenameParts[i]);
-        i += 1;
-      } else {
-        break;
-      }
-    }
-    while (j > i && k > i) {
-      if (oldFilenameParts[j] === newFilenameParts[k]) {
-        suffixPaths.unshift(newFilenameParts[k]);
-        j -= 1;
-        k -= 1;
-      } else {
-        break;
-      }
-    }
-    const finalPrefix = prefixPaths.join(separator);
-    const finalSuffix = suffixPaths.join(separator);
-    const oldRemainingPath = oldFilenameParts.slice(i, j + 1).join(separator);
-    const newRemainingPath = newFilenameParts.slice(i, k + 1).join(separator);
-    if (finalPrefix.length && finalSuffix.length) {
-      return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
-    } else if (finalPrefix.length) {
-      return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}";
-    } else if (finalSuffix.length) {
-      return "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
-    }
-    return oldFilename + " \u2192 " + newFilename;
-  } else if (!isDevNullName(newFilename)) {
-    return newFilename;
-  } else {
-    return oldFilename;
-  }
-}
-function getHtmlId(file) {
-  return `d2h-${hashCode(filenameDiff(file)).toString().slice(-6)}`;
-}
-function getFileIcon(file) {
-  let templateName = "file-changed";
-  if (file.isRename) {
-    templateName = "file-renamed";
-  } else if (file.isCopy) {
-    templateName = "file-renamed";
-  } else if (file.isNew) {
-    templateName = "file-added";
-  } else if (file.isDeleted) {
-    templateName = "file-deleted";
-  } else if (file.newName !== file.oldName) {
-    templateName = "file-renamed";
-  }
-  return templateName;
-}
-function diffHighlight(diffLine1, diffLine2, isCombined, config2 = {}) {
-  const { matching, maxLineLengthHighlight, matchWordsThreshold, diffStyle } = Object.assign(Object.assign({}, defaultRenderConfig), config2);
-  const line1 = deconstructLine(diffLine1, isCombined, false);
-  const line2 = deconstructLine(diffLine2, isCombined, false);
-  if (line1.content.length > maxLineLengthHighlight || line2.content.length > maxLineLengthHighlight) {
-    return {
-      oldLine: {
-        prefix: line1.prefix,
-        content: escapeForHtml(line1.content)
-      },
-      newLine: {
-        prefix: line2.prefix,
-        content: escapeForHtml(line2.content)
-      }
-    };
-  }
-  const diff = diffStyle === "char" ? diffChars(line1.content, line2.content) : diffWordsWithSpace(line1.content, line2.content);
-  const changedWords = [];
-  if (diffStyle === "word" && matching === "words") {
-    const removed = diff.filter((element) => element.removed);
-    const added = diff.filter((element) => element.added);
-    const chunks = matcher(added, removed);
-    chunks.forEach((chunk) => {
-      if (chunk[0].length === 1 && chunk[1].length === 1) {
-        const dist = distance(chunk[0][0], chunk[1][0]);
-        if (dist < matchWordsThreshold) {
-          changedWords.push(chunk[0][0]);
-          changedWords.push(chunk[1][0]);
-        }
-      }
-    });
-  }
-  const highlightedLine = diff.reduce((highlightedLine2, part) => {
-    const elemType = part.added ? "ins" : part.removed ? "del" : null;
-    const addClass = changedWords.indexOf(part) > -1 ? ' class="d2h-change"' : "";
-    const escapedValue = escapeForHtml(part.value);
-    return elemType !== null ? `${highlightedLine2}<${elemType}${addClass}>${escapedValue}</${elemType}>` : `${highlightedLine2}${escapedValue}`;
-  }, "");
-  return {
-    oldLine: {
-      prefix: line1.prefix,
-      content: removeInsElements(highlightedLine)
-    },
-    newLine: {
-      prefix: line2.prefix,
-      content: removeDelElements(highlightedLine)
+    box: box2,
+    stop: () => {
+      seen.disconnect();
+      document.removeEventListener("visibilitychange", pause);
+      box2.remove();
     }
   };
 }
-
-// node_modules/diff2html/lib-esm/file-list-renderer.js
-var baseTemplatesPath = "file-summary";
-var iconsBaseTemplatesPath = "icon";
-var defaultFileListRendererConfig = {
-  colorScheme: defaultRenderConfig.colorScheme
-};
-var FileListRenderer = class {
-  constructor(hoganUtils, config2 = {}) {
-    this.hoganUtils = hoganUtils;
-    this.config = Object.assign(Object.assign({}, defaultFileListRendererConfig), config2);
-  }
-  render(diffFiles) {
-    const files = diffFiles.map((file) => this.hoganUtils.render(baseTemplatesPath, "line", {
-      fileHtmlId: getHtmlId(file),
-      oldName: file.oldName,
-      newName: file.newName,
-      fileName: filenameDiff(file),
-      deletedLines: "-" + file.deletedLines,
-      addedLines: "+" + file.addedLines
-    }, {
-      fileIcon: this.hoganUtils.template(iconsBaseTemplatesPath, getFileIcon(file))
-    })).join("\n");
-    return this.hoganUtils.render(baseTemplatesPath, "wrapper", {
-      colorScheme: colorSchemeToCss(this.config.colorScheme),
-      filesNumber: diffFiles.length,
-      files
-    });
-  }
-};
-
-// node_modules/diff2html/lib-esm/line-by-line-renderer.js
-var defaultLineByLineRendererConfig = Object.assign(Object.assign({}, defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
-var genericTemplatesPath = "generic";
-var baseTemplatesPath2 = "line-by-line";
-var iconsBaseTemplatesPath2 = "icon";
-var tagsBaseTemplatesPath = "tag";
-var LineByLineRenderer = class {
-  constructor(hoganUtils, config2 = {}) {
-    this.hoganUtils = hoganUtils;
-    this.config = Object.assign(Object.assign({}, defaultLineByLineRendererConfig), config2);
-  }
-  render(diffFiles) {
-    const diffsHtml = diffFiles.map((file) => {
-      let diffs;
-      if (file.blocks.length) {
-        diffs = this.generateFileHtml(file);
-      } else {
-        diffs = this.generateEmptyDiff();
-      }
-      return this.makeFileDiffHtml(file, diffs);
-    }).join("\n");
-    return this.hoganUtils.render(genericTemplatesPath, "wrapper", {
-      colorScheme: colorSchemeToCss(this.config.colorScheme),
-      content: diffsHtml
-    });
-  }
-  makeFileDiffHtml(file, diffs) {
-    if (this.config.renderNothingWhenEmpty && Array.isArray(file.blocks) && file.blocks.length === 0)
-      return "";
-    const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath2, "file-diff");
-    const filePathTemplate = this.hoganUtils.template(genericTemplatesPath, "file-path");
-    const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath2, "file");
-    const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath, getFileIcon(file));
-    return fileDiffTemplate.render({
-      file,
-      fileHtmlId: getHtmlId(file),
-      diffs,
-      filePath: filePathTemplate.render({
-        fileDiffName: filenameDiff(file)
-      }, {
-        fileIcon: fileIconTemplate,
-        fileTag: fileTagTemplate
-      })
-    });
-  }
-  generateEmptyDiff() {
-    return this.hoganUtils.render(genericTemplatesPath, "empty-diff", {
-      contentClass: "d2h-code-line",
-      CSSLineClass
-    });
-  }
-  generateFileHtml(file) {
-    const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
-    return file.blocks.map((block2) => {
-      let lines = this.hoganUtils.render(genericTemplatesPath, "block-header", {
-        CSSLineClass,
-        blockHeader: file.isTooBig ? block2.header : escapeForHtml(block2.header),
-        lineClass: "d2h-code-linenumber",
-        contentClass: "d2h-code-line"
-      });
-      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
-        if (oldLines.length && newLines.length && !contextLines.length) {
-          this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
-            const { left, right } = this.processChangedLines(file, file.isCombined, oldLines2, newLines2);
-            lines += left;
-            lines += right;
-          });
-        } else if (contextLines.length) {
-          contextLines.forEach((line2) => {
-            const { prefix, content: content2 } = deconstructLine(line2.content, file.isCombined);
-            lines += this.generateSingleLineHtml(file, {
-              type: CSSLineClass.CONTEXT,
-              prefix,
-              content: content2,
-              oldNumber: line2.oldNumber,
-              newNumber: line2.newNumber
-            });
-          });
-        } else if (oldLines.length || newLines.length) {
-          const { left, right } = this.processChangedLines(file, file.isCombined, oldLines, newLines);
-          lines += left;
-          lines += right;
-        } else {
-          console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
-        }
-      });
-      return lines;
-    }).join("\n");
-  }
-  applyLineGroupping(block2) {
-    const blockLinesGroups = [];
-    let oldLines = [];
-    let newLines = [];
-    for (let i = 0; i < block2.lines.length; i++) {
-      const diffLine = block2.lines[i];
-      if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
-        blockLinesGroups.push([[], oldLines, newLines]);
-        oldLines = [];
-        newLines = [];
-      }
-      if (diffLine.type === LineType.CONTEXT) {
-        blockLinesGroups.push([[diffLine], [], []]);
-      } else if (diffLine.type === LineType.INSERT && oldLines.length === 0) {
-        blockLinesGroups.push([[], [], [diffLine]]);
-      } else if (diffLine.type === LineType.INSERT && oldLines.length > 0) {
-        newLines.push(diffLine);
-      } else if (diffLine.type === LineType.DELETE) {
-        oldLines.push(diffLine);
-      }
-    }
-    if (oldLines.length || newLines.length) {
-      blockLinesGroups.push([[], oldLines, newLines]);
-      oldLines = [];
-      newLines = [];
-    }
-    return blockLinesGroups;
-  }
-  applyRematchMatching(oldLines, newLines, matcher2) {
-    const comparisons = oldLines.length * newLines.length;
-    const maxLineSizeInBlock = max(oldLines.concat(newLines).map((elem) => elem.content.length));
-    const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
-    return doMatching ? matcher2(oldLines, newLines) : [[oldLines, newLines]];
-  }
-  processChangedLines(file, isCombined, oldLines, newLines) {
-    const fileHtml = {
-      right: "",
-      left: ""
-    };
-    const maxLinesNumber = Math.max(oldLines.length, newLines.length);
-    for (let i = 0; i < maxLinesNumber; i++) {
-      const oldLine = oldLines[i];
-      const newLine = newLines[i];
-      const diff = oldLine !== void 0 && newLine !== void 0 ? diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
-      const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
-        prefix: diff.oldLine.prefix,
-        content: diff.oldLine.content,
-        type: CSSLineClass.DELETE_CHANGES
-      } : Object.assign(Object.assign({}, deconstructLine(oldLine.content, isCombined)), { type: toCSSClass(oldLine.type) })), { oldNumber: oldLine.oldNumber, newNumber: oldLine.newNumber }) : void 0;
-      const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
-        prefix: diff.newLine.prefix,
-        content: diff.newLine.content,
-        type: CSSLineClass.INSERT_CHANGES
-      } : Object.assign(Object.assign({}, deconstructLine(newLine.content, isCombined)), { type: toCSSClass(newLine.type) })), { oldNumber: newLine.oldNumber, newNumber: newLine.newNumber }) : void 0;
-      const { left, right } = this.generateLineHtml(file, preparedOldLine, preparedNewLine);
-      fileHtml.left += left;
-      fileHtml.right += right;
-    }
-    return fileHtml;
-  }
-  generateLineHtml(file, oldLine, newLine) {
-    return {
-      left: this.generateSingleLineHtml(file, oldLine),
-      right: this.generateSingleLineHtml(file, newLine)
-    };
-  }
-  generateSingleLineHtml(file, line2) {
-    if (line2 === void 0)
-      return "";
-    const lineNumberHtml = this.hoganUtils.render(baseTemplatesPath2, "numbers", {
-      oldNumber: line2.oldNumber || "",
-      newNumber: line2.newNumber || ""
-    });
-    return this.hoganUtils.render(genericTemplatesPath, "line", {
-      type: line2.type,
-      lineClass: "d2h-code-linenumber",
-      contentClass: "d2h-code-line",
-      prefix: line2.prefix === " " ? "&nbsp;" : line2.prefix,
-      content: line2.content,
-      lineNumber: lineNumberHtml,
-      line: line2,
-      file
-    });
-  }
-};
-
-// node_modules/diff2html/lib-esm/side-by-side-renderer.js
-var defaultSideBySideRendererConfig = Object.assign(Object.assign({}, defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
-var genericTemplatesPath2 = "generic";
-var baseTemplatesPath3 = "side-by-side";
-var iconsBaseTemplatesPath3 = "icon";
-var tagsBaseTemplatesPath2 = "tag";
-var SideBySideRenderer = class {
-  constructor(hoganUtils, config2 = {}) {
-    this.hoganUtils = hoganUtils;
-    this.config = Object.assign(Object.assign({}, defaultSideBySideRendererConfig), config2);
-  }
-  render(diffFiles) {
-    const diffsHtml = diffFiles.map((file) => {
-      let diffs;
-      if (file.blocks.length) {
-        diffs = this.generateFileHtml(file);
-      } else {
-        diffs = this.generateEmptyDiff();
-      }
-      return this.makeFileDiffHtml(file, diffs);
-    }).join("\n");
-    return this.hoganUtils.render(genericTemplatesPath2, "wrapper", {
-      colorScheme: colorSchemeToCss(this.config.colorScheme),
-      content: diffsHtml
-    });
-  }
-  makeFileDiffHtml(file, diffs) {
-    if (this.config.renderNothingWhenEmpty && Array.isArray(file.blocks) && file.blocks.length === 0)
-      return "";
-    const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath3, "file-diff");
-    const filePathTemplate = this.hoganUtils.template(genericTemplatesPath2, "file-path");
-    const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath3, "file");
-    const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath2, getFileIcon(file));
-    return fileDiffTemplate.render({
-      file,
-      fileHtmlId: getHtmlId(file),
-      diffs,
-      filePath: filePathTemplate.render({
-        fileDiffName: filenameDiff(file)
-      }, {
-        fileIcon: fileIconTemplate,
-        fileTag: fileTagTemplate
-      })
-    });
-  }
-  generateEmptyDiff() {
-    return {
-      right: "",
-      left: this.hoganUtils.render(genericTemplatesPath2, "empty-diff", {
-        contentClass: "d2h-code-side-line",
-        CSSLineClass
-      })
-    };
-  }
-  generateFileHtml(file) {
-    const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
-    return file.blocks.map((block2) => {
-      const fileHtml = {
-        left: this.makeHeaderHtml(block2.header, file),
-        right: this.makeHeaderHtml("")
-      };
-      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
-        if (oldLines.length && newLines.length && !contextLines.length) {
-          this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
-            const { left, right } = this.processChangedLines(file.isCombined, oldLines2, newLines2);
-            fileHtml.left += left;
-            fileHtml.right += right;
-          });
-        } else if (contextLines.length) {
-          contextLines.forEach((line2) => {
-            const { prefix, content: content2 } = deconstructLine(line2.content, file.isCombined);
-            const { left, right } = this.generateLineHtml({
-              type: CSSLineClass.CONTEXT,
-              prefix,
-              content: content2,
-              number: line2.oldNumber
-            }, {
-              type: CSSLineClass.CONTEXT,
-              prefix,
-              content: content2,
-              number: line2.newNumber
-            });
-            fileHtml.left += left;
-            fileHtml.right += right;
-          });
-        } else if (oldLines.length || newLines.length) {
-          const { left, right } = this.processChangedLines(file.isCombined, oldLines, newLines);
-          fileHtml.left += left;
-          fileHtml.right += right;
-        } else {
-          console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
-        }
-      });
-      return fileHtml;
-    }).reduce((accomulated, html2) => {
-      return { left: accomulated.left + html2.left, right: accomulated.right + html2.right };
-    }, { left: "", right: "" });
-  }
-  applyLineGroupping(block2) {
-    const blockLinesGroups = [];
-    let oldLines = [];
-    let newLines = [];
-    for (let i = 0; i < block2.lines.length; i++) {
-      const diffLine = block2.lines[i];
-      if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
-        blockLinesGroups.push([[], oldLines, newLines]);
-        oldLines = [];
-        newLines = [];
-      }
-      if (diffLine.type === LineType.CONTEXT) {
-        blockLinesGroups.push([[diffLine], [], []]);
-      } else if (diffLine.type === LineType.INSERT && oldLines.length === 0) {
-        blockLinesGroups.push([[], [], [diffLine]]);
-      } else if (diffLine.type === LineType.INSERT && oldLines.length > 0) {
-        newLines.push(diffLine);
-      } else if (diffLine.type === LineType.DELETE) {
-        oldLines.push(diffLine);
-      }
-    }
-    if (oldLines.length || newLines.length) {
-      blockLinesGroups.push([[], oldLines, newLines]);
-      oldLines = [];
-      newLines = [];
-    }
-    return blockLinesGroups;
-  }
-  applyRematchMatching(oldLines, newLines, matcher2) {
-    const comparisons = oldLines.length * newLines.length;
-    const maxLineSizeInBlock = max(oldLines.concat(newLines).map((elem) => elem.content.length));
-    const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
-    return doMatching ? matcher2(oldLines, newLines) : [[oldLines, newLines]];
-  }
-  makeHeaderHtml(blockHeader, file) {
-    return this.hoganUtils.render(genericTemplatesPath2, "block-header", {
-      CSSLineClass,
-      blockHeader: (file === null || file === void 0 ? void 0 : file.isTooBig) ? blockHeader : escapeForHtml(blockHeader),
-      lineClass: "d2h-code-side-linenumber",
-      contentClass: "d2h-code-side-line"
-    });
-  }
-  processChangedLines(isCombined, oldLines, newLines) {
-    const fileHtml = {
-      right: "",
-      left: ""
-    };
-    const maxLinesNumber = Math.max(oldLines.length, newLines.length);
-    for (let i = 0; i < maxLinesNumber; i++) {
-      const oldLine = oldLines[i];
-      const newLine = newLines[i];
-      const diff = oldLine !== void 0 && newLine !== void 0 ? diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
-      const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
-        prefix: diff.oldLine.prefix,
-        content: diff.oldLine.content,
-        type: CSSLineClass.DELETE_CHANGES
-      } : Object.assign(Object.assign({}, deconstructLine(oldLine.content, isCombined)), { type: toCSSClass(oldLine.type) })), { number: oldLine.oldNumber }) : void 0;
-      const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
-        prefix: diff.newLine.prefix,
-        content: diff.newLine.content,
-        type: CSSLineClass.INSERT_CHANGES
-      } : Object.assign(Object.assign({}, deconstructLine(newLine.content, isCombined)), { type: toCSSClass(newLine.type) })), { number: newLine.newNumber }) : void 0;
-      const { left, right } = this.generateLineHtml(preparedOldLine, preparedNewLine);
-      fileHtml.left += left;
-      fileHtml.right += right;
-    }
-    return fileHtml;
-  }
-  generateLineHtml(oldLine, newLine) {
-    return {
-      left: this.generateSingleHtml(oldLine),
-      right: this.generateSingleHtml(newLine)
-    };
-  }
-  generateSingleHtml(line2) {
-    const lineClass = "d2h-code-side-linenumber";
-    const contentClass = "d2h-code-side-line";
-    return this.hoganUtils.render(genericTemplatesPath2, "line", {
-      type: (line2 === null || line2 === void 0 ? void 0 : line2.type) || `${CSSLineClass.CONTEXT} d2h-emptyplaceholder`,
-      lineClass: line2 !== void 0 ? lineClass : `${lineClass} d2h-code-side-emptyplaceholder`,
-      contentClass: line2 !== void 0 ? contentClass : `${contentClass} d2h-code-side-emptyplaceholder`,
-      prefix: (line2 === null || line2 === void 0 ? void 0 : line2.prefix) === " " ? "&nbsp;" : line2 === null || line2 === void 0 ? void 0 : line2.prefix,
-      content: line2 === null || line2 === void 0 ? void 0 : line2.content,
-      lineNumber: line2 === null || line2 === void 0 ? void 0 : line2.number
-    });
-  }
-};
-
-// node_modules/diff2html/lib-esm/hoganjs-utils.js
-var Hogan3 = __toESM(require_hogan());
-
-// node_modules/diff2html/lib-esm/diff2html-templates.js
-var Hogan2 = __toESM(require_hogan());
-var defaultTemplates = {};
-defaultTemplates["file-summary-line"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<li class="d2h-file-list-line">');
-  t.b("\n" + i);
-  t.b('    <span class="d2h-file-name-wrapper">');
-  t.b("\n" + i);
-  t.b(t.rp("<fileIcon0", c, p, "      "));
-  t.b('      <a href="#');
-  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
-  t.b('" class="d2h-file-name">');
-  t.b(t.v(t.f("fileName", c, p, 0)));
-  t.b("</a>");
-  t.b("\n" + i);
-  t.b('      <span class="d2h-file-stats">');
-  t.b("\n" + i);
-  t.b('          <span class="d2h-lines-added">');
-  t.b(t.v(t.f("addedLines", c, p, 0)));
-  t.b("</span>");
-  t.b("\n" + i);
-  t.b('          <span class="d2h-lines-deleted">');
-  t.b(t.v(t.f("deletedLines", c, p, 0)));
-  t.b("</span>");
-  t.b("\n" + i);
-  t.b("      </span>");
-  t.b("\n" + i);
-  t.b("    </span>");
-  t.b("\n" + i);
-  t.b("</li>");
-  return t.fl();
-}, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} } }, subs: {} });
-defaultTemplates["file-summary-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<div class="d2h-file-list-wrapper ');
-  t.b(t.v(t.f("colorScheme", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('    <div class="d2h-file-list-header">');
-  t.b("\n" + i);
-  t.b('        <span class="d2h-file-list-title">Files changed (');
-  t.b(t.v(t.f("filesNumber", c, p, 0)));
-  t.b(")</span>");
-  t.b("\n" + i);
-  t.b('        <a class="d2h-file-switch d2h-hide">hide</a>');
-  t.b("\n" + i);
-  t.b('        <a class="d2h-file-switch d2h-show">show</a>');
-  t.b("\n" + i);
-  t.b("    </div>");
-  t.b("\n" + i);
-  t.b('    <ol class="d2h-file-list">');
-  t.b("\n" + i);
-  t.b("    ");
-  t.b(t.t(t.f("files", c, p, 0)));
-  t.b("\n" + i);
-  t.b("    </ol>");
-  t.b("\n" + i);
-  t.b("</div>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["generic-block-header"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b("<tr>");
-  t.b("\n" + i);
-  t.b('    <td class="');
-  t.b(t.v(t.f("lineClass", c, p, 0)));
-  t.b(" ");
-  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
-  t.b('"></td>');
-  t.b("\n" + i);
-  t.b('    <td class="');
-  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('        <div class="');
-  t.b(t.v(t.f("contentClass", c, p, 0)));
-  t.b('">');
-  if (t.s(t.f("blockHeader", c, p, 1), c, p, 0, 156, 173, "{{ }}")) {
-    t.rs(c, p, function(c2, p2, t2) {
-      t2.b(t2.t(t2.f("blockHeader", c2, p2, 0)));
-    });
-    c.pop();
-  }
-  if (!t.s(t.f("blockHeader", c, p, 1), c, p, 1, 0, 0, "")) {
-    t.b("&nbsp;");
-  }
-  ;
-  t.b("</div>");
-  t.b("\n" + i);
-  t.b("    </td>");
-  t.b("\n" + i);
-  t.b("</tr>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["generic-empty-diff"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b("<tr>");
-  t.b("\n" + i);
-  t.b('    <td class="');
-  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('        <div class="');
-  t.b(t.v(t.f("contentClass", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b("            File without changes");
-  t.b("\n" + i);
-  t.b("        </div>");
-  t.b("\n" + i);
-  t.b("    </td>");
-  t.b("\n" + i);
-  t.b("</tr>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["generic-file-path"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<span class="d2h-file-name-wrapper">');
-  t.b("\n" + i);
-  t.b(t.rp("<fileIcon0", c, p, "    "));
-  t.b('    <span class="d2h-file-name">');
-  t.b(t.v(t.f("fileDiffName", c, p, 0)));
-  t.b("</span>");
-  t.b("\n" + i);
-  t.b(t.rp("<fileTag1", c, p, "    "));
-  t.b("</span>");
-  t.b("\n" + i);
-  t.b('<label class="d2h-file-collapse">');
-  t.b("\n" + i);
-  t.b('    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">');
-  t.b("\n" + i);
-  t.b("    Viewed");
-  t.b("\n" + i);
-  t.b("</label>");
-  return t.fl();
-}, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} }, "<fileTag1": { name: "fileTag", partials: {}, subs: {} } }, subs: {} });
-defaultTemplates["generic-line"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b("<tr>");
-  t.b("\n" + i);
-  t.b('    <td class="');
-  t.b(t.v(t.f("lineClass", c, p, 0)));
-  t.b(" ");
-  t.b(t.v(t.f("type", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b("      ");
-  t.b(t.t(t.f("lineNumber", c, p, 0)));
-  t.b("\n" + i);
-  t.b("    </td>");
-  t.b("\n" + i);
-  t.b('    <td class="');
-  t.b(t.v(t.f("type", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('        <div class="');
-  t.b(t.v(t.f("contentClass", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  if (t.s(t.f("prefix", c, p, 1), c, p, 0, 162, 238, "{{ }}")) {
-    t.rs(c, p, function(c2, p2, t2) {
-      t2.b('            <span class="d2h-code-line-prefix">');
-      t2.b(t2.t(t2.f("prefix", c2, p2, 0)));
-      t2.b("</span>");
-      t2.b("\n" + i);
-    });
-    c.pop();
-  }
-  if (!t.s(t.f("prefix", c, p, 1), c, p, 1, 0, 0, "")) {
-    t.b('            <span class="d2h-code-line-prefix">&nbsp;</span>');
-    t.b("\n" + i);
-  }
-  ;
-  if (t.s(t.f("content", c, p, 1), c, p, 0, 371, 445, "{{ }}")) {
-    t.rs(c, p, function(c2, p2, t2) {
-      t2.b('            <span class="d2h-code-line-ctn">');
-      t2.b(t2.t(t2.f("content", c2, p2, 0)));
-      t2.b("</span>");
-      t2.b("\n" + i);
-    });
-    c.pop();
-  }
-  if (!t.s(t.f("content", c, p, 1), c, p, 1, 0, 0, "")) {
-    t.b('            <span class="d2h-code-line-ctn"><br></span>');
-    t.b("\n" + i);
-  }
-  ;
-  t.b("        </div>");
-  t.b("\n" + i);
-  t.b("    </td>");
-  t.b("\n" + i);
-  t.b("</tr>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["generic-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<div class="d2h-wrapper ');
-  t.b(t.v(t.f("colorScheme", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b("    ");
-  t.b(t.t(t.f("content", c, p, 0)));
-  t.b("\n" + i);
-  t.b("</div>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["icon-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<svg aria-hidden="true" class="d2h-icon d2h-added" height="16" title="added" version="1.1" viewBox="0 0 14 16"');
-  t.b("\n" + i);
-  t.b('     width="14">');
-  t.b("\n" + i);
-  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM6 9H3V7h3V4h2v3h3v2H8v3H6V9z"></path>');
-  t.b("\n" + i);
-  t.b("</svg>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["icon-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<svg aria-hidden="true" class="d2h-icon d2h-changed" height="16" title="modified" version="1.1"');
-  t.b("\n" + i);
-  t.b('     viewBox="0 0 14 16" width="14">');
-  t.b("\n" + i);
-  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM4 8c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3-3-1.34-3-3z"></path>');
-  t.b("\n" + i);
-  t.b("</svg>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["icon-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<svg aria-hidden="true" class="d2h-icon d2h-deleted" height="16" title="removed" version="1.1"');
-  t.b("\n" + i);
-  t.b('     viewBox="0 0 14 16" width="14">');
-  t.b("\n" + i);
-  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM11 9H3V7h8v2z"></path>');
-  t.b("\n" + i);
-  t.b("</svg>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["icon-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<svg aria-hidden="true" class="d2h-icon d2h-moved" height="16" title="renamed" version="1.1"');
-  t.b("\n" + i);
-  t.b('     viewBox="0 0 14 16" width="14">');
-  t.b("\n" + i);
-  t.b('    <path d="M6 9H3V7h3V4l5 4-5 4V9z m8-7v12c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h12c0.55 0 1 0.45 1 1z m-1 0H1v12h12V2z"></path>');
-  t.b("\n" + i);
-  t.b("</svg>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["icon-file"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">');
-  t.b("\n" + i);
-  t.b('    <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>');
-  t.b("\n" + i);
-  t.b("</svg>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["line-by-line-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<div id="');
-  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
-  t.b('" class="d2h-file-wrapper" data-lang="');
-  t.b(t.v(t.d("file.language", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('    <div class="d2h-file-header">');
-  t.b("\n" + i);
-  t.b("    ");
-  t.b(t.t(t.f("filePath", c, p, 0)));
-  t.b("\n" + i);
-  t.b("    </div>");
-  t.b("\n" + i);
-  t.b('    <div class="d2h-file-diff">');
-  t.b("\n" + i);
-  t.b('        <div class="d2h-code-wrapper">');
-  t.b("\n" + i);
-  t.b('            <table class="d2h-diff-table">');
-  t.b("\n" + i);
-  t.b('                <tbody class="d2h-diff-tbody">');
-  t.b("\n" + i);
-  t.b("                ");
-  t.b(t.t(t.f("diffs", c, p, 0)));
-  t.b("\n" + i);
-  t.b("                </tbody>");
-  t.b("\n" + i);
-  t.b("            </table>");
-  t.b("\n" + i);
-  t.b("        </div>");
-  t.b("\n" + i);
-  t.b("    </div>");
-  t.b("\n" + i);
-  t.b("</div>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["line-by-line-numbers"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<div class="line-num1">');
-  t.b(t.v(t.f("oldNumber", c, p, 0)));
-  t.b("</div>");
-  t.b("\n" + i);
-  t.b('<div class="line-num2">');
-  t.b(t.v(t.f("newNumber", c, p, 0)));
-  t.b("</div>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["side-by-side-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<div id="');
-  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
-  t.b('" class="d2h-file-wrapper" data-lang="');
-  t.b(t.v(t.d("file.language", c, p, 0)));
-  t.b('">');
-  t.b("\n" + i);
-  t.b('    <div class="d2h-file-header">');
-  t.b("\n" + i);
-  t.b("      ");
-  t.b(t.t(t.f("filePath", c, p, 0)));
-  t.b("\n" + i);
-  t.b("    </div>");
-  t.b("\n" + i);
-  t.b('    <div class="d2h-files-diff">');
-  t.b("\n" + i);
-  t.b('        <div class="d2h-file-side-diff">');
-  t.b("\n" + i);
-  t.b('            <div class="d2h-code-wrapper">');
-  t.b("\n" + i);
-  t.b('                <table class="d2h-diff-table">');
-  t.b("\n" + i);
-  t.b('                    <tbody class="d2h-diff-tbody">');
-  t.b("\n" + i);
-  t.b("                    ");
-  t.b(t.t(t.d("diffs.left", c, p, 0)));
-  t.b("\n" + i);
-  t.b("                    </tbody>");
-  t.b("\n" + i);
-  t.b("                </table>");
-  t.b("\n" + i);
-  t.b("            </div>");
-  t.b("\n" + i);
-  t.b("        </div>");
-  t.b("\n" + i);
-  t.b('        <div class="d2h-file-side-diff">');
-  t.b("\n" + i);
-  t.b('            <div class="d2h-code-wrapper">');
-  t.b("\n" + i);
-  t.b('                <table class="d2h-diff-table">');
-  t.b("\n" + i);
-  t.b('                    <tbody class="d2h-diff-tbody">');
-  t.b("\n" + i);
-  t.b("                    ");
-  t.b(t.t(t.d("diffs.right", c, p, 0)));
-  t.b("\n" + i);
-  t.b("                    </tbody>");
-  t.b("\n" + i);
-  t.b("                </table>");
-  t.b("\n" + i);
-  t.b("            </div>");
-  t.b("\n" + i);
-  t.b("        </div>");
-  t.b("\n" + i);
-  t.b("    </div>");
-  t.b("\n" + i);
-  t.b("</div>");
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["tag-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<span class="d2h-tag d2h-added d2h-added-tag">ADDED</span>');
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["tag-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span>');
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["tag-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<span class="d2h-tag d2h-deleted d2h-deleted-tag">DELETED</span>');
-  return t.fl();
-}, partials: {}, subs: {} });
-defaultTemplates["tag-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
-  var t = this;
-  t.b(i = i || "");
-  t.b('<span class="d2h-tag d2h-moved d2h-moved-tag">RENAMED</span>');
-  return t.fl();
-}, partials: {}, subs: {} });
-
-// node_modules/diff2html/lib-esm/hoganjs-utils.js
-var HoganJsUtils = class {
-  constructor({ compiledTemplates = {}, rawTemplates = {} }) {
-    const compiledRawTemplates = Object.entries(rawTemplates).reduce((previousTemplates, [name, templateString]) => {
-      const compiledTemplate = Hogan3.compile(templateString, { asString: false });
-      return Object.assign(Object.assign({}, previousTemplates), { [name]: compiledTemplate });
-    }, {});
-    this.preCompiledTemplates = Object.assign(Object.assign(Object.assign({}, defaultTemplates), compiledTemplates), compiledRawTemplates);
-  }
-  static compile(templateString) {
-    return Hogan3.compile(templateString, { asString: false });
-  }
-  render(namespace, view, params, partials, indent) {
-    const templateKey = this.templateKey(namespace, view);
-    try {
-      const template = this.preCompiledTemplates[templateKey];
-      return template.render(params, partials, indent);
-    } catch (_e) {
-      throw new Error(`Could not find template to render '${templateKey}'`);
-    }
-  }
-  template(namespace, view) {
-    return this.preCompiledTemplates[this.templateKey(namespace, view)];
-  }
-  templateKey(namespace, view) {
-    return `${namespace}-${view}`;
-  }
-};
-
-// node_modules/diff2html/lib-esm/diff2html.js
-var defaultDiff2HtmlConfig = Object.assign(Object.assign(Object.assign({}, defaultLineByLineRendererConfig), defaultSideBySideRendererConfig), { outputFormat: OutputFormatType.LINE_BY_LINE, drawFileList: true });
-function html(diffInput, configuration = {}) {
-  const config2 = Object.assign(Object.assign({}, defaultDiff2HtmlConfig), configuration);
-  const diffJson = typeof diffInput === "string" ? parse(diffInput, config2) : diffInput;
-  const hoganUtils = new HoganJsUtils(config2);
-  const { colorScheme } = config2;
-  const fileListRendererConfig = { colorScheme };
-  const fileList = config2.drawFileList ? new FileListRenderer(hoganUtils, fileListRendererConfig).render(diffJson) : "";
-  const diffOutput = config2.outputFormat === "side-by-side" ? new SideBySideRenderer(hoganUtils, config2).render(diffJson) : new LineByLineRenderer(hoganUtils, config2).render(diffJson);
-  return fileList + diffOutput;
-}
-
-// src/diff.ts
-var encoder = new TextEncoder();
-var ESCAPED = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
-function pathOf(name) {
-  const padless = name.replace(/\t$/, "");
-  if (!padless.includes("\\")) return padless;
-  const bytes = [];
-  for (let at = 0; at < padless.length; at++) {
-    const char = padless.charAt(at);
-    if (char === '"') continue;
-    if (char !== "\\") bytes.push(...encoder.encode(char));
-    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
-      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
-      at += 3;
-    } else bytes.push(ESCAPED[padless.charAt(++at)] ?? 92);
-  }
-  return new TextDecoder().decode(new Uint8Array(bytes));
-}
-var parseDiff = (diff) => parse(diff).map((file) => ({ ...file, oldName: pathOf(file.oldName), newName: pathOf(file.newName) }));
-
-// node_modules/image-size/dist/esm/types/utils.js
-var decoder = new TextDecoder();
-var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
-var toHexString = (input, start = 0, end = input.length) => input.slice(start, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
-var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
-var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
-var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
-var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
-var readUInt24LE = (input, offset = 0) => {
-  const view = getView(input, offset);
-  return view.getUint16(0, true) + (view.getUint8(2) << 16);
-};
-var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
-var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
-var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
-var methods = {
-  readUInt16BE,
-  readUInt16LE,
-  readUInt32BE,
-  readUInt32LE
-};
-function readUInt(input, bits, offset = 0, isBigEndian = false) {
-  const endian = isBigEndian ? "BE" : "LE";
-  const methodName = `readUInt${bits}${endian}`;
-  return methods[methodName](input, offset);
-}
-var BOX_HEADER_SIZE = 8;
-function readBox(input, view, base2, offset, boxCode) {
-  if (input.length - offset < BOX_HEADER_SIZE)
-    return void 0;
-  const boxSize = view.getUint32(base2 + offset, false);
-  if (input.length - offset < boxSize)
-    return void 0;
-  return {
-    offset,
-    size: boxSize,
-    matches: view.getUint32(base2 + 4 + offset, false) === boxCode
-  };
-}
-var boxViews = /* @__PURE__ */ new WeakMap();
-function getBoxView(input) {
-  let view = boxViews.get(input.buffer);
-  if (!view) {
-    view = new DataView(input.buffer);
-    boxViews.set(input.buffer, view);
-  }
-  return view;
-}
-function findBox(input, boxName, startOffset) {
-  const view = getBoxView(input);
-  const boxCode = boxName.charCodeAt(0) << 24 | boxName.charCodeAt(1) << 16 | boxName.charCodeAt(2) << 8 | boxName.charCodeAt(3);
-  const base2 = input.byteOffset;
-  let currentOffset = startOffset;
-  while (currentOffset < input.length) {
-    if (input.length - currentOffset < 4)
-      break;
-    if (view.getUint32(base2 + currentOffset, false) < BOX_HEADER_SIZE) {
-      currentOffset += BOX_HEADER_SIZE;
-      continue;
-    }
-    const box = readBox(input, view, base2, currentOffset, boxCode);
-    if (!box)
-      break;
-    if (box.matches) {
-      return { name: boxName, offset: box.offset, size: box.size };
-    }
-    currentOffset += box.size;
-  }
-  return void 0;
-}
-
-// node_modules/image-size/dist/esm/types/bmp.js
-var BMP = {
-  validate: (input) => toUTF8String(input, 0, 2) === "BM",
-  calculate: (input) => ({
-    height: Math.abs(readInt32LE(input, 22)),
-    width: readUInt32LE(input, 18)
-  })
-};
-
-// node_modules/image-size/dist/esm/types/ico.js
-var TYPE_ICON = 1;
-var SIZE_HEADER = 2 + 2 + 2;
-var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
-function getSizeFromOffset(input, offset) {
-  const value = input[offset];
-  return value === 0 ? 256 : value;
-}
-function getImageSize(input, imageIndex) {
-  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
-  return {
-    height: getSizeFromOffset(input, offset + 1),
-    width: getSizeFromOffset(input, offset)
-  };
-}
-var ICO = {
-  validate(input) {
-    const reserved = readUInt16LE(input, 0);
-    const imageCount = readUInt16LE(input, 4);
-    if (reserved !== 0 || imageCount === 0)
-      return false;
-    const imageType = readUInt16LE(input, 2);
-    return imageType === TYPE_ICON;
-  },
-  calculate(input) {
-    const nbImages = readUInt16LE(input, 4);
-    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
-      throw new TypeError("Invalid ICO");
-    }
-    const imageSize2 = getImageSize(input, 0);
-    if (nbImages === 1)
-      return imageSize2;
-    const images = [];
-    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
-      images.push(getImageSize(input, imageIndex));
-    }
-    return {
-      width: imageSize2.width,
-      height: imageSize2.height,
-      images
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/cur.js
-var TYPE_CURSOR = 2;
-var CUR = {
-  validate(input) {
-    const reserved = readUInt16LE(input, 0);
-    const imageCount = readUInt16LE(input, 4);
-    if (reserved !== 0 || imageCount === 0)
-      return false;
-    const imageType = readUInt16LE(input, 2);
-    return imageType === TYPE_CURSOR;
-  },
-  calculate: (input) => ICO.calculate(input)
-};
-
-// node_modules/image-size/dist/esm/types/dds.js
-var DDS = {
-  validate: (input) => readUInt32LE(input, 0) === 542327876,
-  calculate: (input) => ({
-    height: readUInt32LE(input, 12),
-    width: readUInt32LE(input, 16)
-  })
-};
-
-// node_modules/image-size/dist/esm/types/gif.js
-var gifRegexp = /^GIF8[79]a/;
-var GIF = {
-  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
-  calculate: (input) => ({
-    height: readUInt16LE(input, 8),
-    width: readUInt16LE(input, 6)
-  })
-};
-
-// node_modules/image-size/dist/esm/types/heif.js
-var brandMap = {
-  avif: "avif",
-  mif1: "heif",
-  msf1: "heif",
-  heic: "heic",
-  heix: "heic",
-  hevc: "heic",
-  hevx: "heic"
-};
-var HEIF = {
-  validate(input) {
-    const boxType = toUTF8String(input, 4, 8);
-    if (boxType !== "ftyp")
-      return false;
-    const ftypBox = findBox(input, "ftyp", 0);
-    if (!ftypBox)
-      return false;
-    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
-    return brand in brandMap;
-  },
-  calculate(input) {
-    const metaBox = findBox(input, "meta", 0);
-    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
-    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
-    if (!ipcoBox) {
-      throw new TypeError("Invalid HEIF, no ipco box found");
-    }
-    const type = toUTF8String(input, 8, 12);
-    const images = [];
-    let currentOffset = ipcoBox.offset + 8;
-    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
-      const ispeBox = findBox(input, "ispe", currentOffset);
-      if (!ispeBox)
-        break;
-      if (ispeBox.size < 20) {
-        throw new TypeError("Invalid HEIF");
-      }
-      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
-      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
-      const clapBox = findBox(input, "clap", currentOffset);
-      let width = rawWidth;
-      const height = rawHeight;
-      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
-        const cropRight = readUInt32BE(input, clapBox.offset + 12);
-        width = rawWidth - cropRight;
-      }
-      images.push({ height, width });
-      const nextOffset = ispeBox.offset + ispeBox.size;
-      if (nextOffset <= currentOffset) {
-        throw new TypeError("Invalid HEIF");
-      }
-      currentOffset = nextOffset;
-    }
-    if (images.length === 0) {
-      throw new TypeError("Invalid HEIF, no sizes found");
-    }
-    return {
-      width: images[0].width,
-      height: images[0].height,
-      type,
-      ...images.length > 1 ? { images } : {}
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/icns.js
-var SIZE_HEADER2 = 4 + 4;
-var FILE_LENGTH_OFFSET = 4;
-var ENTRY_LENGTH_OFFSET = 4;
-var ICON_TYPE_SIZE = {
-  ICON: 32,
-  "ICN#": 32,
-  "icm#": 16,
-  icm4: 16,
-  icm8: 16,
-  "ics#": 16,
-  ics4: 16,
-  ics8: 16,
-  is32: 16,
-  s8mk: 16,
-  icp4: 16,
-  icl4: 32,
-  icl8: 32,
-  il32: 32,
-  l8mk: 32,
-  icp5: 32,
-  ic11: 32,
-  ich4: 48,
-  ich8: 48,
-  ih32: 48,
-  h8mk: 48,
-  icp6: 64,
-  ic12: 32,
-  it32: 128,
-  t8mk: 128,
-  ic07: 128,
-  ic08: 256,
-  ic13: 256,
-  ic09: 512,
-  ic14: 512,
-  ic10: 1024
-};
-function readImageHeader(input, imageOffset) {
-  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
-  if (imageLengthOffset + 4 > input.length) {
-    throw new TypeError("Invalid ICNS");
-  }
-  return [
-    toUTF8String(input, imageOffset, imageLengthOffset),
-    readUInt32BE(input, imageLengthOffset)
-  ];
-}
-function getImageSize2(type) {
-  const size = ICON_TYPE_SIZE[type];
-  return { width: size, height: size, type };
-}
-var ICNS = {
-  validate: (input) => toUTF8String(input, 0, 4) === "icns",
-  calculate(input) {
-    const inputLength = input.length;
-    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
-    let imageOffset = SIZE_HEADER2;
-    const images = [];
-    while (imageOffset < fileLength && imageOffset < inputLength) {
-      const imageHeader = readImageHeader(input, imageOffset);
-      const entryLength = imageHeader[1];
-      if (entryLength < 8) {
-        throw new TypeError("Invalid ICNS");
-      }
-      const imageSize2 = getImageSize2(imageHeader[0]);
-      images.push(imageSize2);
-      imageOffset += entryLength;
-    }
-    if (images.length === 0) {
-      throw new TypeError("Invalid ICNS, no sizes found");
-    }
-    return {
-      width: images[0].width,
-      height: images[0].height,
-      ...images.length > 1 ? { images } : {}
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/j2c.js
-var J2C = {
-  validate: (input) => readUInt32BE(input, 0) === 4283432785,
-  calculate: (input) => ({
-    height: readUInt32BE(input, 12),
-    width: readUInt32BE(input, 8)
-  })
-};
-
-// node_modules/image-size/dist/esm/types/jp2.js
-var JP2 = {
-  validate(input) {
-    const boxType = toUTF8String(input, 4, 8);
-    if (boxType !== "jP  ")
-      return false;
-    const ftypBox = findBox(input, "ftyp", 0);
-    if (!ftypBox)
-      return false;
-    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
-    return brand === "jp2 ";
-  },
-  calculate(input) {
-    const jp2hBox = findBox(input, "jp2h", 0);
-    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
-    if (ihdrBox) {
-      return {
-        height: readUInt32BE(input, ihdrBox.offset + 8),
-        width: readUInt32BE(input, ihdrBox.offset + 12)
-      };
-    }
-    throw new TypeError("Unsupported JPEG 2000 format");
-  }
-};
-
-// node_modules/image-size/dist/esm/types/jpg.js
-var EXIF_MARKER = "45786966";
-var APP1_DATA_SIZE_BYTES = 2;
-var EXIF_HEADER_BYTES = 6;
-var TIFF_BYTE_ALIGN_BYTES = 2;
-var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
-var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
-var IDF_ENTRY_BYTES = 12;
-var NUM_DIRECTORY_ENTRIES_BYTES = 2;
-function isEXIF(input) {
-  return toHexString(input, 2, 6) === EXIF_MARKER;
-}
-function extractSize(input, index) {
-  return {
-    height: readUInt16BE(input, index),
-    width: readUInt16BE(input, index + 2)
-  };
-}
-function extractOrientation(exifBlock, isBigEndian) {
-  const idfOffset = 8;
-  const offset = EXIF_HEADER_BYTES + idfOffset;
-  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
-  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
-    const start = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
-    const end = start + IDF_ENTRY_BYTES;
-    if (start > exifBlock.length) {
-      return;
-    }
-    const block2 = exifBlock.slice(start, end);
-    const tagNumber = readUInt(block2, 16, 0, isBigEndian);
-    if (tagNumber === 274) {
-      const dataFormat = readUInt(block2, 16, 2, isBigEndian);
-      if (dataFormat !== 3) {
-        return;
-      }
-      const numberOfComponents = readUInt(block2, 32, 4, isBigEndian);
-      if (numberOfComponents !== 1) {
-        return;
-      }
-      return readUInt(block2, 16, 8, isBigEndian);
-    }
-  }
-}
-function validateExifBlock(input, index) {
-  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
-  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
-  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
-  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
-  if (isBigEndian || isLittleEndian) {
-    return extractOrientation(exifBlock, isBigEndian);
-  }
-}
-function validateInput(input, index) {
-  if (index > input.length) {
-    throw new TypeError("Corrupt JPG, exceeded buffer limits");
-  }
-}
-var JPG = {
-  validate: (input) => toHexString(input, 0, 2) === "ffd8",
-  calculate(_input) {
-    let input = _input.slice(4);
-    let orientation;
-    let next;
-    while (input.length) {
-      const i = readUInt16BE(input, 0);
-      validateInput(input, i);
-      if (input[i] !== 255) {
-        input = input.subarray(1);
-        continue;
-      }
-      if (isEXIF(input)) {
-        orientation = validateExifBlock(input, i);
-      }
-      next = input[i + 1];
-      if (next === 192 || next === 193 || next === 194) {
-        const size = extractSize(input, i + 5);
-        if (!orientation) {
-          return size;
-        }
-        return {
-          height: size.height,
-          orientation,
-          width: size.width
-        };
-      }
-      input = input.subarray(i + 2);
-    }
-    throw new TypeError("Invalid JPG, no size found");
-  }
-};
-
-// node_modules/image-size/dist/esm/utils/bit-reader.js
-var BitReader = class {
-  input;
-  endianness;
-  byteOffset = 2;
-  bitOffset = 0;
-  constructor(input, endianness) {
-    this.input = input;
-    this.endianness = endianness;
-  }
-  getBits(length = 1) {
-    let result = 0;
-    let bitsRead = 0;
-    while (bitsRead < length) {
-      if (this.byteOffset >= this.input.length) {
-        throw new Error("Reached end of input");
-      }
-      const currentByte = this.input[this.byteOffset];
-      const bitsLeft = 8 - this.bitOffset;
-      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
-      if (this.endianness === "little-endian") {
-        const mask = (1 << bitsToRead) - 1;
-        const bits = currentByte >> this.bitOffset & mask;
-        result |= bits << bitsRead;
-      } else {
-        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
-        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
-        result = result << bitsToRead | bits;
-      }
-      bitsRead += bitsToRead;
-      this.bitOffset += bitsToRead;
-      if (this.bitOffset === 8) {
-        this.byteOffset++;
-        this.bitOffset = 0;
-      }
-    }
-    return result;
-  }
-};
-
-// node_modules/image-size/dist/esm/types/jxl-stream.js
-function calculateImageDimension(reader, isSmallImage) {
-  if (isSmallImage) {
-    return 8 * (1 + reader.getBits(5));
-  }
-  const sizeClass = reader.getBits(2);
-  const extraBits = [9, 13, 18, 30][sizeClass];
-  return 1 + reader.getBits(extraBits);
-}
-function calculateImageWidth(reader, isSmallImage, widthMode, height) {
-  if (isSmallImage && widthMode === 0) {
-    return 8 * (1 + reader.getBits(5));
-  }
-  if (widthMode === 0) {
-    return calculateImageDimension(reader, false);
-  }
-  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
-  return Math.floor(height * aspectRatios[widthMode - 1]);
-}
-var JXLStream = {
-  validate: (input) => {
-    return toHexString(input, 0, 2) === "ff0a";
-  },
-  calculate(input) {
-    const reader = new BitReader(input, "little-endian");
-    const isSmallImage = reader.getBits(1) === 1;
-    const height = calculateImageDimension(reader, isSmallImage);
-    const widthMode = reader.getBits(3);
-    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
-    return { width, height };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/jxl.js
-function extractCodestream(input) {
-  const jxlcBox = findBox(input, "jxlc", 0);
-  if (jxlcBox) {
-    return input.subarray(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
-  }
-  const partialStreams = extractPartialStreams(input);
-  if (partialStreams.length > 0) {
-    return concatenateCodestreams(partialStreams);
-  }
-  return void 0;
-}
-function extractPartialStreams(input) {
-  const partialStreams = [];
-  let offset = 0;
-  while (offset < input.length) {
-    const jxlpBox = findBox(input, "jxlp", offset);
-    if (!jxlpBox)
-      break;
-    if (jxlpBox.size < 12) {
-      throw new TypeError("Invalid JXL");
-    }
-    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
-    offset = jxlpBox.offset + jxlpBox.size;
-  }
-  return partialStreams;
-}
-function concatenateCodestreams(partialCodestreams) {
-  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
-  const codestream = new Uint8Array(Math.min(16, totalLength));
-  let position = 0;
-  for (const partial of partialCodestreams) {
-    if (position >= codestream.length)
-      break;
-    const byteCount = Math.min(partial.length, codestream.length - position);
-    codestream.set(partial.subarray(0, byteCount), position);
-    position += byteCount;
-  }
-  return codestream;
-}
-var JXL = {
-  validate: (input) => {
-    const boxType = toUTF8String(input, 4, 8);
-    if (boxType !== "JXL ")
-      return false;
-    const ftypBox = findBox(input, "ftyp", 0);
-    if (!ftypBox)
-      return false;
-    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
-    return brand === "jxl ";
-  },
-  calculate(input) {
-    const codestream = extractCodestream(input);
-    if (codestream)
-      return JXLStream.calculate(codestream);
-    throw new TypeError("Invalid JXL");
-  }
-};
-
-// node_modules/image-size/dist/esm/types/ktx.js
-var KTX = {
-  validate: (input) => {
-    const signature = toUTF8String(input, 1, 7);
-    return ["KTX 11", "KTX 20"].includes(signature);
-  },
-  calculate: (input) => {
-    const type = input[5] === 49 ? "ktx" : "ktx2";
-    const offset = type === "ktx" ? 36 : 20;
-    return {
-      height: readUInt32LE(input, offset + 4),
-      width: readUInt32LE(input, offset),
-      type
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/png.js
-var pngSignature = "PNG\r\n\n";
-var pngImageHeaderChunkName = "IHDR";
-var pngFriedChunkName = "CgBI";
-var PNG = {
-  validate(input) {
-    if (pngSignature === toUTF8String(input, 1, 8)) {
-      let chunkName = toUTF8String(input, 12, 16);
-      if (chunkName === pngFriedChunkName) {
-        chunkName = toUTF8String(input, 28, 32);
-      }
-      if (chunkName !== pngImageHeaderChunkName) {
-        throw new TypeError("Invalid PNG");
-      }
-      return true;
-    }
-    return false;
-  },
-  calculate(input) {
-    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
-      return {
-        height: readUInt32BE(input, 36),
-        width: readUInt32BE(input, 32)
-      };
-    }
-    return {
-      height: readUInt32BE(input, 20),
-      width: readUInt32BE(input, 16)
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/pnm.js
-var PNMTypes = {
-  P1: "pbm/ascii",
-  P2: "pgm/ascii",
-  P3: "ppm/ascii",
-  P4: "pbm",
-  P5: "pgm",
-  P6: "ppm",
-  P7: "pam",
-  PF: "pfm"
-};
-var HEADER_SCAN_LIMIT = 64;
-var PAM_HEADER_LIMIT = 256;
-var isWhitespace = (byte) => byte === 32 || byte === 9 || byte === 10 || byte === 13;
-var isEndOfLine = (byte) => byte === 10 || byte === 13;
-var handlers = {
-  default: (input) => {
-    const end = Math.min(input.length, HEADER_SCAN_LIMIT);
-    const tokens = [];
-    let token3 = "";
-    let inComment = false;
-    for (let i = 2; i < end && tokens.length < 2; i++) {
-      const byte = input[i];
-      if (inComment) {
-        inComment = !isEndOfLine(byte);
-      } else if (byte === 35) {
-        inComment = true;
-      } else if (isWhitespace(byte)) {
-        if (token3) {
-          tokens.push(token3);
-          token3 = "";
-        }
-      } else {
-        token3 += String.fromCharCode(byte);
-      }
-    }
-    if (token3 && tokens.length < 2)
-      tokens.push(token3);
-    if (tokens.length < 2) {
-      throw new TypeError("Invalid PNM");
-    }
-    return {
-      width: Number.parseInt(tokens[0], 10),
-      height: Number.parseInt(tokens[1], 10)
-    };
-  },
-  pam: (input) => {
-    const header2 = toUTF8String(input, 0, Math.min(input.length, PAM_HEADER_LIMIT));
-    const size = {};
-    for (const line2 of header2.split(/[\r\n]+/)) {
-      if (line2.length > 16 || line2.charCodeAt(0) > 128) {
-        continue;
-      }
-      const [key2, value] = line2.split(" ");
-      if (key2 && value) {
-        size[key2.toLowerCase()] = Number.parseInt(value, 10);
-      }
-      if (size.height && size.width) {
-        break;
-      }
-    }
-    if (size.height && size.width) {
-      return {
-        height: size.height,
-        width: size.width
-      };
-    }
-    throw new TypeError("Invalid PAM");
-  }
-};
-var PNM = {
-  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
-  calculate(input) {
-    const signature = toUTF8String(input, 0, 2);
-    const type = PNMTypes[signature];
-    const handler = handlers[type] || handlers.default;
-    return handler(input);
-  }
-};
-
-// node_modules/image-size/dist/esm/types/psd.js
-var PSD = {
-  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
-  calculate: (input) => ({
-    height: readUInt32BE(input, 14),
-    width: readUInt32BE(input, 18)
-  })
-};
-
-// node_modules/image-size/dist/esm/types/svg.js
-var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
-var extractorRegExps = {
-  height: /\sheight=(['"])([^%]+?)\1/,
-  root: svgReg,
-  viewbox: /\sviewBox=(['"])(.+?)\1/i,
-  width: /\swidth=(['"])([^%]+?)\1/
-};
-var INCH_CM = 2.54;
-var units = {
-  in: 96,
-  cm: 96 / INCH_CM,
-  em: 16,
-  ex: 8,
-  m: 96 / INCH_CM * 100,
-  mm: 96 / INCH_CM / 10,
-  pc: 96 / 72 / 12,
-  pt: 96 / 72,
-  px: 1
-};
-var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
-function parseLength(len) {
-  const m = unitsReg.exec(len);
-  if (!m) {
-    return void 0;
-  }
-  return Math.round(Number(m[1]) * (units[m[2]] || 1));
-}
-function parseViewbox(viewbox) {
-  const bounds = viewbox.split(" ");
-  return {
-    height: parseLength(bounds[3]),
-    width: parseLength(bounds[2])
-  };
-}
-function parseAttributes(root2) {
-  const width = root2.match(extractorRegExps.width);
-  const height = root2.match(extractorRegExps.height);
-  const viewbox = root2.match(extractorRegExps.viewbox);
-  return {
-    height: height && parseLength(height[2]),
-    viewbox: viewbox && parseViewbox(viewbox[2]),
-    width: width && parseLength(width[2])
-  };
-}
-function calculateByDimensions(attrs2) {
-  return {
-    height: attrs2.height,
-    width: attrs2.width
-  };
-}
-function calculateByViewbox(attrs2, viewbox) {
-  const ratio = viewbox.width / viewbox.height;
-  if (attrs2.width) {
-    return {
-      height: Math.floor(attrs2.width / ratio),
-      width: attrs2.width
-    };
-  }
-  if (attrs2.height) {
-    return {
-      height: attrs2.height,
-      width: Math.floor(attrs2.height * ratio)
-    };
-  }
-  return {
-    height: viewbox.height,
-    width: viewbox.width
-  };
-}
-var SVG2 = {
-  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
-  calculate(input) {
-    const root2 = toUTF8String(input).match(extractorRegExps.root);
-    if (root2) {
-      const attrs2 = parseAttributes(root2[0]);
-      if (attrs2.width && attrs2.height) {
-        return calculateByDimensions(attrs2);
-      }
-      if (attrs2.viewbox) {
-        return calculateByViewbox(attrs2, attrs2.viewbox);
-      }
-    }
-    throw new TypeError("Invalid SVG");
-  }
-};
-
-// node_modules/image-size/dist/esm/types/tga.js
-var TGA = {
-  validate(input) {
-    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
-  },
-  calculate(input) {
-    return {
-      height: readUInt16LE(input, 14),
-      width: readUInt16LE(input, 12)
-    };
-  }
-};
-
-// node_modules/image-size/dist/esm/types/tiff.js
-var CONSTANTS = {
-  TAG: {
-    WIDTH: 256,
-    HEIGHT: 257,
-    COMPRESSION: 259
-  },
-  TYPE: {
-    SHORT: 3,
-    LONG: 4,
-    LONG8: 16
-  },
-  ENTRY_SIZE: {
-    STANDARD: 12,
-    BIG: 20
-  },
-  COUNT_SIZE: {
-    STANDARD: 2,
-    BIG: 8
-  }
-};
-function readIFD(input, { isBigEndian, isBigTiff }) {
-  const view = new DataView(input.buffer, input.byteOffset);
-  const le = !isBigEndian;
-  const ifdOffset = isBigTiff ? Number(view.getBigUint64(8, le)) : view.getUint32(4, le);
-  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
-  return input.slice(ifdOffset + entryCountSize);
-}
-function readTagValue(view, type, offset, le) {
-  switch (type) {
-    case CONSTANTS.TYPE.SHORT:
-      return view.getUint16(offset, le);
-    case CONSTANTS.TYPE.LONG:
-      return view.getUint32(offset, le);
-    case CONSTANTS.TYPE.LONG8: {
-      const value = Number(view.getBigUint64(offset, le));
-      if (value > Number.MAX_SAFE_INTEGER) {
-        throw new TypeError("Value too large");
-      }
-      return value;
-    }
-    default:
-      return 0;
-  }
-}
-function extractTags(input, { isBigEndian, isBigTiff }) {
-  const tags = {};
-  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
-  const valueOffset = isBigTiff ? 12 : 8;
-  const view = new DataView(input.buffer, input.byteOffset);
-  const le = !isBigEndian;
-  for (let offset = 0; offset + entrySize < input.length; offset += entrySize) {
-    const code2 = view.getUint16(offset, le);
-    const type = view.getUint16(offset + 2, le);
-    const length = isBigTiff ? Number(view.getBigUint64(offset + 4, le)) : view.getUint32(offset + 4, le);
-    if (code2 === 0)
-      break;
-    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
-      tags[code2] = readTagValue(view, type, offset + valueOffset, le);
-    }
-  }
-  return tags;
-}
-function determineFormat(input) {
-  const signature = toUTF8String(input, 0, 2);
-  const isBigEndian = signature === "MM";
-  const view = new DataView(input.buffer, input.byteOffset);
-  const version = view.getUint16(2, !isBigEndian);
-  return {
-    isBigEndian,
-    isBigTiff: version === 43
-  };
-}
-function validateBigTIFFHeader(input, isBigEndian) {
-  const view = new DataView(input.buffer, input.byteOffset);
-  const le = !isBigEndian;
-  const byteSize = view.getUint16(4, le);
-  const reserved = view.getUint16(6, le);
-  if (byteSize !== 8 || reserved !== 0) {
-    throw new TypeError("Invalid BigTIFF header");
-  }
-}
-var signatures = /* @__PURE__ */ new Set([
-  "49492a00",
-  "4d4d002a",
-  "49492b00",
-  "4d4d002b"
-]);
-var TIFF = {
-  validate: (input) => {
-    const signature = toHexString(input, 0, 4);
-    return signatures.has(signature);
-  },
-  calculate(input) {
-    const format2 = determineFormat(input);
-    if (format2.isBigTiff) {
-      validateBigTIFFHeader(input, format2.isBigEndian);
-    }
-    const ifdBuffer = readIFD(input, format2);
-    const tags = extractTags(ifdBuffer, format2);
-    const info = {
-      height: tags[CONSTANTS.TAG.HEIGHT],
-      width: tags[CONSTANTS.TAG.WIDTH],
-      type: format2.isBigTiff ? "bigtiff" : "tiff"
-    };
-    if (tags[CONSTANTS.TAG.COMPRESSION]) {
-      info.compression = tags[CONSTANTS.TAG.COMPRESSION];
-    }
-    if (!info.width || !info.height) {
-      throw new TypeError("Invalid Tiff. Missing tags");
-    }
-    return info;
-  }
-};
-
-// node_modules/image-size/dist/esm/types/webp.js
-function calculateExtended(input) {
-  return {
-    height: 1 + readUInt24LE(input, 7),
-    width: 1 + readUInt24LE(input, 4)
-  };
-}
-function calculateLossless(input) {
-  return {
-    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
-    width: 1 + ((input[2] & 63) << 8 | input[1])
-  };
-}
-function calculateLossy(input) {
-  return {
-    height: readInt16LE(input, 8) & 16383,
-    width: readInt16LE(input, 6) & 16383
-  };
-}
-var WEBP = {
-  validate(input) {
-    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
-    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
-    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
-    return riffHeader && webpHeader && vp8Header;
-  },
-  calculate(_input) {
-    const chunkHeader = toUTF8String(_input, 12, 16);
-    const input = _input.slice(20, 30);
-    if (chunkHeader === "VP8X") {
-      const extendedHeader = input[0];
-      const validStart = (extendedHeader & 192) === 0;
-      const validEnd = (extendedHeader & 1) === 0;
-      if (validStart && validEnd) {
-        return calculateExtended(input);
-      }
-      throw new TypeError("Invalid WebP");
-    }
-    if (chunkHeader === "VP8 " && input[0] !== 47) {
-      return calculateLossy(input);
-    }
-    const signature = toHexString(input, 3, 6);
-    if (chunkHeader === "VP8L" && signature !== "9d012a") {
-      return calculateLossless(input);
-    }
-    throw new TypeError("Invalid WebP");
-  }
-};
-
-// node_modules/image-size/dist/esm/types/index.js
-var typeHandlers = /* @__PURE__ */ new Map([
-  ["bmp", BMP],
-  ["cur", CUR],
-  ["dds", DDS],
-  ["gif", GIF],
-  ["heif", HEIF],
-  ["icns", ICNS],
-  ["ico", ICO],
-  ["j2c", J2C],
-  ["jp2", JP2],
-  ["jpg", JPG],
-  ["jxl", JXL],
-  ["jxl-stream", JXLStream],
-  ["ktx", KTX],
-  ["png", PNG],
-  ["pnm", PNM],
-  ["psd", PSD],
-  ["svg", SVG2],
-  ["tga", TGA],
-  ["tiff", TIFF],
-  ["webp", WEBP]
-]);
-var types = Array.from(typeHandlers.keys());
 
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
@@ -7871,10 +4965,10 @@ function newline(state2, silent) {
   state2.pos = pos;
   return true;
 }
-var ESCAPED2 = [];
-for (let i = 0; i < 256; i++) ESCAPED2.push(0);
+var ESCAPED = [];
+for (let i = 0; i < 256; i++) ESCAPED.push(0);
 "\\!\"#$%&'()*+,./:;<=>?@[]^_`{|}~-".split("").forEach(function(ch) {
-  ESCAPED2[ch.charCodeAt(0)] = 1;
+  ESCAPED[ch.charCodeAt(0)] = 1;
 });
 function escape(state2, silent) {
   let pos = state2.pos;
@@ -7915,7 +5009,7 @@ function escape(state2, silent) {
   const origStr = "\\" + escapedStr;
   if (!silent) {
     const token3 = state2.push("text_special", "", 0);
-    if (ch1 < 256 && ESCAPED2[ch1] !== 0) token3.content = escapedStr;
+    if (ch1 < 256 && ESCAPED[ch1] !== 0) token3.content = escapedStr;
     else token3.content = origStr;
     token3.markup = origStr;
     token3.info = "escape";
@@ -9036,6 +6130,992 @@ _defineProperty(MarkdownIt, "ParserInline", ParserInline);
 _defineProperty(MarkdownIt, "StateInline", StateInline);
 var MarkdownItCallable = callable(MarkdownIt);
 
+// node_modules/image-size/dist/esm/types/utils.js
+var decoder = new TextDecoder();
+var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
+var toHexString = (input, start = 0, end = input.length) => input.slice(start, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
+var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
+var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
+var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
+var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
+var readUInt24LE = (input, offset = 0) => {
+  const view = getView(input, offset);
+  return view.getUint16(0, true) + (view.getUint8(2) << 16);
+};
+var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
+var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
+var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
+var methods = {
+  readUInt16BE,
+  readUInt16LE,
+  readUInt32BE,
+  readUInt32LE
+};
+function readUInt(input, bits, offset = 0, isBigEndian = false) {
+  const endian = isBigEndian ? "BE" : "LE";
+  const methodName = `readUInt${bits}${endian}`;
+  return methods[methodName](input, offset);
+}
+var BOX_HEADER_SIZE = 8;
+function readBox(input, view, base2, offset, boxCode) {
+  if (input.length - offset < BOX_HEADER_SIZE)
+    return void 0;
+  const boxSize = view.getUint32(base2 + offset, false);
+  if (input.length - offset < boxSize)
+    return void 0;
+  return {
+    offset,
+    size: boxSize,
+    matches: view.getUint32(base2 + 4 + offset, false) === boxCode
+  };
+}
+var boxViews = /* @__PURE__ */ new WeakMap();
+function getBoxView(input) {
+  let view = boxViews.get(input.buffer);
+  if (!view) {
+    view = new DataView(input.buffer);
+    boxViews.set(input.buffer, view);
+  }
+  return view;
+}
+function findBox(input, boxName, startOffset) {
+  const view = getBoxView(input);
+  const boxCode = boxName.charCodeAt(0) << 24 | boxName.charCodeAt(1) << 16 | boxName.charCodeAt(2) << 8 | boxName.charCodeAt(3);
+  const base2 = input.byteOffset;
+  let currentOffset = startOffset;
+  while (currentOffset < input.length) {
+    if (input.length - currentOffset < 4)
+      break;
+    if (view.getUint32(base2 + currentOffset, false) < BOX_HEADER_SIZE) {
+      currentOffset += BOX_HEADER_SIZE;
+      continue;
+    }
+    const box2 = readBox(input, view, base2, currentOffset, boxCode);
+    if (!box2)
+      break;
+    if (box2.matches) {
+      return { name: boxName, offset: box2.offset, size: box2.size };
+    }
+    currentOffset += box2.size;
+  }
+  return void 0;
+}
+
+// node_modules/image-size/dist/esm/types/bmp.js
+var BMP = {
+  validate: (input) => toUTF8String(input, 0, 2) === "BM",
+  calculate: (input) => ({
+    height: Math.abs(readInt32LE(input, 22)),
+    width: readUInt32LE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/ico.js
+var TYPE_ICON = 1;
+var SIZE_HEADER = 2 + 2 + 2;
+var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
+function getSizeFromOffset(input, offset) {
+  const value = input[offset];
+  return value === 0 ? 256 : value;
+}
+function getImageSize(input, imageIndex) {
+  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
+  return {
+    height: getSizeFromOffset(input, offset + 1),
+    width: getSizeFromOffset(input, offset)
+  };
+}
+var ICO = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_ICON;
+  },
+  calculate(input) {
+    const nbImages = readUInt16LE(input, 4);
+    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
+      throw new TypeError("Invalid ICO");
+    }
+    const imageSize2 = getImageSize(input, 0);
+    if (nbImages === 1)
+      return imageSize2;
+    const images = [];
+    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
+      images.push(getImageSize(input, imageIndex));
+    }
+    return {
+      width: imageSize2.width,
+      height: imageSize2.height,
+      images
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/cur.js
+var TYPE_CURSOR = 2;
+var CUR = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_CURSOR;
+  },
+  calculate: (input) => ICO.calculate(input)
+};
+
+// node_modules/image-size/dist/esm/types/dds.js
+var DDS = {
+  validate: (input) => readUInt32LE(input, 0) === 542327876,
+  calculate: (input) => ({
+    height: readUInt32LE(input, 12),
+    width: readUInt32LE(input, 16)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/gif.js
+var gifRegexp = /^GIF8[79]a/;
+var GIF = {
+  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
+  calculate: (input) => ({
+    height: readUInt16LE(input, 8),
+    width: readUInt16LE(input, 6)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/heif.js
+var brandMap = {
+  avif: "avif",
+  mif1: "heif",
+  msf1: "heif",
+  heic: "heic",
+  heix: "heic",
+  hevc: "heic",
+  hevx: "heic"
+};
+var HEIF = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "ftyp")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand in brandMap;
+  },
+  calculate(input) {
+    const metaBox = findBox(input, "meta", 0);
+    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
+    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
+    if (!ipcoBox) {
+      throw new TypeError("Invalid HEIF, no ipco box found");
+    }
+    const type = toUTF8String(input, 8, 12);
+    const images = [];
+    let currentOffset = ipcoBox.offset + 8;
+    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
+      const ispeBox = findBox(input, "ispe", currentOffset);
+      if (!ispeBox)
+        break;
+      if (ispeBox.size < 20) {
+        throw new TypeError("Invalid HEIF");
+      }
+      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
+      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
+      const clapBox = findBox(input, "clap", currentOffset);
+      let width = rawWidth;
+      const height = rawHeight;
+      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
+        const cropRight = readUInt32BE(input, clapBox.offset + 12);
+        width = rawWidth - cropRight;
+      }
+      images.push({ height, width });
+      const nextOffset = ispeBox.offset + ispeBox.size;
+      if (nextOffset <= currentOffset) {
+        throw new TypeError("Invalid HEIF");
+      }
+      currentOffset = nextOffset;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid HEIF, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      type,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/icns.js
+var SIZE_HEADER2 = 4 + 4;
+var FILE_LENGTH_OFFSET = 4;
+var ENTRY_LENGTH_OFFSET = 4;
+var ICON_TYPE_SIZE = {
+  ICON: 32,
+  "ICN#": 32,
+  "icm#": 16,
+  icm4: 16,
+  icm8: 16,
+  "ics#": 16,
+  ics4: 16,
+  ics8: 16,
+  is32: 16,
+  s8mk: 16,
+  icp4: 16,
+  icl4: 32,
+  icl8: 32,
+  il32: 32,
+  l8mk: 32,
+  icp5: 32,
+  ic11: 32,
+  ich4: 48,
+  ich8: 48,
+  ih32: 48,
+  h8mk: 48,
+  icp6: 64,
+  ic12: 32,
+  it32: 128,
+  t8mk: 128,
+  ic07: 128,
+  ic08: 256,
+  ic13: 256,
+  ic09: 512,
+  ic14: 512,
+  ic10: 1024
+};
+function readImageHeader(input, imageOffset) {
+  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
+  if (imageLengthOffset + 4 > input.length) {
+    throw new TypeError("Invalid ICNS");
+  }
+  return [
+    toUTF8String(input, imageOffset, imageLengthOffset),
+    readUInt32BE(input, imageLengthOffset)
+  ];
+}
+function getImageSize2(type) {
+  const size = ICON_TYPE_SIZE[type];
+  return { width: size, height: size, type };
+}
+var ICNS = {
+  validate: (input) => toUTF8String(input, 0, 4) === "icns",
+  calculate(input) {
+    const inputLength = input.length;
+    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
+    let imageOffset = SIZE_HEADER2;
+    const images = [];
+    while (imageOffset < fileLength && imageOffset < inputLength) {
+      const imageHeader = readImageHeader(input, imageOffset);
+      const entryLength = imageHeader[1];
+      if (entryLength < 8) {
+        throw new TypeError("Invalid ICNS");
+      }
+      const imageSize2 = getImageSize2(imageHeader[0]);
+      images.push(imageSize2);
+      imageOffset += entryLength;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid ICNS, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/j2c.js
+var J2C = {
+  validate: (input) => readUInt32BE(input, 0) === 4283432785,
+  calculate: (input) => ({
+    height: readUInt32BE(input, 12),
+    width: readUInt32BE(input, 8)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/jp2.js
+var JP2 = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "jP  ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jp2 ";
+  },
+  calculate(input) {
+    const jp2hBox = findBox(input, "jp2h", 0);
+    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
+    if (ihdrBox) {
+      return {
+        height: readUInt32BE(input, ihdrBox.offset + 8),
+        width: readUInt32BE(input, ihdrBox.offset + 12)
+      };
+    }
+    throw new TypeError("Unsupported JPEG 2000 format");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jpg.js
+var EXIF_MARKER = "45786966";
+var APP1_DATA_SIZE_BYTES = 2;
+var EXIF_HEADER_BYTES = 6;
+var TIFF_BYTE_ALIGN_BYTES = 2;
+var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
+var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
+var IDF_ENTRY_BYTES = 12;
+var NUM_DIRECTORY_ENTRIES_BYTES = 2;
+function isEXIF(input) {
+  return toHexString(input, 2, 6) === EXIF_MARKER;
+}
+function extractSize(input, index) {
+  return {
+    height: readUInt16BE(input, index),
+    width: readUInt16BE(input, index + 2)
+  };
+}
+function extractOrientation(exifBlock, isBigEndian) {
+  const idfOffset = 8;
+  const offset = EXIF_HEADER_BYTES + idfOffset;
+  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
+  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
+    const start = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start + IDF_ENTRY_BYTES;
+    if (start > exifBlock.length) {
+      return;
+    }
+    const block2 = exifBlock.slice(start, end);
+    const tagNumber = readUInt(block2, 16, 0, isBigEndian);
+    if (tagNumber === 274) {
+      const dataFormat = readUInt(block2, 16, 2, isBigEndian);
+      if (dataFormat !== 3) {
+        return;
+      }
+      const numberOfComponents = readUInt(block2, 32, 4, isBigEndian);
+      if (numberOfComponents !== 1) {
+        return;
+      }
+      return readUInt(block2, 16, 8, isBigEndian);
+    }
+  }
+}
+function validateExifBlock(input, index) {
+  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
+  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
+  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
+  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
+  if (isBigEndian || isLittleEndian) {
+    return extractOrientation(exifBlock, isBigEndian);
+  }
+}
+function validateInput(input, index) {
+  if (index > input.length) {
+    throw new TypeError("Corrupt JPG, exceeded buffer limits");
+  }
+}
+var JPG = {
+  validate: (input) => toHexString(input, 0, 2) === "ffd8",
+  calculate(_input) {
+    let input = _input.slice(4);
+    let orientation;
+    let next;
+    while (input.length) {
+      const i = readUInt16BE(input, 0);
+      validateInput(input, i);
+      if (input[i] !== 255) {
+        input = input.subarray(1);
+        continue;
+      }
+      if (isEXIF(input)) {
+        orientation = validateExifBlock(input, i);
+      }
+      next = input[i + 1];
+      if (next === 192 || next === 193 || next === 194) {
+        const size = extractSize(input, i + 5);
+        if (!orientation) {
+          return size;
+        }
+        return {
+          height: size.height,
+          orientation,
+          width: size.width
+        };
+      }
+      input = input.subarray(i + 2);
+    }
+    throw new TypeError("Invalid JPG, no size found");
+  }
+};
+
+// node_modules/image-size/dist/esm/utils/bit-reader.js
+var BitReader = class {
+  input;
+  endianness;
+  byteOffset = 2;
+  bitOffset = 0;
+  constructor(input, endianness) {
+    this.input = input;
+    this.endianness = endianness;
+  }
+  getBits(length = 1) {
+    let result = 0;
+    let bitsRead = 0;
+    while (bitsRead < length) {
+      if (this.byteOffset >= this.input.length) {
+        throw new Error("Reached end of input");
+      }
+      const currentByte = this.input[this.byteOffset];
+      const bitsLeft = 8 - this.bitOffset;
+      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
+      if (this.endianness === "little-endian") {
+        const mask = (1 << bitsToRead) - 1;
+        const bits = currentByte >> this.bitOffset & mask;
+        result |= bits << bitsRead;
+      } else {
+        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
+        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
+        result = result << bitsToRead | bits;
+      }
+      bitsRead += bitsToRead;
+      this.bitOffset += bitsToRead;
+      if (this.bitOffset === 8) {
+        this.byteOffset++;
+        this.bitOffset = 0;
+      }
+    }
+    return result;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl-stream.js
+function calculateImageDimension(reader, isSmallImage) {
+  if (isSmallImage) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  const sizeClass = reader.getBits(2);
+  const extraBits = [9, 13, 18, 30][sizeClass];
+  return 1 + reader.getBits(extraBits);
+}
+function calculateImageWidth(reader, isSmallImage, widthMode, height) {
+  if (isSmallImage && widthMode === 0) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  if (widthMode === 0) {
+    return calculateImageDimension(reader, false);
+  }
+  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
+  return Math.floor(height * aspectRatios[widthMode - 1]);
+}
+var JXLStream = {
+  validate: (input) => {
+    return toHexString(input, 0, 2) === "ff0a";
+  },
+  calculate(input) {
+    const reader = new BitReader(input, "little-endian");
+    const isSmallImage = reader.getBits(1) === 1;
+    const height = calculateImageDimension(reader, isSmallImage);
+    const widthMode = reader.getBits(3);
+    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
+    return { width, height };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/jxl.js
+function extractCodestream(input) {
+  const jxlcBox = findBox(input, "jxlc", 0);
+  if (jxlcBox) {
+    return input.subarray(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
+  }
+  const partialStreams = extractPartialStreams(input);
+  if (partialStreams.length > 0) {
+    return concatenateCodestreams(partialStreams);
+  }
+  return void 0;
+}
+function extractPartialStreams(input) {
+  const partialStreams = [];
+  let offset = 0;
+  while (offset < input.length) {
+    const jxlpBox = findBox(input, "jxlp", offset);
+    if (!jxlpBox)
+      break;
+    if (jxlpBox.size < 12) {
+      throw new TypeError("Invalid JXL");
+    }
+    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+    offset = jxlpBox.offset + jxlpBox.size;
+  }
+  return partialStreams;
+}
+function concatenateCodestreams(partialCodestreams) {
+  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
+  const codestream = new Uint8Array(Math.min(16, totalLength));
+  let position = 0;
+  for (const partial of partialCodestreams) {
+    if (position >= codestream.length)
+      break;
+    const byteCount = Math.min(partial.length, codestream.length - position);
+    codestream.set(partial.subarray(0, byteCount), position);
+    position += byteCount;
+  }
+  return codestream;
+}
+var JXL = {
+  validate: (input) => {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "JXL ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jxl ";
+  },
+  calculate(input) {
+    const codestream = extractCodestream(input);
+    if (codestream)
+      return JXLStream.calculate(codestream);
+    throw new TypeError("Invalid JXL");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/ktx.js
+var KTX = {
+  validate: (input) => {
+    const signature = toUTF8String(input, 1, 7);
+    return ["KTX 11", "KTX 20"].includes(signature);
+  },
+  calculate: (input) => {
+    const type = input[5] === 49 ? "ktx" : "ktx2";
+    const offset = type === "ktx" ? 36 : 20;
+    return {
+      height: readUInt32LE(input, offset + 4),
+      width: readUInt32LE(input, offset),
+      type
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/png.js
+var pngSignature = "PNG\r\n\n";
+var pngImageHeaderChunkName = "IHDR";
+var pngFriedChunkName = "CgBI";
+var PNG = {
+  validate(input) {
+    if (pngSignature === toUTF8String(input, 1, 8)) {
+      let chunkName = toUTF8String(input, 12, 16);
+      if (chunkName === pngFriedChunkName) {
+        chunkName = toUTF8String(input, 28, 32);
+      }
+      if (chunkName !== pngImageHeaderChunkName) {
+        throw new TypeError("Invalid PNG");
+      }
+      return true;
+    }
+    return false;
+  },
+  calculate(input) {
+    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
+      return {
+        height: readUInt32BE(input, 36),
+        width: readUInt32BE(input, 32)
+      };
+    }
+    return {
+      height: readUInt32BE(input, 20),
+      width: readUInt32BE(input, 16)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/pnm.js
+var PNMTypes = {
+  P1: "pbm/ascii",
+  P2: "pgm/ascii",
+  P3: "ppm/ascii",
+  P4: "pbm",
+  P5: "pgm",
+  P6: "ppm",
+  P7: "pam",
+  PF: "pfm"
+};
+var HEADER_SCAN_LIMIT = 64;
+var PAM_HEADER_LIMIT = 256;
+var isWhitespace = (byte) => byte === 32 || byte === 9 || byte === 10 || byte === 13;
+var isEndOfLine = (byte) => byte === 10 || byte === 13;
+var handlers = {
+  default: (input) => {
+    const end = Math.min(input.length, HEADER_SCAN_LIMIT);
+    const tokens = [];
+    let token3 = "";
+    let inComment = false;
+    for (let i = 2; i < end && tokens.length < 2; i++) {
+      const byte = input[i];
+      if (inComment) {
+        inComment = !isEndOfLine(byte);
+      } else if (byte === 35) {
+        inComment = true;
+      } else if (isWhitespace(byte)) {
+        if (token3) {
+          tokens.push(token3);
+          token3 = "";
+        }
+      } else {
+        token3 += String.fromCharCode(byte);
+      }
+    }
+    if (token3 && tokens.length < 2)
+      tokens.push(token3);
+    if (tokens.length < 2) {
+      throw new TypeError("Invalid PNM");
+    }
+    return {
+      width: Number.parseInt(tokens[0], 10),
+      height: Number.parseInt(tokens[1], 10)
+    };
+  },
+  pam: (input) => {
+    const header2 = toUTF8String(input, 0, Math.min(input.length, PAM_HEADER_LIMIT));
+    const size = {};
+    for (const line2 of header2.split(/[\r\n]+/)) {
+      if (line2.length > 16 || line2.charCodeAt(0) > 128) {
+        continue;
+      }
+      const [key2, value] = line2.split(" ");
+      if (key2 && value) {
+        size[key2.toLowerCase()] = Number.parseInt(value, 10);
+      }
+      if (size.height && size.width) {
+        break;
+      }
+    }
+    if (size.height && size.width) {
+      return {
+        height: size.height,
+        width: size.width
+      };
+    }
+    throw new TypeError("Invalid PAM");
+  }
+};
+var PNM = {
+  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
+  calculate(input) {
+    const signature = toUTF8String(input, 0, 2);
+    const type = PNMTypes[signature];
+    const handler = handlers[type] || handlers.default;
+    return handler(input);
+  }
+};
+
+// node_modules/image-size/dist/esm/types/psd.js
+var PSD = {
+  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
+  calculate: (input) => ({
+    height: readUInt32BE(input, 14),
+    width: readUInt32BE(input, 18)
+  })
+};
+
+// node_modules/image-size/dist/esm/types/svg.js
+var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
+var extractorRegExps = {
+  height: /\sheight=(['"])([^%]+?)\1/,
+  root: svgReg,
+  viewbox: /\sviewBox=(['"])(.+?)\1/i,
+  width: /\swidth=(['"])([^%]+?)\1/
+};
+var INCH_CM = 2.54;
+var units = {
+  in: 96,
+  cm: 96 / INCH_CM,
+  em: 16,
+  ex: 8,
+  m: 96 / INCH_CM * 100,
+  mm: 96 / INCH_CM / 10,
+  pc: 96 / 72 / 12,
+  pt: 96 / 72,
+  px: 1
+};
+var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
+function parseLength(len) {
+  const m = unitsReg.exec(len);
+  if (!m) {
+    return void 0;
+  }
+  return Math.round(Number(m[1]) * (units[m[2]] || 1));
+}
+function parseViewbox(viewbox) {
+  const bounds = viewbox.split(" ");
+  return {
+    height: parseLength(bounds[3]),
+    width: parseLength(bounds[2])
+  };
+}
+function parseAttributes(root2) {
+  const width = root2.match(extractorRegExps.width);
+  const height = root2.match(extractorRegExps.height);
+  const viewbox = root2.match(extractorRegExps.viewbox);
+  return {
+    height: height && parseLength(height[2]),
+    viewbox: viewbox && parseViewbox(viewbox[2]),
+    width: width && parseLength(width[2])
+  };
+}
+function calculateByDimensions(attrs2) {
+  return {
+    height: attrs2.height,
+    width: attrs2.width
+  };
+}
+function calculateByViewbox(attrs2, viewbox) {
+  const ratio = viewbox.width / viewbox.height;
+  if (attrs2.width) {
+    return {
+      height: Math.floor(attrs2.width / ratio),
+      width: attrs2.width
+    };
+  }
+  if (attrs2.height) {
+    return {
+      height: attrs2.height,
+      width: Math.floor(attrs2.height * ratio)
+    };
+  }
+  return {
+    height: viewbox.height,
+    width: viewbox.width
+  };
+}
+var SVG2 = {
+  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
+  calculate(input) {
+    const root2 = toUTF8String(input).match(extractorRegExps.root);
+    if (root2) {
+      const attrs2 = parseAttributes(root2[0]);
+      if (attrs2.width && attrs2.height) {
+        return calculateByDimensions(attrs2);
+      }
+      if (attrs2.viewbox) {
+        return calculateByViewbox(attrs2, attrs2.viewbox);
+      }
+    }
+    throw new TypeError("Invalid SVG");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tga.js
+var TGA = {
+  validate(input) {
+    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
+  },
+  calculate(input) {
+    return {
+      height: readUInt16LE(input, 14),
+      width: readUInt16LE(input, 12)
+    };
+  }
+};
+
+// node_modules/image-size/dist/esm/types/tiff.js
+var CONSTANTS = {
+  TAG: {
+    WIDTH: 256,
+    HEIGHT: 257,
+    COMPRESSION: 259
+  },
+  TYPE: {
+    SHORT: 3,
+    LONG: 4,
+    LONG8: 16
+  },
+  ENTRY_SIZE: {
+    STANDARD: 12,
+    BIG: 20
+  },
+  COUNT_SIZE: {
+    STANDARD: 2,
+    BIG: 8
+  }
+};
+function readIFD(input, { isBigEndian, isBigTiff }) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const ifdOffset = isBigTiff ? Number(view.getBigUint64(8, le)) : view.getUint32(4, le);
+  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
+  return input.slice(ifdOffset + entryCountSize);
+}
+function readTagValue(view, type, offset, le) {
+  switch (type) {
+    case CONSTANTS.TYPE.SHORT:
+      return view.getUint16(offset, le);
+    case CONSTANTS.TYPE.LONG:
+      return view.getUint32(offset, le);
+    case CONSTANTS.TYPE.LONG8: {
+      const value = Number(view.getBigUint64(offset, le));
+      if (value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError("Value too large");
+      }
+      return value;
+    }
+    default:
+      return 0;
+  }
+}
+function extractTags(input, { isBigEndian, isBigTiff }) {
+  const tags = {};
+  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
+  const valueOffset = isBigTiff ? 12 : 8;
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  for (let offset = 0; offset + entrySize < input.length; offset += entrySize) {
+    const code2 = view.getUint16(offset, le);
+    const type = view.getUint16(offset + 2, le);
+    const length = isBigTiff ? Number(view.getBigUint64(offset + 4, le)) : view.getUint32(offset + 4, le);
+    if (code2 === 0)
+      break;
+    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
+      tags[code2] = readTagValue(view, type, offset + valueOffset, le);
+    }
+  }
+  return tags;
+}
+function determineFormat(input) {
+  const signature = toUTF8String(input, 0, 2);
+  const isBigEndian = signature === "MM";
+  const view = new DataView(input.buffer, input.byteOffset);
+  const version = view.getUint16(2, !isBigEndian);
+  return {
+    isBigEndian,
+    isBigTiff: version === 43
+  };
+}
+function validateBigTIFFHeader(input, isBigEndian) {
+  const view = new DataView(input.buffer, input.byteOffset);
+  const le = !isBigEndian;
+  const byteSize = view.getUint16(4, le);
+  const reserved = view.getUint16(6, le);
+  if (byteSize !== 8 || reserved !== 0) {
+    throw new TypeError("Invalid BigTIFF header");
+  }
+}
+var signatures = /* @__PURE__ */ new Set([
+  "49492a00",
+  "4d4d002a",
+  "49492b00",
+  "4d4d002b"
+]);
+var TIFF = {
+  validate: (input) => {
+    const signature = toHexString(input, 0, 4);
+    return signatures.has(signature);
+  },
+  calculate(input) {
+    const format2 = determineFormat(input);
+    if (format2.isBigTiff) {
+      validateBigTIFFHeader(input, format2.isBigEndian);
+    }
+    const ifdBuffer = readIFD(input, format2);
+    const tags = extractTags(ifdBuffer, format2);
+    const info = {
+      height: tags[CONSTANTS.TAG.HEIGHT],
+      width: tags[CONSTANTS.TAG.WIDTH],
+      type: format2.isBigTiff ? "bigtiff" : "tiff"
+    };
+    if (tags[CONSTANTS.TAG.COMPRESSION]) {
+      info.compression = tags[CONSTANTS.TAG.COMPRESSION];
+    }
+    if (!info.width || !info.height) {
+      throw new TypeError("Invalid Tiff. Missing tags");
+    }
+    return info;
+  }
+};
+
+// node_modules/image-size/dist/esm/types/webp.js
+function calculateExtended(input) {
+  return {
+    height: 1 + readUInt24LE(input, 7),
+    width: 1 + readUInt24LE(input, 4)
+  };
+}
+function calculateLossless(input) {
+  return {
+    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
+    width: 1 + ((input[2] & 63) << 8 | input[1])
+  };
+}
+function calculateLossy(input) {
+  return {
+    height: readInt16LE(input, 8) & 16383,
+    width: readInt16LE(input, 6) & 16383
+  };
+}
+var WEBP = {
+  validate(input) {
+    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
+    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
+    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
+    return riffHeader && webpHeader && vp8Header;
+  },
+  calculate(_input) {
+    const chunkHeader = toUTF8String(_input, 12, 16);
+    const input = _input.slice(20, 30);
+    if (chunkHeader === "VP8X") {
+      const extendedHeader = input[0];
+      const validStart = (extendedHeader & 192) === 0;
+      const validEnd = (extendedHeader & 1) === 0;
+      if (validStart && validEnd) {
+        return calculateExtended(input);
+      }
+      throw new TypeError("Invalid WebP");
+    }
+    if (chunkHeader === "VP8 " && input[0] !== 47) {
+      return calculateLossy(input);
+    }
+    const signature = toHexString(input, 3, 6);
+    if (chunkHeader === "VP8L" && signature !== "9d012a") {
+      return calculateLossless(input);
+    }
+    throw new TypeError("Invalid WebP");
+  }
+};
+
+// node_modules/image-size/dist/esm/types/index.js
+var typeHandlers = /* @__PURE__ */ new Map([
+  ["bmp", BMP],
+  ["cur", CUR],
+  ["dds", DDS],
+  ["gif", GIF],
+  ["heif", HEIF],
+  ["icns", ICNS],
+  ["ico", ICO],
+  ["j2c", J2C],
+  ["jp2", JP2],
+  ["jpg", JPG],
+  ["jxl", JXL],
+  ["jxl-stream", JXLStream],
+  ["ktx", KTX],
+  ["png", PNG],
+  ["pnm", PNM],
+  ["psd", PSD],
+  ["svg", SVG2],
+  ["tga", TGA],
+  ["tiff", TIFF],
+  ["webp", WEBP]
+]);
+var types = Array.from(typeHandlers.keys());
+
 // src/preview.ts
 var TYPES = {
   md: "text/markdown; charset=utf-8",
@@ -9117,6 +7197,2094 @@ withImages.core.ruler.push("mark_added", (state2) => {
 var withoutImages = renderer().disable("image");
 var renderMarkdown = (text2, file, added) => file === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file, added });
 
+// src/page/state.ts
+var PAGE = { name: "walkthrough", lost: () => {
+} };
+var state = {
+  view: void 0,
+  /** Redraws what changed; `own` when the change is what the person just did, which never waits behind the pill. */
+  render: (() => {
+  }),
+  /** Counts what the page sent, so a poll that left before an answer does not put back what it replaced. */
+  sends: 0,
+  /** Set when the page shows what the server never took, so the next poll fetches the view whole. */
+  stale: false
+};
+var phone = matchMedia("(max-width: 760px)");
+async function send2(route, body) {
+  state.sends++;
+  const answer = await post(PAGE, route, body);
+  if (!answer) {
+    state.stale = true;
+    return false;
+  }
+  state.view = await answer.json();
+  state.render(true);
+  return true;
+}
+var allFiles = () => state.view.steps.flatMap((step) => step.files);
+var stepOfFile = (file) => state.view.steps.find((step) => step.files.includes(file));
+var pendingComments = () => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.pending).map((comment) => ({ thread, comment })));
+var sentComments = (review) => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.review === review).map((comment) => ({ thread, comment })));
+var threadsIn = (step, file) => state.view.threads.filter((one) => one.step === step && one.file === file);
+var commentCount = (step, file) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
+var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && one.step !== null);
+var notViewed = () => allFiles().filter((file) => !state.view.viewed.includes(file));
+var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.by ?? "you";
+var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
+var linesLabel = ([first2, last]) => first2 === last ? String(first2) : `${String(first2)}\u2013${String(last)}`;
+var baseName = (file) => file.slice(file.lastIndexOf("/") + 1);
+function markdown(text2, className) {
+  const box2 = document.createElement("div");
+  box2.className = `markdown ${className}`.trim();
+  box2.innerHTML = renderMarkdown(text2);
+  return box2;
+}
+var UNITS = [
+  ["year", 31536e3],
+  ["month", 2592e3],
+  ["day", 86400],
+  ["hour", 3600],
+  ["minute", 60]
+];
+var relative = new Intl.RelativeTimeFormat("en", { numeric: "always" });
+function ago(iso) {
+  const seconds = (Date.parse(iso) - Date.now()) / 1e3;
+  for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
+  return "now";
+}
+var goesOut = (comment) => comment.by === "ai" && (comment.pending === true || comment.review !== void 0);
+
+// src/page/end.ts
+var COPIED_MS = 2e3;
+var TYPE_NAMES = { comment: "Comment", approve: "Approve", "request-changes": "Request changes" };
+function sentLine() {
+  const { pr, submitted } = state.view;
+  const comments = plural(submitted?.comments ?? 0, "comment");
+  return pr ? `${submitted?.type ? TYPE_NAMES[submitted.type] : ""}, with ${comments}, on #${pr.number}.` : `${comments}.`;
+}
+var them = () => state.view.submitted?.comments === 1 ? "it" : "them";
+var viewReview = () => {
+  const address = state.view.submitted?.address;
+  return address ? [el("a", { className: "btn small", href: address, target: "_blank", rel: "noopener noreferrer" }, icon("external"), "View review")] : [];
+};
+function commandBox() {
+  const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : "/walkthrough";
+  const word = el("span", {}, "Copy command");
+  const copy = attrs(el("button", { type: "button", className: "btn small" }, icon("copy"), word), { "aria-live": "polite" });
+  let shown = 0;
+  copy.onclick = () => {
+    void navigator.clipboard.writeText(command).then(() => {
+      word.textContent = "Copied";
+      clearTimeout(shown);
+      shown = window.setTimeout(() => {
+        word.textContent = "Copy command";
+      }, COPIED_MS);
+    });
+  };
+  return el("div", { className: "command" }, el("code", {}, command), copy);
+}
+function endScreen(ending2, retry) {
+  const { pr, submitted } = state.view;
+  const lost = ending2 === "lost";
+  const robot2 = byeScene(lost ? "asleep" : submitted ? "happy" : "plain");
+  const pending = pendingComments().length;
+  const kept = pending ? `Your ${plural(pending, "comment")} and Viewed marks are kept for next time.` : "Your Viewed marks are kept for next time.";
+  const outcome = lost ? box(false, "This page lost its session.", "Nothing is lost; your comments and Viewed marks are saved.", [
+    el("button", { type: "button", className: "btn small primary", onclick: retry }, "Try again")
+  ]) : submitted ? pr ? box(true, "Review submitted", sentLine(), viewReview()) : box(true, "Sent to the agent", `${sentLine()} The agent picks ${them()} up in your conversation.`, []) : box(false, pr ? "Nothing was posted." : "Nothing was sent to the agent.", kept, []);
+  const page = el(
+    "div",
+    { className: "end" },
+    robot2.box,
+    el("h1", { className: "end-title", tabIndex: -1 }, lost ? "The session isn\u2019t running" : "Session ended"),
+    outcome,
+    el(
+      "section",
+      { className: "pick-up" },
+      el("h2", {}, "Pick it up again"),
+      el("p", { className: "end-line" }, "Run this in your agent:"),
+      commandBox(),
+      el("p", { className: "end-line" }, "A new commit reopens only the steps that changed.")
+    ),
+    ...lost ? [] : [el("p", { className: "end-line bye" }, "You can close this tab.")]
+  );
+  return { box: page, stop: robot2.stop };
+}
+function box(sent, title, line2, actions) {
+  return el(
+    "div",
+    { className: `outcome ${sent ? "sent" : "kept"}` },
+    icon(sent ? "met" : "info"),
+    el("div", {}, el("strong", {}, title), el("p", {}, line2), ...actions.length ? [el("p", { className: "outcome-actions" }, ...actions)] : [])
+  );
+}
+
+// node_modules/diff2html/lib-esm/types.js
+var LineType;
+(function(LineType2) {
+  LineType2["INSERT"] = "insert";
+  LineType2["DELETE"] = "delete";
+  LineType2["CONTEXT"] = "context";
+})(LineType || (LineType = {}));
+var OutputFormatType = {
+  LINE_BY_LINE: "line-by-line",
+  SIDE_BY_SIDE: "side-by-side"
+};
+var LineMatchingType = {
+  LINES: "lines",
+  WORDS: "words",
+  NONE: "none"
+};
+var DiffStyleType = {
+  WORD: "word",
+  CHAR: "char"
+};
+var ColorSchemeType;
+(function(ColorSchemeType2) {
+  ColorSchemeType2["AUTO"] = "auto";
+  ColorSchemeType2["DARK"] = "dark";
+  ColorSchemeType2["LIGHT"] = "light";
+})(ColorSchemeType || (ColorSchemeType = {}));
+
+// node_modules/diff2html/lib-esm/utils.js
+var specials = [
+  "-",
+  "[",
+  "]",
+  "/",
+  "{",
+  "}",
+  "(",
+  ")",
+  "*",
+  "+",
+  "?",
+  ".",
+  "\\",
+  "^",
+  "$",
+  "|"
+];
+var regex = RegExp("[" + specials.join("\\") + "]", "g");
+function escapeForRegExp(str) {
+  return str.replace(regex, "\\$&");
+}
+function unifyPath(path) {
+  return path ? path.replace(/\\/g, "/") : path;
+}
+function hashCode(text2) {
+  let i, chr, len;
+  let hash = 0;
+  for (i = 0, len = text2.length; i < len; i++) {
+    chr = text2.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0;
+  }
+  return hash;
+}
+function max(arr) {
+  const length = arr.length;
+  let max2 = -Infinity;
+  for (let i = 0; i < length; i++) {
+    max2 = Math.max(max2, arr[i]);
+  }
+  return max2;
+}
+
+// node_modules/diff2html/lib-esm/diff-parser.js
+function getExtension(filename, language) {
+  const filenameParts = filename.split(".");
+  return filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : language;
+}
+function startsWithAny(str, prefixes) {
+  return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
+}
+var baseDiffFilenamePrefixes = ["a/", "b/", "i/", "w/", "c/", "o/"];
+function getFilename(line2, linePrefix, extraPrefix) {
+  const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes, extraPrefix] : baseDiffFilenamePrefixes;
+  const FilenameRegExp = linePrefix ? new RegExp(`^${escapeForRegExp(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
+  const [, filename = ""] = FilenameRegExp.exec(line2) || [];
+  const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
+  const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
+  return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
+}
+function getSrcFilename(line2, srcPrefix) {
+  return getFilename(line2, "---", srcPrefix);
+}
+function getDstFilename(line2, dstPrefix) {
+  return getFilename(line2, "+++", dstPrefix);
+}
+function parse(diffInput, config2 = {}) {
+  const files = [];
+  let currentFile = null;
+  let currentBlock = null;
+  let oldLine = null;
+  let oldLine2 = null;
+  let newLine = null;
+  let possibleOldName = null;
+  let possibleNewName = null;
+  const oldFileNameHeader = "--- ";
+  const newFileNameHeader = "+++ ";
+  const hunkHeaderPrefix = "@@";
+  const oldMode = /^old mode (\d{6})/;
+  const newMode = /^new mode (\d{6})/;
+  const deletedFileMode = /^deleted file mode (\d{6})/;
+  const newFileMode = /^new file mode (\d{6})/;
+  const copyFrom = /^copy from "?(.+)"?/;
+  const copyTo = /^copy to "?(.+)"?/;
+  const renameFrom = /^rename from "?(.+)"?/;
+  const renameTo = /^rename to "?(.+)"?/;
+  const similarityIndex = /^similarity index (\d+)%/;
+  const dissimilarityIndex = /^dissimilarity index (\d+)%/;
+  const index = /^index ([\da-z]+)\.\.([\da-z]+)\s*(\d{6})?/;
+  const binaryFiles = /^Binary files (.*) and (.*) differ/;
+  const binaryDiff = /^GIT binary patch/;
+  const combinedIndex = /^index ([\da-z]+),([\da-z]+)\.\.([\da-z]+)/;
+  const combinedMode = /^mode (\d{6}),(\d{6})\.\.(\d{6})/;
+  const combinedNewFile = /^new file mode (\d{6})/;
+  const combinedDeletedFile = /^deleted file mode (\d{6}),(\d{6})/;
+  const diffLines = diffInput.replace(/\\ No newline at end of file/g, "").replace(/\r\n?/g, "\n").split("\n");
+  function saveBlock() {
+    if (currentBlock !== null && currentFile !== null) {
+      currentFile.blocks.push(currentBlock);
+      currentBlock = null;
+    }
+  }
+  function saveFile() {
+    if (currentFile !== null) {
+      if (!currentFile.oldName && possibleOldName !== null) {
+        currentFile.oldName = possibleOldName;
+      }
+      if (!currentFile.newName && possibleNewName !== null) {
+        currentFile.newName = possibleNewName;
+      }
+      if (currentFile.newName) {
+        files.push(currentFile);
+        currentFile = null;
+      }
+    }
+    possibleOldName = null;
+    possibleNewName = null;
+  }
+  function startFile() {
+    saveBlock();
+    saveFile();
+    currentFile = {
+      blocks: [],
+      deletedLines: 0,
+      addedLines: 0
+    };
+  }
+  function startBlock(line2) {
+    saveBlock();
+    let values;
+    if (currentFile !== null) {
+      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line2)) {
+        currentFile.isCombined = false;
+        oldLine = parseInt(values[1], 10);
+        newLine = parseInt(values[2], 10);
+      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line2)) {
+        currentFile.isCombined = true;
+        oldLine = parseInt(values[1], 10);
+        oldLine2 = parseInt(values[2], 10);
+        newLine = parseInt(values[3], 10);
+      } else {
+        if (line2.startsWith(hunkHeaderPrefix)) {
+          console.error("Failed to parse lines, starting in 0!");
+        }
+        oldLine = 0;
+        newLine = 0;
+        currentFile.isCombined = false;
+      }
+    }
+    currentBlock = {
+      lines: [],
+      oldStartLine: oldLine,
+      oldStartLine2: oldLine2,
+      newStartLine: newLine,
+      header: line2
+    };
+  }
+  function createLine(line2) {
+    if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
+      return;
+    const currentLine = {
+      content: line2
+    };
+    const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
+    const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
+    if (startsWithAny(line2, addedPrefixes)) {
+      currentFile.addedLines++;
+      currentLine.type = LineType.INSERT;
+      currentLine.oldNumber = void 0;
+      currentLine.newNumber = newLine++;
+    } else if (startsWithAny(line2, deletedPrefixes)) {
+      currentFile.deletedLines++;
+      currentLine.type = LineType.DELETE;
+      currentLine.oldNumber = oldLine++;
+      currentLine.newNumber = void 0;
+    } else {
+      currentLine.type = LineType.CONTEXT;
+      currentLine.oldNumber = oldLine++;
+      currentLine.newNumber = newLine++;
+    }
+    currentBlock.lines.push(currentLine);
+  }
+  function existHunkHeader(line2, lineIdx) {
+    let idx = lineIdx;
+    while (idx < diffLines.length - 3) {
+      if (line2.startsWith("diff")) {
+        return false;
+      }
+      if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
+        return true;
+      }
+      idx++;
+    }
+    return false;
+  }
+  diffLines.forEach((line2, lineIndex) => {
+    if (!line2 || line2.startsWith("*")) {
+      return;
+    }
+    let values;
+    const prevLine = diffLines[lineIndex - 1];
+    const nxtLine = diffLines[lineIndex + 1];
+    const afterNxtLine = diffLines[lineIndex + 2];
+    if (line2.startsWith("diff --git") || line2.startsWith("diff --combined")) {
+      startFile();
+      const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
+      if (values = gitDiffStart.exec(line2)) {
+        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
+        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
+      }
+      if (currentFile === null) {
+        throw new Error("Where is my file !!!");
+      }
+      currentFile.isGitDiff = true;
+      return;
+    }
+    if (line2.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
+      startFile();
+      const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
+      if (values = unixDiffBinaryStart.exec(line2)) {
+        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
+        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
+      }
+      if (currentFile === null) {
+        throw new Error("Where is my file !!!");
+      }
+      currentFile.isBinary = true;
+      return;
+    }
+    if (!currentFile || !currentFile.isGitDiff && currentFile && line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
+      startFile();
+    }
+    if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
+      return;
+    }
+    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line2.length > config2.diffMaxLineLength)) {
+      currentFile.isTooBig = true;
+      currentFile.addedLines = 0;
+      currentFile.deletedLines = 0;
+      currentFile.blocks = [];
+      currentBlock = null;
+      const message = typeof config2.diffTooBigMessage === "function" ? config2.diffTooBigMessage(files.length) : "Diff too big to be displayed";
+      startBlock(message);
+      return;
+    }
+    if (line2.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line2.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
+      if (currentFile && !currentFile.oldName && line2.startsWith("--- ") && (values = getSrcFilename(line2, config2.srcPrefix))) {
+        currentFile.oldName = values;
+        currentFile.language = getExtension(currentFile.oldName, currentFile.language);
+        return;
+      }
+      if (currentFile && !currentFile.newName && line2.startsWith("+++ ") && (values = getDstFilename(line2, config2.dstPrefix))) {
+        currentFile.newName = values;
+        currentFile.language = getExtension(currentFile.newName, currentFile.language);
+        return;
+      }
+    }
+    if (currentFile && (line2.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
+      startBlock(line2);
+      return;
+    }
+    if (currentBlock && (line2.startsWith("+") || line2.startsWith("-") || line2.startsWith(" "))) {
+      createLine(line2);
+      return;
+    }
+    const doesNotExistHunkHeader = !existHunkHeader(line2, lineIndex);
+    if (currentFile === null) {
+      throw new Error("Where is my file !!!");
+    }
+    if (values = oldMode.exec(line2)) {
+      currentFile.oldMode = values[1];
+    } else if (values = newMode.exec(line2)) {
+      currentFile.newMode = values[1];
+    } else if (values = deletedFileMode.exec(line2)) {
+      currentFile.deletedFileMode = values[1];
+      currentFile.isDeleted = true;
+    } else if (values = newFileMode.exec(line2)) {
+      currentFile.newFileMode = values[1];
+      currentFile.isNew = true;
+    } else if (values = copyFrom.exec(line2)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.oldName = values[1];
+      }
+      currentFile.isCopy = true;
+    } else if (values = copyTo.exec(line2)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.newName = values[1];
+      }
+      currentFile.isCopy = true;
+    } else if (values = renameFrom.exec(line2)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.oldName = values[1];
+      }
+      currentFile.isRename = true;
+    } else if (values = renameTo.exec(line2)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.newName = values[1];
+      }
+      currentFile.isRename = true;
+    } else if (values = binaryFiles.exec(line2)) {
+      currentFile.isBinary = true;
+      currentFile.oldName = getFilename(values[1], void 0, config2.srcPrefix);
+      currentFile.newName = getFilename(values[2], void 0, config2.dstPrefix);
+      startBlock("Binary file");
+    } else if (binaryDiff.test(line2)) {
+      currentFile.isBinary = true;
+      startBlock(line2);
+    } else if (values = similarityIndex.exec(line2)) {
+      currentFile.unchangedPercentage = parseInt(values[1], 10);
+    } else if (values = dissimilarityIndex.exec(line2)) {
+      currentFile.changedPercentage = parseInt(values[1], 10);
+    } else if (values = index.exec(line2)) {
+      currentFile.checksumBefore = values[1];
+      currentFile.checksumAfter = values[2];
+      if (values[3])
+        currentFile.mode = values[3];
+    } else if (values = combinedIndex.exec(line2)) {
+      currentFile.checksumBefore = [values[2], values[3]];
+      currentFile.checksumAfter = values[1];
+    } else if (values = combinedMode.exec(line2)) {
+      currentFile.oldMode = [values[2], values[3]];
+      currentFile.newMode = values[1];
+    } else if (values = combinedNewFile.exec(line2)) {
+      currentFile.newFileMode = values[1];
+      currentFile.isNew = true;
+    } else if (values = combinedDeletedFile.exec(line2)) {
+      currentFile.deletedFileMode = values[1];
+      currentFile.isDeleted = true;
+    }
+  });
+  saveBlock();
+  saveFile();
+  return files;
+}
+
+// node_modules/diff/libesm/diff/base.js
+var Diff = class {
+  diff(oldStr, newStr, options = {}) {
+    let callback;
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    } else if ("callback" in options) {
+      callback = options.callback;
+    }
+    const oldString = this.castInput(oldStr, options);
+    const newString = this.castInput(newStr, options);
+    const oldTokens = this.removeEmpty(this.tokenize(oldString, options));
+    const newTokens = this.removeEmpty(this.tokenize(newString, options));
+    return this.diffWithOptionsObj(oldTokens, newTokens, options, callback);
+  }
+  diffWithOptionsObj(oldTokens, newTokens, options, callback) {
+    var _a;
+    const done = (value) => {
+      value = this.postProcess(value, options);
+      if (callback) {
+        setTimeout(function() {
+          callback(value);
+        }, 0);
+        return void 0;
+      } else {
+        return value;
+      }
+    };
+    const newLen = newTokens.length, oldLen = oldTokens.length;
+    let editLength = 1;
+    let maxEditLength = newLen + oldLen;
+    if (options.maxEditLength != null) {
+      maxEditLength = Math.min(maxEditLength, options.maxEditLength);
+    }
+    const maxExecutionTime = (_a = options.timeout) !== null && _a !== void 0 ? _a : Infinity;
+    const abortAfterTimestamp = Date.now() + maxExecutionTime;
+    const bestPath = [{ oldPos: -1, lastComponent: void 0 }];
+    let newPos = this.extractCommon(bestPath[0], newTokens, oldTokens, 0, options);
+    if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+      return done(this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens));
+    }
+    let minDiagonalToConsider = -Infinity, maxDiagonalToConsider = Infinity;
+    const execEditLength = () => {
+      for (let diagonalPath = Math.max(minDiagonalToConsider, -editLength); diagonalPath <= Math.min(maxDiagonalToConsider, editLength); diagonalPath += 2) {
+        let basePath;
+        const removePath = bestPath[diagonalPath - 1], addPath = bestPath[diagonalPath + 1];
+        if (removePath) {
+          bestPath[diagonalPath - 1] = void 0;
+        }
+        let canAdd = false;
+        if (addPath) {
+          const addPathNewPos = addPath.oldPos - diagonalPath;
+          canAdd = addPath && 0 <= addPathNewPos && addPathNewPos < newLen;
+        }
+        const canRemove = removePath && removePath.oldPos + 1 < oldLen;
+        if (!canAdd && !canRemove) {
+          bestPath[diagonalPath] = void 0;
+          continue;
+        }
+        if (!canRemove || canAdd && removePath.oldPos < addPath.oldPos) {
+          basePath = this.addToPath(addPath, true, false, 0, options);
+        } else {
+          basePath = this.addToPath(removePath, false, true, 1, options);
+        }
+        newPos = this.extractCommon(basePath, newTokens, oldTokens, diagonalPath, options);
+        if (basePath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+          return done(this.buildValues(basePath.lastComponent, newTokens, oldTokens)) || true;
+        } else {
+          bestPath[diagonalPath] = basePath;
+          if (basePath.oldPos + 1 >= oldLen) {
+            maxDiagonalToConsider = Math.min(maxDiagonalToConsider, diagonalPath - 1);
+          }
+          if (newPos + 1 >= newLen) {
+            minDiagonalToConsider = Math.max(minDiagonalToConsider, diagonalPath + 1);
+          }
+        }
+      }
+      editLength++;
+    };
+    if (callback) {
+      (function exec() {
+        setTimeout(function() {
+          if (editLength > maxEditLength || Date.now() > abortAfterTimestamp) {
+            return callback(void 0);
+          }
+          if (!execEditLength()) {
+            exec();
+          }
+        }, 0);
+      })();
+    } else {
+      while (editLength <= maxEditLength && Date.now() <= abortAfterTimestamp) {
+        const ret = execEditLength();
+        if (ret) {
+          return ret;
+        }
+      }
+    }
+  }
+  addToPath(path, added, removed, oldPosInc, options) {
+    const last = path.lastComponent;
+    if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
+      return {
+        oldPos: path.oldPos + oldPosInc,
+        lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
+      };
+    } else {
+      return {
+        oldPos: path.oldPos + oldPosInc,
+        lastComponent: { count: 1, added, removed, previousComponent: last }
+      };
+    }
+  }
+  extractCommon(basePath, newTokens, oldTokens, diagonalPath, options) {
+    const newLen = newTokens.length, oldLen = oldTokens.length;
+    let oldPos = basePath.oldPos, newPos = oldPos - diagonalPath, commonCount = 0;
+    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(oldTokens[oldPos + 1], newTokens[newPos + 1], options)) {
+      newPos++;
+      oldPos++;
+      commonCount++;
+      if (options.oneChangePerToken) {
+        basePath.lastComponent = { count: 1, previousComponent: basePath.lastComponent, added: false, removed: false };
+      }
+    }
+    if (commonCount && !options.oneChangePerToken) {
+      basePath.lastComponent = { count: commonCount, previousComponent: basePath.lastComponent, added: false, removed: false };
+    }
+    basePath.oldPos = oldPos;
+    return newPos;
+  }
+  equals(left, right, options) {
+    if (options.comparator) {
+      return options.comparator(left, right);
+    } else {
+      return left === right || !!options.ignoreCase && left.toLowerCase() === right.toLowerCase();
+    }
+  }
+  removeEmpty(array) {
+    const ret = [];
+    for (let i = 0; i < array.length; i++) {
+      if (array[i]) {
+        ret.push(array[i]);
+      }
+    }
+    return ret;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  castInput(value, options) {
+    return value;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  tokenize(value, options) {
+    return Array.from(value);
+  }
+  join(chars) {
+    return chars.join("");
+  }
+  postProcess(changeObjects, options) {
+    return changeObjects;
+  }
+  get useLongestToken() {
+    return false;
+  }
+  buildValues(lastComponent, newTokens, oldTokens) {
+    const components = [];
+    let nextComponent;
+    while (lastComponent) {
+      components.push(lastComponent);
+      nextComponent = lastComponent.previousComponent;
+      delete lastComponent.previousComponent;
+      lastComponent = nextComponent;
+    }
+    components.reverse();
+    const componentLen = components.length;
+    let componentPos = 0, newPos = 0, oldPos = 0;
+    for (; componentPos < componentLen; componentPos++) {
+      const component = components[componentPos];
+      if (!component.removed) {
+        if (!component.added && this.useLongestToken) {
+          let value = newTokens.slice(newPos, newPos + component.count);
+          value = value.map(function(value2, i) {
+            const oldValue = oldTokens[oldPos + i];
+            return oldValue.length > value2.length ? oldValue : value2;
+          });
+          component.value = this.join(value);
+        } else {
+          component.value = this.join(newTokens.slice(newPos, newPos + component.count));
+        }
+        newPos += component.count;
+        if (!component.added) {
+          oldPos += component.count;
+        }
+      } else {
+        component.value = this.join(oldTokens.slice(oldPos, oldPos + component.count));
+        oldPos += component.count;
+      }
+    }
+    return components;
+  }
+};
+
+// node_modules/diff/libesm/diff/character.js
+var CharacterDiff = class extends Diff {
+};
+var characterDiff = new CharacterDiff();
+function diffChars(oldStr, newStr, options) {
+  return characterDiff.diff(oldStr, newStr, options);
+}
+
+// node_modules/diff/libesm/util/string.js
+function longestCommonPrefix(str1, str2) {
+  let i;
+  for (i = 0; i < str1.length && i < str2.length; i++) {
+    if (str1[i] != str2[i]) {
+      return str1.slice(0, i);
+    }
+  }
+  return str1.slice(0, i);
+}
+function longestCommonSuffix(str1, str2) {
+  let i;
+  if (!str1 || !str2 || str1[str1.length - 1] != str2[str2.length - 1]) {
+    return "";
+  }
+  for (i = 0; i < str1.length && i < str2.length; i++) {
+    if (str1[str1.length - (i + 1)] != str2[str2.length - (i + 1)]) {
+      return str1.slice(-i);
+    }
+  }
+  return str1.slice(-i);
+}
+function replacePrefix(string, oldPrefix, newPrefix) {
+  if (string.slice(0, oldPrefix.length) != oldPrefix) {
+    throw Error(`string ${JSON.stringify(string)} doesn't start with prefix ${JSON.stringify(oldPrefix)}; this is a bug`);
+  }
+  return newPrefix + string.slice(oldPrefix.length);
+}
+function replaceSuffix(string, oldSuffix, newSuffix) {
+  if (!oldSuffix) {
+    return string + newSuffix;
+  }
+  if (string.slice(-oldSuffix.length) != oldSuffix) {
+    throw Error(`string ${JSON.stringify(string)} doesn't end with suffix ${JSON.stringify(oldSuffix)}; this is a bug`);
+  }
+  return string.slice(0, -oldSuffix.length) + newSuffix;
+}
+function removePrefix(string, oldPrefix) {
+  return replacePrefix(string, oldPrefix, "");
+}
+function removeSuffix(string, oldSuffix) {
+  return replaceSuffix(string, oldSuffix, "");
+}
+function maximumOverlap(string1, string2) {
+  return string2.slice(0, overlapCount(string1, string2));
+}
+function overlapCount(a, b) {
+  let startA = 0;
+  if (a.length > b.length) {
+    startA = a.length - b.length;
+  }
+  let endB = b.length;
+  if (a.length < b.length) {
+    endB = a.length;
+  }
+  const map2 = Array(endB);
+  let k = 0;
+  map2[0] = 0;
+  for (let j = 1; j < endB; j++) {
+    if (b[j] == b[k]) {
+      map2[j] = map2[k];
+    } else {
+      map2[j] = k;
+    }
+    while (k > 0 && b[j] != b[k]) {
+      k = map2[k];
+    }
+    if (b[j] == b[k]) {
+      k++;
+    }
+  }
+  k = 0;
+  for (let i = startA; i < a.length; i++) {
+    while (k > 0 && a[i] != b[k]) {
+      k = map2[k];
+    }
+    if (a[i] == b[k]) {
+      k++;
+    }
+  }
+  return k;
+}
+function segment(string, segmenter) {
+  const parts = [];
+  for (const segmentObj of Array.from(segmenter.segment(string))) {
+    const segment2 = segmentObj.segment;
+    if (parts.length && /\s/.test(parts[parts.length - 1]) && /\s/.test(segment2)) {
+      parts[parts.length - 1] += segment2;
+    } else {
+      parts.push(segment2);
+    }
+  }
+  return parts;
+}
+function trailingWs(string, segmenter) {
+  if (segmenter) {
+    return leadingAndTrailingWs(string, segmenter)[1];
+  }
+  let i;
+  for (i = string.length - 1; i >= 0; i--) {
+    if (!string[i].match(/\s/)) {
+      break;
+    }
+  }
+  return string.substring(i + 1);
+}
+function leadingWs(string, segmenter) {
+  if (segmenter) {
+    return leadingAndTrailingWs(string, segmenter)[0];
+  }
+  const match = string.match(/^\s*/);
+  return match ? match[0] : "";
+}
+function leadingAndTrailingWs(string, segmenter) {
+  if (!segmenter) {
+    return [leadingWs(string), trailingWs(string)];
+  }
+  if (segmenter.resolvedOptions().granularity != "word") {
+    throw new Error('The segmenter passed must have a granularity of "word"');
+  }
+  const segments = segment(string, segmenter);
+  const firstSeg = segments[0];
+  const lastSeg = segments[segments.length - 1];
+  const head = /\s/.test(firstSeg) ? firstSeg : "";
+  const tail = /\s/.test(lastSeg) ? lastSeg : "";
+  return [head, tail];
+}
+
+// node_modules/diff/libesm/diff/word.js
+var extendedWordChars = "a-zA-Z0-9_\\u{AD}\\u{C0}-\\u{D6}\\u{D8}-\\u{F6}\\u{F8}-\\u{2C6}\\u{2C8}-\\u{2D7}\\u{2DE}-\\u{2FF}\\u{1E00}-\\u{1EFF}";
+var tokenizeIncludingWhitespace = new RegExp(`[${extendedWordChars}]+|\\s+|[^${extendedWordChars}]`, "ug");
+var WordDiff = class extends Diff {
+  equals(left, right, options) {
+    if (options.ignoreCase) {
+      left = left.toLowerCase();
+      right = right.toLowerCase();
+    }
+    return left.trim() === right.trim();
+  }
+  tokenize(value, options = {}) {
+    let parts;
+    if (options.intlSegmenter) {
+      const segmenter = options.intlSegmenter;
+      if (segmenter.resolvedOptions().granularity != "word") {
+        throw new Error('The segmenter passed must have a granularity of "word"');
+      }
+      parts = segment(value, segmenter);
+    } else {
+      parts = value.match(tokenizeIncludingWhitespace) || [];
+    }
+    const tokens = [];
+    let prevPart = null;
+    parts.forEach((part) => {
+      if (/\s/.test(part)) {
+        if (prevPart == null) {
+          tokens.push(part);
+        } else {
+          tokens.push(tokens.pop() + part);
+        }
+      } else if (prevPart != null && /\s/.test(prevPart)) {
+        if (tokens[tokens.length - 1] == prevPart) {
+          tokens.push(tokens.pop() + part);
+        } else {
+          tokens.push(prevPart + part);
+        }
+      } else {
+        tokens.push(part);
+      }
+      prevPart = part;
+    });
+    return tokens;
+  }
+  join(tokens) {
+    return tokens.map((token3, i) => {
+      if (i == 0) {
+        return token3;
+      } else {
+        return token3.replace(/^\s+/, "");
+      }
+    }).join("");
+  }
+  postProcess(changes, options) {
+    if (!changes || options.oneChangePerToken) {
+      return changes;
+    }
+    let lastKeep = null;
+    let insertion = null;
+    let deletion = null;
+    changes.forEach((change) => {
+      if (change.added) {
+        insertion = change;
+      } else if (change.removed) {
+        deletion = change;
+      } else {
+        if (insertion || deletion) {
+          dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, change, options.intlSegmenter);
+        }
+        lastKeep = change;
+        insertion = null;
+        deletion = null;
+      }
+    });
+    if (insertion || deletion) {
+      dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options.intlSegmenter);
+    }
+    return changes;
+  }
+};
+var wordDiff = new WordDiff();
+function dedupeWhitespaceInChangeObjects(startKeep, deletion, insertion, endKeep, segmenter) {
+  if (deletion && insertion) {
+    const [oldWsPrefix, oldWsSuffix] = leadingAndTrailingWs(deletion.value, segmenter);
+    const [newWsPrefix, newWsSuffix] = leadingAndTrailingWs(insertion.value, segmenter);
+    if (startKeep) {
+      const commonWsPrefix = longestCommonPrefix(oldWsPrefix, newWsPrefix);
+      startKeep.value = replaceSuffix(startKeep.value, newWsPrefix, commonWsPrefix);
+      deletion.value = removePrefix(deletion.value, commonWsPrefix);
+      insertion.value = removePrefix(insertion.value, commonWsPrefix);
+    }
+    if (endKeep) {
+      const commonWsSuffix = longestCommonSuffix(oldWsSuffix, newWsSuffix);
+      endKeep.value = replacePrefix(endKeep.value, newWsSuffix, commonWsSuffix);
+      deletion.value = removeSuffix(deletion.value, commonWsSuffix);
+      insertion.value = removeSuffix(insertion.value, commonWsSuffix);
+    }
+  } else if (insertion) {
+    if (startKeep) {
+      const ws = leadingWs(insertion.value, segmenter);
+      insertion.value = insertion.value.substring(ws.length);
+    }
+    if (endKeep) {
+      const ws = leadingWs(endKeep.value, segmenter);
+      endKeep.value = endKeep.value.substring(ws.length);
+    }
+  } else if (startKeep && endKeep) {
+    const newWsFull = leadingWs(endKeep.value, segmenter), [delWsStart, delWsEnd] = leadingAndTrailingWs(deletion.value, segmenter);
+    const newWsStart = longestCommonPrefix(newWsFull, delWsStart);
+    deletion.value = removePrefix(deletion.value, newWsStart);
+    const newWsEnd = longestCommonSuffix(removePrefix(newWsFull, newWsStart), delWsEnd);
+    deletion.value = removeSuffix(deletion.value, newWsEnd);
+    endKeep.value = replacePrefix(endKeep.value, newWsFull, newWsEnd);
+    startKeep.value = replaceSuffix(startKeep.value, newWsFull, newWsFull.slice(0, newWsFull.length - newWsEnd.length));
+  } else if (endKeep) {
+    const endKeepWsPrefix = leadingWs(endKeep.value, segmenter);
+    const deletionWsSuffix = trailingWs(deletion.value, segmenter);
+    const overlap = maximumOverlap(deletionWsSuffix, endKeepWsPrefix);
+    deletion.value = removeSuffix(deletion.value, overlap);
+  } else if (startKeep) {
+    const startKeepWsSuffix = trailingWs(startKeep.value, segmenter);
+    const deletionWsPrefix = leadingWs(deletion.value, segmenter);
+    const overlap = maximumOverlap(startKeepWsSuffix, deletionWsPrefix);
+    deletion.value = removePrefix(deletion.value, overlap);
+  }
+}
+var WordsWithSpaceDiff = class extends Diff {
+  tokenize(value) {
+    const regex2 = new RegExp(`(\\r?\\n)|[${extendedWordChars}]+|[^\\S\\n\\r]+|[^${extendedWordChars}]`, "ug");
+    return value.match(regex2) || [];
+  }
+};
+var wordsWithSpaceDiff = new WordsWithSpaceDiff();
+function diffWordsWithSpace(oldStr, newStr, options) {
+  return wordsWithSpaceDiff.diff(oldStr, newStr, options);
+}
+
+// node_modules/diff2html/lib-esm/rematch.js
+function levenshtein(a, b) {
+  if (a.length === 0) {
+    return b.length;
+  }
+  if (b.length === 0) {
+    return a.length;
+  }
+  const matrix = [];
+  let i;
+  for (i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  let j;
+  for (j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (i = 1; i <= b.length; i++) {
+    for (j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+function newDistanceFn(str) {
+  return (x, y) => {
+    const xValue = str(x).trim();
+    const yValue = str(y).trim();
+    const lev = levenshtein(xValue, yValue);
+    return lev / (xValue.length + yValue.length);
+  };
+}
+function newMatcherFn(distance2) {
+  function findBestMatch(a, b, cache = /* @__PURE__ */ new Map()) {
+    let bestMatchDist = Infinity;
+    let bestMatch;
+    for (let i = 0; i < a.length; ++i) {
+      for (let j = 0; j < b.length; ++j) {
+        const cacheKey = JSON.stringify([a[i], b[j]]);
+        let md;
+        if (!(cache.has(cacheKey) && (md = cache.get(cacheKey)))) {
+          md = distance2(a[i], b[j]);
+          cache.set(cacheKey, md);
+        }
+        if (md < bestMatchDist) {
+          bestMatchDist = md;
+          bestMatch = { indexA: i, indexB: j, score: bestMatchDist };
+        }
+      }
+    }
+    return bestMatch;
+  }
+  function group(a, b, level = 0, cache = /* @__PURE__ */ new Map()) {
+    const bm = findBestMatch(a, b, cache);
+    if (!bm || a.length + b.length < 3) {
+      return [[a, b]];
+    }
+    const a1 = a.slice(0, bm.indexA);
+    const b1 = b.slice(0, bm.indexB);
+    const aMatch = [a[bm.indexA]];
+    const bMatch = [b[bm.indexB]];
+    const tailA = bm.indexA + 1;
+    const tailB = bm.indexB + 1;
+    const a2 = a.slice(tailA);
+    const b2 = b.slice(tailB);
+    const group1 = group(a1, b1, level + 1, cache);
+    const groupMatch = group(aMatch, bMatch, level + 1, cache);
+    const group2 = group(a2, b2, level + 1, cache);
+    let result = groupMatch;
+    if (bm.indexA > 0 || bm.indexB > 0) {
+      result = group1.concat(result);
+    }
+    if (a.length > tailA || b.length > tailB) {
+      result = result.concat(group2);
+    }
+    return result;
+  }
+  return group;
+}
+
+// node_modules/diff2html/lib-esm/render-utils.js
+var CSSLineClass = {
+  INSERTS: "d2h-ins",
+  DELETES: "d2h-del",
+  CONTEXT: "d2h-cntx",
+  INFO: "d2h-info",
+  INSERT_CHANGES: "d2h-ins d2h-change",
+  DELETE_CHANGES: "d2h-del d2h-change"
+};
+var defaultRenderConfig = {
+  matching: LineMatchingType.NONE,
+  matchWordsThreshold: 0.25,
+  maxLineLengthHighlight: 1e4,
+  diffStyle: DiffStyleType.WORD,
+  colorScheme: ColorSchemeType.LIGHT
+};
+var separator = "/";
+var distance = newDistanceFn((change) => change.value);
+var matcher = newMatcherFn(distance);
+function isDevNullName(name) {
+  return name.indexOf("dev/null") !== -1;
+}
+function removeInsElements(line2) {
+  return line2.replace(/(<ins[^>]*>((.|\n)*?)<\/ins>)/g, "");
+}
+function removeDelElements(line2) {
+  return line2.replace(/(<del[^>]*>((.|\n)*?)<\/del>)/g, "");
+}
+function toCSSClass(lineType) {
+  switch (lineType) {
+    case LineType.CONTEXT:
+      return CSSLineClass.CONTEXT;
+    case LineType.INSERT:
+      return CSSLineClass.INSERTS;
+    case LineType.DELETE:
+      return CSSLineClass.DELETES;
+  }
+}
+function colorSchemeToCss(colorScheme) {
+  switch (colorScheme) {
+    case ColorSchemeType.DARK:
+      return "d2h-dark-color-scheme";
+    case ColorSchemeType.AUTO:
+      return "d2h-auto-color-scheme";
+    case ColorSchemeType.LIGHT:
+    default:
+      return "d2h-light-color-scheme";
+  }
+}
+function prefixLength(isCombined) {
+  return isCombined ? 2 : 1;
+}
+function escapeForHtml(str) {
+  return str.slice(0).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;");
+}
+function deconstructLine(line2, isCombined, escape2 = true) {
+  const indexToSplit = prefixLength(isCombined);
+  return {
+    prefix: line2.substring(0, indexToSplit),
+    content: escape2 ? escapeForHtml(line2.substring(indexToSplit)) : line2.substring(indexToSplit)
+  };
+}
+function filenameDiff(file) {
+  const oldFilename = unifyPath(file.oldName);
+  const newFilename = unifyPath(file.newName);
+  if (oldFilename !== newFilename && !isDevNullName(oldFilename) && !isDevNullName(newFilename)) {
+    const prefixPaths = [];
+    const suffixPaths = [];
+    const oldFilenameParts = oldFilename.split(separator);
+    const newFilenameParts = newFilename.split(separator);
+    const oldFilenamePartsSize = oldFilenameParts.length;
+    const newFilenamePartsSize = newFilenameParts.length;
+    let i = 0;
+    let j = oldFilenamePartsSize - 1;
+    let k = newFilenamePartsSize - 1;
+    while (i < j && i < k) {
+      if (oldFilenameParts[i] === newFilenameParts[i]) {
+        prefixPaths.push(newFilenameParts[i]);
+        i += 1;
+      } else {
+        break;
+      }
+    }
+    while (j > i && k > i) {
+      if (oldFilenameParts[j] === newFilenameParts[k]) {
+        suffixPaths.unshift(newFilenameParts[k]);
+        j -= 1;
+        k -= 1;
+      } else {
+        break;
+      }
+    }
+    const finalPrefix = prefixPaths.join(separator);
+    const finalSuffix = suffixPaths.join(separator);
+    const oldRemainingPath = oldFilenameParts.slice(i, j + 1).join(separator);
+    const newRemainingPath = newFilenameParts.slice(i, k + 1).join(separator);
+    if (finalPrefix.length && finalSuffix.length) {
+      return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
+    } else if (finalPrefix.length) {
+      return finalPrefix + separator + "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}";
+    } else if (finalSuffix.length) {
+      return "{" + oldRemainingPath + " \u2192 " + newRemainingPath + "}" + separator + finalSuffix;
+    }
+    return oldFilename + " \u2192 " + newFilename;
+  } else if (!isDevNullName(newFilename)) {
+    return newFilename;
+  } else {
+    return oldFilename;
+  }
+}
+function getHtmlId(file) {
+  return `d2h-${hashCode(filenameDiff(file)).toString().slice(-6)}`;
+}
+function getFileIcon(file) {
+  let templateName = "file-changed";
+  if (file.isRename) {
+    templateName = "file-renamed";
+  } else if (file.isCopy) {
+    templateName = "file-renamed";
+  } else if (file.isNew) {
+    templateName = "file-added";
+  } else if (file.isDeleted) {
+    templateName = "file-deleted";
+  } else if (file.newName !== file.oldName) {
+    templateName = "file-renamed";
+  }
+  return templateName;
+}
+function diffHighlight(diffLine1, diffLine2, isCombined, config2 = {}) {
+  const { matching, maxLineLengthHighlight, matchWordsThreshold, diffStyle } = Object.assign(Object.assign({}, defaultRenderConfig), config2);
+  const line1 = deconstructLine(diffLine1, isCombined, false);
+  const line2 = deconstructLine(diffLine2, isCombined, false);
+  if (line1.content.length > maxLineLengthHighlight || line2.content.length > maxLineLengthHighlight) {
+    return {
+      oldLine: {
+        prefix: line1.prefix,
+        content: escapeForHtml(line1.content)
+      },
+      newLine: {
+        prefix: line2.prefix,
+        content: escapeForHtml(line2.content)
+      }
+    };
+  }
+  const diff = diffStyle === "char" ? diffChars(line1.content, line2.content) : diffWordsWithSpace(line1.content, line2.content);
+  const changedWords = [];
+  if (diffStyle === "word" && matching === "words") {
+    const removed = diff.filter((element) => element.removed);
+    const added = diff.filter((element) => element.added);
+    const chunks = matcher(added, removed);
+    chunks.forEach((chunk) => {
+      if (chunk[0].length === 1 && chunk[1].length === 1) {
+        const dist = distance(chunk[0][0], chunk[1][0]);
+        if (dist < matchWordsThreshold) {
+          changedWords.push(chunk[0][0]);
+          changedWords.push(chunk[1][0]);
+        }
+      }
+    });
+  }
+  const highlightedLine = diff.reduce((highlightedLine2, part) => {
+    const elemType = part.added ? "ins" : part.removed ? "del" : null;
+    const addClass = changedWords.indexOf(part) > -1 ? ' class="d2h-change"' : "";
+    const escapedValue = escapeForHtml(part.value);
+    return elemType !== null ? `${highlightedLine2}<${elemType}${addClass}>${escapedValue}</${elemType}>` : `${highlightedLine2}${escapedValue}`;
+  }, "");
+  return {
+    oldLine: {
+      prefix: line1.prefix,
+      content: removeInsElements(highlightedLine)
+    },
+    newLine: {
+      prefix: line2.prefix,
+      content: removeDelElements(highlightedLine)
+    }
+  };
+}
+
+// node_modules/diff2html/lib-esm/file-list-renderer.js
+var baseTemplatesPath = "file-summary";
+var iconsBaseTemplatesPath = "icon";
+var defaultFileListRendererConfig = {
+  colorScheme: defaultRenderConfig.colorScheme
+};
+var FileListRenderer = class {
+  constructor(hoganUtils, config2 = {}) {
+    this.hoganUtils = hoganUtils;
+    this.config = Object.assign(Object.assign({}, defaultFileListRendererConfig), config2);
+  }
+  render(diffFiles) {
+    const files = diffFiles.map((file) => this.hoganUtils.render(baseTemplatesPath, "line", {
+      fileHtmlId: getHtmlId(file),
+      oldName: file.oldName,
+      newName: file.newName,
+      fileName: filenameDiff(file),
+      deletedLines: "-" + file.deletedLines,
+      addedLines: "+" + file.addedLines
+    }, {
+      fileIcon: this.hoganUtils.template(iconsBaseTemplatesPath, getFileIcon(file))
+    })).join("\n");
+    return this.hoganUtils.render(baseTemplatesPath, "wrapper", {
+      colorScheme: colorSchemeToCss(this.config.colorScheme),
+      filesNumber: diffFiles.length,
+      files
+    });
+  }
+};
+
+// node_modules/diff2html/lib-esm/line-by-line-renderer.js
+var defaultLineByLineRendererConfig = Object.assign(Object.assign({}, defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
+var genericTemplatesPath = "generic";
+var baseTemplatesPath2 = "line-by-line";
+var iconsBaseTemplatesPath2 = "icon";
+var tagsBaseTemplatesPath = "tag";
+var LineByLineRenderer = class {
+  constructor(hoganUtils, config2 = {}) {
+    this.hoganUtils = hoganUtils;
+    this.config = Object.assign(Object.assign({}, defaultLineByLineRendererConfig), config2);
+  }
+  render(diffFiles) {
+    const diffsHtml = diffFiles.map((file) => {
+      let diffs;
+      if (file.blocks.length) {
+        diffs = this.generateFileHtml(file);
+      } else {
+        diffs = this.generateEmptyDiff();
+      }
+      return this.makeFileDiffHtml(file, diffs);
+    }).join("\n");
+    return this.hoganUtils.render(genericTemplatesPath, "wrapper", {
+      colorScheme: colorSchemeToCss(this.config.colorScheme),
+      content: diffsHtml
+    });
+  }
+  makeFileDiffHtml(file, diffs) {
+    if (this.config.renderNothingWhenEmpty && Array.isArray(file.blocks) && file.blocks.length === 0)
+      return "";
+    const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath2, "file-diff");
+    const filePathTemplate = this.hoganUtils.template(genericTemplatesPath, "file-path");
+    const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath2, "file");
+    const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath, getFileIcon(file));
+    return fileDiffTemplate.render({
+      file,
+      fileHtmlId: getHtmlId(file),
+      diffs,
+      filePath: filePathTemplate.render({
+        fileDiffName: filenameDiff(file)
+      }, {
+        fileIcon: fileIconTemplate,
+        fileTag: fileTagTemplate
+      })
+    });
+  }
+  generateEmptyDiff() {
+    return this.hoganUtils.render(genericTemplatesPath, "empty-diff", {
+      contentClass: "d2h-code-line",
+      CSSLineClass
+    });
+  }
+  generateFileHtml(file) {
+    const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
+    return file.blocks.map((block2) => {
+      let lines = this.hoganUtils.render(genericTemplatesPath, "block-header", {
+        CSSLineClass,
+        blockHeader: file.isTooBig ? block2.header : escapeForHtml(block2.header),
+        lineClass: "d2h-code-linenumber",
+        contentClass: "d2h-code-line"
+      });
+      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+        if (oldLines.length && newLines.length && !contextLines.length) {
+          this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
+            const { left, right } = this.processChangedLines(file, file.isCombined, oldLines2, newLines2);
+            lines += left;
+            lines += right;
+          });
+        } else if (contextLines.length) {
+          contextLines.forEach((line2) => {
+            const { prefix, content: content2 } = deconstructLine(line2.content, file.isCombined);
+            lines += this.generateSingleLineHtml(file, {
+              type: CSSLineClass.CONTEXT,
+              prefix,
+              content: content2,
+              oldNumber: line2.oldNumber,
+              newNumber: line2.newNumber
+            });
+          });
+        } else if (oldLines.length || newLines.length) {
+          const { left, right } = this.processChangedLines(file, file.isCombined, oldLines, newLines);
+          lines += left;
+          lines += right;
+        } else {
+          console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
+        }
+      });
+      return lines;
+    }).join("\n");
+  }
+  applyLineGroupping(block2) {
+    const blockLinesGroups = [];
+    let oldLines = [];
+    let newLines = [];
+    for (let i = 0; i < block2.lines.length; i++) {
+      const diffLine = block2.lines[i];
+      if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
+        blockLinesGroups.push([[], oldLines, newLines]);
+        oldLines = [];
+        newLines = [];
+      }
+      if (diffLine.type === LineType.CONTEXT) {
+        blockLinesGroups.push([[diffLine], [], []]);
+      } else if (diffLine.type === LineType.INSERT && oldLines.length === 0) {
+        blockLinesGroups.push([[], [], [diffLine]]);
+      } else if (diffLine.type === LineType.INSERT && oldLines.length > 0) {
+        newLines.push(diffLine);
+      } else if (diffLine.type === LineType.DELETE) {
+        oldLines.push(diffLine);
+      }
+    }
+    if (oldLines.length || newLines.length) {
+      blockLinesGroups.push([[], oldLines, newLines]);
+      oldLines = [];
+      newLines = [];
+    }
+    return blockLinesGroups;
+  }
+  applyRematchMatching(oldLines, newLines, matcher2) {
+    const comparisons = oldLines.length * newLines.length;
+    const maxLineSizeInBlock = max(oldLines.concat(newLines).map((elem) => elem.content.length));
+    const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
+    return doMatching ? matcher2(oldLines, newLines) : [[oldLines, newLines]];
+  }
+  processChangedLines(file, isCombined, oldLines, newLines) {
+    const fileHtml = {
+      right: "",
+      left: ""
+    };
+    const maxLinesNumber = Math.max(oldLines.length, newLines.length);
+    for (let i = 0; i < maxLinesNumber; i++) {
+      const oldLine = oldLines[i];
+      const newLine = newLines[i];
+      const diff = oldLine !== void 0 && newLine !== void 0 ? diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
+      const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+        prefix: diff.oldLine.prefix,
+        content: diff.oldLine.content,
+        type: CSSLineClass.DELETE_CHANGES
+      } : Object.assign(Object.assign({}, deconstructLine(oldLine.content, isCombined)), { type: toCSSClass(oldLine.type) })), { oldNumber: oldLine.oldNumber, newNumber: oldLine.newNumber }) : void 0;
+      const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+        prefix: diff.newLine.prefix,
+        content: diff.newLine.content,
+        type: CSSLineClass.INSERT_CHANGES
+      } : Object.assign(Object.assign({}, deconstructLine(newLine.content, isCombined)), { type: toCSSClass(newLine.type) })), { oldNumber: newLine.oldNumber, newNumber: newLine.newNumber }) : void 0;
+      const { left, right } = this.generateLineHtml(file, preparedOldLine, preparedNewLine);
+      fileHtml.left += left;
+      fileHtml.right += right;
+    }
+    return fileHtml;
+  }
+  generateLineHtml(file, oldLine, newLine) {
+    return {
+      left: this.generateSingleLineHtml(file, oldLine),
+      right: this.generateSingleLineHtml(file, newLine)
+    };
+  }
+  generateSingleLineHtml(file, line2) {
+    if (line2 === void 0)
+      return "";
+    const lineNumberHtml = this.hoganUtils.render(baseTemplatesPath2, "numbers", {
+      oldNumber: line2.oldNumber || "",
+      newNumber: line2.newNumber || ""
+    });
+    return this.hoganUtils.render(genericTemplatesPath, "line", {
+      type: line2.type,
+      lineClass: "d2h-code-linenumber",
+      contentClass: "d2h-code-line",
+      prefix: line2.prefix === " " ? "&nbsp;" : line2.prefix,
+      content: line2.content,
+      lineNumber: lineNumberHtml,
+      line: line2,
+      file
+    });
+  }
+};
+
+// node_modules/diff2html/lib-esm/side-by-side-renderer.js
+var defaultSideBySideRendererConfig = Object.assign(Object.assign({}, defaultRenderConfig), { renderNothingWhenEmpty: false, matchingMaxComparisons: 2500, maxLineSizeInBlockForComparison: 200 });
+var genericTemplatesPath2 = "generic";
+var baseTemplatesPath3 = "side-by-side";
+var iconsBaseTemplatesPath3 = "icon";
+var tagsBaseTemplatesPath2 = "tag";
+var SideBySideRenderer = class {
+  constructor(hoganUtils, config2 = {}) {
+    this.hoganUtils = hoganUtils;
+    this.config = Object.assign(Object.assign({}, defaultSideBySideRendererConfig), config2);
+  }
+  render(diffFiles) {
+    const diffsHtml = diffFiles.map((file) => {
+      let diffs;
+      if (file.blocks.length) {
+        diffs = this.generateFileHtml(file);
+      } else {
+        diffs = this.generateEmptyDiff();
+      }
+      return this.makeFileDiffHtml(file, diffs);
+    }).join("\n");
+    return this.hoganUtils.render(genericTemplatesPath2, "wrapper", {
+      colorScheme: colorSchemeToCss(this.config.colorScheme),
+      content: diffsHtml
+    });
+  }
+  makeFileDiffHtml(file, diffs) {
+    if (this.config.renderNothingWhenEmpty && Array.isArray(file.blocks) && file.blocks.length === 0)
+      return "";
+    const fileDiffTemplate = this.hoganUtils.template(baseTemplatesPath3, "file-diff");
+    const filePathTemplate = this.hoganUtils.template(genericTemplatesPath2, "file-path");
+    const fileIconTemplate = this.hoganUtils.template(iconsBaseTemplatesPath3, "file");
+    const fileTagTemplate = this.hoganUtils.template(tagsBaseTemplatesPath2, getFileIcon(file));
+    return fileDiffTemplate.render({
+      file,
+      fileHtmlId: getHtmlId(file),
+      diffs,
+      filePath: filePathTemplate.render({
+        fileDiffName: filenameDiff(file)
+      }, {
+        fileIcon: fileIconTemplate,
+        fileTag: fileTagTemplate
+      })
+    });
+  }
+  generateEmptyDiff() {
+    return {
+      right: "",
+      left: this.hoganUtils.render(genericTemplatesPath2, "empty-diff", {
+        contentClass: "d2h-code-side-line",
+        CSSLineClass
+      })
+    };
+  }
+  generateFileHtml(file) {
+    const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
+    return file.blocks.map((block2) => {
+      const fileHtml = {
+        left: this.makeHeaderHtml(block2.header, file),
+        right: this.makeHeaderHtml("")
+      };
+      this.applyLineGroupping(block2).forEach(([contextLines, oldLines, newLines]) => {
+        if (oldLines.length && newLines.length && !contextLines.length) {
+          this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
+            const { left, right } = this.processChangedLines(file.isCombined, oldLines2, newLines2);
+            fileHtml.left += left;
+            fileHtml.right += right;
+          });
+        } else if (contextLines.length) {
+          contextLines.forEach((line2) => {
+            const { prefix, content: content2 } = deconstructLine(line2.content, file.isCombined);
+            const { left, right } = this.generateLineHtml({
+              type: CSSLineClass.CONTEXT,
+              prefix,
+              content: content2,
+              number: line2.oldNumber
+            }, {
+              type: CSSLineClass.CONTEXT,
+              prefix,
+              content: content2,
+              number: line2.newNumber
+            });
+            fileHtml.left += left;
+            fileHtml.right += right;
+          });
+        } else if (oldLines.length || newLines.length) {
+          const { left, right } = this.processChangedLines(file.isCombined, oldLines, newLines);
+          fileHtml.left += left;
+          fileHtml.right += right;
+        } else {
+          console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
+        }
+      });
+      return fileHtml;
+    }).reduce((accomulated, html2) => {
+      return { left: accomulated.left + html2.left, right: accomulated.right + html2.right };
+    }, { left: "", right: "" });
+  }
+  applyLineGroupping(block2) {
+    const blockLinesGroups = [];
+    let oldLines = [];
+    let newLines = [];
+    for (let i = 0; i < block2.lines.length; i++) {
+      const diffLine = block2.lines[i];
+      if (diffLine.type !== LineType.INSERT && newLines.length || diffLine.type === LineType.CONTEXT && oldLines.length > 0) {
+        blockLinesGroups.push([[], oldLines, newLines]);
+        oldLines = [];
+        newLines = [];
+      }
+      if (diffLine.type === LineType.CONTEXT) {
+        blockLinesGroups.push([[diffLine], [], []]);
+      } else if (diffLine.type === LineType.INSERT && oldLines.length === 0) {
+        blockLinesGroups.push([[], [], [diffLine]]);
+      } else if (diffLine.type === LineType.INSERT && oldLines.length > 0) {
+        newLines.push(diffLine);
+      } else if (diffLine.type === LineType.DELETE) {
+        oldLines.push(diffLine);
+      }
+    }
+    if (oldLines.length || newLines.length) {
+      blockLinesGroups.push([[], oldLines, newLines]);
+      oldLines = [];
+      newLines = [];
+    }
+    return blockLinesGroups;
+  }
+  applyRematchMatching(oldLines, newLines, matcher2) {
+    const comparisons = oldLines.length * newLines.length;
+    const maxLineSizeInBlock = max(oldLines.concat(newLines).map((elem) => elem.content.length));
+    const doMatching = comparisons < this.config.matchingMaxComparisons && maxLineSizeInBlock < this.config.maxLineSizeInBlockForComparison && (this.config.matching === "lines" || this.config.matching === "words");
+    return doMatching ? matcher2(oldLines, newLines) : [[oldLines, newLines]];
+  }
+  makeHeaderHtml(blockHeader, file) {
+    return this.hoganUtils.render(genericTemplatesPath2, "block-header", {
+      CSSLineClass,
+      blockHeader: (file === null || file === void 0 ? void 0 : file.isTooBig) ? blockHeader : escapeForHtml(blockHeader),
+      lineClass: "d2h-code-side-linenumber",
+      contentClass: "d2h-code-side-line"
+    });
+  }
+  processChangedLines(isCombined, oldLines, newLines) {
+    const fileHtml = {
+      right: "",
+      left: ""
+    };
+    const maxLinesNumber = Math.max(oldLines.length, newLines.length);
+    for (let i = 0; i < maxLinesNumber; i++) {
+      const oldLine = oldLines[i];
+      const newLine = newLines[i];
+      const diff = oldLine !== void 0 && newLine !== void 0 ? diffHighlight(oldLine.content, newLine.content, isCombined, this.config) : void 0;
+      const preparedOldLine = oldLine !== void 0 && oldLine.oldNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+        prefix: diff.oldLine.prefix,
+        content: diff.oldLine.content,
+        type: CSSLineClass.DELETE_CHANGES
+      } : Object.assign(Object.assign({}, deconstructLine(oldLine.content, isCombined)), { type: toCSSClass(oldLine.type) })), { number: oldLine.oldNumber }) : void 0;
+      const preparedNewLine = newLine !== void 0 && newLine.newNumber !== void 0 ? Object.assign(Object.assign({}, diff !== void 0 ? {
+        prefix: diff.newLine.prefix,
+        content: diff.newLine.content,
+        type: CSSLineClass.INSERT_CHANGES
+      } : Object.assign(Object.assign({}, deconstructLine(newLine.content, isCombined)), { type: toCSSClass(newLine.type) })), { number: newLine.newNumber }) : void 0;
+      const { left, right } = this.generateLineHtml(preparedOldLine, preparedNewLine);
+      fileHtml.left += left;
+      fileHtml.right += right;
+    }
+    return fileHtml;
+  }
+  generateLineHtml(oldLine, newLine) {
+    return {
+      left: this.generateSingleHtml(oldLine),
+      right: this.generateSingleHtml(newLine)
+    };
+  }
+  generateSingleHtml(line2) {
+    const lineClass = "d2h-code-side-linenumber";
+    const contentClass = "d2h-code-side-line";
+    return this.hoganUtils.render(genericTemplatesPath2, "line", {
+      type: (line2 === null || line2 === void 0 ? void 0 : line2.type) || `${CSSLineClass.CONTEXT} d2h-emptyplaceholder`,
+      lineClass: line2 !== void 0 ? lineClass : `${lineClass} d2h-code-side-emptyplaceholder`,
+      contentClass: line2 !== void 0 ? contentClass : `${contentClass} d2h-code-side-emptyplaceholder`,
+      prefix: (line2 === null || line2 === void 0 ? void 0 : line2.prefix) === " " ? "&nbsp;" : line2 === null || line2 === void 0 ? void 0 : line2.prefix,
+      content: line2 === null || line2 === void 0 ? void 0 : line2.content,
+      lineNumber: line2 === null || line2 === void 0 ? void 0 : line2.number
+    });
+  }
+};
+
+// node_modules/diff2html/lib-esm/hoganjs-utils.js
+var Hogan3 = __toESM(require_hogan());
+
+// node_modules/diff2html/lib-esm/diff2html-templates.js
+var Hogan2 = __toESM(require_hogan());
+var defaultTemplates = {};
+defaultTemplates["file-summary-line"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<li class="d2h-file-list-line">');
+  t.b("\n" + i);
+  t.b('    <span class="d2h-file-name-wrapper">');
+  t.b("\n" + i);
+  t.b(t.rp("<fileIcon0", c, p, "      "));
+  t.b('      <a href="#');
+  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+  t.b('" class="d2h-file-name">');
+  t.b(t.v(t.f("fileName", c, p, 0)));
+  t.b("</a>");
+  t.b("\n" + i);
+  t.b('      <span class="d2h-file-stats">');
+  t.b("\n" + i);
+  t.b('          <span class="d2h-lines-added">');
+  t.b(t.v(t.f("addedLines", c, p, 0)));
+  t.b("</span>");
+  t.b("\n" + i);
+  t.b('          <span class="d2h-lines-deleted">');
+  t.b(t.v(t.f("deletedLines", c, p, 0)));
+  t.b("</span>");
+  t.b("\n" + i);
+  t.b("      </span>");
+  t.b("\n" + i);
+  t.b("    </span>");
+  t.b("\n" + i);
+  t.b("</li>");
+  return t.fl();
+}, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} } }, subs: {} });
+defaultTemplates["file-summary-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<div class="d2h-file-list-wrapper ');
+  t.b(t.v(t.f("colorScheme", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('    <div class="d2h-file-list-header">');
+  t.b("\n" + i);
+  t.b('        <span class="d2h-file-list-title">Files changed (');
+  t.b(t.v(t.f("filesNumber", c, p, 0)));
+  t.b(")</span>");
+  t.b("\n" + i);
+  t.b('        <a class="d2h-file-switch d2h-hide">hide</a>');
+  t.b("\n" + i);
+  t.b('        <a class="d2h-file-switch d2h-show">show</a>');
+  t.b("\n" + i);
+  t.b("    </div>");
+  t.b("\n" + i);
+  t.b('    <ol class="d2h-file-list">');
+  t.b("\n" + i);
+  t.b("    ");
+  t.b(t.t(t.f("files", c, p, 0)));
+  t.b("\n" + i);
+  t.b("    </ol>");
+  t.b("\n" + i);
+  t.b("</div>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["generic-block-header"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b("<tr>");
+  t.b("\n" + i);
+  t.b('    <td class="');
+  t.b(t.v(t.f("lineClass", c, p, 0)));
+  t.b(" ");
+  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+  t.b('"></td>');
+  t.b("\n" + i);
+  t.b('    <td class="');
+  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('        <div class="');
+  t.b(t.v(t.f("contentClass", c, p, 0)));
+  t.b('">');
+  if (t.s(t.f("blockHeader", c, p, 1), c, p, 0, 156, 173, "{{ }}")) {
+    t.rs(c, p, function(c2, p2, t2) {
+      t2.b(t2.t(t2.f("blockHeader", c2, p2, 0)));
+    });
+    c.pop();
+  }
+  if (!t.s(t.f("blockHeader", c, p, 1), c, p, 1, 0, 0, "")) {
+    t.b("&nbsp;");
+  }
+  ;
+  t.b("</div>");
+  t.b("\n" + i);
+  t.b("    </td>");
+  t.b("\n" + i);
+  t.b("</tr>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["generic-empty-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b("<tr>");
+  t.b("\n" + i);
+  t.b('    <td class="');
+  t.b(t.v(t.d("CSSLineClass.INFO", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('        <div class="');
+  t.b(t.v(t.f("contentClass", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b("            File without changes");
+  t.b("\n" + i);
+  t.b("        </div>");
+  t.b("\n" + i);
+  t.b("    </td>");
+  t.b("\n" + i);
+  t.b("</tr>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["generic-file-path"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<span class="d2h-file-name-wrapper">');
+  t.b("\n" + i);
+  t.b(t.rp("<fileIcon0", c, p, "    "));
+  t.b('    <span class="d2h-file-name">');
+  t.b(t.v(t.f("fileDiffName", c, p, 0)));
+  t.b("</span>");
+  t.b("\n" + i);
+  t.b(t.rp("<fileTag1", c, p, "    "));
+  t.b("</span>");
+  t.b("\n" + i);
+  t.b('<label class="d2h-file-collapse">');
+  t.b("\n" + i);
+  t.b('    <input class="d2h-file-collapse-input" type="checkbox" name="viewed" value="viewed">');
+  t.b("\n" + i);
+  t.b("    Viewed");
+  t.b("\n" + i);
+  t.b("</label>");
+  return t.fl();
+}, partials: { "<fileIcon0": { name: "fileIcon", partials: {}, subs: {} }, "<fileTag1": { name: "fileTag", partials: {}, subs: {} } }, subs: {} });
+defaultTemplates["generic-line"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b("<tr>");
+  t.b("\n" + i);
+  t.b('    <td class="');
+  t.b(t.v(t.f("lineClass", c, p, 0)));
+  t.b(" ");
+  t.b(t.v(t.f("type", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b("      ");
+  t.b(t.t(t.f("lineNumber", c, p, 0)));
+  t.b("\n" + i);
+  t.b("    </td>");
+  t.b("\n" + i);
+  t.b('    <td class="');
+  t.b(t.v(t.f("type", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('        <div class="');
+  t.b(t.v(t.f("contentClass", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  if (t.s(t.f("prefix", c, p, 1), c, p, 0, 162, 238, "{{ }}")) {
+    t.rs(c, p, function(c2, p2, t2) {
+      t2.b('            <span class="d2h-code-line-prefix">');
+      t2.b(t2.t(t2.f("prefix", c2, p2, 0)));
+      t2.b("</span>");
+      t2.b("\n" + i);
+    });
+    c.pop();
+  }
+  if (!t.s(t.f("prefix", c, p, 1), c, p, 1, 0, 0, "")) {
+    t.b('            <span class="d2h-code-line-prefix">&nbsp;</span>');
+    t.b("\n" + i);
+  }
+  ;
+  if (t.s(t.f("content", c, p, 1), c, p, 0, 371, 445, "{{ }}")) {
+    t.rs(c, p, function(c2, p2, t2) {
+      t2.b('            <span class="d2h-code-line-ctn">');
+      t2.b(t2.t(t2.f("content", c2, p2, 0)));
+      t2.b("</span>");
+      t2.b("\n" + i);
+    });
+    c.pop();
+  }
+  if (!t.s(t.f("content", c, p, 1), c, p, 1, 0, 0, "")) {
+    t.b('            <span class="d2h-code-line-ctn"><br></span>');
+    t.b("\n" + i);
+  }
+  ;
+  t.b("        </div>");
+  t.b("\n" + i);
+  t.b("    </td>");
+  t.b("\n" + i);
+  t.b("</tr>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["generic-wrapper"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<div class="d2h-wrapper ');
+  t.b(t.v(t.f("colorScheme", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b("    ");
+  t.b(t.t(t.f("content", c, p, 0)));
+  t.b("\n" + i);
+  t.b("</div>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["icon-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<svg aria-hidden="true" class="d2h-icon d2h-added" height="16" title="added" version="1.1" viewBox="0 0 14 16"');
+  t.b("\n" + i);
+  t.b('     width="14">');
+  t.b("\n" + i);
+  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM6 9H3V7h3V4h2v3h3v2H8v3H6V9z"></path>');
+  t.b("\n" + i);
+  t.b("</svg>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["icon-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<svg aria-hidden="true" class="d2h-icon d2h-changed" height="16" title="modified" version="1.1"');
+  t.b("\n" + i);
+  t.b('     viewBox="0 0 14 16" width="14">');
+  t.b("\n" + i);
+  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM4 8c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3-3-1.34-3-3z"></path>');
+  t.b("\n" + i);
+  t.b("</svg>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["icon-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<svg aria-hidden="true" class="d2h-icon d2h-deleted" height="16" title="removed" version="1.1"');
+  t.b("\n" + i);
+  t.b('     viewBox="0 0 14 16" width="14">');
+  t.b("\n" + i);
+  t.b('    <path d="M13 1H1C0.45 1 0 1.45 0 2v12c0 0.55 0.45 1 1 1h12c0.55 0 1-0.45 1-1V2c0-0.55-0.45-1-1-1z m0 13H1V2h12v12zM11 9H3V7h8v2z"></path>');
+  t.b("\n" + i);
+  t.b("</svg>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["icon-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<svg aria-hidden="true" class="d2h-icon d2h-moved" height="16" title="renamed" version="1.1"');
+  t.b("\n" + i);
+  t.b('     viewBox="0 0 14 16" width="14">');
+  t.b("\n" + i);
+  t.b('    <path d="M6 9H3V7h3V4l5 4-5 4V9z m8-7v12c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h12c0.55 0 1 0.45 1 1z m-1 0H1v12h12V2z"></path>');
+  t.b("\n" + i);
+  t.b("</svg>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["icon-file"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<svg aria-hidden="true" class="d2h-icon" height="16" version="1.1" viewBox="0 0 12 16" width="12">');
+  t.b("\n" + i);
+  t.b('    <path d="M6 5H2v-1h4v1zM2 8h7v-1H2v1z m0 2h7v-1H2v1z m0 2h7v-1H2v1z m10-7.5v9.5c0 0.55-0.45 1-1 1H1c-0.55 0-1-0.45-1-1V2c0-0.55 0.45-1 1-1h7.5l3.5 3.5z m-1 0.5L8 2H1v12h10V5z"></path>');
+  t.b("\n" + i);
+  t.b("</svg>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["line-by-line-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<div id="');
+  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+  t.b('" class="d2h-file-wrapper" data-lang="');
+  t.b(t.v(t.d("file.language", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('    <div class="d2h-file-header">');
+  t.b("\n" + i);
+  t.b("    ");
+  t.b(t.t(t.f("filePath", c, p, 0)));
+  t.b("\n" + i);
+  t.b("    </div>");
+  t.b("\n" + i);
+  t.b('    <div class="d2h-file-diff">');
+  t.b("\n" + i);
+  t.b('        <div class="d2h-code-wrapper">');
+  t.b("\n" + i);
+  t.b('            <table class="d2h-diff-table">');
+  t.b("\n" + i);
+  t.b('                <tbody class="d2h-diff-tbody">');
+  t.b("\n" + i);
+  t.b("                ");
+  t.b(t.t(t.f("diffs", c, p, 0)));
+  t.b("\n" + i);
+  t.b("                </tbody>");
+  t.b("\n" + i);
+  t.b("            </table>");
+  t.b("\n" + i);
+  t.b("        </div>");
+  t.b("\n" + i);
+  t.b("    </div>");
+  t.b("\n" + i);
+  t.b("</div>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["line-by-line-numbers"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<div class="line-num1">');
+  t.b(t.v(t.f("oldNumber", c, p, 0)));
+  t.b("</div>");
+  t.b("\n" + i);
+  t.b('<div class="line-num2">');
+  t.b(t.v(t.f("newNumber", c, p, 0)));
+  t.b("</div>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["side-by-side-file-diff"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<div id="');
+  t.b(t.v(t.f("fileHtmlId", c, p, 0)));
+  t.b('" class="d2h-file-wrapper" data-lang="');
+  t.b(t.v(t.d("file.language", c, p, 0)));
+  t.b('">');
+  t.b("\n" + i);
+  t.b('    <div class="d2h-file-header">');
+  t.b("\n" + i);
+  t.b("      ");
+  t.b(t.t(t.f("filePath", c, p, 0)));
+  t.b("\n" + i);
+  t.b("    </div>");
+  t.b("\n" + i);
+  t.b('    <div class="d2h-files-diff">');
+  t.b("\n" + i);
+  t.b('        <div class="d2h-file-side-diff">');
+  t.b("\n" + i);
+  t.b('            <div class="d2h-code-wrapper">');
+  t.b("\n" + i);
+  t.b('                <table class="d2h-diff-table">');
+  t.b("\n" + i);
+  t.b('                    <tbody class="d2h-diff-tbody">');
+  t.b("\n" + i);
+  t.b("                    ");
+  t.b(t.t(t.d("diffs.left", c, p, 0)));
+  t.b("\n" + i);
+  t.b("                    </tbody>");
+  t.b("\n" + i);
+  t.b("                </table>");
+  t.b("\n" + i);
+  t.b("            </div>");
+  t.b("\n" + i);
+  t.b("        </div>");
+  t.b("\n" + i);
+  t.b('        <div class="d2h-file-side-diff">');
+  t.b("\n" + i);
+  t.b('            <div class="d2h-code-wrapper">');
+  t.b("\n" + i);
+  t.b('                <table class="d2h-diff-table">');
+  t.b("\n" + i);
+  t.b('                    <tbody class="d2h-diff-tbody">');
+  t.b("\n" + i);
+  t.b("                    ");
+  t.b(t.t(t.d("diffs.right", c, p, 0)));
+  t.b("\n" + i);
+  t.b("                    </tbody>");
+  t.b("\n" + i);
+  t.b("                </table>");
+  t.b("\n" + i);
+  t.b("            </div>");
+  t.b("\n" + i);
+  t.b("        </div>");
+  t.b("\n" + i);
+  t.b("    </div>");
+  t.b("\n" + i);
+  t.b("</div>");
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["tag-file-added"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<span class="d2h-tag d2h-added d2h-added-tag">ADDED</span>');
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["tag-file-changed"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<span class="d2h-tag d2h-changed d2h-changed-tag">CHANGED</span>');
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["tag-file-deleted"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<span class="d2h-tag d2h-deleted d2h-deleted-tag">DELETED</span>');
+  return t.fl();
+}, partials: {}, subs: {} });
+defaultTemplates["tag-file-renamed"] = new Hogan2.Template({ code: function(c, p, i) {
+  var t = this;
+  t.b(i = i || "");
+  t.b('<span class="d2h-tag d2h-moved d2h-moved-tag">RENAMED</span>');
+  return t.fl();
+}, partials: {}, subs: {} });
+
+// node_modules/diff2html/lib-esm/hoganjs-utils.js
+var HoganJsUtils = class {
+  constructor({ compiledTemplates = {}, rawTemplates = {} }) {
+    const compiledRawTemplates = Object.entries(rawTemplates).reduce((previousTemplates, [name, templateString]) => {
+      const compiledTemplate = Hogan3.compile(templateString, { asString: false });
+      return Object.assign(Object.assign({}, previousTemplates), { [name]: compiledTemplate });
+    }, {});
+    this.preCompiledTemplates = Object.assign(Object.assign(Object.assign({}, defaultTemplates), compiledTemplates), compiledRawTemplates);
+  }
+  static compile(templateString) {
+    return Hogan3.compile(templateString, { asString: false });
+  }
+  render(namespace, view, params, partials, indent) {
+    const templateKey = this.templateKey(namespace, view);
+    try {
+      const template = this.preCompiledTemplates[templateKey];
+      return template.render(params, partials, indent);
+    } catch (_e) {
+      throw new Error(`Could not find template to render '${templateKey}'`);
+    }
+  }
+  template(namespace, view) {
+    return this.preCompiledTemplates[this.templateKey(namespace, view)];
+  }
+  templateKey(namespace, view) {
+    return `${namespace}-${view}`;
+  }
+};
+
+// node_modules/diff2html/lib-esm/diff2html.js
+var defaultDiff2HtmlConfig = Object.assign(Object.assign(Object.assign({}, defaultLineByLineRendererConfig), defaultSideBySideRendererConfig), { outputFormat: OutputFormatType.LINE_BY_LINE, drawFileList: true });
+function html(diffInput, configuration = {}) {
+  const config2 = Object.assign(Object.assign({}, defaultDiff2HtmlConfig), configuration);
+  const diffJson = typeof diffInput === "string" ? parse(diffInput, config2) : diffInput;
+  const hoganUtils = new HoganJsUtils(config2);
+  const { colorScheme } = config2;
+  const fileListRendererConfig = { colorScheme };
+  const fileList = config2.drawFileList ? new FileListRenderer(hoganUtils, fileListRendererConfig).render(diffJson) : "";
+  const diffOutput = config2.outputFormat === "side-by-side" ? new SideBySideRenderer(hoganUtils, config2).render(diffJson) : new LineByLineRenderer(hoganUtils, config2).render(diffJson);
+  return fileList + diffOutput;
+}
+
+// src/diff.ts
+var encoder = new TextEncoder();
+var ESCAPED2 = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
+function pathOf(name) {
+  const padless = name.replace(/\t$/, "");
+  if (!padless.includes("\\")) return padless;
+  const bytes = [];
+  for (let at = 0; at < padless.length; at++) {
+    const char = padless.charAt(at);
+    if (char === '"') continue;
+    if (char !== "\\") bytes.push(...encoder.encode(char));
+    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
+      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
+      at += 3;
+    } else bytes.push(ESCAPED2[padless.charAt(++at)] ?? 92);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+var parseDiff = (diff) => parse(diff).map((file) => ({ ...file, oldName: pathOf(file.oldName), newName: pathOf(file.newName) }));
+
 // src/page/motion.ts
 var root = getComputedStyle(document.documentElement);
 var token2 = (name) => root.getPropertyValue(`--${name}`).trim();
@@ -9181,63 +9349,6 @@ function shrink(element, done) {
   });
 }
 
-// src/page/state.ts
-var PAGE = { name: "walkthrough", reopen: "Run /walkthrough to reopen." };
-var state = {
-  view: void 0,
-  /** Redraws what changed; `own` when the change is what the person just did, which never waits behind the pill. */
-  render: (() => {
-  }),
-  /** Counts what the page sent, so a poll that left before an answer does not put back what it replaced. */
-  sends: 0,
-  /** Set when the page shows what the server never took, so the next poll fetches the view whole. */
-  stale: false
-};
-var phone = matchMedia("(max-width: 760px)");
-async function send2(route, body) {
-  state.sends++;
-  const answer = await post(PAGE, route, body);
-  if (!answer) {
-    state.stale = true;
-    return false;
-  }
-  state.view = await answer.json();
-  state.render(true);
-  return true;
-}
-var allFiles = () => state.view.steps.flatMap((step) => step.files);
-var stepOfFile = (file) => state.view.steps.find((step) => step.files.includes(file));
-var pendingComments = () => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.pending).map((comment) => ({ thread, comment })));
-var sentComments = (review) => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.review === review).map((comment) => ({ thread, comment })));
-var threadsIn = (step, file) => state.view.threads.filter((one) => one.step === step && one.file === file);
-var commentCount = (step, file) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
-var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && one.step !== null);
-var notViewed = () => allFiles().filter((file) => !state.view.viewed.includes(file));
-var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.by ?? "you";
-var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
-var linesLabel = ([first2, last]) => first2 === last ? String(first2) : `${String(first2)}\u2013${String(last)}`;
-var baseName = (file) => file.slice(file.lastIndexOf("/") + 1);
-function markdown(text2, className) {
-  const box = document.createElement("div");
-  box.className = `markdown ${className}`.trim();
-  box.innerHTML = renderMarkdown(text2);
-  return box;
-}
-var UNITS = [
-  ["year", 31536e3],
-  ["month", 2592e3],
-  ["day", 86400],
-  ["hour", 3600],
-  ["minute", 60]
-];
-var relative = new Intl.RelativeTimeFormat("en", { numeric: "always" });
-function ago(iso) {
-  const seconds = (Date.parse(iso) - Date.now()) / 1e3;
-  for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
-  return "now";
-}
-var goesOut = (comment) => comment.by === "ai" && (comment.pending === true || comment.review !== void 0);
-
 // src/page/threads.ts
 var initials = (handle) => handle.split(/[-_.\s]+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("") || "?";
 var authorName = (comment) => comment.by === "you" ? "You" : comment.by === "ai" ? "AI" : comment.author ?? "";
@@ -9255,7 +9366,7 @@ function composer({ placeholder, text: text2 = "", primary, onPrimary, onAsk, on
   area.setAttribute("aria-label", placeholder);
   const add = el("button", { type: "button", className: "btn primary small", disabled: !text2.trim() }, primary);
   const busy = (doing) => {
-    for (const button of box.querySelectorAll("button")) button.disabled = doing;
+    for (const button of box2.querySelectorAll("button")) button.disabled = doing;
     if (!doing) add.disabled = !area.value.trim();
   };
   const run = async (action) => {
@@ -9279,7 +9390,7 @@ function composer({ placeholder, text: text2 = "", primary, onPrimary, onAsk, on
     }
   };
   add.onclick = () => void run(onPrimary);
-  const box = el(
+  const box2 = el(
     "div",
     { className: "composer" },
     area,
@@ -9292,7 +9403,7 @@ function composer({ placeholder, text: text2 = "", primary, onPrimary, onAsk, on
       add
     )
   );
-  return box;
+  return box2;
 }
 var askButton = (onclick) => el("button", { type: "button", className: "btn small ask", onclick }, icon("ask"), "Ask AI");
 function iconButton(name, label, onclick) {
@@ -9415,7 +9526,7 @@ var ThreadBox = class {
     this.foot.hidden = false;
     if (this.replying) {
       if (this.foot.querySelector(".composer")) return;
-      const box = composer({
+      const box2 = composer({
         placeholder: "Reply\u2026",
         primary: "Add comment",
         onPrimary: async (text2) => this.closeAfter(await send2("comment", { thread: thread.id, text: text2 })),
@@ -9426,9 +9537,9 @@ var ThreadBox = class {
           this.foot.querySelector(".reply-field")?.focus();
         }
       });
-      this.foot.replaceChildren(box);
+      this.foot.replaceChildren(box2);
       this.foot.classList.add("composing");
-      box.querySelector("textarea")?.focus();
+      box2.querySelector("textarea")?.focus();
       return;
     }
     if (this.foot.querySelector(".reply-field")) return;
@@ -9685,13 +9796,13 @@ var FilePane = class {
         else for (const one of fresh) one.classList.add("arrive");
         continue;
       }
-      const box = new ThreadBox(thread);
-      const row = threadRow(box.box);
+      const box2 = new ThreadBox(thread);
+      const row = threadRow(box2.box);
       row.dataset["thread"] = thread.id;
       this.placeAfter(anchor, row);
-      this.threads.set(thread.id, { row, box });
+      this.threads.set(thread.id, { row, box: box2 });
       if (held) arrived2.push(hold(row));
-      else if (this.drawn) for (const one of box.box.querySelectorAll(".comment")) one.classList.add("arrive");
+      else if (this.drawn) for (const one of box2.box.querySelectorAll(".comment")) one.classList.add("arrive");
     }
     this.drawn = true;
     for (const thread of here) this.markThread(thread);
@@ -9724,7 +9835,7 @@ var FilePane = class {
     const anchor = this.rows.get(mine.end);
     if (!anchor) return;
     const lines = [mine.start, mine.end];
-    const box = composer({
+    const box2 = composer({
       placeholder: "Leave a comment",
       primary: "Add comment",
       onPrimary: async (text2) => {
@@ -9741,7 +9852,7 @@ var FilePane = class {
         pick(null);
       }
     });
-    this.composerRow = threadRow(el("div", { className: "thread" }, box));
+    this.composerRow = threadRow(el("div", { className: "thread" }, box2));
     this.composerRow.classList.add("composer-line");
     this.composerRow.dataset["lines"] = key2 ?? "";
     this.placeAfter(anchor, this.composerRow);
@@ -9761,16 +9872,16 @@ var FilePane = class {
     return attrs(el("div", { className: "segmented" }, ...choices), { role: "group", "aria-label": `Show ${this.name} as` });
   }
   async showPreview(previewing) {
-    const box = this.preview;
-    if (!box) return;
+    const box2 = this.preview;
+    if (!box2) return;
     this.previewing = previewing;
     this.header.querySelectorAll(".segmented button").forEach((button, at2) => {
       button.setAttribute("aria-pressed", String(previewing === (at2 === 1)));
     });
     this.diffBox.hidden = previewing;
     this.stripe.classList.toggle("hidden", previewing);
-    box.hidden = !previewing;
-    if (!previewing || box.hasChildNodes()) return;
+    box2.hidden = !previewing;
+    if (!previewing || box2.hasChildNodes()) return;
     const parsed = parseDiff(this.step.diff).find((one) => (one.isDeleted ? one.oldName : one.newName) === this.name);
     if (!parsed) return;
     const at = (path) => `file?path=${encodeURIComponent(path)}`;
@@ -9783,7 +9894,7 @@ var FilePane = class {
         };
         return el("figure", {}, el("div", { className: "image-box" }, image3), caption);
       };
-      box.replaceChildren(
+      box2.replaceChildren(
         el(
           "div",
           { className: "image-compare" },
@@ -9796,11 +9907,11 @@ var FilePane = class {
     const answer = await fetch(at(this.name)).catch(() => null);
     const added = new Set(parsed.blocks.flatMap((block2) => block2.lines).flatMap((line2) => line2.type === LineType.INSERT && line2.newNumber ? [line2.newNumber] : []));
     if (!answer?.ok) {
-      box.replaceChildren(el("p", { className: "muted" }, "Preview failed."));
+      box2.replaceChildren(el("p", { className: "muted" }, "Preview failed."));
       return;
     }
-    box.innerHTML = renderMarkdown(await answer.text(), this.name, added);
-    box.classList.add("markdown");
+    box2.innerHTML = renderMarkdown(await answer.text(), this.name, added);
+    box2.classList.add("markdown");
   }
 };
 var threadRow = (content2) => el("tr", { className: "thread-row" }, el("td", { colSpan: 2 }, el("div", { className: "thread-cell" }, content2)));
@@ -9817,33 +9928,7 @@ function drawFiles(step) {
   return step.files.flatMap((file) => panes2.filter((pane) => pane.file === file));
 }
 
-// src/page/desk.ts
-var SCENE = `<svg class="desk6" viewBox="0 -20 344 192" width="344" height="192" role="img" aria-label="The AI at its desk, reading the change"><defs><clipPath id="scr6"><rect x="32" y="30" width="152" height="92" rx="3"/></clipPath></defs><path class="stand" d="M100 130h16l4 16h-24z"/><line class="dk" x1="84" y1="148" x2="132" y2="148"/><rect class="mon" x="24" y="22" width="168" height="108" rx="9"/><g clip-path="url(#scr6)"><g class="cd"><rect class="bh" x="33" y="133.5" width="150" height="10.5" rx="2"/><rect class="sn" x="36" y="38" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="37.75" width="70" height="3.5" rx="1.75"/><rect class="sn" x="36" y="47" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="46.75" width="92" height="3.5" rx="1.75"/><rect class="sn" x="36" y="56" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="55.75" width="64" height="3.5" rx="1.75"/><rect class="sn" x="36" y="65" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="74" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="73.75" width="84" height="3.5" rx="1.75"/><rect class="sn" x="36" y="83" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="82.75" width="58" height="3.5" rx="1.75"/><rect class="sn" x="36" y="92" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="91.75" width="76" height="3.5" rx="1.75"/><rect class="sn" x="36" y="101" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="100.75" width="40" height="3.5" rx="1.75"/><rect class="sn" x="36" y="110" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="109.75" width="22" height="3.5" rx="1.75"/><rect class="sn" x="36" y="119" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="128" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="127.75" width="88" height="3.5" rx="1.75"/><rect class="sn" x="36" y="137" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="136.75" width="96" height="3.5" rx="1.75"/><rect class="sn" x="36" y="146" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="145.75" width="60" height="3.5" rx="1.75"/><rect class="sn" x="36" y="155" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="154.75" width="18" height="3.5" rx="1.75"/><rect class="sn" x="36" y="164" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="173" width="8" height="3" rx="1.5"/><rect class="sl sa" x="52" y="172.75" width="74" height="3.5" rx="1.75"/><rect class="sn" x="36" y="182" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="181.75" width="90" height="3.5" rx="1.75"/><rect class="sn" x="36" y="191" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="190.75" width="66" height="3.5" rx="1.75"/><rect class="sn" x="36" y="200" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="199.75" width="82" height="3.5" rx="1.75"/><rect class="sn" x="36" y="209" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="208.75" width="20" height="3.5" rx="1.75"/><rect class="sn" x="36" y="218" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="227" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="226.75" width="62" height="3.5" rx="1.75"/><rect class="sn" x="36" y="236" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="235.75" width="86" height="3.5" rx="1.75"/><rect class="sn" x="36" y="245" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="244.75" width="54" height="3.5" rx="1.75"/><rect class="sn" x="36" y="254" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="253.75" width="16" height="3.5" rx="1.75"/><rect class="sn" x="36" y="263" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="272" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="271.75" width="72" height="3.5" rx="1.75"/><rect class="sn" x="36" y="281" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="280.75" width="48" height="3.5" rx="1.75"/><g class="cb"><rect class="cbr" x="160" y="132" width="20" height="13" rx="3.5"/><text class="cbt" x="170" y="141.4" text-anchor="middle">AI</text></g><g class="ck"><circle class="ckc" cx="172" cy="184" r="7"/><path class="ckp" d="M168.6 184.2l2.3 2.3 4-4.3"/></g></g></g><rect class="rb" x="214" y="98" width="64" height="70" rx="18"/><g class="rh"><line class="ant" x1="246" y1="40" x2="246" y2="29"/><circle class="ink" cx="246" cy="27" r="3.6"/><rect class="ink" x="210" y="40" width="72" height="60" rx="17"/><g class="re"><rect class="eye" x="220" y="58" width="9" height="13" rx="4.5"/><rect class="eye" x="241" y="58" width="9" height="13" rx="4.5"/></g><g class="rhap"><path class="hap" d="M220 68q4.5-8 9 0"/><path class="hap" d="M241 68q4.5-8 9 0"/></g><ellipse class="rmo" cx="236" cy="86" rx="5" ry="4"/><path class="rsm" d="M229 84q6 6 13 0"/></g><rect class="kb" x="146" y="141" width="62" height="7" rx="2.5"/><line class="dk" x1="8" y1="148" x2="312" y2="148"/><rect class="under" x="0" y="149" width="320" height="23"/><rect class="ink m1" x="158" y="131" width="17" height="13" rx="6.5"/><rect class="ink m2" x="182" y="131" width="17" height="13" rx="6.5"/><g class="bub b1"><path class="bb" d="M258 -18h74a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-66l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="295.0" y="-2" text-anchor="middle">Wait, what?!</text></g><g class="bub b2"><path class="bb" d="M258 -18h40a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-32l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="278.0" y="-2" text-anchor="middle">Hmm\u2026</text></g><g class="bub b3"><path class="bb" d="M258 -18h36a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-28l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="276.0" y="-2" text-anchor="middle">Nice.</text></g></svg>`;
-function deskScene() {
-  const box = document.createElement("div");
-  box.className = "desk-scene";
-  box.innerHTML = SCENE;
-  let offscreen = false;
-  const pause = () => box.classList.toggle("rdpause", document.hidden || offscreen);
-  const seen = new IntersectionObserver(([entry]) => {
-    offscreen = !entry?.isIntersecting;
-    pause();
-  });
-  seen.observe(box);
-  document.addEventListener("visibilitychange", pause);
-  pause();
-  return {
-    box,
-    stop: () => {
-      seen.disconnect();
-      document.removeEventListener("visibilitychange", pause);
-      box.remove();
-    }
-  };
-}
-
 // src/page/opening.ts
-var COPIED_MS = 2e3;
 var Opening = class {
   box = el("div", { className: "opening" });
   scene = null;
@@ -9868,7 +9953,7 @@ var Opening = class {
           "div",
           {},
           el("h1", { className: "opening-title" }, "Preparing the walkthrough"),
-          el("p", { className: "opening-line" }, `The AI is finishing its review of the ${files}. The walkthrough opens here when it\u2019s ready, usually within a minute.`)
+          el("p", { className: "opening-line" }, "The AI is finishing its review, usually within a minute.")
         ),
         { role: "status" }
       ),
@@ -9881,18 +9966,6 @@ var Opening = class {
     this.scene = null;
   }
   failed() {
-    const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : "/walkthrough";
-    const copy = attrs(el("button", { type: "button", className: "btn small" }, "Copy command"), { "aria-live": "polite" });
-    let shown = 0;
-    copy.onclick = () => {
-      void navigator.clipboard.writeText(command).then(() => {
-        copy.textContent = "Copied";
-        clearTimeout(shown);
-        shown = window.setTimeout(() => {
-          copy.textContent = "Copy command";
-        }, COPIED_MS);
-      });
-    };
     return attrs(
       el(
         "div",
@@ -9902,8 +9975,9 @@ var Opening = class {
           "div",
           {},
           el("h1", { className: "opening-title" }, "The AI couldn\u2019t prepare the walkthrough"),
-          el("p", { className: "opening-line" }, "The Claude Code session stopped before the review was done. Nothing was posted. Run ", el("code", {}, command), " again to pick it up."),
-          el("p", { className: "opening-actions" }, copy)
+          el("p", { className: "opening-line" }, "It stopped before the review was done. Nothing was posted."),
+          el("p", { className: "end-line opening-lead" }, "Start it over in your agent:"),
+          commandBox()
         )
       ),
       { role: "status" }
@@ -10036,11 +10110,7 @@ var StepPane = class {
 };
 
 // src/page/summary.ts
-var TYPES2 = [
-  ["comment", "Comment"],
-  ["approve", "Approve"],
-  ["request-changes", "Request changes"]
-];
+var TYPES2 = Object.entries(TYPE_NAMES);
 var CRITERIA = {
   met: ["met", "Met"],
   partly: ["partly", "Partly met"],
@@ -10048,10 +10118,12 @@ var CRITERIA = {
   "not-checked": ["unchecked", "Not checked"]
 };
 var SummaryPane = class {
-  constructor(reveal2) {
+  constructor(reveal2, end) {
     this.reveal = reveal2;
+    this.end = end;
   }
   reveal;
+  end;
   box = el("section", { className: "summary" });
   draft = "";
   type = "comment";
@@ -10082,11 +10154,11 @@ var SummaryPane = class {
       { className: "summary-section" },
       el("h2", { className: "section-head" }, submitted ? "Sent" : "Going out", counter),
       ...list2.children.length ? [list2] : [],
-      ...rows.length || submitted ? [] : [el("p", { className: "empty" }, "No comments. Add one on a line, or answer the AI\u2019s.")],
+      ...rows.length || submitted ? [] : [el("p", { className: "empty" }, "No comments. Add one on a line.")],
       ...submitted ? [] : this.counts()
     );
     const left = el("div", { className: "summary-lists" }, going, ...this.criteria());
-    const right = el("div", { className: "review-side" }, submitted ? this.done(submitted.comments) : this.reviewBox());
+    const right = el("div", { className: "review-side" }, submitted ? this.done() : this.reviewBox());
     this.box.replaceChildren(el("h1", { className: "step-title", tabIndex: -1 }, "Summary"), el("div", { className: "summary-grid" }, left, right));
     if (submitted && this.shownSent === false) this.arrive(right);
     this.shownSent = !!submitted;
@@ -10204,17 +10276,15 @@ var SummaryPane = class {
     area.oninput = () => {
       this.draft = area.value;
     };
-    const blocked = () => own && this.type === "comment" && pendingComments().length === 0;
-    const submit = el("button", { type: "button", className: "btn primary wide", disabled: blocked() || this.sending }, own ? "Send to agent" : "Submit review");
-    const note = el("p", { className: "review-note", hidden: !blocked() }, "Add a comment, or choose Approve or Request changes.");
+    const blocked = own && pendingComments().length === 0;
+    const submit = el("button", { type: "button", className: "btn primary wide", disabled: blocked || this.sending }, own ? "Send to agent" : "Submit review");
+    const note = el("p", { className: "review-note", hidden: !blocked }, "Add a comment to send it.");
     attrs(submit, { "aria-describedby": "review-note" });
     note.id = "review-note";
     const radios = TYPES2.map(([value, label]) => {
       const radio = el("input", { type: "radio", name: "review-type", value, checked: value === this.type });
       radio.onchange = () => {
         this.type = value;
-        submit.disabled = blocked();
-        note.hidden = !blocked();
       };
       return el("label", { className: "radio" }, radio, label);
     });
@@ -10222,13 +10292,13 @@ var SummaryPane = class {
       this.sending = true;
       submit.disabled = true;
       const still = reduced();
-      const fading = animate(box, "review-leave", still ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.98)" }], {
+      const fading = animate(box2, "review-leave", still ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.98)" }], {
         ms: "fast",
         curve: "ease-in",
         fill: "forwards"
       });
-      this.sentBox = { box, fading };
-      const done = await send2("submit", { type: this.type, summary: this.draft.trim() });
+      this.sentBox = { box: box2, fading };
+      const done = await send2("submit", { ...!own && { type: this.type }, summary: this.draft.trim() });
       this.sending = false;
       if (done) this.draft = "";
       else {
@@ -10236,26 +10306,20 @@ var SummaryPane = class {
         this.update();
       }
     };
-    const box = el(
+    const box2 = el(
       "div",
       { className: "review-box" },
       el("h2", { className: "section-head" }, "Finish your review"),
       area,
-      attrs(el("div", { className: "radios" }, ...radios), { role: "radiogroup", "aria-label": "Finish your review" }),
+      ...own ? [] : [attrs(el("div", { className: "radios" }, ...radios), { role: "radiogroup", "aria-label": "Finish your review" })],
       submit,
       note
     );
-    return box;
+    return box2;
   }
-  done(count) {
-    const { view } = state;
-    const submitted = view.submitted;
-    const type = TYPES2.find(([value]) => value === submitted?.type)?.[1] ?? "";
-    const lines = view.pr ? [
-      el("strong", {}, "Review submitted"),
-      el("p", {}, `${type}, with ${plural(count, "comment")}, on #${view.pr.number}.`),
-      ...submitted?.address ? [el("a", { href: submitted.address, target: "_blank", rel: "noopener noreferrer" }, "View review")] : []
-    ] : [el("strong", {}, "Sent to the agent"), ...count ? [el("p", {}, `${plural(count, "comment")}; it fixes them in the Claude Code chat.`)] : []];
+  done() {
+    const end = el("button", { type: "button", className: "btn small ghost", onclick: this.end }, "End session");
+    const lines = state.view.pr ? [el("strong", {}, "Review submitted"), el("p", {}, sentLine()), el("p", { className: "outcome-actions" }, ...viewReview(), end)] : [el("strong", {}, "Sent to the agent"), el("p", {}, `${sentLine()} The agent is fixing ${them()}; follow along there.`), el("p", { className: "outcome-actions" }, end)];
     return attrs(el("div", { className: "review-box done" }, icon("met"), el("div", {}, ...lines)), { role: "status" });
   }
 };
@@ -10273,9 +10337,14 @@ new ResizeObserver(() => {
 var theme = "system";
 var stopped = false;
 var panes = /* @__PURE__ */ new Map();
-var summary = new SummaryPane((target) => {
-  reveal(target);
-});
+var summary = new SummaryPane(
+  (target) => {
+    reveal(target);
+  },
+  () => {
+    endSession();
+  }
+);
 var arrived = [];
 var opening = null;
 var stepAddress = (id) => `step-${id}`;
@@ -10364,8 +10433,8 @@ function reveal({ thread: id, edit, file }) {
 function readingAnchor() {
   const top = main.getBoundingClientRect().top;
   for (const element of content.firstElementChild?.querySelectorAll(".step-head, .file-header, tr, .step-foot") ?? []) {
-    const box = element.getBoundingClientRect();
-    if (box.height && box.bottom > top) return { element, top: box.top };
+    const box2 = element.getBoundingClientRect();
+    if (box2.height && box2.bottom > top) return { element, top: box2.top };
   }
   return null;
 }
@@ -10451,7 +10520,7 @@ function drawHeader(onSummary) {
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
   }
-  const reviewing = !view.ready && !view.sessionGone;
+  const reviewing = !view.ready && !view.sessionGone && !ending;
   const title = `${reviewing ? "Reviewing \xB7 " : ""}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} \xB7 Walkthrough`;
   if (document.title !== title) document.title = title;
   const favicon = reviewing ? "favicon-reviewing.svg" : "favicon.svg";
@@ -10530,7 +10599,7 @@ function toggleMenu() {
       { className: "menu" },
       attrs(el("div", {}, el("p", { className: "menu-label", id: "menu-theme" }, "Theme"), ...themes), { role: "group", "aria-labelledby": "menu-theme" }),
       el("hr"),
-      item("End session", "menuitem", () => void endSession())
+      item("End session", "menuitem", endSession)
     ),
     { role: "menu", "aria-label": "Menu" }
   );
@@ -10556,11 +10625,42 @@ document.addEventListener("pointerdown", (event) => {
   const button = header.querySelector(".menu-button");
   if (menu && event.target instanceof Node && !menu.contains(event.target) && !button?.contains(event.target)) closeMenu(false);
 });
-async function endSession() {
-  await postQuietly("stop", {});
+function endSession() {
   stopped = true;
   clearInterval(poller);
-  showUnreachable(PAGE);
+  showEnd("ended");
+  void postQuietly("stop", {});
+}
+var endPage = el("main", { className: "end-page", hidden: true });
+document.body.append(endPage);
+var ending = null;
+function showEnd(kind) {
+  if (ending?.kind === kind) return;
+  ending?.stop();
+  closeMenu(false);
+  showDrawer(false);
+  showAlert(null);
+  const screen = endScreen(kind, poll);
+  ending = { kind, stop: screen.stop, scrolled: ending?.scrolled ?? [main.scrollTop, nav.scrollTop] };
+  endPage.replaceChildren(screen.box);
+  endPage.hidden = false;
+  endPage.scrollTop = 0;
+  document.body.classList.add("ended");
+  drawHeader(current().kind === "summary");
+  endPage.querySelector(".end-title")?.focus({ preventScroll: true });
+}
+function hideEnd() {
+  if (!ending) return;
+  const [mainTop, navTop] = ending.scrolled;
+  ending.stop();
+  ending = null;
+  endPage.hidden = true;
+  endPage.replaceChildren();
+  document.body.classList.remove("ended");
+  main.scrollTop = mainTop;
+  nav.scrollTop = navTop;
+  render(true);
+  content.querySelector(".step-title")?.focus({ preventScroll: true });
 }
 var drawnNav = "";
 var navSteps = [];
@@ -10711,11 +10811,13 @@ document.addEventListener("keydown", (event) => {
   }
   const typing = event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]");
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
-  if (pendingKey === "g" && event.key === "s" && state.view.ready) go("summary");
+  if (pendingKey === "g" && event.key === "s" && state.view.ready && !ending) go("summary");
   pendingKey = event.key === "g" ? "g" : "";
 });
 var POLL_MS = 1500;
+var LOST_AFTER = 2;
 var polling = false;
+var failed = 0;
 var tag = "";
 function poll() {
   if (polling || stopped) return;
@@ -10724,19 +10826,23 @@ function poll() {
   if (state.stale) tag = "";
   state.stale = false;
   fetch("data/walkthrough.json", tag ? { headers: { "if-none-match": tag } } : {}).then(async (answer) => {
-    if (document.body.classList.contains("unreachable")) showAlert(null);
-    if (answer.status === 304 || since !== state.sends) return;
-    if (!answer.ok) throw new Error(String(answer.status));
-    tag = answer.headers.get("etag") ?? "";
-    state.view = await answer.json();
-    render(false);
+    if (answer.status !== 304 && !answer.ok) throw new Error(String(answer.status));
+    if (stopped) return;
+    failed = 0;
+    const fresh = answer.status !== 304 && since === state.sends;
+    if (fresh) {
+      tag = answer.headers.get("etag") ?? "";
+      state.view = await answer.json();
+    }
+    if (ending) hideEnd();
+    else if (fresh) render(false);
   }).catch(() => {
-    showUnreachable(PAGE);
+    if (!stopped && ++failed >= LOST_AFTER) showEnd("lost");
   }).finally(() => {
     polling = false;
   });
 }
-PAGE.retry = poll;
+PAGE.lost = poll;
 theme = await loadViewer();
 var first = await fetch("data/walkthrough.json");
 tag = first.headers.get("etag") ?? "";
