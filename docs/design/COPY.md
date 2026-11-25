@@ -7,6 +7,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | String | Where | Note |
 |---|---|---|
 | `<branch>` / `#<N> <title>` | header label | branch in mono; number in secondary ink, title in sans |
+| `<branch>` · Walkthrough / `#<N> <title>` · Walkthrough | browser tab title | tells open walkthroughs apart |
 | N / M files viewed | header progress | **GH** |
 | AI reviewing | header indicator, while the AI is still reviewing | tooltip: "The AI is still reviewing; comments may arrive" |
 | Finish review | header, primary | **GH** ("Finish your review"); tooltip "Go to the Summary (G S)" |

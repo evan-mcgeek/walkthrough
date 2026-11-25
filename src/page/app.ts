@@ -222,6 +222,7 @@ function drawHeader(onSummary: boolean): void {
       : el('code', { className: 'change-label branch', title: name }, name);
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
+    document.title = `${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   }
   const files = allFiles().length;
   const viewed = view.viewed.length;

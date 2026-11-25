@@ -14,6 +14,7 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   record(repo, STEPS);
   await open(page, url);
 
+  await expect(page).toHaveTitle('feature/login · Walkthrough');
   await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
   await expect(page.getByText('The rest of it.')).toBeHidden();
   await page.getByRole('button', { name: 'More' }).click();

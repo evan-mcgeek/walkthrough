@@ -10,6 +10,7 @@ test.describe('a pull request', () => {
     record(repo, [{ text: 'Only users log in', status: 'not-met' }], 'criteria');
     await open(page, url);
     await expect(page.locator('.change-label')).toHaveText('#212 Due dates for tasks');
+    await expect(page).toHaveTitle('#212 Due dates for tasks · Walkthrough');
     const listener = repo.background('listen');
 
     await page.getByRole('link', { name: 'Finish review' }).click();
