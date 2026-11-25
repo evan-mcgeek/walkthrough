@@ -47,8 +47,10 @@ For another branch or a range of commits, just say so in the chat.
 Nothing is ever checked out, and uncommitted edits are left out with a warning.
 
 1. The session asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need.
-2. The page opens and the steps appear: each with "Look at:" links to the lines that matter and a sentence or two of explanation.
-3. The AI reviews against the ticket and leaves its comments on the lines, marked `[AI]`. Colleagues' threads show on their lines as well.
+2. The AI splits the change into steps and reviews it against the ticket.
+   The page opens when the review is nearly done and shows the whole walkthrough once it is ready.
+3. Each step has "Look at:" links to the lines that matter and a sentence or two of explanation.
+   The AI's comments are on the lines, marked `[AI]`. Colleagues' threads show on their lines as well.
 4. You read, mark files Viewed, comment, edit or delete the AI's comments, reply and resolve.
    For a question, use Ask AI in a thread; the answer stays on the page and never goes out.
 5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them.
@@ -90,10 +92,10 @@ The plugin's hook approves only `walkthrough` commands and the session's writes 
 
 | Command | What it does |
 | --- | --- |
-| `start` | Starts or resumes a walkthrough and opens its page; `--pr <number>` makes it a pull request. |
+| `start` | Starts or resumes a walkthrough and serves its page; `--pr <number>` makes it a pull request. |
 | `files` | Lists the changed files. |
 | `steps`, `comment`, `threads`, `criteria` | Record the steps, the AI's comments, colleagues' threads and the acceptance criteria. |
-| `reviewing` | Records the steps the AI is still reviewing. |
+| `open`, `ready` | Open the page; show the whole walkthrough once the review is done. |
 | `listen`, `say` | Wait for Ask AI and the submit; answer in the thread. |
 | `comments`, `posted` | Print what goes out; record that it went out, and where. |
 | `policy` | Shows, creates or saves your review policy. |
@@ -120,7 +122,8 @@ npm run lint    # type check and ESLint
 Rules for working on the code are in [`AGENTS.md`](AGENTS.md), the design in [`docs/design/`](docs/design/), the decisions in [`docs/adr/`](docs/adr/).
 
 To release, label a pull request to `main` with `release`.
-When it merges, CI runs the tests, builds the plugin and pushes it to the `release` branch, which is what the marketplace installs.
+When it merges, CI tests it, builds it onto the `release` branch the marketplace installs from, and tags it with a GitHub Release.
+More in [`docs/releasing.md`](docs/releasing.md).
 
 ## License
 

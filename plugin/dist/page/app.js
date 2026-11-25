@@ -9151,7 +9151,7 @@ function grow(element) {
   }
   const { paddingTop, paddingBottom } = getComputedStyle(element);
   element.classList.add("growing");
-  const opening = animate(element, "grow", [{ height: "0px", paddingTop: "0px", paddingBottom: "0px" }, { height: `${String(element.offsetHeight)}px`, paddingTop, paddingBottom }], {
+  const opening2 = animate(element, "grow", [{ height: "0px", paddingTop: "0px", paddingBottom: "0px" }, { height: `${String(element.offsetHeight)}px`, paddingTop, paddingBottom }], {
     ms: "slow",
     curve: "ease-out"
   });
@@ -9159,7 +9159,7 @@ function grow(element) {
   const done = () => {
     element.classList.remove("growing");
   };
-  opening.finished.then(done, done);
+  opening2.finished.then(done, done);
 }
 function shrink(element, done) {
   const fade = duration("fast");
@@ -9213,7 +9213,6 @@ var threadsIn = (step, file) => state.view.threads.filter((one) => one.step === 
 var commentCount = (step, file) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
 var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && one.step !== null);
 var notViewed = () => allFiles().filter((file) => !state.view.viewed.includes(file));
-var aiReviewing = () => !state.view.submitted && (!state.view.steps.length || !!state.view.unplaced?.length || state.view.reviewing.length > 0);
 var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.by ?? "you";
 var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
 var linesLabel = ([first2, last]) => first2 === last ? String(first2) : `${String(first2)}\u2013${String(last)}`;
@@ -9818,8 +9817,143 @@ function drawFiles(step) {
   return step.files.flatMap((file) => panes2.filter((pane) => pane.file === file));
 }
 
+// src/page/desk.ts
+var SCENE = `<svg class="desk6" viewBox="0 -20 344 192" width="344" height="192" role="img" aria-label="The AI at its desk, reading the change"><defs><clipPath id="scr6"><rect x="32" y="30" width="152" height="92" rx="3"/></clipPath></defs><path class="stand" d="M100 130h16l4 16h-24z"/><line class="dk" x1="84" y1="148" x2="132" y2="148"/><rect class="mon" x="24" y="22" width="168" height="108" rx="9"/><g clip-path="url(#scr6)"><g class="cd"><rect class="bh" x="33" y="133.5" width="150" height="10.5" rx="2"/><rect class="sn" x="36" y="38" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="37.75" width="70" height="3.5" rx="1.75"/><rect class="sn" x="36" y="47" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="46.75" width="92" height="3.5" rx="1.75"/><rect class="sn" x="36" y="56" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="55.75" width="64" height="3.5" rx="1.75"/><rect class="sn" x="36" y="65" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="74" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="73.75" width="84" height="3.5" rx="1.75"/><rect class="sn" x="36" y="83" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="82.75" width="58" height="3.5" rx="1.75"/><rect class="sn" x="36" y="92" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="91.75" width="76" height="3.5" rx="1.75"/><rect class="sn" x="36" y="101" width="8" height="3" rx="1.5"/><rect class="sl" x="70" y="100.75" width="40" height="3.5" rx="1.75"/><rect class="sn" x="36" y="110" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="109.75" width="22" height="3.5" rx="1.75"/><rect class="sn" x="36" y="119" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="128" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="127.75" width="88" height="3.5" rx="1.75"/><rect class="sn" x="36" y="137" width="8" height="3" rx="1.5"/><rect class="sl sd" x="61" y="136.75" width="96" height="3.5" rx="1.75"/><rect class="sn" x="36" y="146" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="145.75" width="60" height="3.5" rx="1.75"/><rect class="sn" x="36" y="155" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="154.75" width="18" height="3.5" rx="1.75"/><rect class="sn" x="36" y="164" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="173" width="8" height="3" rx="1.5"/><rect class="sl sa" x="52" y="172.75" width="74" height="3.5" rx="1.75"/><rect class="sn" x="36" y="182" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="181.75" width="90" height="3.5" rx="1.75"/><rect class="sn" x="36" y="191" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="190.75" width="66" height="3.5" rx="1.75"/><rect class="sn" x="36" y="200" width="8" height="3" rx="1.5"/><rect class="sl sa" x="61" y="199.75" width="82" height="3.5" rx="1.75"/><rect class="sn" x="36" y="209" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="208.75" width="20" height="3.5" rx="1.75"/><rect class="sn" x="36" y="218" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="227" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="226.75" width="62" height="3.5" rx="1.75"/><rect class="sn" x="36" y="236" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="235.75" width="86" height="3.5" rx="1.75"/><rect class="sn" x="36" y="245" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="244.75" width="54" height="3.5" rx="1.75"/><rect class="sn" x="36" y="254" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="253.75" width="16" height="3.5" rx="1.75"/><rect class="sn" x="36" y="263" width="8" height="3" rx="1.5"/><rect class="sn" x="36" y="272" width="8" height="3" rx="1.5"/><rect class="sl" x="52" y="271.75" width="72" height="3.5" rx="1.75"/><rect class="sn" x="36" y="281" width="8" height="3" rx="1.5"/><rect class="sl" x="61" y="280.75" width="48" height="3.5" rx="1.75"/><g class="cb"><rect class="cbr" x="160" y="132" width="20" height="13" rx="3.5"/><text class="cbt" x="170" y="141.4" text-anchor="middle">AI</text></g><g class="ck"><circle class="ckc" cx="172" cy="184" r="7"/><path class="ckp" d="M168.6 184.2l2.3 2.3 4-4.3"/></g></g></g><rect class="rb" x="214" y="98" width="64" height="70" rx="18"/><g class="rh"><line class="ant" x1="246" y1="40" x2="246" y2="29"/><circle class="ink" cx="246" cy="27" r="3.6"/><rect class="ink" x="210" y="40" width="72" height="60" rx="17"/><g class="re"><rect class="eye" x="220" y="58" width="9" height="13" rx="4.5"/><rect class="eye" x="241" y="58" width="9" height="13" rx="4.5"/></g><g class="rhap"><path class="hap" d="M220 68q4.5-8 9 0"/><path class="hap" d="M241 68q4.5-8 9 0"/></g><ellipse class="rmo" cx="236" cy="86" rx="5" ry="4"/><path class="rsm" d="M229 84q6 6 13 0"/></g><rect class="kb" x="146" y="141" width="62" height="7" rx="2.5"/><line class="dk" x1="8" y1="148" x2="312" y2="148"/><rect class="under" x="0" y="149" width="320" height="23"/><rect class="ink m1" x="158" y="131" width="17" height="13" rx="6.5"/><rect class="ink m2" x="182" y="131" width="17" height="13" rx="6.5"/><g class="bub b1"><path class="bb" d="M258 -18h74a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-66l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="295.0" y="-2" text-anchor="middle">Wait, what?!</text></g><g class="bub b2"><path class="bb" d="M258 -18h40a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-32l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="278.0" y="-2" text-anchor="middle">Hmm\u2026</text></g><g class="bub b3"><path class="bb" d="M258 -18h36a8 8 0 0 1 8 8v8a8 8 0 0 1-8 8h-28l-7 7v-7h-1a8 8 0 0 1-8-8v-8a8 8 0 0 1 8-8z"/><text class="bt6" x="276.0" y="-2" text-anchor="middle">Nice.</text></g></svg>`;
+function deskScene() {
+  const box = document.createElement("div");
+  box.className = "desk-scene";
+  box.innerHTML = SCENE;
+  let offscreen = false;
+  const pause = () => box.classList.toggle("rdpause", document.hidden || offscreen);
+  const seen = new IntersectionObserver(([entry]) => {
+    offscreen = !entry?.isIntersecting;
+    pause();
+  });
+  seen.observe(box);
+  document.addEventListener("visibilitychange", pause);
+  pause();
+  return {
+    box,
+    stop: () => {
+      seen.disconnect();
+      document.removeEventListener("visibilitychange", pause);
+      box.remove();
+    }
+  };
+}
+
+// src/page/opening.ts
+var COPIED_MS = 2e3;
+var Opening = class {
+  box = el("div", { className: "opening" });
+  scene = null;
+  drawn = "";
+  update() {
+    const { sessionGone, changedFiles, pr } = state.view;
+    const key2 = JSON.stringify([sessionGone, changedFiles, pr?.number]);
+    if (key2 === this.drawn) return;
+    this.drawn = key2;
+    const files = plural(changedFiles.length, "changed file");
+    if (sessionGone) {
+      this.scene?.stop();
+      this.scene = null;
+      this.box.replaceChildren(this.failed(), this.fileList(files));
+      return;
+    }
+    this.scene ??= deskScene();
+    this.box.replaceChildren(
+      this.scene.box,
+      attrs(
+        el(
+          "div",
+          {},
+          el("h1", { className: "opening-title" }, "Preparing the walkthrough"),
+          el("p", { className: "opening-line" }, `The AI is finishing its review of the ${files}. The walkthrough opens here when it\u2019s ready, usually within a minute.`)
+        ),
+        { role: "status" }
+      ),
+      this.fileList(files)
+    );
+  }
+  /** Lets the scene go, once the walkthrough shows. */
+  stop() {
+    this.scene?.stop();
+    this.scene = null;
+  }
+  failed() {
+    const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : "/walkthrough";
+    const copy = attrs(el("button", { type: "button", className: "btn small" }, "Copy command"), { "aria-live": "polite" });
+    let shown = 0;
+    copy.onclick = () => {
+      void navigator.clipboard.writeText(command).then(() => {
+        copy.textContent = "Copied";
+        clearTimeout(shown);
+        shown = window.setTimeout(() => {
+          copy.textContent = "Copy command";
+        }, COPIED_MS);
+      });
+    };
+    return attrs(
+      el(
+        "div",
+        { className: "opening-failed" },
+        icon("not-met"),
+        el(
+          "div",
+          {},
+          el("h1", { className: "opening-title" }, "The AI couldn\u2019t prepare the walkthrough"),
+          el("p", { className: "opening-line" }, "The Claude Code session stopped before the review was done. Nothing was posted. Run ", el("code", {}, command), " again to pick it up."),
+          el("p", { className: "opening-actions" }, copy)
+        )
+      ),
+      { role: "status" }
+    );
+  }
+  fileList(files) {
+    const { changedFiles } = state.view;
+    const sum = (key2) => changedFiles.reduce((total, one) => total + (one[key2] ?? 0), 0);
+    return el(
+      "section",
+      { className: "changed-files" },
+      el("h2", {}, files, el("span", { className: "changed-total" }, `+${String(sum("additions"))} \u2212${String(sum("deletions"))}`)),
+      el(
+        "ul",
+        {},
+        ...changedFiles.map(
+          ({ path, additions, deletions }) => el(
+            "li",
+            {},
+            el("span", { className: "changed-path", title: path }, path),
+            ...additions === void 0 ? [] : [el("span", { className: "changed-stat" }, el("span", { className: "added" }, `+${String(additions)}`), " ", el("span", { className: "deleted" }, `\u2212${String(deletions ?? 0)}`))]
+          )
+        )
+      )
+    );
+  }
+};
+var PLACEHOLDERS = [
+  ["w70", "w45", "w35"],
+  ["w55", "w40", "w50"],
+  ["w80", "w30", "w45"]
+];
+function openingNav() {
+  const gone = state.view.sessionGone;
+  const rows = gone ? [] : PLACEHOLDERS.map(
+    ([step = "", ...files]) => el(
+      "li",
+      { className: "step-placeholder" },
+      el("span", { className: "step-row" }, el("span", { className: "step-number" }), el("span", { className: `placeholder-bar ${step}` })),
+      el("ul", { className: "file-list" }, ...files.map((width) => el("li", {}, el("span", { className: `placeholder-bar ${width}` }))))
+    )
+  );
+  return [
+    el("p", { className: "steps-note" }, gone ? "No steps yet." : "Steps appear here when the AI is done."),
+    attrs(el("ol", { className: "steps" }, ...rows), { "aria-hidden": "true" }),
+    el("span", { className: "step-row summary-row still" }, icon("summary"), el("span", { className: "step-name" }, "Summary"), el("span", { className: "file-count" }, "0"))
+  ];
+}
+
 // src/page/step.ts
-var spinner = () => attrs(icon("spinner"), { "aria-hidden": "true" });
 var StepPane = class {
   constructor(step, scroller) {
     this.step = step;
@@ -9832,7 +9966,6 @@ var StepPane = class {
   scroller;
   box = el("section", { className: "step" });
   head = el("div", { className: "step-head" });
-  reviewing = el("p", { className: "reviewing-line" }, spinner(), "The AI is still reviewing this step.");
   files;
   foot = el("div", { className: "step-foot" });
   more = false;
@@ -9846,7 +9979,6 @@ var StepPane = class {
       this.drawnHead = key2;
       this.drawHead();
     }
-    this.reviewing.hidden = !state.view.reviewing.includes(this.step.id) || !!state.view.submitted;
     this.drawFoot(go2);
     return this.files.flatMap((pane) => pane.update(shows));
   }
@@ -9877,8 +10009,7 @@ var StepPane = class {
     this.head.replaceChildren(
       el("h1", { className: "step-title", tabIndex: -1 }, step.title),
       ...look.length ? [el("div", { className: "look" }, el("span", { className: "look-at" }, "Look at:"), ...look)] : [],
-      explanation,
-      this.reviewing
+      explanation
     );
   }
   drawFoot(go2) {
@@ -10146,14 +10277,15 @@ var summary = new SummaryPane((target) => {
   reveal(target);
 });
 var arrived = [];
+var opening = null;
 var stepAddress = (id) => `step-${id}`;
 var firstAddress = () => state.view.steps[0] ? stepAddress(state.view.steps[0].id) : "";
 function current() {
   const address = decodeURIComponent(location.hash.slice(1));
-  if (!state.view.steps.length) return { kind: "preparing" };
+  if (!state.view.ready) return { kind: "opening" };
   if (address === "summary") return { kind: "summary" };
   const step = state.view.steps.find((one) => stepAddress(one.id) === address) ?? state.view.steps[0];
-  return step ? { kind: "step", pane: paneOf(step.id) } : { kind: "preparing" };
+  return step ? { kind: "step", pane: paneOf(step.id) } : { kind: "opening" };
 }
 function paneOf(id) {
   const step = state.view.steps.find((one) => one.id === id);
@@ -10185,7 +10317,7 @@ function moved() {
     settle(shown);
     shown.removeAttribute("inert");
     shown.removeAttribute("aria-hidden");
-    const leaving = old instanceof HTMLElement && !old.classList.contains("preparing");
+    const leaving = old instanceof HTMLElement && !old.classList.contains("opening");
     if (leaving) leave(old, scrolled);
     const still = reduced();
     animate(shown, "pane-enter", still ? FADE_IN : [{ opacity: 0, transform: "translateX(12px)" }, { opacity: 1, transform: "none" }], {
@@ -10275,10 +10407,11 @@ var filesViewed = el(
   attrs(el("span", { className: "bar" }, viewedFill), { "aria-hidden": "true" }),
   el("span", { className: "count" }, viewedNumber, viewedTotal, el("span", { className: "long" }, " files viewed"))
 );
-var reviewingNow = attrs(
-  el("span", { className: "ai-reviewing", title: "The AI is still reviewing; comments may arrive" }, icon("spinner"), el("span", { className: "long" }, "AI reviewing")),
-  { role: "status", "aria-label": "AI reviewing" }
-);
+var filesChanged = el("span", { className: "files-changed", hidden: true });
+var reviewingNow = attrs(el("span", { className: "ai-reviewing" }, icon("spinner"), el("span", { className: "long" }, "AI reviewing")), {
+  role: "status",
+  "aria-label": "AI reviewing"
+});
 var finish = attrs(
   el("a", { className: "btn primary small finish", href: "#summary", title: "Go to the Summary (G S)" }, el("span", { className: "long" }, "Finish review"), el("span", { className: "short" }, "Finish")),
   { "aria-label": "Finish review" }
@@ -10297,6 +10430,7 @@ header.append(
   }),
   changeLabel,
   filesViewed,
+  filesChanged,
   el("span", { className: "spacer" }),
   finish,
   attrs(el("button", { type: "button", className: "icon-button menu-button", onclick: toggleMenu }, icon("more")), {
@@ -10317,6 +10451,12 @@ function drawHeader(onSummary) {
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
   }
+  const reviewing = !view.ready && !view.sessionGone;
+  const title = `${reviewing ? "Reviewing \xB7 " : ""}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} \xB7 Walkthrough`;
+  if (document.title !== title) document.title = title;
+  const favicon = reviewing ? "favicon-reviewing.svg" : "favicon.svg";
+  const icon2 = document.querySelector('link[rel="icon"]');
+  if (icon2 && icon2.getAttribute("href") !== favicon) icon2.setAttribute("href", favicon);
   const files = allFiles().length;
   const viewed = view.viewed.length;
   viewedTotal.data = ` / ${String(files)}`;
@@ -10326,10 +10466,15 @@ function drawHeader(onSummary) {
     if (shownViewed !== void 0) tick(viewedNumber);
     shownViewed = viewed;
   }
-  finish.hidden = onSummary;
-  if (aiReviewing()) {
+  const ready = view.ready;
+  filesViewed.hidden = !ready;
+  filesChanged.hidden = ready;
+  const changed = view.changedFiles.length;
+  if (!ready) filesChanged.replaceChildren(el("span", {}, plural(changed, "file"), el("span", { className: "long" }, " changed")));
+  finish.hidden = onSummary || !ready;
+  if (!ready && !view.sessionGone) {
     settle(reviewingNow);
-    if (!reviewingNow.isConnected) filesViewed.after(reviewingNow);
+    if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
   } else if (reviewingNow.isConnected)
     fadeOut(reviewingNow, "base", () => {
       reviewingNow.remove();
@@ -10437,7 +10582,6 @@ function buildNav() {
   navSteps = state.view.steps.map((step, index) => {
     const row = navLink(stepAddress(step.id), "step-row", el("span", { className: "step-number" }, String(index + 1)), el("span", { className: "step-name", title: step.title }, step.title));
     row.dataset["key"] = `step:${step.id}`;
-    const spinner2 = attrs(el("span", { className: "step-reviewing", title: "AI still reviewing this step" }, icon("spinner")), { role: "img", "aria-label": "AI still reviewing this step" });
     const files = step.files.map((file) => {
       const tick2 = attrs(el("span", { className: "viewed-tick" }, icon("ring"), icon("met")), { role: "img" });
       const count = el("span", { className: "file-count" }, icon("message"), "");
@@ -10449,7 +10593,7 @@ function buildNav() {
       };
       return { file, row: fileRow, tick: tick2, count, shown: -1 };
     });
-    return { id: step.id, row, spinner: spinner2, files };
+    return { id: step.id, row, files };
   });
   const items = navSteps.map(({ row, files }) => el("li", {}, row, el("ul", { className: "file-list" }, ...files.map((one) => el("li", {}, one.row)))));
   nav.replaceChildren(el("ol", { className: "steps" }, ...items), summaryRow);
@@ -10458,22 +10602,22 @@ function buildNav() {
 }
 function drawNav(at) {
   const { view } = state;
+  if (at.kind === "opening") {
+    const key3 = view.sessionGone ? "gone" : "opening";
+    if (key3 !== drawnNav) nav.replaceChildren(...openingNav());
+    drawnNav = key3;
+    shownPending = void 0;
+    return;
+  }
   const key2 = JSON.stringify(view.steps.map((step) => [step.id, step.title, step.files]));
   if (key2 !== drawnNav) {
     drawnNav = key2;
     buildNav();
   }
   const here = at.kind === "step" ? at.pane.step.id : at.kind;
-  for (const { id, row, spinner: spinner2, files } of navSteps) {
+  for (const { id, row, files } of navSteps) {
     if (here === id) row.setAttribute("aria-current", "page");
     else row.removeAttribute("aria-current");
-    if (view.reviewing.includes(id) && !view.submitted) {
-      settle(spinner2);
-      if (!spinner2.isConnected) row.append(spinner2);
-    } else if (spinner2.isConnected)
-      fadeOut(spinner2, "base", () => {
-        spinner2.remove();
-      });
     for (const one of files) {
       const seen = view.viewed.includes(one.file);
       one.row.classList.toggle("viewed", seen);
@@ -10502,20 +10646,54 @@ function render(own, navigated = false) {
   drawNav(at);
   document.body.dataset["view"] = at.kind;
   const anchor = navigated ? null : readingAnchor();
-  if (at.kind === "preparing") {
-    if (!content.querySelector(".preparing")) content.replaceChildren(attrs(el("div", { className: "preparing" }, icon("mark")), { "aria-busy": "true" }));
+  const old = content.firstElementChild;
+  const fromOpening = !!opening && old === opening.box;
+  if (at.kind === "opening") {
+    opening ??= new Opening();
+    opening.update();
+    if (old !== opening.box) {
+      content.replaceChildren(opening.box);
+      main.scrollTop = 0;
+    }
   } else if (at.kind === "summary") {
     summary.update();
     if (content.firstElementChild !== summary.box) content.replaceChildren(summary.box);
   } else {
     if (content.firstElementChild !== at.pane.box) content.replaceChildren(at.pane.box);
     const bottom = main.getBoundingClientRect().bottom;
-    const shows = (element) => !own && element.getBoundingClientRect().top < bottom;
+    const shows = (element) => !own && !fromOpening && element.getBoundingClientRect().top < bottom;
     arrived.push(...at.pane.update(shows, go));
   }
+  if (fromOpening && content.firstElementChild !== old) leaveOpening();
   if (anchor?.element.isConnected) main.scrollTop += anchor.element.getBoundingClientRect().top - anchor.top;
   drawPill();
   for (const time of content.querySelectorAll("time.comment-time")) time.textContent = ago(time.dateTime);
+}
+function leaveOpening() {
+  const leaving = opening;
+  const shown = content.firstElementChild;
+  if (!leaving || !shown) return;
+  opening = null;
+  if (!location.hash && firstAddress()) history.replaceState(null, "", `#${firstAddress()}`);
+  attrs(leaving.box, { inert: "", "aria-hidden": "true" });
+  content.append(leaving.box);
+  const scrolled = main.scrollTop;
+  main.scrollTop = 0;
+  const at = `translateY(${String(-scrolled)}px)`;
+  animate(leaving.box, "pane-leave", [{ opacity: 1, transform: at }, { opacity: 0, transform: at }], { ms: "fast", curve: "ease-in", fill: "forwards" }).finished.then(
+    () => {
+      leaving.stop();
+      leaving.box.remove();
+    },
+    () => {
+    }
+  );
+  const still = reduced();
+  animate(shown, "pane-enter", still ? FADE_IN : [{ opacity: 0, transform: "translateX(12px)" }, { opacity: 1, transform: "none" }], {
+    ms: "base",
+    curve: still ? "linear" : "ease-out",
+    delay: duration("fast")
+  });
 }
 state.render = (own) => {
   render(own);
@@ -10533,7 +10711,7 @@ document.addEventListener("keydown", (event) => {
   }
   const typing = event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]");
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
-  if (pendingKey === "g" && event.key === "s" && state.view.steps.length) go("summary");
+  if (pendingKey === "g" && event.key === "s" && state.view.ready) go("summary");
   pendingKey = event.key === "g" ? "g" : "";
 });
 var POLL_MS = 1500;

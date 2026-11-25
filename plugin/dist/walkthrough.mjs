@@ -6274,6 +6274,16 @@ async function changedFiles(cwd, base, head) {
   }
   return files3;
 }
+function fileStats(cwd, base, head) {
+  const fields = git(cwd, "diff", "--numstat", "-z", "-M", "--no-ext-diff", base, head).split("\0");
+  const stats = [];
+  for (let at = 0; at < fields.length - 1; ) {
+    const [added = "", deleted = "", name2 = ""] = (fields[at++] ?? "").split("	");
+    const path12 = name2 || (at += 2, fields[at - 1] ?? "");
+    stats.push(added === "-" ? { path: path12 } : { path: path12, additions: Number(added), deletions: Number(deleted) });
+  }
+  return stats;
+}
 var orderOf = (files3) => files3.map((file2) => file2.path.replace(/[\\*?[\]#!]/g, "\\$&")).join("\n");
 async function diffOf(cwd, base, head, files3) {
   if (files3.length === 0) return "";
@@ -12496,7 +12506,7 @@ function alive(record2) {
   } catch {
     return false;
   }
-  return psStart(record2.pid) === record2.started;
+  return record2.started === void 0 || psStart(record2.pid) === record2.started;
 }
 
 // src/list.ts
@@ -12927,7 +12937,7 @@ function walkthroughDir(repo, source) {
 }
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
-var EARLIER_FIELDS = ["kindLabel", "commentHint", "checking", "checklist", "lastChecklistItem", "actions", "hints"];
+var EARLIER_FIELDS = ["kindLabel", "commentHint", "checking", "checklist", "lastChecklistItem", "actions", "hints", "reviewing"];
 function current(saved) {
   if (!saved) return null;
   const upgraded = Object.fromEntries(Object.entries(saved).filter(([key2]) => !EARLIER_FIELDS.includes(key2)));
@@ -12947,7 +12957,7 @@ function openWalkthrough(dir, source, change, pr, carry) {
       return { walkthrough: relabelled, opened: "resumed" };
     }
     if (saved) {
-      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head };
+      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
       const { steps: steps3, unplaced } = await carry(moved);
       setSteps(moved, steps3);
       if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
@@ -12960,7 +12970,8 @@ function openWalkthrough(dir, source, change, pr, carry) {
       ...given,
       base: change.base,
       head: change.head,
-      steps: []
+      steps: [],
+      ready: false
     };
     writeJson(file(dir), walkthrough);
     return { walkthrough, opened: "new" };
@@ -12979,7 +12990,6 @@ function setSteps(walkthrough, steps3) {
   walkthrough.steps = steps3;
   delete walkthrough.unplaced;
   walkthrough.lastStep = Math.max(walkthrough.lastStep ?? 0, ...steps3.map((step) => Number(step.id)));
-  if (walkthrough.reviewing) walkthrough.reviewing = steps3.map((step) => step.id).filter((id) => walkthrough.reviewing?.includes(id));
 }
 function recordSteps(dir, build) {
   return updateWalkthrough(dir, async (walkthrough) => {
@@ -12987,16 +12997,20 @@ function recordSteps(dir, build) {
     return walkthrough;
   });
 }
-function recordReviewing(dir, ids) {
+function markReady(dir) {
   return updateWalkthrough(dir, (walkthrough) => {
-    const known = walkthrough.steps.map((step) => step.id);
-    const unknown = [...new Set(ids.filter((id) => !known.includes(id)))];
-    if (unknown.length)
-      throw new Error(`the walkthrough has no ${unknown.length === 1 ? "step" : "steps"} ${unknown.join(", ")}; nothing was recorded`);
-    walkthrough.reviewing = known.filter((id) => ids.includes(id));
-    return walkthrough.reviewing;
+    if (!walkthrough.steps.length) throw new Error("record the steps before the walkthrough is ready");
+    const left = walkthrough.unplaced ?? [];
+    if (left.length) throw new Error(`these files are in no step yet: ${left.join(", ")}; record the steps again with them`);
+    walkthrough.ready = true;
+    const opened = walkthrough.opened === true;
+    walkthrough.opened = true;
+    return opened;
   });
 }
+var markOpened = (dir) => updateWalkthrough(dir, (walkthrough) => {
+  walkthrough.opened = true;
+});
 
 // src/review.ts
 var REVIEW_TYPES = ["comment", "approve", "request-changes"];
@@ -13124,11 +13138,11 @@ function fileMarks(steps3) {
   );
 }
 function walkthroughVersion(dir) {
-  const stats = ["walkthrough.json", "review.jsonl", "viewed.json"].map((name2) => {
+  const stats = ["walkthrough.json", "review.jsonl", "viewed.json", "listener.json"].map((name2) => {
     const stat = fs5.statSync(path5.join(dir, name2), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
   });
-  return fingerprint(stats.join(":"));
+  return fingerprint([...stats, String(listenerGone(dir))].join(":"));
 }
 function walkthroughView(dir) {
   const walkthrough = readWalkthrough(dir);
@@ -13139,9 +13153,12 @@ function walkthroughView(dir) {
   const last = submits.at(-1);
   const showsSubmitted = last && last.head === walkthrough.head && !kept.some((one) => one.pending);
   const address = last && posted2.get(last.id);
+  const ready2 = walkthrough.ready !== false && walkthrough.steps.length > 0;
   return {
     ...walkthrough,
-    reviewing: walkthrough.reviewing ?? [],
+    ready: ready2,
+    sessionGone: !ready2 && listenerGone(dir),
+    changedFiles: ready2 ? [] : fileStats(process.cwd(), walkthrough.base, walkthrough.head),
     threads: threads3,
     viewed: Object.entries(current3).flatMap(([file2, mark]) => marks.includes(mark) ? [file2] : []),
     changed: Object.entries(current3).flatMap(
@@ -13252,6 +13269,18 @@ function reviewComments(dir) {
 }
 var withoutPrefix = (body) => body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim();
 var LISTEN_EVERY_MS = 500;
+var LISTEN_GAP_MS = 15e3;
+var listenerAlive = (dir) => {
+  const now = readJson(files(dir).listener, null);
+  return now?.state === "listening" && alive(now);
+};
+function listenerGone(dir) {
+  const stat = fs5.statSync(files(dir).listener, { throwIfNoEntry: false });
+  return !!stat && Date.now() - stat.mtimeMs > LISTEN_GAP_MS && !listenerAlive(dir);
+}
+var forgetStoppedListener = (dir) => hold(dir, () => {
+  if (!listenerAlive(dir)) fs5.rmSync(files(dir).listener, { force: true });
+});
 function handedAsk(dir, event) {
   const walkthrough = readWalkthrough(dir);
   const thread = walkthrough && replay(walkthrough, logOf(dir)).threads.find((one) => one.comments.some((said2) => said2.id === event.id));
@@ -13271,7 +13300,7 @@ async function listen(dir, pageRunning) {
     return now?.state === "listening" && now.pid === process.pid;
   };
   await hold(dir, () => {
-    writeJson(listener, { state: "listening", pid: process.pid });
+    writeJson(listener, { state: "listening", pid: process.pid, started: psStart(process.pid) });
   });
   const release = () => hold(dir, () => {
     if (mine()) writeJson(listener, { state: "stopped" });
@@ -13348,6 +13377,7 @@ var PAGE = path7.join(import.meta.dirname, "page");
 var SHARED_FILES = {
   "style.css": { file: "style.css", type: "text/css; charset=utf-8" },
   "favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
+  "favicon-reviewing.svg": { file: "favicon-reviewing.svg", type: "image/svg+xml" },
   "apple-touch-icon.png": { file: "app-icon-180.png", type: "image/png" }
 };
 var PAGE_FILES = {
@@ -13727,12 +13757,13 @@ var criteria = [
   { text: "Invalid dates rejected with a clear error", status: "not-met" }
 ];
 var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
-  Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  Starts or resumes a walkthrough and serves its page without opening it; nothing is checked out.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label.
   --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
   Every command below finds the walkthrough from the same source options start was given, so pass them to each.
   When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
+  A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
   Comments on lines that changed stay in the review, detached from the diff.
   It prints the walkthrough's inbox, the folder for the files the session records from.
 
@@ -13752,8 +13783,13 @@ walkthrough steps --file <file>
   A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
 ${JSON.stringify(steps, null, 2)}
 
-walkthrough reviewing [<step id>...]
-  Records the steps the AI is still reviewing, replacing the set before; with no ids, none, and the page's "AI reviewing" goes.
+walkthrough open
+  Opens the page in the browser. Until the walkthrough is ready it shows the AI at work and the changed files, not the steps.
+
+walkthrough ready
+  Marks the review ready, once every changed file is in a step: the page shows the whole walkthrough at once,
+  with every step, comment, thread and criterion recorded so far. Opens the page too if it was never opened.
+  Comments recorded after this land on the page while the person reads.
 
 walkthrough comment --file <file>
   Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
@@ -13778,6 +13814,7 @@ walkthrough listen
     {"kind": "stopped"}   the page was stopped; nothing more will come
   Comments, replies, edits, deletions, Resolve and Viewed never wake it.
   Exit code 3: another walkthrough listen took over.
+  Until ready, the page says the session stopped once a listen ran and none has run for 15 seconds, so start it again at once.
 
 walkthrough say --answer <ask id> (<text> | --file <file>)
   Answers an ask as a reply in its thread, in two sentences, the first answering directly. Answers stay on the page and never go out.
@@ -14080,7 +14117,20 @@ async function start(args) {
       `Warning: ${plural(change.uncommitted, "uncommitted change")} ${change.uncommitted === 1 ? "is" : "are"} left out of this walkthrough.`
     );
   console.log(`Write what you record to files in ${inbox} and pass each with --file.`);
+  if (walkthrough.ready === false) await forgetStoppedListener(dir);
+  await ensureServer(dir);
+  console.log("The page is not open yet; walkthrough open opens it.");
+}
+async function openCommand(args) {
+  const { dir } = current2(args);
+  await markOpened(dir);
   openPage(await ensureServer(dir), "The page", dir);
+}
+async function ready(args) {
+  const { dir } = current2(args);
+  const opened = await markReady(dir);
+  console.log("The walkthrough is ready; the page shows it whole.");
+  if (!opened) openPage(await ensureServer(dir), "The page", dir);
 }
 function openPage(url, what, dir) {
   const browser = spawnSync4(process.platform === "darwin" ? "open" : "xdg-open", [url], { stdio: "ignore" });
@@ -14109,11 +14159,6 @@ async function steps2(args) {
   const inputs = parseSteps(readInput(values.file));
   const { steps: recorded } = await recordSteps(dir, (walkthrough) => buildSteps(cwd, walkthrough, inputs));
   console.log(`Recorded ${plural(recorded.length, "step")}: ${recorded.map((step) => `${step.id} (${step.title})`).join(", ")}.`);
-}
-async function reviewing(args) {
-  const { dir, positionals } = located(args, { allowPositionals: true });
-  const ids = await recordReviewing(dir, positionals);
-  console.log(ids.length ? `Reviewing ${plural(ids.length, "step")}: ${ids.join(", ")}.` : "Reviewing no steps.");
 }
 async function commentCommand(args) {
   const { dir, walkthrough, values } = current2(args, FILE_OPTION);
@@ -14181,7 +14226,8 @@ var COMMANDS = {
   start,
   files: files2,
   steps: steps2,
-  reviewing,
+  open: openCommand,
+  ready,
   comment: commentCommand,
   threads: threads2,
   criteria: criteria2,
@@ -14227,7 +14273,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | reviewing [<step id>...]\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {
