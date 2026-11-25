@@ -1,0 +1,19 @@
+# A pull request labelled release must give its version a section in ROADMAP.md, so the roadmap moves with every release.
+name: Roadmap
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  roadmap:
+    if: contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: .github/roadmap-has-version.sh
