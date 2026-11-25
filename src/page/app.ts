@@ -228,8 +228,14 @@ function drawHeader(onSummary: boolean): void {
       : el('code', { className: 'change-label branch', title: name }, name);
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
-    document.title = `${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   }
+  // The tab says the AI is still reviewing, so it reads from the tab strip; a static mark, since background tabs barely animate.
+  const reviewing = !view.ready && !view.sessionGone;
+  const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
+  if (document.title !== title) document.title = title;
+  const favicon = reviewing ? 'favicon-reviewing.svg' : 'favicon.svg';
+  const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (icon && icon.getAttribute('href') !== favicon) icon.setAttribute('href', favicon);
   const files = allFiles().length;
   const viewed = view.viewed.length;
   viewedTotal.data = ` / ${String(files)}`;

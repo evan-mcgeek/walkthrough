@@ -21,6 +21,8 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   await expect(page.getByRole('status', { name: 'AI reviewing' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Finish review' })).toBeHidden();
   await expect(page.getByText('Steps appear here when the AI is done.')).toBeVisible();
+  await expect(page).toHaveTitle('Reviewing · feature/login · Walkthrough');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-reviewing.svg');
   expect(await sceneMotion(page)).toBeGreaterThan(0);
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -42,6 +44,8 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   await expect(page.locator('.ai-reviewing')).toHaveCount(0);
   await expect(page.locator('.opening')).toHaveCount(0);
   await expect(page.locator('.desk-scene')).toHaveCount(0);
+  await expect(page).toHaveTitle('feature/login · Walkthrough');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon.svg');
 });
 
 test('once the session stops listening before ready, the page says so and how to pick it up', async ({ page, repo, url, context }) => {

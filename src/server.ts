@@ -28,6 +28,7 @@ export const PAGE = path.join(import.meta.dirname, 'page');
 const SHARED_FILES: Record<string, { file: string; type: string }> = {
   'style.css': { file: 'style.css', type: 'text/css; charset=utf-8' },
   'favicon.svg': { file: 'favicon.svg', type: 'image/svg+xml' },
+  'favicon-reviewing.svg': { file: 'favicon-reviewing.svg', type: 'image/svg+xml' },
   'apple-touch-icon.png': { file: 'app-icon-180.png', type: 'image/png' },
 };
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
