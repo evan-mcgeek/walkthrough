@@ -2,9 +2,11 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
 import { anchorOf, type Lines, type Place, placeIn } from './lines';
+import { alive, psStart } from './processes';
 import { readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
 export const REVIEW_TYPES = ['comment', 'approve', 'request-changes'] as const;
@@ -56,7 +58,11 @@ export type ThreadView = {
 export type Submitted = { id: string; type: ReviewType; summary: string; comments: number; posted: boolean; address?: string };
 type WithoutThreads<T> = T extends unknown ? Omit<T, 'threads'> : never;
 export type WalkthroughView = WithoutThreads<Walkthrough> & {
-  reviewing: string[];
+  ready: boolean;
+  /** Not ready, and the session's listen, which ran, has been gone too long for a restart. */
+  sessionGone: boolean;
+  /** Every changed file with its line counts, while the walkthrough is not ready. */
+  changedFiles: FileStat[];
   threads: ThreadView[];
   /** Files marked Viewed while their diff is unchanged. */
   viewed: string[];
@@ -208,11 +214,11 @@ function fileMarks(steps: Step[]): Record<string, string> {
 
 /** Changes whenever a file walkthroughView reads does, so the page's poll of an unchanged view is answered without one. */
 export function walkthroughVersion(dir: string): string {
-  const stats = ['walkthrough.json', 'review.jsonl', 'viewed.json'].map(name => {
+  const stats = ['walkthrough.json', 'review.jsonl', 'viewed.json', 'listener.json'].map(name => {
     const stat = fs.statSync(path.join(dir, name), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : '';
   });
-  return fingerprint(stats.join(':'));
+  return fingerprint([...stats, String(listenerGone(dir))].join(':'));
 }
 
 export function walkthroughView(dir: string): WalkthroughView | null {
@@ -224,9 +230,12 @@ export function walkthroughView(dir: string): WalkthroughView | null {
   const last = submits.at(-1);
   const showsSubmitted = last && last.head === walkthrough.head && !kept.some(one => one.pending);
   const address = last && posted.get(last.id);
+  const ready = walkthrough.ready !== false && walkthrough.steps.length > 0;
   return {
     ...walkthrough,
-    reviewing: walkthrough.reviewing ?? [],
+    ready,
+    sessionGone: !ready && listenerGone(dir),
+    changedFiles: ready ? [] : fileStats(process.cwd(), walkthrough.base, walkthrough.head),
     threads,
     viewed: Object.entries(current).flatMap(([file, mark]) => (marks.includes(mark) ? [file] : [])),
     changed: Object.entries(current).flatMap(([file, mark]) =>
@@ -359,8 +368,27 @@ export function reviewComments(dir: string): Record<string, unknown>[] {
 /** The text of an AI comment as it is stored: the page shows `[AI]` itself. */
 export const withoutPrefix = (body: string) => (body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim());
 
-type Listener = { state: 'listening'; pid: number } | { state: 'stopped' };
+type Listener = { state: 'listening'; pid: number; started: string } | { state: 'stopped' };
 const LISTEN_EVERY_MS = 500;
+// Long enough for the session to start listen again after it handled what woke it.
+const LISTEN_GAP_MS = 15_000;
+
+const listenerAlive = (dir: string) => {
+  const now = readJson<Listener | null>(files(dir).listener, null);
+  return now?.state === 'listening' && alive(now);
+};
+
+/** A listen ran, and none has been alive for longer than a restart takes. */
+export function listenerGone(dir: string): boolean {
+  const stat = fs.statSync(files(dir).listener, { throwIfNoEntry: false });
+  return !!stat && Date.now() - stat.mtimeMs > LISTEN_GAP_MS && !listenerAlive(dir);
+}
+
+/** Forgets a listen that is no longer running, so the page waits for this session's own. */
+export const forgetStoppedListener = (dir: string) =>
+  hold(dir, () => {
+    if (!listenerAlive(dir)) fs.rmSync(files(dir).listener, { force: true });
+  });
 
 /** What listen prints for an ask: the question with its lines and the thread so far. */
 export function handedAsk(dir: string, event: Event & { kind: 'ask' }): Record<string, unknown> {
@@ -384,7 +412,7 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<E
     return now?.state === 'listening' && now.pid === process.pid;
   };
   await hold(dir, () => {
-    writeJson(listener, { state: 'listening', pid: process.pid } satisfies Listener);
+    writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
   });
   const release = () =>
     hold(dir, () => {

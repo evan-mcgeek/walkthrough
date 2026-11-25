@@ -25,12 +25,13 @@ const criteria = [
 ];
 
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
-  Starts or resumes a walkthrough and opens its page; nothing is checked out.
+  Starts or resumes a walkthrough and serves its page without opening it; nothing is checked out.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label.
   --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
   Every command below finds the walkthrough from the same source options start was given, so pass them to each.
   When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
+  A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
   Comments on lines that changed stay in the review, detached from the diff.
   It prints the walkthrough's inbox, the folder for the files the session records from.
 
@@ -50,8 +51,13 @@ walkthrough steps --file <file>
   A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
 ${JSON.stringify(steps, null, 2)}
 
-walkthrough reviewing [<step id>...]
-  Records the steps the AI is still reviewing, replacing the set before; with no ids, none, and the page's "AI reviewing" goes.
+walkthrough open
+  Opens the page in the browser. Until the walkthrough is ready it shows the AI at work and the changed files, not the steps.
+
+walkthrough ready
+  Marks the review ready, once every changed file is in a step: the page shows the whole walkthrough at once,
+  with every step, comment, thread and criterion recorded so far. Opens the page too if it was never opened.
+  Comments recorded after this land on the page while the person reads.
 
 walkthrough comment --file <file>
   Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;

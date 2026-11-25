@@ -1,5 +1,7 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import { ONE_STEP, makeRepo, postTo, type Repo, viewAt } from './helpers';
+import { ONE_STEP, makeRepo, postTo, type Repo, until, viewAt } from './helpers';
 
 let repo: Repo;
 afterEach(async () => {
@@ -112,15 +114,38 @@ describe('the review', () => {
     expect((await viewAt(page)).submitted).toMatchObject({ type: 'approve', comments: 0 });
   });
 
-  test('records the criteria and the steps still being reviewed, and refuses what does not fit', async () => {
+  test('before ready, the session counts as gone once its listen ran and none has been alive for 15 seconds', async () => {
+    const page = started();
+    const listener = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'listener.json');
+    const ago = (seconds: number) => {
+      const then = new Date(Date.now() - seconds * 1000);
+      fs.utimesSync(listener, then, then);
+    };
+    expect((await viewAt(page)).sessionGone).toBe(false);
+
+    const { child } = repo.background('listen');
+    await until('listen starts', () => Promise.resolve(fs.existsSync(listener)));
+    ago(20);
+    expect((await viewAt(page)).sessionGone).toBe(false);
+
+    child.kill('SIGKILL');
+    await until('listen ends', () => Promise.resolve(child.exitCode !== null || child.signalCode !== null));
+    ago(5);
+    expect((await viewAt(page)).sessionGone).toBe(false);
+    ago(20);
+    expect((await viewAt(page)).sessionGone).toBe(true);
+
+    repo.run('start');
+    expect(fs.existsSync(listener)).toBe(false);
+    expect((await viewAt(page)).sessionGone).toBe(false);
+  });
+
+  test('records the criteria, and refuses what does not fit', async () => {
     const page = started();
 
     expect(repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria').stdout).toBe('Recorded 1 criterion.\n');
     expect(repo.record([{ text: 'Logs in', status: 'done' }], 'criteria').stderr).toContain('status must be one of met, partly, not-met, not-checked');
-    expect(repo.run('reviewing', '1').stdout).toBe('Reviewing 1 step: 1.\n');
-    expect(repo.run('reviewing', '9').stderr).toContain('the walkthrough has no step 9');
     expect(repo.record([{ file: 'login.ts', lines: [5, 5], body: 'x' }], 'comment').stderr).toContain('lines 5-5 of login.ts are not in its diff');
-    expect(await viewAt(page)).toMatchObject({ criteria: [{ text: 'Logs in', status: 'partly' }], reviewing: ['1'] });
-    expect(repo.run('reviewing').stdout).toBe('Reviewing no steps.\n');
+    expect(await viewAt(page)).toMatchObject({ criteria: [{ text: 'Logs in', status: 'partly' }] });
   });
 });

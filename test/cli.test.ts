@@ -12,6 +12,10 @@ afterEach(() => {
   repo.run('stop');
 });
 
+/** The state folder of the walkthrough of the current branch. */
+const walkthroughFolder = (of: Repo) =>
+  path.join(of.state, fs.readdirSync(of.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login');
+
 describe('walkthrough start', () => {
   test('pins the walkthrough to the merge-base and head without checking anything out', () => {
     repo = makeRepo();
@@ -84,12 +88,13 @@ describe('walkthrough start', () => {
     );
   });
 
-  test('serves the page on localhost behind a private token and opens it in the browser', async () => {
+  test('serves the page on localhost behind a private token, without opening it', async () => {
     repo = makeRepo();
 
     const started = repo.run('start');
 
-    expect(started.stdout).toContain('The page is open in your browser.');
+    expect(started.stdout).toContain('The page is not open yet; walkthrough open opens it.');
+    expect(repo.opened()).toEqual([]);
     const url = new URL(repo.url());
     expect(url.hostname).toBe('127.0.0.1');
     expect(url.pathname).toMatch(/^\/s\/[0-9a-f]{48}\/$/);
@@ -107,7 +112,9 @@ describe('walkthrough start', () => {
     const ended = await Promise.all([1, 2, 3].map(() => repo.background('start').ended));
 
     expect(ended.map(one => one.status)).toEqual([0, 0, 0]);
-    expect(new Set(repo.opened()).size).toBe(1);
+    const { pid } = JSON.parse(fs.readFileSync(path.join(walkthroughFolder(repo), 'server.json'), 'utf8')) as { pid: number };
+    const servers = spawnSync('pgrep', ['-f', `serve ${walkthroughFolder(repo)}`], { encoding: 'utf8' }).stdout.trim().split('\n');
+    expect(servers).toEqual([String(pid)]);
   });
 
   test('answers a poll for an unchanged walkthrough with no body, and a changed one in full', async () => {
@@ -226,6 +233,44 @@ describe('the page server', () => {
   });
 });
 
+describe('walkthrough open and ready', () => {
+  test('open opens the page; ready shows the whole walkthrough, opening the page only if it never was', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    const url = repo.url();
+
+    expect(repo.run('ready').stderr).toContain('record the steps before the walkthrough is ready');
+    repo.record(ONE_STEP);
+    expect((await shownAt(url)).ready).toBe(false);
+    expect(repo.run('open').stdout).toContain('The page is open in your browser.');
+    expect(repo.opened()).toEqual([url]);
+    expect(repo.run('ready').stdout).toBe('The walkthrough is ready; the page shows it whole.\n');
+    expect(repo.opened()).toEqual([url]);
+    expect(await shownAt(url)).toMatchObject({ ready: true, changedFiles: [] });
+
+    repo.run('stop');
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+    expect(repo.run('ready').stdout).toContain('The page is open in your browser.');
+    expect(repo.opened()).toEqual([repo.url()]);
+  });
+
+  test('a walkthrough saved before ready existed counts as ready', async () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+    const saved = path.join(walkthroughFolder(repo), 'walkthrough.json');
+    const earlier = JSON.parse(fs.readFileSync(saved, 'utf8')) as { ready?: boolean };
+    delete earlier.ready;
+    fs.writeFileSync(saved, JSON.stringify({ ...earlier, reviewing: ['1'] }));
+
+    const shown = await shownAt(repo.url());
+    expect(shown.ready).toBe(true);
+    expect(shown).not.toHaveProperty('reviewing');
+  });
+});
+
 describe('walkthrough stop', () => {
   test('ends the page server', async () => {
     repo = makeRepo();
@@ -243,9 +288,10 @@ describe('walkthrough stop', () => {
     repo = makeRepo();
     repo.run('start');
 
-    expect((await post(repo.url(), '/stop', {})).status).toBe(200);
+    const url = repo.url();
+    expect((await post(url, '/stop', {})).status).toBe(200);
 
-    await until('the page server ends', () => fetch(repo.url()).then(() => false, () => true));
+    await until('the page server ends', () => fetch(url).then(() => false, () => true));
     expect(repo.run('stop').stdout).toContain('The walkthrough page was not running.');
   });
 });

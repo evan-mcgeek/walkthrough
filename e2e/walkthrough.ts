@@ -34,10 +34,10 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
   },
 });
 
-/** Records `input` with the CLI and waits until the page shows the step list it draws. */
+/** Records `input` with the CLI; steps also make the walkthrough ready, so the page shows it. */
 export function record(repo: Repo, input: unknown, command = 'steps'): void {
-  const recorded = repo.record(input, command);
-  if (recorded.status !== 0) throw new Error(recorded.stderr);
+  const recorded = command === 'steps' ? [repo.record(input, command), repo.run('ready')] : [repo.record(input, command)];
+  for (const { status, stderr } of recorded) if (status !== 0) throw new Error(stderr);
 }
 
 export async function open(page: Page, url: string, address = ''): Promise<void> {

@@ -116,6 +116,21 @@ export async function changedFiles(cwd: string, base: string, head: string): Pro
   return files;
 }
 
+/** A changed file's added and deleted lines; a binary file has none. */
+export type FileStat = { path: string; additions?: number; deletions?: number };
+
+export function fileStats(cwd: string, base: string, head: string): FileStat[] {
+  const fields = git(cwd, 'diff', '--numstat', '-z', '-M', '--no-ext-diff', base, head).split('\0');
+  const stats: FileStat[] = [];
+  for (let at = 0; at < fields.length - 1; ) {
+    const [added = '', deleted = '', name = ''] = (fields[at++] ?? '').split('\t');
+    // A rename leaves the name empty and gives its base path, then its path, as the next two fields.
+    const path = name || ((at += 2), fields[at - 1] ?? '');
+    stats.push(added === '-' ? { path } : { path, additions: Number(added), deletions: Number(deleted) });
+  }
+  return stats;
+}
+
 // An order file line is a wildmatch pattern, so each path is escaped to match only itself.
 const orderOf = (files: ChangedFile[]) => files.map(file => file.path.replace(/[\\*?[\]#!]/g, '\\$&')).join('\n');
 

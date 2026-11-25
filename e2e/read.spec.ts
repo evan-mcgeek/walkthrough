@@ -37,6 +37,7 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   fs.writeFileSync(path.join(repo.dir, 'tasks.ts'), lines(61, 'task'));
   git(repo.dir, 'commit', '-am', 'One more task');
   repo.run('start');
+  repo.run('ready');
 
   await expect(file.getByText('Changed since last view')).toBeVisible();
   await expect(file).not.toHaveClass(/closed/);

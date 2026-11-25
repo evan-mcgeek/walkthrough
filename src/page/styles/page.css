@@ -285,6 +285,7 @@ textarea {
 }
 
 .files-viewed,
+.files-changed,
 .ai-reviewing {
   display: inline-flex;
   flex: none;
@@ -463,12 +464,6 @@ textarea {
   white-space: nowrap;
 }
 
-.step-reviewing .icon {
-  width: 13px;
-  height: 13px;
-  color: var(--muted);
-}
-
 .file-row {
   display: flex;
   align-items: center;
@@ -585,18 +580,6 @@ textarea {
   overflow: clip;
 }
 
-.preparing {
-  display: grid;
-  place-items: center;
-  min-height: 50vh;
-  color: var(--accent);
-}
-
-.preparing .icon {
-  width: 20px;
-  height: 20px;
-}
-
 .step-head {
   margin-bottom: var(--s4);
 }
@@ -664,20 +647,6 @@ textarea {
 
 .explanation:focus {
   outline: none;
-}
-
-.reviewing-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: var(--s2) 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.reviewing-line .icon {
-  width: 14px;
-  height: 14px;
 }
 
 /* Files: a header in a bordered box; the body folds by grid rows. */

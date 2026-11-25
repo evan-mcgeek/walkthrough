@@ -160,11 +160,16 @@ export function makeRepo({
       }),
     /** Every address the CLI asked the browser to open. */
     opened: () => lines('open'),
-    /** The page address the last start opened. */
+    /** The address of the page server started last, which start serves without opening it. */
     url: () => {
-      const last = lines('open').at(-1);
-      if (!last) throw new Error(`no page was opened${said ? `; the CLI last said: ${said.trim()}` : ''}`);
-      return last;
+      const folders = (dir: string) => (fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).filter(one => one.isDirectory()).map(one => path.join(dir, one.name)) : []);
+      const records = folders(env.WALKTHROUGH_STATE)
+        .flatMap(repoDir => [repoDir, ...folders(repoDir)])
+        .map(dir => path.join(dir, 'server.json'))
+        .filter(file => fs.existsSync(file));
+      const last = records.sort((one, other) => fs.statSync(one).mtimeMs - fs.statSync(other).mtimeMs).at(-1);
+      if (!last) throw new Error(`no page server runs${said ? `; the CLI last said: ${said.trim()}` : ''}`);
+      return (JSON.parse(fs.readFileSync(last, 'utf8')) as { url: string }).url;
     },
   };
 }
