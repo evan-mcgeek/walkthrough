@@ -12,19 +12,22 @@
   --surface-tint: light-dark(#eef0f3, #232830);
   --rule: light-dark(#dde1e6, #2c323b);
   --rule-soft: light-dark(#e9ecef, #252a32);
-  --control-edge: light-dark(#8390a3, #5e6a7a);
+  --control-edge: light-dark(#818b98, #6e7681);
   --ink: light-dark(#1d2126, #e5e8ec);
   --ink-secondary: light-dark(#3a4048, #c3c8cf);
   --muted: light-dark(#5b636d, #9aa2ac);
   --icon-knockout: light-dark(#ffffff, #15181d);
 
   /* The one accent, Ultramarine: the mark, the primary action, focus, picked lines and your own words; never status */
-  --accent: light-dark(#2433b8, #8c97ff);
-  --accent-hover: light-dark(#1b2896, #a3abff);
-  --accent-text: light-dark(#2433b8, #a9b1ff);
+  --accent: light-dark(#2d3a9e, #8c97ff);
+  --accent-hover: light-dark(#252f85, #a3abff);
+  --accent-text: light-dark(#2d3a9e, #a9b1ff);
+  /* The filled things, the primary button and your avatar: a mid-tone in dark, so the primary is never the brightest thing on screen */
+  --accent-fill: light-dark(#2d3a9e, #4f5bd5);
+  --accent-fill-hover: light-dark(#252f85, #5b67e0);
   --accent-wash: light-dark(#eceefc, #1e2346);
   --accent-line: light-dark(#d3d7f7, #333b70);
-  --on-accent: light-dark(#ffffff, #0b0f2e);
+  --on-accent: #ffffff;
   --line-pick: light-dark(#eef0fd, #1d2242);
   --line-pick-gutter: light-dark(#d9ddf8, #2a3263);
 

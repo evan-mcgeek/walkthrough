@@ -23,7 +23,7 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   await expect(page.getByText('Steps appear here when the AI is done.')).toBeVisible();
   await expect(page).toHaveTitle('Reviewing · feature/login · Walkthrough');
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-reading.svg');
-  for (const head of ['reading', 'awake', 'done', 'asleep'])
+  for (const head of ['reading', 'awake', 'done', 'ended', 'asleep'])
     expect((await page.request.get(new URL(`favicon-${head}.svg`, url).href)).headers()['content-type']).toBe('image/svg+xml');
   expect(await sceneMotion(page)).toBeGreaterThan(0);
 

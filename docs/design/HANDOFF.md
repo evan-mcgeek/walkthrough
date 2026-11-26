@@ -30,6 +30,8 @@ The build spec for the Walkthrough review page. It replaces every earlier brief,
 | 21 | Suggested changes | no |
 | 22 to 25 | Colorblind (with the stripe check), Copied code, Comments on a whole file | no |
 | 26 to 30 | Syntax colours on every background (with the contrast grid), Code in comments, explanations and answers, A file taking its colours, What stays plain | no |
+| 31 to 33 | `mascot.html` (Favicons) for 31 and 32; every board uses the new control edge (33) | no |
+| 34 | every board and the prototype use the new accent and fill | yes |
 
 Boards drawn before decision 26 show plain code; decision 26 colours them too. Decisions 22 to 25 and 27 change features already built in 0.1.5; each says what is built, what is kept and what changes.
 
@@ -70,6 +72,12 @@ These override `VISION.md` where they differ.
 28. **Code blocks, GitHub's fenced markdown,** in comments, explanations and answers: coloured by the language the fence names, plain with no language, on the surface tint. Suggested changes and an outdated thread's quoted code are coloured as their file. The review policy keeps blocks to 6 lines, only when the point is code (`DESIGN.md` → Words).
 29. **Colours never hold the page and never move.** During the Opening the page highlights the first step's files, so the walkthrough arrives coloured; the other files are highlighted in reading order behind the page. A file reached before its colours shows plain and takes them in place in one frame: no fade, no spinner, no word, no layout change, under reduced motion the same.
 30. **What stays plain:** a line over 1,000 characters (as on GitHub), a file in a language Shiki does not know, a code block whose fence names none. Nothing on the page says so.
+
+31. **The tab's favicons are readable at 16px.** *Built:* closed eyes (asleep) and happy arcs (done) were 2.2-unit strokes on the 32 grid, about 1px at 16px. *Changed:* every eye is at least 2px at 16px: asleep's closed eyes are filled bars (6.5 × 4), done's arcs are 3 units thick and further apart. Files: `brand/mascot/favicon-*.svg`.
+32. **A session that ended with nothing sent has its own favicon, "ended".** *Built:* the tab showed "done" for any ended session, because "awake" would claim a session is still running. *Changed:* "done" (happy arcs) only when something went out; "ended" (two round dot eyes, the farewell's "nothing sent" face) when nothing did. The tab: Opening → reading; running → awake; session isn't running (or the Opening failed) → asleep; ended after Submit review or Send to agent → done; ended with nothing sent → ended. File: `brand/mascot/favicon-ended.svg`.
+33. **Control edges clear 3:1 on every grey.** *Built:* control borders at #8390a3 / #5e6a7a, 3:1 on canvas and surface but 2.8 and 2.7:1 on the surface tint used for hover and pressed. *Changed:* `control-edge` is GitHub's emphasis border, light #818b98, dark #6e7681: 3.0 to 3.5:1 (light) and 3.2 to 3.9:1 (dark) on canvas, surface, surface tint and picked lines. One value for every control, so none needs a second border token wherever it sits.
+
+34. **The accent, toned down.** *Built:* Ultramarine #2433b8 in light (as saturated as the hue gets at that depth) and, in dark, the primary button filled with the bright #8c97ff and dark text, the brightest thing on the page. *Changed:* light Ultramarine and its text tone become #2d3a9e (hover #252f85). Dark keeps #8c97ff and #a9b1ff for rings, the caret, links and marks, but the three filled things (the primary button, your avatar and the gutter "+") take new fill tokens, #4f5bd5 with hover #5b67e0 and white text (5.5:1 and 4.7:1). In light the fill tokens equal Ultramarine. The mark, favicon and app icons follow (`brand/`).
 
 ## Constraints that do not move
 
@@ -131,6 +139,7 @@ Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on 
 - **The farewell and asleep robot:** the same robot in `screens.html` as `.bye6` (keyframes `wave6`, `zz6`), with the monitor off. Happy eyes when something was sent, dot eyes when nothing was, closed eyes and "z" when the session isn't running.
 - **After End session:** End session (from the menu, or the quiet button after sending) stops the server, so before it does, the page swaps itself to the farewell drawn from what it already holds: header with the mark and label only; the robot waving once (happy eyes if something was sent); "Session ended"; one outcome box (Review submitted + View review / Nothing was posted. / Sent to the agent / Nothing was sent to the agent.); "Pick it up again" with the command in mono (`/walkthrough:pr <N>`, or `/walkthrough` for your own change) and Copy command ("Copied" for 2s); "A new commit reopens only the steps that changed."; "You can close this tab." No step list, no links back in. Boards: "After End session".
 - **The session isn't running:** when the page loses its server without End session (the agent closed, sleep, a crash), it replaces the old "Could not reach the walkthrough page." banner with the same layout: the robot asleep at its desk, "The session isn't running", a box saying nothing is lost with Try again (reconnects if the session is still there), then "Pick it up again" with the command. Decide it after two failed polls, not on the first. The page keeps polling, so it also comes back by itself when the session answers again. Board: "The session isn't running".
+- **The tab's favicon (decisions 31, 32):** the head favicons from `brand/mascot/`, swapped by state: reading during the Opening, awake while the session runs, asleep when it isn't running or the Opening failed, done after the session ends with something sent, ended when it ends with nothing sent.
 - **Menu:** Theme (System, Light, Dark, and the Colorblind checkbox, decision 22) and End session. Nothing else.
 
 ## 3. Build order
@@ -169,6 +178,8 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 - Moved lines appear once, with both ends linked; J, K, C and V work and appear in no list.
 - Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
 - Every coloured token is 4.5:1 or more on its background in light, dark and Colorblind; the page carries no inline style for colours; a file taking its colours moves nothing, and the line you read stays put.
+- In dark, the primary button is a mid-tone fill with white text; no filled accent uses #8c97ff; light Ultramarine is #2d3a9e everywhere, the mark and icons included.
+- Every control edge is 3:1 or more against canvas, surface, surface tint and picked lines, at rest, on hover and pressed; each favicon's eyes are at least 2px at 16px, and the tab never shows awake or done after a session that sent nothing.
 - With Colorblind on, no green or red is left in the diff, the counts, the stripe or the status colours, in light and dark (syntax colours keep their hues, decision 26); every stripe mark is 3:1 against the stripe.
 - A copy's last line is visible without reading line numbers; a copy never looks like a move.
 - Comment on this file opens its composer at the top of the file; file threads sit above outdated ones; a file comment's Summary row has no line and goes to the thread.

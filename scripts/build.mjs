@@ -89,5 +89,5 @@ await build({
 for (const page of ['index.html', 'list.html']) fs.copyFileSync(path.join(root, 'src', 'page', page), path.join(out, 'page', page));
 // The design's master brand files ship as they are: Walky's head for the tab, one per session state, and the app icon.
 const brand = path.join(root, 'docs', 'design', 'brand');
-for (const asset of ['favicon-reading.svg', 'favicon-awake.svg', 'favicon-done.svg', 'favicon-asleep.svg']) fs.copyFileSync(path.join(brand, 'mascot', asset), path.join(out, 'page', asset));
+for (const asset of ['favicon-reading.svg', 'favicon-awake.svg', 'favicon-done.svg', 'favicon-ended.svg', 'favicon-asleep.svg']) fs.copyFileSync(path.join(brand, 'mascot', asset), path.join(out, 'page', asset));
 fs.copyFileSync(path.join(brand, 'app-icon-180.png'), path.join(out, 'page', 'app-icon-180.png'));

@@ -7,13 +7,15 @@ colors:
   surface-tint: "#eef0f3"
   rule: "#dde1e6"
   rule-soft: "#e9ecef"
-  control-edge: "#8390a3"
+  control-edge: "#818b98"
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
-  ultramarine: "#2433b8"
-  ultramarine-hover: "#1b2896"
-  ultramarine-text: "#2433b8"
+  ultramarine: "#2d3a9e"
+  ultramarine-hover: "#252f85"
+  ultramarine-text: "#2d3a9e"
+  ultramarine-fill: "#2d3a9e"
+  ultramarine-fill-hover: "#252f85"
   ultramarine-wash: "#eceefc"
   ultramarine-line: "#d3d7f7"
   on-ultramarine: "#ffffff"
@@ -39,7 +41,7 @@ colors:
   surface-tint-dark: "#232830"
   rule-dark: "#2c323b"
   rule-soft-dark: "#252a32"
-  control-edge-dark: "#5e6a7a"
+  control-edge-dark: "#6e7681"
   ink-dark: "#e5e8ec"
   ink-secondary-dark: "#c3c8cf"
   muted-dark: "#9aa2ac"
@@ -48,7 +50,9 @@ colors:
   ultramarine-text-dark: "#a9b1ff"
   ultramarine-wash-dark: "#1e2346"
   ultramarine-line-dark: "#333b70"
-  on-ultramarine-dark: "#0b0f2e"
+  on-ultramarine-dark: "#ffffff"
+  ultramarine-fill-dark: "#4f5bd5"
+  ultramarine-fill-hover-dark: "#5b67e0"
   icon-knockout-dark: "#15181d"
   amber-dark: "#e3b260"
   ok-dark: "#5fd38d"
@@ -172,15 +176,15 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.control}"
     padding: "0 12px"
     height: "30px"
   button-primary-hover:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-primary-active:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -262,7 +266,7 @@ components:
     rounded: "{rounded.xl}"
     padding: "12px 16px"
   add-comment:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.sm}"
     size: "20px"
@@ -316,10 +320,10 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu. Colorblind (decision 22) swaps the green and red pair for blue and orange in either theme; see Colorblind below.
 
 ### Primary (the accent)
-- **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the gutter "+" for a new comment, and the mark. It never carries status: not in the files-viewed bar, not in the step list.
-- **Ultramarine Hover** (`ultramarine-hover`): the primary button's hover and active fill. A disabled primary stays plain Ultramarine on hover.
+- **Ultramarine** (light `ultramarine` #2d3a9e, dark `ultramarine-dark` #8c97ff): the default accent and the brand colour, as a line or a mark: focus rings (2px, 2px offset), the text caret, the checked radio ring, your stripe mark, and the mark. It never carries status: not in the files-viewed bar, not in the step list. Decision 34 softened light from #2433b8 (chroma 0.21, the most this hue holds at its depth) to #2d3a9e (0.16, same hue); white on it is 9.5:1.
+- **Ultramarine Fill / Fill Hover** (`ultramarine-fill`, `ultramarine-fill-hover`; decision 34): the three filled things: the primary button (with an inset 1px bottom shade; hover and active take Fill Hover; a disabled primary stays on Fill), your avatar, and the gutter "+" that starts a comment, all with `on-ultramarine` (white) on top. Light: the same as Ultramarine and its hover (#2d3a9e, #252f85). Dark: #4f5bd5 and #5b67e0, a mid-tone so the primary button is no longer the brightest thing on a dark page; white on them is 5.5:1 and 4.7:1. New because dark needs a darker fill for white text while rings and marks need the bright tone. `ultramarine-hover` stays as the light fill hover, for anything already reading it.
 - **Ultramarine Text** (`ultramarine-text`): the accent at text contrast, for links, step-number links, the "Look at" links, the selected-line gutter number, the reviewer's own gutter marker and "Your comment" label.
-- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, your avatar, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
+- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
 
 ### Status
 Status colour survives only where GitHub has the same meaning or the AI's criteria check needs it. Each still carries an icon and a word.
@@ -406,7 +410,7 @@ Contrast of each token on each background, ours, with GitHub's in brackets where
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
 - **Surface** (`surface`): the step list, file headers, secondary buttons, the code pane, the overview stripe, and the AI's comment rows.
 - **Surface Tint** (`surface-tint`): hover fill and every pressed or chosen neutral state (a checked Viewed pill), counters, step numbers, inline code.
-- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control, 3:1 against canvas and surface (light #8390a3 at 3.2 / 3.0, dark #5e6a7a at 3.2 / 3.0; built in 0.1.5 at #d0d5dc and #3a414b, 1.4 to 1.7:1).
+- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control. Control Edge is GitHub's emphasis border, light #818b98 and dark #6e7681 (decision 33): 3:1 or more on canvas, surface, surface tint and picked lines (light 3.0 to 3.5:1, dark 3.2 to 3.9:1), so a control keeps its edge when hover or pressed fills it with the tint, or when it sits on the tint. Before: #8390a3 / #5e6a7a, 3:1 on canvas and surface but 2.8 and 2.7:1 on the tint; built in 0.1.5 at #d0d5dc / #3a414b, 1.3 to 1.7:1. Rules stay as they are: they divide, they do not bound a control.
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text and all reading prose; secondary labels, the PR number, a viewed file's tick, quotes and table values; the single secondary grey per theme, for metadata, counts, placeholders, line numbers, hunk headers, a criterion not checked, and resting icons.
 - **Files viewed bar** (`rule` track, `ink-secondary` fill): the 72px bar in the header.
 - **Overview stripe marks:** additions and deletions in the stripe colours; a comment by the AI or a colleague in muted, yours in the accent. Hidden at 390.
@@ -483,8 +487,8 @@ Small, tight radii. 4px on every control (buttons, inputs, icon buttons, inline 
 
 ### Inputs
 - Canvas fill, 1px control edge, 4px corners, 30px tall; comment and summary textareas 6px corners, min 64px, resizable. Placeholders are GitHub's: "Leave a comment", "Reply…".
-- **Viewed:** GitHub's checkbox with the word, in a 26px bordered pill at the right of the file header; checked, the pill takes surface tint and the file folds. When new commits change a file you marked Viewed, Viewed clears, the file opens again, its step-list tick goes back to a ring, and a neutral pill beside the count reads "Changed since last view" (as on GitHub).
-- **Review type:** three native radios, Comment, Approve, Request changes, accent-coloured, no descriptions.
+- **Viewed:** GitHub's checkbox (14px, control edge; checked, filled in secondary ink with a canvas tick) with the word, in a 26px bordered pill at the right of the file header; checked, the pill takes surface tint and the file folds. When new commits change a file you marked Viewed, Viewed clears, the file opens again, its step-list tick goes back to a ring, and a neutral pill beside the count reads "Changed since last view" (as on GitHub).
+- **Review type:** three radios, Comment, Approve, Request changes, no descriptions: a 16px ring in the control edge, checked as an accent ring around a canvas dot (a native ring is about 1.7:1, under decision 33's 3:1).
 
 ### Header
 44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", Finish (not on the Summary), menu. "AI reviewing" with the spinner belongs to the Opening's header only (HANDOFF decision 10).
