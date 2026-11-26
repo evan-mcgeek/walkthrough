@@ -94,25 +94,34 @@ describe('walkthrough resolve', () => {
 });
 
 describe('an outdated comment', () => {
-  test('keeps the code it was written on and names the step that now holds its file; one whose file left the change names none', async () => {
-    repo = makeRepo();
+  test('keeps the code it was written on, numbered across hunks, and names the step that now holds its file; one whose file left the change names none', async () => {
+    const long = (changed: Record<number, string>) => Array.from({ length: 30 }, (_, at) => changed[at + 1] ?? `export const v${String(at + 1)} = 1;`).join('\n') + '\n';
+    repo = makeRepo({ start: { 'long.ts': long({}) }, feature: { 'long.ts': long({ 1: 'export const v1 = 2;', 20: 'export const v20 = 2;' }) } });
     repo.run('start');
-    repo.record(ONE_STEP);
+    repo.record([{ ...ONE_STEP[0], files: ['login.ts', 'app.ts', 'long.ts'] }]);
     repo.run('ready');
     const page = repo.url();
     await postTo(page, '/comment', { file: 'app.ts', lines: [1, 1], text: 'On the app.' });
+    expect((await postTo(page, '/comment', { file: 'long.ts', lines: [3, 18], text: 'Across hunks.' })).status).toBe(200);
     repo.record([THREAD], 'threads');
 
     fs.writeFileSync(path.join(repo.dir, 'app.ts'), 'export const app = 3;\n');
+    fs.writeFileSync(path.join(repo.dir, 'long.ts'), long({ 1: 'export const v1 = 2;', 18: 'export const v18 = 2;', 20: 'export const v20 = 2;' }));
     fs.rmSync(path.join(repo.dir, 'login.ts'));
     git(repo.dir, 'add', '-A');
     git(repo.dir, 'commit', '-m', 'More');
     repo.run('start');
 
     const { threads } = await viewAt(page);
-    expect(threads.find(one => one.file === 'app.ts')).toMatchObject({ step: null, code: ['export const app = 2;'], fileStep: '1' });
+    expect(threads.find(one => one.file === 'app.ts')).toMatchObject({ step: null, code: [[1, 'export const app = 2;']], fileStep: '1' });
+    expect(threads.find(one => one.file === 'long.ts')?.code).toEqual([
+      [3, 'export const v3 = 1;'],
+      [4, 'export const v4 = 1;'],
+      [17, 'export const v17 = 1;'],
+      [18, 'export const v18 = 1;'],
+    ]);
     const gone = threads.find(one => one.id === '1042');
-    expect(gone).toMatchObject({ step: null, code: ['export const login = () => true;'] });
+    expect(gone).toMatchObject({ step: null, code: [[1, 'export const login = () => true;']] });
     expect(gone).not.toHaveProperty('fileStep');
   });
 });

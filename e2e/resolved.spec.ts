@@ -46,6 +46,7 @@ test.describe('a pull request', () => {
 test('an outdated comment sits at the top of its file with the code it was written on, and its Summary row links there', async ({ page, repo, url }) => {
   record(repo, ONE_STEP);
   await postTo(url, '/comment', { file: 'app.ts', lines: [1, 1], text: 'Bump it once.' });
+  record(repo, [{ id: '1042', file: 'app.ts', lines: [1, 1], author: 'dana-k', at: '2026-11-23T09:30:00Z', body: 'Why 2?' }], 'threads');
   fs.writeFileSync(path.join(repo.dir, 'app.ts'), 'export const app = 3;\n');
   git(repo.dir, 'commit', '-am', 'More');
   repo.run('start');
@@ -53,17 +54,21 @@ test('an outdated comment sits at the top of its file with the code it was writt
   await open(page, url);
 
   const file = page.locator('.file[data-file="app.ts"]');
-  const thread = file.locator('.outdated-zone .thread');
+  const thread = file.locator('.outdated-zone .thread').filter({ hasText: 'Bump it once.' });
   await expect(thread.locator('.outdated-head')).toHaveText('app.tsOutdated');
   await expect(thread.locator('.outdated-line')).toHaveText('1export const app = 2;');
   await expect(thread.locator('.comment-you')).toContainText('Bump it once.');
   await expect(thread.getByRole('button', { name: 'Edit' })).toBeVisible();
   await expect(file.locator('.thread-row')).toHaveCount(0);
-  await expect(file.locator('.file-comments')).toHaveText('1');
+  await expect(file.locator('.file-comments')).toHaveText('2');
 
   await page.getByRole('link', { name: 'Finish review' }).click();
   const row = page.locator('.going-row');
   await expect(row.locator('.outdated-tag')).toHaveText('Outdated');
   await row.getByRole('link', { name: 'app.ts:1' }).click();
   await expect(thread).toBeInViewport();
+
+  await page.getByRole('link', { name: 'Finish review' }).click();
+  await page.getByRole('link', { name: '1 unresolved thread' }).click();
+  await expect(file.locator('.thread[data-thread="1042"]')).toBeInViewport();
 });

@@ -6,8 +6,10 @@ import type { Step, Walkthrough } from './walkthrough';
 
 /** The first and last line, numbered as in the file at the head. */
 export type Lines = [number, number];
-/** `linesHash` fingerprints the lines as they were when placed, so a place whose lines change is detached; `code` is their text then. */
-export type Place = { file: string; lines: Lines; linesHash: string; code?: string[] };
+/** The lines of a place the diff shows, each as its number and text. */
+export type Code = [number, string][];
+/** `linesHash` fingerprints the lines as they were when placed, so a place whose lines change is detached; `code` is those lines then. */
+export type Place = { file: string; lines: Lines; linesHash: string; code?: Code };
 
 export const isLines = (value: unknown): value is Lines =>
   Array.isArray(value) &&
@@ -27,8 +29,13 @@ export function shownLines(step: Step, file: string): Map<number, string> | null
   return new Map(lines.flatMap(line => (line.newNumber === undefined ? [] : [[line.newNumber, line.content.slice(1)]])));
 }
 
-const codeOf = (shown: Map<number, string>, [first, last]: Lines) => [...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line);
-const hashOf = (shown: Map<number, string>, lines: Lines) => crypto.createHash('sha256').update(JSON.stringify(codeOf(shown, lines))).digest('hex').slice(0, 16);
+const codeOf = (shown: Map<number, string>, [first, last]: Lines): Code => [...shown].filter(([number]) => number >= first && number <= last);
+const hashOf = (shown: Map<number, string>, lines: Lines) =>
+  crypto
+    .createHash('sha256')
+    .update(JSON.stringify(codeOf(shown, lines).map(([, line]) => line)))
+    .digest('hex')
+    .slice(0, 16);
 
 const stepOf = ({ steps }: Walkthrough, file: string) => steps.find(one => one.files.includes(file));
 

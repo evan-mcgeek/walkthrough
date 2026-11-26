@@ -139,10 +139,11 @@ export class ThreadBox {
     const { thread } = this;
     this.outdated.hidden = thread.step !== null;
     if (thread.step !== null || this.outdated.hasChildNodes()) return;
-    // ponytail: numbered from the first line, so a range that spans two hunks numbers the second wrong; store numbers with the code if that matters.
-    const code = (thread.code ?? []).map((text, at) =>
-      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(thread.lines[0] + at)), el('span', {}, text)),
-    );
+    // A gap row stands where the numbers jump, between two hunks.
+    const code = (thread.code ?? []).flatMap(([number, text], at, all) => [
+      ...(at > 0 && number !== (all[at - 1]?.[0] ?? 0) + 1 ? [attrs(el('div', { className: 'outdated-gap' }), { 'aria-hidden': 'true' })] : []),
+      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(number)), el('span', {}, text)),
+    ]);
     this.outdated.append(
       el('div', { className: 'outdated-head' }, el('span', { className: 'outdated-path', title: thread.file }, thread.file), el('span', { className: 'outdated-tag' }, 'Outdated')),
       ...(code.length ? [el('div', { className: 'outdated-code' }, ...code)] : []),

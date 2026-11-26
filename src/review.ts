@@ -5,7 +5,7 @@ import path from 'node:path';
 import { type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
-import { anchorOf, type Lines, type Place, placeIn, stepOfFile } from './lines';
+import { anchorOf, type Code, type Lines, type Place, placeIn, stepOfFile } from './lines';
 import { alive, psStart } from './processes';
 import { readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
@@ -64,7 +64,7 @@ export type ThreadView = {
   /** Unresolve conversation takes the resolve back: it has not gone out, or it is the AI's on your own change. */
   unresolvable?: true;
   /** Once outdated: the lines' text when the thread was placed, and the step that now changes its file, if any. */
-  code?: string[];
+  code?: Code;
   fileStep?: string;
   comments: CommentView[];
 };

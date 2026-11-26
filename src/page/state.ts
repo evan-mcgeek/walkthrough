@@ -44,7 +44,7 @@ export const outdatedIn = (step: string, file: string) => state.view.threads.fil
 export const commentCount = (step: string, file: string) => [...threadsIn(step, file), ...outdatedIn(step, file)].reduce((sum, one) => sum + one.comments.length, 0);
 /** The step a thread shows in, at its lines or at the top of its file; none once its file left the change. */
 export const threadStep = (thread: ThreadView) => thread.step ?? thread.fileStep;
-export const unresolved = () => state.view.threads.filter(one => one.colleague && !one.resolved && one.step !== null);
+export const unresolved = () => state.view.threads.filter(one => one.colleague && !one.resolved && threadStep(one) !== undefined);
 export const notViewed = () => allFiles().filter(file => !state.view.viewed.includes(file));
 
 /** Who started a thread, which its gutter mark and stripe tick show. */

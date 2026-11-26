@@ -903,6 +903,12 @@ textarea {
   white-space: pre;
 }
 
+.outdated-gap {
+  height: var(--s2);
+  margin: var(--s1) 0;
+  background: var(--surface-tint);
+}
+
 .outdated-number {
   flex: none;
   width: 40px;
