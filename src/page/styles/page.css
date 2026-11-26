@@ -1332,6 +1332,18 @@ tr.moved-label .line-num1 {
   height: 13px;
 }
 
+/* Copied code: a muted rule down the code cells from the label to the last copied line, turning under it. */
+tr.copied > td:not(.d2h-code-linenumber) {
+  box-shadow: inset 2px 0 var(--muted);
+}
+
+tr.copied-end > td:not(.d2h-code-linenumber) {
+  background-image: linear-gradient(var(--muted), var(--muted));
+  background-position: 0 100%;
+  background-size: 10px 2px;
+  background-repeat: no-repeat;
+}
+
 tr.picked td {
   background: var(--line-pick);
 }
@@ -1352,7 +1364,7 @@ tr.flash td {
 @keyframes flash {
   0%,
   30% {
-    background: var(--line-pick-gutter);
+    background-color: var(--line-pick-gutter);
   }
 }
 
