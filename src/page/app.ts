@@ -254,11 +254,12 @@ function drawHeader(onSummary: boolean): void {
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
   }
-  // The tab says the AI is still reviewing, so it reads from the tab strip; a static mark, since background tabs barely animate.
+  // The tab says what the session is doing, so it reads from the tab strip; static heads, since background tabs barely animate.
   const reviewing = !view.ready && !view.sessionGone && !ending;
   const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   if (document.title !== title) document.title = title;
-  const favicon = reviewing ? 'favicon-reviewing.svg' : 'favicon.svg';
+  const asleep = ending?.kind === 'lost' || view.sessionGone;
+  const favicon = `favicon-${asleep ? 'asleep' : ending || view.submitted ? 'done' : view.ready ? 'awake' : 'reading'}.svg`;
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon && icon.getAttribute('href') !== favicon) icon.setAttribute('href', favicon);
   const files = allFiles().length;
@@ -282,7 +283,7 @@ function drawHeader(onSummary: boolean): void {
   // At phone width the switch is the first row of the step.
   if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
   else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
-  drawBehind(ready && view.behind && !ending);
+  drawBehind(view.behind && !view.sessionGone && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
