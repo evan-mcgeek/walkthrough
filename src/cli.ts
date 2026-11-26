@@ -14,7 +14,7 @@ import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import { parseComments, parseCriteria, parseThreads } from './record';
-import { aiComments, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments, walkthroughView } from './review';
+import { aiComments, aiResolve, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments, walkthroughView } from './review';
 import {
   markOpened,
   markReady,
@@ -182,6 +182,14 @@ function comments(args: string[]): void {
   for (const line of reviewComments(dir, values.all)) console.log(JSON.stringify(line));
 }
 
+async function resolveCommand(args: string[]): Promise<void> {
+  const { dir, positionals } = current(args, { allowPositionals: true });
+  const [id] = positionals;
+  if (positionals.length !== 1 || !id) throw new Error('usage: walkthrough resolve <comment id>');
+  await aiResolve(dir, id);
+  console.log(`Resolved the thread of comment ${id}.`);
+}
+
 async function posted(args: string[]): Promise<void> {
   const { dir, values } = current(args, { options: { address: { type: 'string' } } });
   const address = values.address?.trim();
@@ -235,6 +243,7 @@ const COMMANDS: Record<string, (args: string[]) => Promise<void> | void> = {
   threads,
   criteria,
   comments,
+  resolve: resolveCommand,
   posted,
   list,
   export: exportCommand,
@@ -280,7 +289,7 @@ try {
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
         '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n' +
         '    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n' +
-        '    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
+        '    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
         '    | policy [show | init | save --file <file>]\n' +
         '  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch',
     );

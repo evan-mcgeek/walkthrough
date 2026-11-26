@@ -12,7 +12,7 @@ import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
 import { listPage, listView } from './list';
-import { ask, comment, markViewed, resolve, submit, walkthroughVersion, walkthroughView } from './review';
+import { ask, comment, markViewed, resolve, submit, unresolve, walkthroughVersion, walkthroughView } from './review';
 import { readWalkthrough } from './walkthrough';
 import { DEFAULT_VIEWER, mergeViewer, type Viewer } from './viewer';
 import { tooLong } from './words';
@@ -139,6 +139,7 @@ export function serve(dir: string, list = false): void {
         '/comment': async fields => answered(dir, await comment(dir, fields)),
         '/ask': async fields => answered(dir, await ask(dir, fields)),
         '/resolve': async fields => answered(dir, await resolve(dir, fields)),
+        '/unresolve': async fields => answered(dir, await unresolve(dir, fields)),
         '/submit': async fields => answered(dir, await submit(dir, fields)),
         '/stop': stop,
       };
