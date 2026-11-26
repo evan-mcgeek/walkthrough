@@ -4,19 +4,33 @@ The build spec for the Walkthrough review page. It replaces every earlier brief,
 
 ## Paste this into Claude Code
 
-> You are building the final design of the Walkthrough review page in this repository. Copy `HANDOFF.md`, `VISION.md`, `DESIGN.md`, `PRODUCT.md`, `COPY.md`, `screens.html` and `prototype.html` from the design artifact into `docs/design/`, replacing anything there. Read `HANDOFF.md` first and work through it in order. Report anything you could not match and any string over its cap.
+> You are building the final design of the Walkthrough review page in this repository. The design bundle is in `docs/design/` (unzipped from `walkthrough-design-handoff.zip`; it replaces anything that was there). Read `docs/design/HANDOFF.md` first, then `VISION.md`, and work through HANDOFF's "Build order", one pull request per stage. Measurements and tokens are in `DESIGN.md`, every string in `COPY.md`, every state on the boards in `screens.html` (open it in a browser), interaction and motion in `prototype.html`. Where a board and HANDOFF disagree, HANDOFF wins; say so in the PR. Before each PR, check that stage against "Done when". At the end, report anything you could not match, any string over its cap, and any contrast pair under its floor.
 
 ## The files
 
 | File | What it is |
 |---|---|
-| `HANDOFF.md` | This file: decisions, what to remove, what to build, and when it is done. |
+| `HANDOFF.md` | This file: decisions, what to remove, what to build, in what order, and when it is done. |
 | `VISION.md` | The product in one page. GitHub's pull request review page, made better by AI. Binding, except where a founder decision below differs. |
-| `DESIGN.md` | Tokens, type, spacing, every component with measurements, motion, word caps. Sidecar tokens in `.impeccable/design.json` if present. |
+| `DESIGN.md` | Tokens (light, dark and Colorblind, syntax included, with contrast tables), type, spacing, every component with measurements, motion, word caps. |
 | `PRODUCT.md` | Behaviour and the glossary. |
-| `COPY.md` | Every string the page shows. Anything not in it is removed. |
-| `screens.html` | The boards: every state, light and dark, 1440 and 390. |
-| `prototype.html` | Clickable reference for interaction and motion. |
+| `COPY.md` | Every string the page shows, with its cap. Anything not in it is removed. |
+| `screens.html` | The boards: every state, light and dark, 1440 and 390. Also the source for the desk scene and farewell robot SVG and CSS. |
+| `prototype.html` | Clickable reference for interaction and motion (not for decisions 18, 19 and 21 onward; see the table below). |
+| `brand/` | The mark, favicons, app icons, and the mascot Walky (`brand/mascot/`, light and dark, with a README). |
+
+## Where each decision is drawn
+
+| Decisions | Boards in `screens.html` | In `prototype.html` |
+|---|---|---|
+| 1 to 11 | Opening a review, Header, Steps and files, A step, Files, Comments and threads, The Summary, After End session, The session isn't running | yes, except 2, 3, the Opening and the lost session |
+| 12 to 17 | Changes since your last review, Outdated and resolved, The page is behind the branch | 12 to 14, 16, 17 ("Back after new commits") |
+| 18 to 20 | Moved code, The author's screenshot, Keyboard | keys J, K, C, V only |
+| 21 | Suggested changes | no |
+| 22 to 25 | Colorblind (with the stripe check), Copied code, Comments on a whole file | no |
+| 26 to 30 | Syntax colours on every background (with the contrast grid), Code in comments, explanations and answers, A file taking its colours, What stays plain | no |
+
+Boards drawn before decision 26 show plain code; decision 26 colours them too. Decisions 22 to 25 and 27 change features already built in 0.1.5; each says what is built, what is kept and what changes.
 
 ## Founder decisions
 
@@ -50,11 +64,11 @@ These override `VISION.md` where they differ.
 24. **Copied code.** *Built:* "Copied from `<file>` line N" above a run of added lines. *Kept:* the lines stay additions, + and green, since the source still exists and the copy is new code to review; that is what tells a copy from a move (no + or −, a source row). *Changed:* the label gives the source's range ("Copied from tests/tasks.test.ts lines 20–23"; in the same file "Copied from lines 4–6") and links to it; a 2px muted rule runs from the label down the copied lines and turns under the last one, so the end of the copy shows when more additions follow; at 390 the label shows the file name only, the whole label in its tooltip. "Moved from" takes the same shape: a range, and the file name only at 390. Copies show only for unchanged runs, as built.
 25. **Comments on a whole file.** *Built:* an icon button "Comment on this file" after Viewed; file threads in a band above the diff, under outdated threads; the Summary row names the file with no line; no suggested change (decision 21). *Kept:* the button and its place (GitHub's), the band, the Summary row, no suggestion. *Changed:* in the band, file threads come first and outdated threads after them, since a file thread is about the code on screen; the composer opens at the top of the band, under the button, which shows pressed while it is open; the AI may comment on a file, with [AI] and Pending like its line comments (the review policy may use it for something no single line holds, such as a missing test); the Summary row's tooltip gives the full path; file threads count in the file's comment count.
 
-Decisions 12 to 20 are drawn in `screens.html` under Moved code, The author’s screenshot, Keyboard, Changes since your last review, Outdated and resolved, and The page is behind the branch; decisions 12 to 14, 16 and 17 also run in `prototype.html` under "Back after new commits".
-
-Decisions 22 to 25 review features already built in 0.1.5; each says what changes from what is built. They are drawn in `screens.html` under Colorblind, Copied code and Comments on a whole file; the stripe check is the board "The overview stripe: built, now, and Colorblind". The prototype does not act them out.
-
-Decisions 8 to 11 came after this bundle was drawn: where section 2, `DESIGN.md`, the boards or the prototype differ from them, they win.
+26. **Syntax colours, GitHub's, made to read on every background.** Code is coloured with Shiki's github-light and github-dark, each file highlighted whole (the old and new versions each as one piece of code). The page tokenizes with both themes and maps each theme colour to a syntax token, written as a class, so there is no inline style (CSP) and the page's values apply. Where GitHub's colour falls under 4.5:1 on a background code sits on, the token moves in its own hue just far enough: in light comment, keyword, constant, tag and variable (variable from 2.4:1 to 4.5:1); in dark comment (2.2:1 to 4.5:1), keyword and entity. String, regexp and invalid keep GitHub's values, and so do constant, tag and variable in dark and entity in light. Values and every ratio: `DESIGN.md` → Colors → Syntax. Bold, italic and underline from the themes are dropped. Colorblind keeps the syntax tokens. Not coloured: hunk headers, line numbers, inline code, paths.
+27. **Changed words keep their wash, lighter.** *Built in 0.1.5:* diff2html's word marks in `diff-add-word` / `diff-del-word`, at GitHub's values (light #b9e5c6 / #f4c4bf, dark #1f4a2e / #5a2626, Colorblind dark #26508a / #764223). *Kept:* the marks, square, under the code. *Changed:* lighter in light and less deep in dark (`DESIGN.md` → Colors), because on the built values GitHub's comment colour falls to 2.1:1 (dark) and 1.7:1 (Colorblind dark), and lifting every token to 4.5:1 there would turn comments and keywords nearly white. They still sit 1.2 to 1.4:1 from their line wash. They come from the diff, so they show while a file is still plain.
+28. **Code blocks, GitHub's fenced markdown,** in comments, explanations and answers: coloured by the language the fence names, plain with no language, on the surface tint. Suggested changes and an outdated thread's quoted code are coloured as their file. The review policy keeps blocks to 6 lines, only when the point is code (`DESIGN.md` → Words).
+29. **Colours never hold the page and never move.** During the Opening the page highlights the first step's files, so the walkthrough arrives coloured; the other files are highlighted in reading order behind the page. A file reached before its colours shows plain and takes them in place in one frame: no fade, no spinner, no word, no layout change, under reduced motion the same.
+30. **What stays plain:** a line over 1,000 characters (as on GitHub), a file in a language Shiki does not know, a code block whose fence names none. Nothing on the page says so.
 
 ## Constraints that do not move
 
@@ -90,7 +104,17 @@ Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on 
 - **A step:** title (20px), "Look at:" with one or two pointers, one or two sentences with More, its files, then previous and next named by the steps' titles. Every step is complete when it appears (decision 10).
 - **Look at:** `{file, start, end, label}`, label 2–4 words. Click opens the file if folded, scrolls the range into view with 120px above, flashes it in the line-pick tone.
 - **Files:** GitHub's header in a bordered box: chevron, path, +/−, comment count, Viewed, Comment on this file (decision 25: file threads first in the band above the diff, then outdated ones; the composer at its top). Viewed folds the file. A generated file arrives folded with one line saying why. After new commits: "Changed since last view" (decision 3).
+- **Syntax colours (decisions 26 to 30):** Shiki with github-light and github-dark, run off the main path (a worker or idle time) so it never holds a paint. Tokenize each file version whole with both themes (`codeToTokens` with `themes: {light, dark}`) and map each token's colour pair to a class; never write Shiki's inline styles. The pairs (light|dark → class → token): `#6A737D|#6A737D` → `sx-c` comment; `#D73A49|#F97583` → `sx-k` keyword; `#005CC5|#79B8FF` → `sx-n` constant; `#6F42C1|#B392F0` → `sx-e` entity; `#22863A|#85E89D` → `sx-t` tag; `#032F62|#9ECBFF` → `sx-s` string; `#032F62|#DBEDFF` → `sx-r` regexp; `#E36209|#FFAB70` → `sx-v` variable; `#B31D28|#FDAEB7` → `sx-x` invalid; `#24292E|#E1E4E8` and anything else → no class (ink). Drop font styles. Split diff2html's word marks around token spans so both show. Highlight the first step's files during the Opening, then the rest in reading order; a file reached first shows plain and swaps in place. Lines over 1,000 characters and unknown languages stay plain.
 - **Diff:** line numbers are buttons; click or Shift-click opens a composer under the line. Gutter bubble for a thread: ink for the AI, accent for you, muted for a colleague. Overview stripe at the right, hidden at 390, marks at full colour (decision 23). Copied lines stay additions under "Copied from … lines N–M" with the muted rule to their last line (decision 24).
+- **Changes since your last review (decisions 13, 14):** a small secondary button in the header after the label (branch icon, current choice, chevron) opening a menu with "All changes" and "Changes since your last review", each with a muted count line; shown only when you reviewed an earlier head, and it opens on "Changes since your last review"; C opens it. In that view the step list keeps only changed files; a step with none stays, muted, and its page says "No changes since your last review." with Show all changes; diffs show only what is new. At 390 it is the first row of the main pane.
+- **Behind the branch (decision 15):** one line under the header on every screen, with the command and Copy command, for your own branch only. The page never catches up by itself.
+- **Outdated and resolved (decisions 12, 16, 17):** outdated threads move to a band at the top of their file with "Outdated" and the lines they were written on; the AI's resolved comments show GitHub's collapsed resolved line with "Pending" until Submit review (none on your own change), Show resolved, and Unresolve conversation; the Summary lists "Resolved conversations".
+- **Moved code (decision 18):** a label row "Moved from `<file>` lines N–M" above lines on the surface tone with no + or −, and one row "N lines moved to …" where they left; the two link to each other. At 390 the label shows the file name only (decision 24).
+- **Copied code (decision 24):** copied lines stay additions under "Copied from `<file>` lines N–M" (no file name in the same file), linked to the source, with a 2px muted rule from the label to the last copied line.
+- **The author's screenshot (decision 19):** on the step the AI places it, under the explanation, 240 × 156 closed, opening in place to the step's width; caption is the alt text; one it cannot place is shown nowhere.
+- **Keys (decision 20):** J and K next and previous file through the steps, C the changes switch, V Viewed, Esc closes; each key only in its control's tooltip, in brackets.
+- **Comments on a whole file (decision 25):** the "Comment on this file" icon button after Viewed opens the composer at the top of the file's band; file threads first, then outdated ones; no suggested change; the Summary row names the file with no line.
+- **Code blocks (decisions 28, 30):** GitHub's fenced blocks in comments, explanations and answers, on the surface tint, coloured by the fence's language, plain with none. Inline code is never coloured.
 - **Suggested change (decision 21):** inside a comment, after its text, GitHub's block: a header row "Suggested change", then the commented lines as deletions and the suggestion as additions, with line numbers; no Apply or Commit button. On the Summary the row shows "Suggested change" as a tag before the comment's text; the code shows in its thread.
 - **Comments and threads:** one component for everyone. Avatar, name, Pending tag, time, Edit and Delete on pending comments only; body; the foot has Reply, Ask AI, and Resolve on colleagues' threads. Composer: textarea, Ask AI, Cancel, Add comment.
 - **Ask AI:** in a thread or on picked lines. Posts "Ask AI: …", shows the AI's avatar, spinner and "Answering…", then the answer as a reply (decision 4). Only Ask AI wakes the AI.
@@ -108,11 +132,26 @@ Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on 
 - **The session isn't running:** when the page loses its server without End session (the agent closed, sleep, a crash), it replaces the old "Could not reach the walkthrough page." banner with the same layout: the robot asleep at its desk, "The session isn't running", a box saying nothing is lost with Try again (reconnects if the session is still there), then "Pick it up again" with the command. Decide it after two failed polls, not on the first. The page keeps polling, so it also comes back by itself when the session answers again. Board: "The session isn't running".
 - **Menu:** Theme (System, Light, Dark, and the Colorblind checkbox, decision 22) and End session. Nothing else.
 
-## 3. Motion
+## 3. Build order
+
+One pull request per stage; each ends with its part of "Done when" passing in light, dark and at 390.
+
+1. **Remove** everything in section 1, with its styles, strings and session fields.
+2. **Tokens:** the full light, dark and Colorblind set from `DESIGN.md` (frontmatter and Colors), syntax tokens and word marks included, as CSS custom properties; the theme and Colorblind set from the menu.
+3. **The shell:** header, menu, step list, a step, Look at, files with Viewed and Comment on this file, the diff with gutter, stripe, moved and copied code.
+4. **Comments:** threads, composer, Ask AI, arriving comments, suggested changes, file threads, code blocks.
+5. **The Summary** and submitting, both kinds (pull request and your own change).
+6. **Session states:** the Opening with the desk scene, After End session, The session isn't running.
+7. **Back on a new head:** Changes since your last review, Viewed reset, outdated and resolved, the behind line.
+8. **Syntax colours** (decisions 26 to 30), after the diff is stable.
+9. **Screenshot and keys** (decisions 19, 20).
+10. **Motion** last, from `prototype.html` and `DESIGN.md` → Motion, then a reduced-motion pass.
+
+## 4. Motion
 
 Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashed checking spinner; the opening desk scene (only until the review is ready, paused when hidden); the asleep robot's "z" on the lost-session screen. The farewell robot waves once and stops. Known rough edges from the last motion review, worth a look while porting: under reduced motion the Viewed fold snaps a second time near the end; a deleted Summary row can jump sideways at the start of its exit.
 
-## 4. Done when
+## 5. Done when
 
 - Nothing from section 1 is on any screen; grep the templates for the strings in `COPY.md` → "Strings to remove".
 - Every string is in `COPY.md` and within its cap (`DESIGN.md` → Words).
@@ -128,21 +167,22 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 - An outdated thread never sits on a line that no longer holds its code; the AI's resolved comments go out with the next Submit review.
 - Moved lines appear once, with both ends linked; J, K, C and V work and appear in no list.
 - Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
+- Every coloured token is 4.5:1 or more on its background in light, dark and Colorblind; the page carries no inline style for colours; a file taking its colours moves nothing, and the line you read stays put.
 - With Colorblind on, no green or red is left anywhere on the page, in light and dark; every stripe mark is 3:1 against the stripe.
 - A copy's last line is visible without reading line numbers; a copy never looks like a move.
 - Comment on this file opens its composer at the top of the file; file threads sit above outdated ones; a file comment's Summary row has no line and goes to the thread.
+- A fenced code block is coloured by its language and plain without one; a line over 1,000 characters and a file in an unknown language stay plain, with no label.
 - An AI comment with a suggestion shows "Suggested change" with the lines it replaces and the new lines; nothing on the page applies it.
 
 ## Not drawn
 
-- Under design, not decided: a diagram of the flow on a step (board "Diagram of the flow (design round, not decided)"). Recommended shape: only on a step that crosses three or more parts or branches; recorded by the session with the step, each arrow citing a line in the diff; one line naming the parts opens it; arrows link to their lines, the step's own arrows in ink; a branch as an alt box; up to 5 parts and 7 arrows; a numbered list at 390; drawn by the page from data, no Mermaid renderer. Its strings are not in `COPY.md` until it is decided.
+- Under design, not decided: a diagram of the flow on a step (board "Diagram of the flow (design round, not decided)"). Recommended shape: only on a step that crosses three or more parts or branches; collapsible, closed on every step until its one line opens it, and that line closes it again; recorded by the session with the step, each arrow citing a line in the diff; one line naming the parts opens it; arrows link to their lines, the step's own arrows in ink; a branch as an alt box; up to 5 parts and 7 arrows; a numbered list at 390; drawn by the page from data, no Mermaid renderer. Its strings are not in `COPY.md` until it is decided.
 - The image diff in this design (keep Diff / Preview on a transparency checker as built).
 - The two Send to agent states and "Changed since last view" at 390 (same components, one column).
-- The prototype does not act out decisions 2 and 3, the opening or the lost session; it does act out End session after Submit review (the farewell) and Copy command.
 - The "Copied" state, the farewell with no comments, and "The session isn't running" for your own change (same layout, `/walkthrough`).
 - The opening scene was reviewed frame by frame (seeked keyframes), not as a recorded run: check real-time playback, the exit into the whole walkthrough, and pausing when hidden. The farewell wave and the "z" drift have not had a motion review.
 - The behind-the-branch line for a pull request: to rethink (decision 15).
-- Moved code and the author's screenshot are boards only; the prototype acts out decisions 12 to 14, 16 and 17 and keys J, K, C and V there.
 - The motion of Show resolved and the screenshot has not had a motion review.
-- Decisions 22 to 25 are boards only, not in the prototype. Not drawn for them: Colorblind's effect on the farewell and lost-session screens (the robot is ink only, so nothing changes), a copy of a single line, a file comment on a folded or generated file (same band once it opens), and a resolved colleague file thread (GitHub's collapsed resolved look, as in decision 17).
+- Not drawn for decisions 22 to 25: Colorblind's effect on the farewell and lost-session screens (the robot is ink only, so nothing changes), a copy of a single line, a file comment on a folded or generated file (same band once it opens), and a resolved colleague file thread (GitHub's collapsed resolved look, as in decision 17).
+- Not drawn for decisions 26 to 30: boards before decision 26 in colour (they show plain code), and syntax colours in the prototype.
 - Out of scope: a session liveness heartbeat; a Tritanopia palette.
