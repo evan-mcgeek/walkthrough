@@ -14,7 +14,7 @@ afterEach(() => {
 
 /** The state folder of the walkthrough of the current branch. */
 const walkthroughFolder = (of: Repo) =>
-  path.join(of.state, fs.readdirSync(of.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login');
+  path.join(of.state, fs.readdirSync(of.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin');
 
 describe('walkthrough start', () => {
   test('pins the walkthrough to the merge-base and head without checking anything out', () => {
@@ -140,7 +140,7 @@ describe('walkthrough start', () => {
     repo = makeRepo();
     repo.run('start');
     repo.run('stop');
-    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'walkthrough.json');
+    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin', 'walkthrough.json');
     fs.writeFileSync(saved, '{"kind": "bran');
 
     const started = repo.run('start');
@@ -151,12 +151,38 @@ describe('walkthrough start', () => {
     expect(repo.record(ONE_STEP).stderr).toContain(`cannot read ${saved}`);
   });
 
+  test('the inbox of a branch with a slash is one the plugin hook approves unquoted', () => {
+    repo = makeRepo();
+    const inbox = /files in (\S+) and pass/.exec(repo.run('start').stdout)?.[1] ?? '';
+    const hook = spawnSync('node', [path.resolve(import.meta.dirname, '..', 'plugin', 'dist', 'hook.mjs')], {
+      input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: `walkthrough comment --file ${inbox}/comments.json` } }),
+      encoding: 'utf8',
+      env: { ...process.env, WALKTHROUGH_STATE: repo.state },
+    });
+
+    expect(inbox).toBe(path.join(walkthroughFolder(repo), 'inbox'));
+    expect(hook.stdout).toContain('"permissionDecision":"allow"');
+  });
+
+  test('a walkthrough in the folder an earlier release named moves to the new name with its steps', () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record(ONE_STEP);
+    repo.run('stop');
+    const folder = walkthroughFolder(repo);
+    const earlier = path.join(path.dirname(folder), 'branch-feature~login');
+    fs.renameSync(folder, earlier);
+
+    expect(repo.run('start').stdout).toContain(', 1 step.');
+    expect(fs.existsSync(earlier)).toBe(false);
+  });
+
   test('a walkthrough saved by an earlier release keeps its place, and its steps are recorded again', async () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
     repo.run('stop');
-    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'walkthrough.json');
+    const saved = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin', 'walkthrough.json');
     const earlier = JSON.parse(fs.readFileSync(saved, 'utf8')) as { steps: Record<string, unknown>[] };
     earlier.steps = earlier.steps.map(step => ({ ...step, look: undefined, kind: 'step', assumptions: [] }));
     fs.writeFileSync(saved, JSON.stringify({ ...earlier, kindLabel: 'own', checklist: { title: 'Criteria', items: [] } }));

@@ -50,21 +50,35 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
 
-// `~` cannot appear in a branch name, so `/` maps to it one to one; a label is encoded whole.
+// Down to characters no shell expands, so the inbox paths the session passes match the plugin hook unquoted.
+const encode = (name: string) =>
+  encodeURIComponent(name).replace(/[!'()*~]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+
 export function walkthroughDir(repo: string, source: Source): string {
-  const name =
-    source.kind === 'branch'
-      ? `branch-${source.branch.replaceAll('/', '~')}`
-      : `range-${encodeURIComponent(source.label)}`;
+  const name = `${source.kind}-${encode(nameOf(source))}`;
   if (Buffer.byteLength(name) > 255)
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
   return path.join(stateDir(), repo, name);
 }
 
-/** The branch a walkthrough's folder is named after; undefined for a range. */
+/** The folder releases up to 0.1.6 named a walkthrough, with a branch's `/` as `~`. */
+export const earlierDir = (repo: string, source: Source) =>
+  path.join(
+    stateDir(),
+    repo,
+    source.kind === 'branch' ? `branch-${source.branch.replaceAll('/', '~')}` : `range-${encodeURIComponent(source.label)}`,
+  );
+
+/** The branch a walkthrough's folder is named after, in either naming; undefined for a range. */
 export const branchOfDir = (dir: string) => {
   const name = path.basename(dir);
-  return name.startsWith('branch-') ? name.slice('branch-'.length).replaceAll('~', '/') : undefined;
+  if (!name.startsWith('branch-')) return undefined;
+  const branch = name.slice('branch-'.length).replaceAll('~', '/');
+  try {
+    return decodeURIComponent(branch);
+  } catch {
+    return branch;
+  }
 };
 
 /** A range's target is a commit when its base named no branch. */

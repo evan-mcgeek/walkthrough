@@ -8,7 +8,7 @@ import { expect, open, test } from './walkthrough';
 const sceneMotion = (page: Page) => page.locator('.desk-scene').evaluate(scene => scene.getAnimations({ subtree: true }).length);
 
 const listenerFile = (repo: Repo) =>
-  path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'listener.json');
+  path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin', 'listener.json');
 
 test('the Opening shows until ready, then the whole walkthrough appears at once; under reduced motion the scene stands still', async ({ page, repo, url }) => {
   await open(page, url);

@@ -146,7 +146,7 @@ describe('the review', () => {
 
   test('before ready, the session counts as gone once its listen ran and none has been alive for 15 seconds', async () => {
     const page = started();
-    const listener = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'listener.json');
+    const listener = path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin', 'listener.json');
     const ago = (seconds: number) => {
       const then = new Date(Date.now() - seconds * 1000);
       fs.utimesSync(listener, then, then);
