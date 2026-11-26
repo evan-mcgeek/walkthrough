@@ -53,6 +53,16 @@ The pull request that ships or drops an item updates this file.
 - `/walkthrough:init` sets everything up before a first review, and offers to write your comments in your voice.
 - The first step opens with what the change makes behave differently.
 
+### 0.1.6 (2026-11-26): code that reads like code
+
+- Syntax colours in every diff, suggested change and code block, from GitHub's own themes, made to read on every background; a language's grammar downloads the first time a change uses it, checked against a hash, and colouring never holds up the page.
+- Suggested changes: a short fix in a comment shows as GitHub's "Suggested change", the lines it replaces and the new ones; nothing on the page applies it.
+- Colorblind, GitHub's word, swaps green and red for blue and orange everywhere they appear, and the overview stripe's marks reach 3:1.
+- Copied and moved code name the lines they came from, and a rule shows where a copy ends.
+- Comments on a whole file sit first in the band above the diff; the AI can leave one too, for what no single line holds.
+- Code in a comment, an explanation or an answer only when the point is code, as the review policy now says.
+- The line you read stays put when an answer arrives above it, and the new-comment pill no longer narrows the diff.
+
 ## Now
 
 - Nothing in progress.
