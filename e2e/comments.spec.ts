@@ -36,3 +36,29 @@ test('you add, edit and delete a comment on lines, and edit or delete the AI’s
   const comments = repo.run('comments').stdout.trim().split('\n').map(line => JSON.parse(line) as { by: string; body: string });
   expect(comments).toEqual([expect.objectContaining({ by: 'you', body: 'Everyone gets in; check the password.' })]);
 });
+
+test('you comment on a whole file above its diff, ask the AI in that thread, and its Summary row links to the file', async ({ page, repo, url }) => {
+  record(repo, ONE_STEP);
+  await open(page, url);
+
+  const file = page.locator('.file[data-file="login.ts"]');
+  await file.getByRole('button', { name: 'Comment on this file' }).click();
+  await expect(file.locator('.file-threads textarea')).toBeFocused();
+  await page.keyboard.type('Name it for what it does.');
+  await file.getByRole('button', { name: 'Add comment' }).click();
+  const thread = file.locator('.file-threads .thread');
+  await expect(thread.locator('.comment-you')).toContainText('Name it for what it does.');
+  await expect(thread.getByText('Pending')).toBeVisible();
+  await expect(file.locator('.thread-row')).toHaveCount(0);
+  await expect(file.locator('.file-comments')).toHaveText('1');
+  expect(JSON.parse(repo.run('comments').stdout)).toMatchObject({ file: 'login.ts', subject: 'file', body: 'Name it for what it does.' });
+
+  await thread.getByRole('button', { name: 'Ask AI' }).click();
+  await thread.locator('textarea').fill('Is the name clear?');
+  await thread.locator('.composer').getByRole('button', { name: 'Ask AI' }).click();
+  await expect(thread.locator('.answering')).toBeVisible();
+
+  await page.getByRole('link', { name: 'Finish review' }).click();
+  await page.locator('.going-row').getByRole('link', { name: 'login.ts', exact: true }).click();
+  await expect(thread).toBeInViewport();
+});

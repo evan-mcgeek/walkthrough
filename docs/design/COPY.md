@@ -44,6 +44,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Collapse / Expand `<path>` | chevron, accessible name | |
 | Generated from the schema | folded generated file | written by the session (the reason), one line |
 | Comment on line N | line number button, accessible name | **GH** |
+| Comment on this file | file header icon button, after Viewed; accessible name and tooltip | **GH**; opens the composer above the file's diff |
 | Diff / Preview | image file, switch | **GH** |
 | Before / After | image preview, under each side | |
 | Preview failed. | image preview, when an image does not load | |
