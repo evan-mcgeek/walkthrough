@@ -20,7 +20,7 @@ const turnColorblind = async (page: Page, on: boolean) => {
 
 test('Colorblind swaps every green and red for blue and orange, keeps the theme and survives a reload', async ({ page, repo, url }) => {
   record(repo, ONE_STEP);
-  record(repo, [{ text: 'Only users log in', status: 'met' }], 'criteria');
+  record(repo, [{ text: 'Only users log in', status: 'met', file: 'login.ts', lines: [1, 1] }], 'criteria');
   await open(page, url);
   await pick(page, 'Light');
   const green = await colour(added(page), 'backgroundColor');

@@ -14,7 +14,7 @@ import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import { parseComments, parseCriteria, parseThreads } from './record';
-import { aiComments, aiResolve, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments, walkthroughView } from './review';
+import { aiComments, aiResolve, answer, forgetStoppedListener, handedAsk, listen, logOf, markPosted, reviewComments, walkthroughView } from './review';
 import {
   markOpened,
   markReady,
@@ -182,10 +182,9 @@ async function threads(args: string[]): Promise<void> {
 
 async function criteria(args: string[]): Promise<void> {
   const { dir, values } = located(args, FILE_OPTION);
-  const recorded = parseCriteria(readInput(values.file));
-  await updateWalkthrough(dir, walkthrough => {
-    walkthrough.criteria = recorded;
-  });
+  const text = readInput(values.file);
+  const ai = new Set(logOf(dir).flatMap(event => (event.kind === 'comment' && event.by === 'ai' ? [event.id] : [])));
+  const recorded = await updateWalkthrough(dir, walkthrough => (walkthrough.criteria = parseCriteria(text, walkthrough, ai)));
   console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? 'criterion' : 'criteria'}.`);
 }
 

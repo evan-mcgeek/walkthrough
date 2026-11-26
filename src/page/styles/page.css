@@ -2066,25 +2066,60 @@ tr.flash td {
 }
 
 .criterion {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 7px 0;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: start;
+  padding: 9px 0;
   border-bottom: 1px solid var(--rule-soft);
   font-size: 13.5px;
 }
 
-.criterion-text {
-  flex: 1;
+.criterion > .icon {
+  margin-top: 2px;
+}
+
+.criterion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.criterion-text {
+  line-height: 20px;
+}
+
+/* What shows it: the link, then what is missing, or why it was not checked. */
+.criterion-shows {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.criterion-shows .where {
+  color: var(--accent-text);
+  font: 400 11.5px/18px var(--font-mono);
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.criterion-shows a.where:hover {
+  text-decoration: underline;
+}
+
+.criterion-shows span.where,
+.criterion.not-checked .criterion-shows {
+  color: var(--muted);
 }
 
 .criterion-word {
   font-size: 12.5px;
+  line-height: 20px;
   white-space: nowrap;
 }
 
@@ -2232,6 +2267,10 @@ tr.flash td {
 /* Phone: one column; the step list opens over the page from the header; 44px targets. */
 
 @media (max-width: 760px) {
+  .criterion-word {
+    grid-column: 2;
+  }
+
   .screenshot:not(.open) .screenshot-button {
     width: 100%;
   }

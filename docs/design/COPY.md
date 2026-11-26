@@ -86,6 +86,9 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Acceptance criteria | heading | |
 | checked by the AI | after the heading | |
 | Met / Partly met / Not met / Not checked | criterion status | |
+| `<file>:<line>` · `<file>` · `<file>:<start>–<end>` | link under a criterion: to the AI comment (partly or not met; `<file>` alone for a comment on the whole file), or to the lines that meet it (met) | decision 35; mono accent, as the Summary's other links; tooltip "`<path>` line N: go to the comment" or "`<path>` lines N–M: go to the lines" (Tooltip, 12) |
+| `<what is missing>` | after the link, under a partly or not met criterion | decision 35; written by the session; 12 words; the gap, never the fix (the fix is the comment's) |
+| `<why not checked>` | under a not checked criterion | decision 35; written by the session; 8 words, e.g. "Needs the running app." |
 | Finish your review | review box title | **GH** |
 | Comment / Approve / Request changes | review type | **GH** |
 | Submit review | pull request | **GH** |

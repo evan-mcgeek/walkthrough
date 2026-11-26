@@ -84,6 +84,8 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - When the ticket has acceptance criteria, record each one, in the ticket's words, in at most 12 words.
 - Mark it met, partly or not-met from the code and the reviewers' check, or not-checked when the code cannot show it.
+- For one partly or not met, leave a comment where the gap is, on its lines or on its file, worded as the fix; link the criterion to it and say what is missing in at most 12 words, never the fix.
+- For one met, link the lines that meet it; for one not checked, say why in at most 8 words.
 
 ### Answers
 

@@ -106,7 +106,7 @@ export async function exportPage(dir: string): Promise<string> {
 <div class="markdown">${renderMarkdown(step.explanation)}</div>${figure}${diff}${said.length ? `<ul class="export-comments">${said.join('')}</ul>` : ''}</section>`;
   });
   const body = await colourBlocks(steps.join('\n'));
-  const criteria = (view.criteria ?? []).map(one => `<li>${escape(one.text)}: ${STATUS[one.status]}</li>`);
+  const criteria = (view.criteria ?? []).map(one => `<li>${escape(one.text)}: ${STATUS[one.status]}${one.missing || one.reason ? `. ${escape(one.missing ?? one.reason ?? '')}` : ''}</li>`);
   const style = fs.readFileSync(path.join(PAGE, 'style.css'), 'utf8');
   const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   return `<!doctype html>

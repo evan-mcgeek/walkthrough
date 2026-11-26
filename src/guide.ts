@@ -23,8 +23,9 @@ const threads = [
   },
 ];
 const criteria = [
-  { text: 'Optional due date on create and edit', status: 'met' },
-  { text: 'Invalid dates rejected with a clear error', status: 'not-met' },
+  { text: 'Invalid dates rejected with a clear error', status: 'not-met', comment: '48f3f82c', missing: 'An invalid date becomes null and clears the field.' },
+  { text: 'Date picker works on phones', status: 'not-checked', reason: 'Needs the running app.' },
+  { text: 'Optional due date on create and edit', status: 'met', file: 'src/api/tasks.ts', lines: [19, 22] },
 ];
 
 export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
@@ -80,7 +81,9 @@ walkthrough threads --file <file>
 ${JSON.stringify(threads, null, 2)}
 
 walkthrough criteria --file <file>
-  Records the acceptance criteria as checked, replacing those before; read-only on the page. status: met, partly, not-met or not-checked.
+  Records the acceptance criteria as checked, replacing those before; read-only on the page, gaps first. status: met, partly, not-met or not-checked.
+  partly and not-met need comment, the id walkthrough comment printed for your comment that closes the gap, and missing: what is missing, in 12 words, never the fix.
+  met needs the file and lines that meet it, in a step's diff; the page opens them as a Look at pointer does. not-checked needs reason: why, in 8 words.
 ${JSON.stringify(criteria, null, 2)}
 
 walkthrough listen

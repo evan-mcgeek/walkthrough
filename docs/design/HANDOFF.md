@@ -32,6 +32,7 @@ The build spec for the Walkthrough review page. It replaces every earlier brief,
 | 26 to 30 | Syntax colours on every background (with the contrast grid), Code in comments, explanations and answers, A file taking its colours, What stays plain | no |
 | 31 to 33 | `mascot.html` (Favicons) for 31 and 32; every board uses the new control edge (33) | no |
 | 34 | every board and the prototype use the new accent and fill | yes |
+| 35 | Acceptance criteria that say what is missing and where (listed and folded, light, dark, Colorblind, 390) | no |
 
 Boards drawn before decision 26 show plain code; decision 26 colours them too. Decisions 22 to 25 and 27 change features already built in 0.1.5; each says what is built, what is kept and what changes.
 
@@ -78,6 +79,8 @@ These override `VISION.md` where they differ.
 33. **Control edges clear 3:1 on every grey.** *Built:* control borders at #8390a3 / #5e6a7a, 3:1 on canvas and surface but 2.8 and 2.7:1 on the surface tint used for hover and pressed. *Changed:* `control-edge` is GitHub's emphasis border, light #818b98, dark #6e7681: 3.0 to 3.5:1 (light) and 3.2 to 3.9:1 (dark) on canvas, surface, surface tint and picked lines. One value for every control, so none needs a second border token wherever it sits.
 
 34. **The accent, toned down.** *Built:* Ultramarine #2433b8 in light (as saturated as the hue gets at that depth) and, in dark, the primary button filled with the bright #8c97ff and dark text, the brightest thing on the page. *Changed:* light Ultramarine and its text tone become #2d3a9e (hover #252f85). Dark keeps #8c97ff and #a9b1ff for rings, the caret, links and marks, but the three filled things (the primary button, your avatar and the gutter "+") take new fill tokens, #4f5bd5 with hover #5b67e0 and white text (5.5:1 and 4.7:1). In light the fill tokens equal Ultramarine. The mark, favicon and app icons follow (`brand/`).
+
+35. **Acceptance criteria say what is missing and where.** *Built:* each criterion showed an icon, the ticket's words and a status word, in the ticket's order, linking nowhere; "Partly met" said neither what nor where. *Kept:* the section, its place and note, the icons, words and colours, read-only rows. *Changed:* rows go not met, partly met, not checked, met. A partly or not met row links to the AI comment that says how to close the gap (on its lines, or on its file) and adds what is missing in at most 12 words; the comment holds the fix and the row never repeats it. A met row links to the lines that meet it, opening them as "Look at" does. A not checked row says why in at most 8 words. Met rows stay listed, not folded. The session records, per criterion: status, the comment it links or the line range, the missing line, the reason. `DESIGN.md` → Summary; `COPY.md` → Summary.
 
 ## Constraints that do not move
 
@@ -131,7 +134,7 @@ Measurements are in `DESIGN.md` → Components; strings in `COPY.md`; states on 
 - **Summary ("Finish your review"):**
   - Going out (N): every pending comment, one row each: avatar, `file:line` link (full path as tooltip), text up to two lines, Edit, Delete. At 390 the link sits on its own line. Empty: "No comments. Add one on a line."
   - "N unresolved threads" and "N files not viewed" as links that go there.
-  - Acceptance criteria, checked by the AI, read-only: icon, criterion, Met / Partly met / Not met / Not checked.
+  - Acceptance criteria, checked by the AI, read-only (decision 35): not met, partly met, not checked, met; each row an icon, the criterion and its status word, then a link (to the AI comment for a gap, to the lines for met) and what is missing, or why it was not checked.
   - The review box: on a pull request, summary textarea, Comment / Approve / Request changes and Submit review; on your own change, summary textarea and Send to agent, with no review type, disabled with no comments under the line "Add a comment to send it." (decision 11).
   - After sending: the box becomes "Review submitted", one line ("Request changes, with 5 comments, on #212."), View review (opens the posted review) and a quiet End session (text button, no fill); on your own change "Sent to the agent", "N comments. The agent is fixing them; follow along there." and the same quiet End session. "Going out" becomes "Sent" without Edit or Delete; the counts row goes away.
 - **Opening (until the review is ready):** the session opens the page near the end of its review (decision 9) and the Opening lasts until `walkthrough ready` (decision 10); see `DESIGN.md` → Components → Opening and the board "Opening a review". The header shows "N files changed", "AI reviewing" with the spinner, and no Finish review; the step list shows "Steps appear here when the AI is done." and three placeholder rows; the main pane shows the desk scene, "Preparing the walkthrough", "The AI is finishing its review, usually within a minute." and the changed files with +/−. When the review is ready the whole walkthrough appears at once. If the session stops first: "The AI couldn't prepare the walkthrough", "It stopped before the review was done. Nothing was posted.", then "Start it over in your agent:" and the command (`/walkthrough:pr <N>` or `/walkthrough`) with Copy command, the farewell's component. There is no Try again: the page cannot restart a session. The page needs only the change's file list (path, additions, deletions), which it already has.
@@ -178,6 +181,7 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 - Moved lines appear once, with both ends linked; J, K, C and V work and appear in no list.
 - Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
 - Every coloured token is 4.5:1 or more on its background in light, dark and Colorblind; the page carries no inline style for colours; a file taking its colours moves nothing, and the line you read stays put.
+- Every partly or not met criterion links to a comment and says what is missing in 12 words or fewer, never the fix; every met one links to its lines; every not checked one says why in 8 words or fewer.
 - In dark, the primary button is a mid-tone fill with white text; no filled accent uses #8c97ff; light Ultramarine is #2d3a9e everywhere, the mark and icons included.
 - Every control edge is 3:1 or more against canvas, surface, surface tint and picked lines, at rest, on hover and pressed; each favicon's eyes are at least 2px at 16px, and the tab never shows awake or done after a session that sent nothing.
 - With Colorblind on, no green or red is left in the diff, the counts, the stripe or the status colours, in light and dark (syntax colours keep their hues, decision 26); every stripe mark is 3:1 against the stripe.
@@ -188,6 +192,7 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 
 ## Not drawn
 
+- Open founder question (decision 35): should a criterion also show on the step whose code meets or misses it, or only on the Summary? Drawn: only on the Summary.
 - Under design, not decided: a diagram of the flow on a step (board "Diagram of the flow (design round, not decided)"). Recommended shape: only on a step that crosses three or more parts or branches; collapsible, closed on every step until its one line opens it, and that line closes it again; recorded by the session with the step, each arrow citing a line in the diff; one line naming the parts opens it; arrows link to their lines, the step's own arrows in ink; a branch as an alt box; up to 5 parts and 7 arrows; a numbered list at 390; drawn by the page from data, no Mermaid renderer. Its strings are not in `COPY.md` until it is decided.
 - The image diff in this design (keep Diff / Preview on a transparency checker as built).
 - The two Send to agent states and "Changed since last view" at 390 (same components, one column).

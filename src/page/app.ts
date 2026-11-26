@@ -128,7 +128,12 @@ function leave(old: HTMLElement, scrolled: number): void {
   );
 }
 
-function reveal({ thread: id, edit, file }: Reveal): void {
+function reveal({ thread: id, edit, file, lines }: Reveal): void {
+  if (file !== undefined && lines) {
+    const look = { file, start: lines[0], end: lines[1], label: '' };
+    if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+    return;
+  }
   const thread = state.view.threads.find(one => one.id === id);
   const stepId = thread ? threadStep(thread) : file === undefined ? undefined : stepOfFile(file)?.id;
   if (stepId === undefined) return;

@@ -15,6 +15,9 @@ const CRITERIA: Record<Criterion['status'], [IconName, string]> = {
   'not-met': ['not-met', 'Not met'],
   'not-checked': ['unchecked', 'Not checked'],
 };
+/** Gaps first, then what the AI could not check, then what is met; the ticket's order within each. */
+const ORDER: Criterion['status'][] = ['not-met', 'partly', 'not-checked', 'met'];
+const linesWord = (lines: [number, number]) => `${lines[0] === lines[1] ? 'line' : 'lines'} ${linesLabel(lines)}`;
 
 /** The text on one line, without its suggestion blocks, which show only in the thread. */
 function rowText(body: string): { text: string; suggests: boolean } {
@@ -27,8 +30,8 @@ function rowText(body: string): { text: string; suggests: boolean } {
 /** The AI's resolves not sent yet, or sent with the review the Summary shows as submitted. */
 const resolvedByAi = () => state.view.threads.filter(one => one.resolvedBy === 'ai' && (one.resolveReview === undefined || one.resolveReview === state.view.submitted?.id));
 
-/** What the Summary links to: a thread, which it can open for editing, or a file. */
-export type Reveal = { thread?: string; edit?: string; file?: string };
+/** What the Summary links to: a thread, which it can open for editing, a file, or lines of it to flash. */
+export type Reveal = { thread?: string; edit?: string; file?: string; lines?: [number, number] };
 
 export class SummaryPane {
   readonly box = el('section', { className: 'summary' });
@@ -216,13 +219,46 @@ export class SummaryPane {
         el(
           'ul',
           { className: 'criteria' },
-          ...criteria.map(({ text, status }) => {
-            const [mark, word] = CRITERIA[status];
-            return el('li', { className: `criterion ${status}` }, icon(mark), el('span', { className: 'criterion-text', title: text }, text), el('span', { className: 'criterion-word' }, word));
-          }),
+          ...[...criteria]
+            .sort((one, other) => ORDER.indexOf(one.status) - ORDER.indexOf(other.status))
+            .map(criterion => {
+              const { text, status } = criterion;
+              const [mark, word] = CRITERIA[status];
+              const shows = this.shows(criterion);
+              return el(
+                'li',
+                { className: `criterion ${status}` },
+                icon(mark),
+                el('span', { className: 'criterion-body' }, el('span', { className: 'criterion-text' }, text), ...(shows.length ? [el('span', { className: 'criterion-shows' }, ...shows)] : [])),
+                el('span', { className: 'criterion-word' }, word),
+              );
+            }),
         ),
       ),
     ];
+  }
+
+  /** A gap's link to the AI comment that closes it and what is missing; met's link to its lines; not checked's reason. */
+  private shows({ comment, missing, file, lines, reason }: Criterion): (HTMLElement | string)[] {
+    if (reason) return [reason];
+    if (file && lines)
+      return [
+        el(
+          'a',
+          { className: 'where', href: '#', title: `${file} ${linesWord(lines)}: go to the lines`, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ file, lines }); } },
+          `${baseName(file)}:${linesLabel(lines)}`,
+        ),
+      ];
+    // A deleted comment takes its link with it.
+    const thread = comment === undefined ? undefined : state.view.threads.find(one => one.comments.some(said => said.id === comment));
+    const where = thread ? `${baseName(thread.file)}${thread.lines ? `:${linesLabel(thread.lines)}` : ''}` : '';
+    const title = thread ? `${thread.file}${thread.lines ? ` ${linesWord(thread.lines)}` : ''}: go to the comment` : '';
+    const link = !thread
+      ? []
+      : threadStep(thread) === undefined
+        ? [el('span', { className: 'where', title }, where)]
+        : [el('a', { className: 'where', href: '#', title, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where)];
+    return [...link, ...(missing ? [missing] : [])];
   }
 
   private reviewBox(): HTMLElement {

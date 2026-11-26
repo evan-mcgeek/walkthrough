@@ -23,7 +23,16 @@ export type Step = {
   copies?: Copy[];
 };
 export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;
-export type Criterion = { text: string; status: (typeof CRITERION_STATUSES)[number] };
+/** A gap links to the AI comment that closes it and says what is missing; met links to the lines that meet it; not checked says why. */
+export type Criterion = {
+  text: string;
+  status: (typeof CRITERION_STATUSES)[number];
+  comment?: string;
+  missing?: string;
+  file?: string;
+  lines?: Lines;
+  reason?: string;
+};
 export type Said = { author: string; at: string; body: string };
 /** A colleague's thread already on the change, by the id the session gave it. */
 export type Thread = Said & { id: string; file: string; lines?: Lines; resolved?: true; replies: Said[]; linesHash?: string; code?: Code };
