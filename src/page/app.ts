@@ -154,7 +154,9 @@ function readingAnchor(): { element: Element; top: number } | null {
   const top = main.getBoundingClientRect().top;
   for (const element of content.firstElementChild?.querySelectorAll('.step-head, .file-header, tr, .step-foot') ?? []) {
     const box = element.getBoundingClientRect();
-    if (box.height && box.bottom > top) return { element, top: box.top };
+    // A file header stuck at the top stays put while the lines under it move.
+    const stuck = element.classList.contains('file-header') && (element.parentElement?.getBoundingClientRect().top ?? top) < top;
+    if (box.height && box.bottom > top && !stuck) return { element, top: box.top };
   }
   return null;
 }
