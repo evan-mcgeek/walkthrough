@@ -15,6 +15,8 @@ export type Step = {
   /** The one-line reason a generated or copied file arrives folded, by its path. */
   folded?: Record<string, string>;
   look: Look[];
+  /** The author's screenshot of the change, kept in the walkthrough's folder by `name`, with the author's alt text. */
+  screenshot?: { name: string; alt: string };
   diff: string;
 };
 export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;

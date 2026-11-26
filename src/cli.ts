@@ -151,7 +151,7 @@ const FILE_OPTION = { options: { file: { type: 'string' } } } as const;
 async function steps(args: string[]): Promise<void> {
   const { cwd, dir, values } = located(args, FILE_OPTION);
   const inputs = parseSteps(readInput(values.file));
-  const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, walkthrough, inputs));
+  const { steps: recorded } = await recordSteps(dir, walkthrough => buildSteps(cwd, dir, walkthrough, inputs));
   console.log(`Recorded ${plural(recorded.length, 'step')}: ${recorded.map(step => `${step.id} (${step.title})`).join(', ')}.`);
 }
 

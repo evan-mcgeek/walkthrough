@@ -178,6 +178,8 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | N lines moved to `<file>` line M | diff row where moved lines left | Diff row, 8 | "1 line moved to …"; same file: "N lines moved to line M"; links to where they arrive |
 | `<alt text>` | caption under the author's screenshot | the author's words | from the pull request; none if it has none |
 | Open the screenshot: `<alt text>` | accessible name of the closed screenshot | Tooltip, 12 | |
+| Open the screenshot | accessible name of the closed screenshot when it has no alt text | Tooltip, 12 | |
+| Close the screenshot | accessible name of the open image | Tooltip, 12 | a click on it closes the screenshot |
 | Close | under the open screenshot | Button, 3 | also Esc or a click on the image |
 | Viewed (V) · Changes since your last review (C) | tooltips of the Viewed checkbox and the changes switch | Tooltip, 12 | the key in brackets, as "Go to the Summary (G S)"; no key caps; J and K show nowhere, as on GitHub |
 
