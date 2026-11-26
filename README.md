@@ -68,6 +68,30 @@ While the AI finishes its review, the page shows it at its desk:
   <img alt="The Opening: the AI at its desk, and the changed files, while the review is not ready" src="docs/images/opening-light.png">
 </picture>
 
+### Steps, each with what to look at
+
+> The AI splits the change into steps in an order that makes sense; each "Look at:" link takes you to the lines that matter.
+
+<img alt="Opening a step and clicking a Look at link, which lands on its lines" src="docs/images/steps.gif">
+
+### The AI's comments
+
+> They sit on the lines, marked `[AI]` and pending; a short fix comes as a suggested change. Edit or delete any of them before anything goes out.
+
+<img alt="An AI comment with its suggested change on the lines it replaces" src="docs/images/ai-comment.gif">
+
+### Ask the AI in a thread
+
+> Ask about any line and the session answers in the thread; the answer stays on the page.
+
+<img alt="Asking the AI in a thread and its answer arriving" src="docs/images/ask-ai.gif">
+
+### Finish on the Summary
+
+> Every comment that will go out, the acceptance criteria as the AI checked them, then Submit review or Send to agent.
+
+<img alt="The Summary with what goes out and the criteria, then Send to agent" src="docs/images/summary.gif">
+
 On a pull request, Submit review posts one review with your summary and comments.
 On your own change, Send to agent hands your comments back to the agent as a fix list.
 So, nothing leaves before you submit.
