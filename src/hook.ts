@@ -41,7 +41,7 @@ function words(command: string): Word[] | null {
 }
 
 // Not serve, which start runs itself and which writes in the folder it names.
-const SUBCOMMANDS = new Set(['start', 'files', 'steps', 'open', 'ready', 'comment', 'threads', 'criteria', 'comments', 'posted', 'list', 'export', 'guide', 'listen', 'policy', 'say', 'stop', 'prune']);
+const SUBCOMMANDS = new Set(['start', 'files', 'steps', 'open', 'ready', 'comment', 'threads', 'criteria', 'comments', 'resolve', 'posted', 'list', 'export', 'guide', 'listen', 'policy', 'say', 'stop', 'prune']);
 
 // `--out` writes wherever it names, so an export stays with the person.
 function ownCommand(command: string): boolean {

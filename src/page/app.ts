@@ -662,15 +662,28 @@ phone.addEventListener('change', () => {
 
 let pendingKey = '';
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && document.body.classList.contains('drawer-open')) {
-    toggleDrawer();
-    header.querySelector<HTMLElement>('.steps-button')?.focus();
-    return;
-  }
-  if (event.key === 'Escape' && (changesSwitch.isOpen || menu)) {
-    changesSwitch.close(true);
-    closeMenu(true);
-    return;
+  // One Esc closes one thing, the innermost open; a composer or a menu that took it has prevented it.
+  if (event.key === 'Escape') {
+    if (event.defaultPrevented) return;
+    const close = changesSwitch.isOpen
+      ? () => {
+          changesSwitch.close(true);
+        }
+      : menu
+        ? () => {
+            closeMenu(true);
+          }
+        : document.body.classList.contains('drawer-open')
+          ? () => {
+              toggleDrawer();
+              header.querySelector<HTMLElement>('.steps-button')?.focus();
+            }
+          : null;
+    if (close) {
+      event.preventDefault();
+      close();
+      return;
+    }
   }
   const typing = event.target instanceof HTMLElement && event.target.closest('textarea, select, [contenteditable], input:not([type="checkbox"], [type="radio"])');
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;

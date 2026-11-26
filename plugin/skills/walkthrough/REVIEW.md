@@ -116,6 +116,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - I name the change by its number or link on your code host.
 - Fetch its head from your code host into a local ref, without checking it out, and walk from its base to that ref with a label naming it, such as "PR 123", and its number and title.
 - Read the change's description and discussion as well as its ticket.
+- When its description shows a screenshot of the change, put it on the step it shows; leave out one that fits no step.
 
 ### Threads already on the change
 

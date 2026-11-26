@@ -1,6 +1,9 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
 import type { Walkthrough } from '../src/walkthrough';
-import { git, makeRepo, type Repo } from './helpers';
+import { git, inboxOf, makeRepo, type Repo } from './helpers';
 
 let repo: Repo;
 afterEach(() => {
@@ -54,6 +57,60 @@ describe('walkthrough steps', () => {
     expect(repo.record([{ ...login, look: [{ ...LOOK, end: 3 }] }, app]).stderr).toContain('points to lines 1-3 of login.ts, which are not in its diff');
     expect(repo.record([{ ...login, look: [{ ...LOOK, label: 'one two three four five' }] }, app]).stderr).toContain('a label of 1 to 4 words');
     expect((await shownAt(repo.url())).steps.map(step => step.title)).toEqual(['Login check', 'App version']);
+  });
+});
+
+describe("a step's screenshot", () => {
+  test('a PNG in the inbox is kept by its content hash and served with its type; a text file is refused and nothing is recorded', async () => {
+    repo = makeRepo();
+    const inbox = inboxOf(repo.run('start'));
+    const png = fs.readFileSync(path.resolve(import.meta.dirname, '..', 'docs', 'design', 'brand', 'app-icon-16.png'));
+    const notes = path.join(inbox, 'notes.png');
+    fs.writeFileSync(notes, 'not an image\n');
+    const [login, app] = loginSteps;
+
+    const refused = repo.record([{ ...login, screenshot: { file: notes, alt: 'The login form' } }, app]);
+
+    expect(refused.stderr).toContain(`step 1: its screenshot ${notes} is not a PNG, JPEG, GIF or WebP image`);
+    expect(fs.existsSync(notes)).toBe(true);
+    expect((await shownAt(repo.url())).steps).toEqual([]);
+
+    const shot = path.join(inbox, 'login.png');
+    fs.writeFileSync(shot, png);
+    expect(repo.record([{ ...login, screenshot: { file: shot, alt: 'The login form' } }, app]).stderr).toBe('');
+
+    const name = `${crypto.createHash('sha256').update(png).digest('hex')}.png`;
+    expect((await shownAt(repo.url())).steps[0]?.screenshot).toEqual({ name, alt: 'The login form' });
+    expect(fs.existsSync(shot)).toBe(false);
+    const served = await fetch(`${repo.url()}screenshot/${name}`);
+    expect(served.headers.get('content-type')).toBe('image/png');
+    expect(Buffer.from(await served.arrayBuffer()).equals(png)).toBe(true);
+    const out = path.join(path.dirname(repo.dir), 'login.html');
+    repo.run('export', '--out', out);
+    expect(fs.readFileSync(out, 'utf8')).toContain(`<img class="screenshot-image" src="data:image/png;base64,${png.toString('base64')}" alt="The login form" />`);
+  });
+
+  test('recorded again, a step keeps its screenshot unless given a new one or null', async () => {
+    repo = makeRepo();
+    const inbox = inboxOf(repo.run('start'));
+    const shot = (name: string, bytes: Buffer) => {
+      fs.writeFileSync(path.join(inbox, name), bytes);
+      return path.join(inbox, name);
+    };
+    const icon = (size: number) => fs.readFileSync(path.resolve(import.meta.dirname, '..', 'docs', 'design', 'brand', `app-icon-${String(size)}.png`));
+    const named = (bytes: Buffer) => `${crypto.createHash('sha256').update(bytes).digest('hex')}.png`;
+    const [login, app] = loginSteps;
+    const screenshotOf = async () => (await shownAt(repo.url())).steps[0]?.screenshot;
+    repo.record([{ ...login, screenshot: { file: shot('a.png', icon(16)), alt: 'Before' } }, app]);
+
+    repo.record([{ ...login, title: 'Login, renamed' }, app]);
+    expect(await screenshotOf()).toEqual({ name: named(icon(16)), alt: 'Before' });
+
+    repo.record([{ ...login, screenshot: { file: shot('b.png', icon(32)), alt: 'After' } }, app]);
+    expect(await screenshotOf()).toEqual({ name: named(icon(32)), alt: 'After' });
+
+    repo.record([{ ...login, screenshot: null }, app]);
+    expect(await screenshotOf()).toBeUndefined();
   });
 });
 
