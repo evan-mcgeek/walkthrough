@@ -28,8 +28,8 @@ colors:
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
   diff-del-gutter: "#f7d9d6"
-  diff-add-word: "#b9e5c6"
-  diff-del-word: "#f4c4bf"
+  diff-add-word: "#c4e9cf"
+  diff-del-word: "#f7cdc8"
   stripe-add: "#3c9a5f"
   stripe-del: "#c8473b"
   line-pick: "#eef0fd"
@@ -60,8 +60,8 @@ colors:
   diff-add-gutter-dark: "#193423"
   diff-del-dark: "#33191a"
   diff-del-gutter-dark: "#3f1f20"
-  diff-add-word-dark: "#1f4a2e"
-  diff-del-word-dark: "#5a2626"
+  diff-add-word-dark: "#1d4129"
+  diff-del-word-dark: "#4f2526"
   stripe-add-dark: "#4fbf7a"
   stripe-del-dark: "#ef7e6f"
   line-pick-dark: "#1d2242"
@@ -70,8 +70,8 @@ colors:
   cb-add-gutter: "#ccecff"
   cb-del: "#fff1e5"
   cb-del-gutter: "#ffe2c8"
-  cb-add-word: "#b6e3ff"
-  cb-del-word: "#ffd8b5"
+  cb-add-word: "#b8e2ff"
+  cb-del-word: "#ffd5b3"
   cb-stripe-add: "#0969da"
   cb-stripe-del: "#bc4c00"
   cb-ok: "#0969da"
@@ -82,14 +82,32 @@ colors:
   cb-add-gutter-dark: "#14345a"
   cb-del-dark: "#2e1f16"
   cb-del-gutter-dark: "#42261a"
-  cb-add-word-dark: "#26508a"
-  cb-del-word-dark: "#764223"
+  cb-add-word-dark: "#1a3f69"
+  cb-del-word-dark: "#4c2c1a"
   cb-stripe-add-dark: "#4493f8"
   cb-stripe-del-dark: "#db6d28"
   cb-ok-dark: "#58a6ff"
   cb-ok-wash-dark: "#14263b"
   cb-bad-dark: "#f0883e"
   cb-bad-wash-dark: "#2e1f16"
+  syntax-comment: "#555e68"
+  syntax-keyword: "#b0282a"
+  syntax-constant: "#005abf"
+  syntax-entity: "#6f42c1"
+  syntax-tag: "#1a6c2d"
+  syntax-string: "#032f62"
+  syntax-regexp: "#032f62"
+  syntax-variable: "#9f4009"
+  syntax-invalid: "#b31d28"
+  syntax-comment-dark: "#a0a9b3"
+  syntax-keyword-dark: "#f98795"
+  syntax-constant-dark: "#79b8ff"
+  syntax-entity-dark: "#bb9af0"
+  syntax-tag-dark: "#85e89d"
+  syntax-string-dark: "#9ecbff"
+  syntax-regexp-dark: "#dbedff"
+  syntax-variable-dark: "#ffab70"
+  syntax-invalid-dark: "#fdaeb7"
 typography:
   headline:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
@@ -317,7 +335,7 @@ Status colour survives only where GitHub has the same meaning or the AI's criter
 ### Diff
 - **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell (line numbers in muted reach 4.5:1 on every gutter, which is why `diff-del-gutter` moved from #f6d6d3 to #f7d9d6). Preview-mode insertions use the addition wash full-bleed.
 - **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at full colour (decision 23; the built 55% and 60% gave 1.8:1 and 2.4:1 in light, under the 3:1 a mark needs).
-- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line.
+- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line. Light #c4e9cf / #f7cdc8, dark #1d4129 / #4f2526 (decision 27; built in 0.1.5 as #b9e5c6 / #f4c4bf and #1f4a2e / #5a2626, deep enough that syntax colours could not reach 4.5:1 on them without losing their hue, see Syntax).
 - **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad`, so Colorblind swaps them too.
 - **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask or comment about; gutter number turns accent text, semibold.
 
@@ -328,12 +346,61 @@ GitHub's Protanopia and Deuteranopia palette. With Colorblind on, these replace 
 |---|---|---|---|
 | `cb-add` / `cb-add-gutter` | #ddf4ff / #ccecff | #112a45 / #14345a | `diff-add` / `diff-add-gutter` |
 | `cb-del` / `cb-del-gutter` | #fff1e5 / #ffe2c8 | #2e1f16 / #42261a | `diff-del` / `diff-del-gutter` |
-| `cb-add-word` / `cb-del-word` | #b6e3ff / #ffd8b5 | #26508a / #764223 | `diff-add-word` / `diff-del-word` |
+| `cb-add-word` / `cb-del-word` | #b8e2ff / #ffd5b3 | #1a3f69 / #4c2c1a | `diff-add-word` / `diff-del-word` |
 | `cb-stripe-add` / `cb-stripe-del` | #0969da / #bc4c00 | #4493f8 / #db6d28 | `stripe-add` / `stripe-del` |
 | `cb-ok` / `cb-ok-wash` | #0969da / #ddf4ff | #58a6ff / #14263b | `ok` / `ok-wash` |
 | `cb-bad` / `cb-bad-wash` | #bc4c00 / #fff1e5 | #f0883e / #2e1f16 | `bad` / `bad-wash` |
 
-GitHub's light gutters (#b6e3ff, #ffd8b5) and its dark ones put muted line numbers at 4.47:1 and 3.93:1, so the gutters are lighter (light) or deeper (dark) than GitHub's; the changed words keep GitHub's values, as built in 0.1.5. Checked: code text on every wash 11:1 or more; muted line numbers on the gutters 4.8:1 (light) and 4.9:1 (dark); `cb-ok` and `cb-bad` as text 4.6:1 or more on canvas, surface and their washes; stripe marks 4.7:1 or more on the stripe. Blue and orange marks have near-equal lightness: they part by hue, which is what these readers see.
+GitHub's light gutters (#b6e3ff, #ffd8b5) and its dark ones put muted line numbers at 4.47:1 and 3.93:1, so the gutters are lighter (light) or deeper (dark) than GitHub's; the changed words are lighter than GitHub's in light and less deep in dark (decision 27), so syntax colours read on them. Checked: code text on every wash 11:1 or more; muted line numbers on the gutters 4.8:1 (light) and 4.9:1 (dark); `cb-ok` and `cb-bad` as text 4.6:1 or more on canvas, surface and their washes; stripe marks 4.7:1 or more on the stripe. Blue and orange marks have near-equal lightness: they part by hue, which is what these readers see.
+
+### Syntax (decision 26)
+GitHub's own themes, github-light and github-dark, through Shiki. The page tokenizes each file whole with both themes and maps each theme colour to one of these tokens as a class (`sx-c`, `sx-k`, …), so the strict CSP needs no inline style and the page's own values apply. Each token is GitHub's colour, darkened in light or lightened in dark in its own hue only as far as it takes to reach 4.5:1 on every background code sits on (context, moved, a code block, picked lines, added, removed, the changed-word washes, and all of these with Colorblind). Plain code is `ink`, as now. Bold, italic and underline from the themes are dropped, so colours change no width. Colorblind keeps these tokens: syntax hues name code, not change. Each token is new for one reason: GitHub's theme gives that kind of code its own colour.
+
+| Token | Covers | Light | Dark | Lowest ratio, light / dark |
+|---|---|---|---|---|
+| `syntax-comment` | Comment | #555e68 (GitHub #6a737d) | #a0a9b3 (GitHub #6a737d) | 4.6 / 4.5 |
+| `syntax-keyword` | Keyword, storage | #b0282a (GitHub #d73a49) | #f98795 (GitHub #f97583) | 4.6 / 4.6 |
+| `syntax-constant` | Constant, support, property | #005abf (GitHub #005cc5) | #79b8ff | 4.5 / 5.2 |
+| `syntax-entity` | Function, type, class | #6f42c1 | #bb9af0 (GitHub #b392f0) | 4.5 / 4.6 |
+| `syntax-tag` | Tag, escape | #1a6c2d (GitHub #22863a) | #85e89d | 4.5 / 7.2 |
+| `syntax-string` | String | #032f62 | #9ecbff | 9.2 / 6.3 |
+| `syntax-regexp` | Regexp | #032f62 | #dbedff | 9.2 / 9.0 |
+| `syntax-variable` | Variable, parameter | #9f4009 (GitHub #e36209) | #ffab70 | 4.5 / 5.8 |
+| `syntax-invalid` | Invalid | #b31d28 | #fdaeb7 | 4.7 / 6.1 |
+
+- **Changed words** (decision 27): `diff-add-word` / `diff-del-word` and their Colorblind pair, under Diff and Colorblind above. On the built values GitHub's comment colour falls to 1.7:1 (Colorblind dark) and 2.1:1 (dark), and keeping every token at 4.5:1 would have turned dark comments to #bac3cd and keywords to #f9adbb, nearly plain text; on the new values the tokens stay close to GitHub's. They sit 1.2 to 1.4:1 from their line wash, enough to see.
+
+Contrast of each token on each background, ours, with GitHub's in brackets where we changed it (bold where it falls under 4.5:1). CB is Colorblind.
+
+**Light**
+
+| Token | Context | Moved | Code block | Picked | Added | Removed | Added word | Removed word | CB added | CB removed | CB added word | CB removed word |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comment | 6.6 (4.8) | 6.2 (**4.5**) | 5.8 (**4.2**) | 5.8 (**4.2**) | 5.9 (**4.3**) | 5.7 (**4.2**) | 5.0 (**3.6**) | 4.6 (**3.3**) | 5.8 (**4.2**) | 6.0 (**4.3**) | 4.8 (**3.5**) | 4.8 (**3.5**) |
+| Keyword, storage | 6.6 (4.6) | 6.2 (**4.3**) | 5.8 (**4.0**) | 5.8 (**4.0**) | 5.9 (**4.1**) | 5.7 (**4.0**) | 5.0 (**3.5**) | 4.6 (**3.2**) | 5.8 (**4.0**) | 6.0 (**4.1**) | 4.8 (**3.4**) | 4.8 (**3.4**) |
+| Constant, support, property | 6.5 (6.3) | 6.1 (5.9) | 5.7 (5.5) | 5.8 (5.5) | 5.9 (5.6) | 5.7 (5.5) | 5.0 (4.8) | 4.5 (**4.3**) | 5.7 (5.5) | 5.9 (5.7) | 4.8 (4.6) | 4.8 (4.6) |
+| Function, type, class | 6.5 | 6.1 | 5.7 | 5.7 | 5.8 | 5.7 | 4.9 | 4.5 | 5.7 | 5.9 | 4.8 | 4.8 |
+| Tag, escape | 6.5 (4.6) | 6.1 (**4.3**) | 5.7 (**4.0**) | 5.7 (**4.1**) | 5.8 (**4.2**) | 5.6 (**4.0**) | 4.9 (**3.5**) | 4.5 (**3.2**) | 5.7 (**4.1**) | 5.9 (**4.2**) | 4.8 (**3.4**) | 4.8 (**3.4**) |
+| String | 13.2 | 12.3 | 11.6 | 11.7 | 11.9 | 11.5 | 10.0 | 9.2 | 11.6 | 11.9 | 9.7 | 9.7 |
+| Regexp | 13.2 | 12.3 | 11.6 | 11.7 | 11.9 | 11.5 | 10.0 | 9.2 | 11.6 | 11.9 | 9.7 | 9.7 |
+| Variable, parameter | 6.5 (**3.5**) | 6.1 (**3.3**) | 5.7 (**3.1**) | 5.8 (**3.1**) | 5.9 (**3.1**) | 5.7 (**3.0**) | 5.0 (**2.6**) | 4.5 (**2.4**) | 5.8 (**3.1**) | 5.9 (**3.1**) | 4.8 (**2.5**) | 4.8 (**2.6**) |
+| Invalid | 6.7 | 6.3 | 5.9 | 5.9 | 6.0 | 5.8 | 5.1 | 4.7 | 5.9 | 6.1 | 4.9 | 4.9 |
+| Plain text (`ink`) | 16.2 | 15.1 | 14.2 | 14.3 | 14.5 | 14.0 | 12.2 | 11.2 | 14.2 | 14.6 | 11.8 | 11.9 |
+
+**Dark**
+
+| Token | Context | Moved | Code block | Picked | Added | Removed | Added word | Removed word | CB added | CB removed | CB added word | CB removed word |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comment | 7.5 (**3.7**) | 7.0 (**3.4**) | 6.2 (**3.1**) | 6.5 (**3.2**) | 6.5 (**3.2**) | 6.8 (**3.4**) | 4.8 (**2.4**) | 5.4 (**2.7**) | 6.1 (**3.0**) | 6.7 (**3.3**) | 4.5 (**2.2**) | 5.2 (**2.6**) |
+| Keyword, storage | 7.6 (6.7) | 7.0 (6.2) | 6.3 (5.6) | 6.6 (5.8) | 6.6 (5.8) | 6.9 (6.1) | 4.8 (**4.3**) | 5.5 (4.9) | 6.2 (5.5) | 6.7 (6.0) | 4.6 (**4.0**) | 5.3 (4.7) |
+| Constant, support, property | 8.6 | 8.0 | 7.1 | 7.4 | 7.5 | 7.8 | 5.5 | 6.2 | 7.0 | 7.6 | 5.2 | 6.0 |
+| Function, type, class | 7.6 (7.0) | 7.1 (6.5) | 6.3 (5.8) | 6.6 (6.1) | 6.7 (6.1) | 7.0 (6.4) | 4.9 (4.5) | 5.5 (5.1) | 6.2 (5.8) | 6.8 (6.3) | 4.6 (**4.2**) | 5.3 (4.9) |
+| Tag, escape | 11.9 | 11.1 | 9.9 | 10.3 | 10.4 | 10.8 | 7.6 | 8.6 | 9.7 | 10.6 | 7.2 | 8.3 |
+| String | 10.5 | 9.8 | 8.8 | 9.2 | 9.2 | 9.6 | 6.8 | 7.7 | 8.6 | 9.4 | 6.3 | 7.4 |
+| Regexp | 14.9 | 13.8 | 12.4 | 12.9 | 13.0 | 13.6 | 9.6 | 10.8 | 12.2 | 13.3 | 9.0 | 10.4 |
+| Variable, parameter | 9.6 | 8.9 | 8.0 | 8.3 | 8.4 | 8.7 | 6.2 | 7.0 | 7.8 | 8.5 | 5.8 | 6.7 |
+| Invalid | 10.1 | 9.4 | 8.4 | 8.8 | 8.8 | 9.2 | 6.5 | 7.3 | 8.3 | 9.0 | 6.1 | 7.1 |
+| Plain text (`ink`) | 14.5 | 13.5 | 12.1 | 12.6 | 12.7 | 13.2 | 9.3 | 10.5 | 11.9 | 12.9 | 8.7 | 10.2 |
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
@@ -437,6 +504,13 @@ GitHub's file header in a bordered box (1px rule, 7px corners): a 40px sticky he
 ### Diff and gutter
 diff2html line-by-line, restyled through classes, as before: 46px number columns, 12.5/21px mono, addition and deletion washes, picked lines in the line-pick tone, hunk headers muted. A line number is a button: click (and Shift-click for a range) opens a composer under the line. A line with a thread shows a 13px bubble in its gutter: ink for an AI comment, accent person for yours, muted for a colleague's. The overview stripe stays (hidden at 390): additions and deletions, AI and colleague comments in muted, yours in the accent.
 
+### Syntax colours in the page (decisions 26 to 30)
+- **Where:** every diff line (context, added, removed, moved, copied, picked), an outdated thread's quoted code, a suggested change, and fenced code blocks in comments, explanations and answers. Not: hunk headers, line numbers, inline `code`, file paths.
+- **Changed words** (decision 27): diff2html's word marks inside a changed line, in the word tokens, square, under the syntax colours; they come from the diff, so they show before colours arrive.
+- **Code block** (decision 28; GitHub's fenced block, new on the page because comments and answers had no way to show more than inline code): surface tint, 6px corners, 8px 12px padding, 12.5/20px mono, up to 680px, scrolls sideways, 6px above and below. Coloured by the language its fence names; no language, plain.
+- **Arriving** (decision 29): no indicator and no motion. Colours replace plain text in place.
+- **Plain** (decision 30): a line over 1,000 characters, a file or block whose language Shiki does not know or does not name; no label.
+
 ### Comments and threads
 One component. A thread is a bordered box (1px rule, 8px corners, up to 760px) under its line. Each comment is a row: a 24px avatar (you: accent circle with your initial; the AI: an ink rounded square reading "AI"; a colleague: a grey circle with initials), the name (You, AI, or the colleague's handle), a Pending tag (amber outline, 12px) while it is pending, the time, and at the right Edit and Delete for pending comments; the body at 14/1.55; the AI's pending comments start with a mono `[AI]` (its answers to Ask AI do not, since they never go out). An AI comment row sits on a faint surface tone. The thread's foot holds a Reply field, Ask AI, and Resolve for colleagues' threads.
 - **Composer:** on picked lines, a thread box holding a textarea, Ask AI at the left, and Cancel and Add comment at the right.
@@ -508,6 +582,7 @@ One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezie
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
 - **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the review is ready, the opening block fades out (120ms ease-in) and the whole walkthrough enters at once: the first step with the usual pane swap, the step list and header counts fading in (200ms).
 - **After the session:** the robot waves once (1.6s, after 400ms; ease-in-out swing, no overshoot) and then stays still.
+- **Syntax colours:** none. A file's colours replace its plain text in one frame; nothing fades and nothing moves, under reduced motion too.
 - **Colorblind, copied code, file comments:** nothing new moves. Turning Colorblind on recolours at once, no transition. A file composer opens by grid rows like any composer.
 - **Back on a new head:** steps switch with the usual pane swap; Show resolved opens by grid rows (320ms) like a comment growing; the screenshot opens in place by height. Nothing else moves: the switch, the behind line and the Outdated band appear without motion.
 - **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles; the farewell robot does not wave and the "z" stand still.
@@ -542,6 +617,7 @@ Rules: one place per thing (elsewhere at most a count that leads to it); list ro
 | Criterion | The ticket's own sentence, 12 words max; status one of Met, Partly met, Not met, Not checked | "Invalid dates rejected with a clear error" · "Not met: bad dates become null" | The evidence paragraph as the criterion text |
 | Answer to an ask | 2 sentences, the first answers directly | "No: 30 February rolls over to 2 March. isNaN won't catch it." | "Great question! Let's look at how Date parsing works…" |
 | Suggested change | only when the fix fits in a few lines on the commented lines; at most 6 lines; the comment's sentence still says why | "[AI] Return 400 here." then the suggestion block | A block that rewrites the whole function, or a suggestion with no sentence |
+| Code block in a comment or answer | only when the point is code; at most 6 lines; the fence names the language; the sentence still says why | "Treat it as missing:" then ```ts if (!value) return null; ``` | A pasted function, or a block with no language |
 | Draft comment | 2 sentences, 40 words, starts with [AI] | "[AI] Return 400 for an invalid dueDate, with the field name." | A paragraph restating the finding and the policy |
 
 

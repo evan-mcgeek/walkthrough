@@ -46,6 +46,8 @@ if (!process.env['WALKTHROUGH_TEST_SANDBOX']) {
     XDG_STATE_HOME: path.join(home, '.local', 'state'),
     XDG_CONFIG_HOME: path.join(home, '.config'),
     WALKTHROUGH_STATE: path.join(sandbox, 'state'),
+    // Grammars come from the installed package, so no test reaches the network.
+    WALKTHROUGH_GRAMMARS: path.resolve(import.meta.dirname, '..', 'node_modules', 'tm-grammars', 'grammars'),
   });
   process.on('exit', () => {
     // A test that failed before its teardown leaves its page server up for the idle timeout.

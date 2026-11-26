@@ -29,7 +29,10 @@ describe('walkthrough export', () => {
     expect(html).toContain('Logs in: Partly met');
     expect(html).toContain('<div class="suggestion-head">Suggested change</div>');
     expect(html).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
-    expect(html).toContain('login = () =&gt; true;');
+    expect(html.replace(/<\/?span[^>]*>/g, '')).toContain('login = () =&gt; true;');
+    // Its code is coloured, with each colour's rule in the file's one stylesheet.
+    expect(html).toContain('<span class="hl-d73a49-f97583">const</span>');
+    expect(html).toContain('.hl-d73a49-f97583{color:light-dark(#d73a49,#f97583)}');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b/i);
     // The self-hosted code font travels inside the file.
