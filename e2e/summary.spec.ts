@@ -88,8 +88,12 @@ test('acceptance criteria go gaps first, each with what shows it: the comment an
 
   // At 390 the status word moves under the text.
   await page.setViewportSize({ width: 390, height: 844 });
-  const text = await rows.nth(0).locator('.criterion-text').boundingBox();
-  const word = await rows.nth(0).locator('.criterion-word').boundingBox();
-  expect(word?.y ?? 0).toBeGreaterThan(text?.y ?? 0);
-  expect(word?.x).toBe(text?.x);
+  // Both read in one frame, once the page has settled at its new width.
+  const under = () =>
+    rows.nth(0).evaluate(row => {
+      const text = row.querySelector('.criterion-text')?.getBoundingClientRect();
+      const word = row.querySelector('.criterion-word')?.getBoundingClientRect();
+      return !!text && !!word && word.top > text.top && word.left === text.left;
+    });
+  await expect.poll(under).toBe(true);
 });
