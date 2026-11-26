@@ -50,7 +50,7 @@ test('moved code shows once where it arrives, and each end links to the other', 
   await left.getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Dates' })).toBeVisible();
   const dates = page.locator('.file[data-file="dates.ts"]');
-  await expect(dates.locator('tr.moved-label')).toHaveText('Moved from api.ts line 2');
+  await expect(dates.locator('tr.moved-label')).toHaveText('Moved from api.ts lines 2–5');
   const arrived = dates.locator('tr.moved');
   await expect(arrived.locator('.d2h-code-line-ctn')).toHaveText(PARSE);
   await expect(arrived.locator('.d2h-code-line-prefix')).toHaveText([' ', ' ', ' ', ' ']);
@@ -70,8 +70,8 @@ test('moved code shows once where it arrives, and each end links to the other', 
 
   await page.getByRole('link', { name: 'Dates' }).first().click();
   const list = page.locator('.file[data-file="list.ts"]');
-  await expect(list.locator('tr.moved-label')).toHaveText([/1\s*4 lines moved to line 11/, 'Moved from line 1']);
+  await expect(list.locator('tr.moved-label')).toHaveText([/1\s*4 lines moved to line 11/, 'Moved from lines 1–4']);
   await expect(list.locator('.d2h-ins, .d2h-del')).toHaveCount(0);
-  await list.getByRole('button', { name: 'Moved from line 1' }).click();
+  await list.getByRole('button', { name: 'Moved from lines 1–4' }).click();
   await expect(list.locator('tr.moved-label').first()).toHaveClass(/flash/);
 });
