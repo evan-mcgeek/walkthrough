@@ -11,6 +11,14 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
   if (typeof require !== "undefined") return require.apply(this, arguments);
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
+};
 var __commonJS = (cb, mod) => function __require2() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -39,9 +47,18 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// <define:GRAMMARS>
+var define_GRAMMARS_default;
+var init_define_GRAMMARS = __esm({
+  "<define:GRAMMARS>"() {
+    define_GRAMMARS_default = { version: "1.32.22", extensions: { ".bsl": "bsl", ".os": "bsl", ".abap": "abap", ".apl": "apl", ".dyalog": "apl", ".as": "actionscript-3", ".adb": "ada", ".ada": "ada", ".ads": "ada", ".outjob": "ini", ".pcbdoc": "ini", ".prjpcb": "ini", ".schdoc": "ini", ".apacheconf": "apache", ".vhost": "apache", ".cls": "apex", ".apex": "apex", ".trigger": "apex", ".applescript": "applescript", ".scpt": "applescript", ".asciidoc": "asciidoc", ".adoc": "asciidoc", ".asc": "asciidoc", ".asm": "asm", ".a51": "asm", ".i": "asm", ".inc": "asm", ".nas": "asm", ".nasm": "asm", ".s": "asm", ".astro": "astro", ".ahk": "ahk", ".ah1": "ahk", ".ah2": "ahk", ".ahkl": "ahk", ".awk": "awk", ".auk": "awk", ".gawk": "awk", ".mawk": "awk", ".nawk": "awk", ".b": "c", ".bal": "ballerina", ".bat": "bat", ".cmd": "bat", ".bf": "csharp", ".be": "berry", ".bib": "bibtex", ".bibtex": "bibtex", ".bicep": "bicep", ".bicepparam": "bicep", ".blade": "blade", ".blade.php": "blade", ".bst": "yaml", ".c": "c", ".cats": "c", ".h": "c", ".h.in": "c", ".idc": "c", ".cs": "csharp", ".cake": "csharp", ".cs.pp": "csharp", ".csx": "csharp", ".linq": "csharp", ".cpp": "cpp", ".c++": "cpp", ".cc": "cpp", ".cp": "pascal", ".cppm": "cpp", ".cxx": "cpp", ".h++": "cpp", ".hh": "cpp", ".hpp": "cpp", ".hxx": "cpp", ".inl": "cpp", ".ino": "cpp", ".ipp": "cpp", ".ixx": "cpp", ".re": "cpp", ".tcc": "cpp", ".tpp": "cpp", ".txx": "cpp", ".chs": "haskell", ".c3": "c3", ".cmake": "cmake", ".cmake.in": "cmake", ".cob": "cobol", ".cbl": "cobol", ".ccp": "cobol", ".cobol": "cobol", ".cpy": "cobol", ".dae": "xml", ".cql": "cypher", ".cson": "coffee", ".css": "css", ".csv": "csv", ".cue": "cue", ".cdc": "cadence", ".cairo": "cairo", ".chpl": "chapel", ".ck": "java", ".clar": "clarity", ".clj": "clojure", ".bb": "clojure", ".boot": "clojure", ".cl2": "clojure", ".cljc": "clojure", ".cljs": "clojure", ".cljs.hl": "clojure", ".cljscm": "clojure", ".cljx": "clojure", ".hic": "clojure", ".soy": "soy", ".ql": "codeql", ".qll": "codeql", ".coffee": "coffee", "._coffee": "coffee", ".cjsx": "coffee", ".coffee.erb": "coffee", ".iced": "coffee", ".lisp": "common-lisp", ".asd": "common-lisp", ".cl": "c", ".l": "common-lisp", ".lsp": "common-lisp", ".ny": "common-lisp", ".podsl": "common-lisp", ".sexp": "common-lisp", ".cps": "pascal", ".cr": "crystal", ".cy": "javascript", ".cyp": "cypher", ".cypher": "cypher", ".d": "d", ".di": "d", ".dm": "dream-maker", ".dart": "dart", ".dhall": "haskell", ".diff": "diff", ".patch": "diff", ".dockerfile": "docker", ".containerfile": "docker", ".env": "dotenv", ".eq": "csharp", ".sch": "xml", ".brd": "xml", ".eb": "python", ".epj": "json", ".edge": "edge", ".ex": "elixir", ".exs": "elixir", ".elm": "elm", ".el": "emacs-lisp", ".emacs": "emacs-lisp", ".emacs.desktop": "emacs-lisp", ".em": "coffee", ".emberscript": "coffee", ".erl": "erlang", ".app": "erlang", ".app.src": "erlang", ".es": "erlang", ".escript": "erlang", ".hrl": "erlang", ".xrl": "erlang", ".yrl": "erlang", ".fs": "fsharp", ".fsi": "fsharp", ".fsx": "fsharp", ".fnl": "fennel", ".ftl": "fluent", ".ftlh": "fluent", ".fr": "haskell", ".gd": "gdscript", ".gdshader": "gdshader", ".gdshaderinc": "gdshader", ".glsl": "glsl", ".fp": "glsl", ".frag": "glsl", ".frg": "glsl", ".fsh": "glsl", ".fshader": "glsl", ".geo": "glsl", ".geom": "glsl", ".glslf": "glsl", ".glslv": "glsl", ".gs": "genie", ".gshader": "glsl", ".rchit": "glsl", ".rmiss": "glsl", ".shader": "shaderlab", ".tesc": "glsl", ".tese": "glsl", ".vert": "glsl", ".vrx": "glsl", ".vs": "glsl", ".vsh": "glsl", ".vshader": "glsl", ".gn": "gn", ".gni": "gn", ".ebuild": "shellscript", ".eclass": "shellscript", ".po": "po", ".pot": "po", ".feature": "gherkin", ".story": "gherkin", ".gleam": "gleam", ".gjs": "glimmer-js", ".gts": "glimmer-ts", ".glf": "tcl", ".gp": "gnuplot", ".gnu": "gnuplot", ".gnuplot": "gnuplot", ".p": "gnuplot", ".plot": "gnuplot", ".plt": "gnuplot", ".go": "go", ".gdnlib": "gdresource", ".gdns": "gdresource", ".tres": "gdresource", ".tscn": "gdresource", ".gradle.kts": "kotlin", ".graphql": "graphql", ".gql": "graphql", ".graphqls": "graphql", ".groovy": "groovy", ".grt": "groovy", ".gtpl": "groovy", ".gvy": "groovy", ".hcl": "hcl", ".nomad": "hcl", ".tf": "hcl", ".tfvars": "hcl", ".tofu": "hcl", ".workflow": "hcl", ".hlsl": "hlsl", ".cginc": "hlsl", ".fx": "hlsl", ".fxh": "hlsl", ".hlsli": "hlsl", ".html": "html", ".hta": "html", ".htm": "html", ".html.hl": "html", ".xht": "html", ".xhtml": "html", ".erb": "erb", ".erb.deface": "erb", ".rhtml": "erb", ".cshtml": "razor", ".razor": "razor", ".http": "http", ".hxml": "hxml", ".hack": "hack", ".hhi": "hack", ".php": "php", ".haml": "haml", ".haml.deface": "haml", ".handlebars": "handlebars", ".hbs": "handlebars", ".hs": "haskell", ".hs-boot": "haskell", ".hsc": "haskell", ".hx": "haxe", ".hxsl": "haxe", ".hurl": "hurl", ".hy": "hy", ".ini": "ini", ".cfg": "ini", ".cnf": "ini", ".container": "ini", ".dof": "ini", ".frm": "ini", ".lektorproject": "ini", ".mount": "ini", ".network": "ini", ".prefs": "ini", ".pro": "ini", ".properties": "ini", ".service": "ini", ".socket": "ini", ".target": "ini", ".timer": "ini", ".url": "ini", ".imba": "imba", ".json": "json", ".4dform": "json", ".4dproject": "json", ".avsc": "json", ".geojson": "json", ".gltf": "json", ".har": "json", ".ice": "json", ".json-tmlanguage": "json", ".json.example": "json", ".jsonl": "json", ".mcmeta": "json", ".sarif": "json", ".slnlaunch": "json", ".tact": "json", ".tfstate": "json", ".tfstate.backup": "json", ".topojson": "json", ".webapp": "json", ".webmanifest": "json", ".yy": "json", ".yyp": "json", ".jsonc": "jsonc", ".code-snippets": "jsonc", ".code-workspace": "jsonc", ".hujson": "jsonc", ".sublime-build": "jsonc", ".sublime-color-scheme": "jsonc", ".sublime-commands": "jsonc", ".sublime-completions": "jsonc", ".sublime-keymap": "jsonc", ".sublime-macro": "jsonc", ".sublime-menu": "jsonc", ".sublime-mousemap": "jsonc", ".sublime-project": "jsonc", ".sublime-settings": "jsonc", ".sublime-theme": "jsonc", ".sublime-workspace": "jsonc", ".sublime_metrics": "jsonc", ".sublime_session": "jsonc", ".tsconfig.json": "jsonc", ".json5": "json5", ".jsonld": "javascript", ".java": "java", ".jav": "java", ".jsh": "java", ".js": "javascript", "._js": "javascript", ".bones": "javascript", ".cjs": "javascript", ".es6": "javascript", ".jake": "javascript", ".javascript": "javascript", ".jsb": "javascript", ".jscad": "javascript", ".jsfl": "javascript", ".jslib": "javascript", ".jsm": "javascript", ".jspre": "javascript", ".jss": "javascript", ".jsx": "javascript", ".mjs": "javascript", ".njs": "javascript", ".pac": "javascript", ".sjs": "javascript", ".ssjs": "javascript", ".xsjs": "javascript", ".xsjslib": "javascript", ".js.erb": "javascript", ".jinja": "jinja", ".j2": "jinja", ".jinja2": "jinja", ".jison": "jison", ".jsonnet": "jsonnet", ".libsonnet": "jsonnet", ".jl": "julia", ".ipynb": "json", ".just": "just", ".kdl": "kdl", ".ksy": "yaml", ".kit": "html", ".kt": "kotlin", ".ktm": "kotlin", ".kts": "kotlin", ".csl": "kusto", ".kql": "kusto", ".ll": "llvm", ".lvproj": "xml", ".lvclass": "xml", ".lvlib": "xml", ".lean": "lean", ".hlean": "lean", ".less": "less", ".liquid": "liquid", ".lkml": "yaml", ".lookml": "yaml", ".lua": "lua", ".fcgi": "lua", ".nse": "lua", ".p8": "lua", ".pd_lua": "lua", ".rbxs": "lua", ".rockspec": "lua", ".wlua": "lua", ".luau": "luau", ".matlab": "matlab", ".m": "objective-c", ".mdx": "mdx", ".mtml": "html", ".mak": "make", ".make": "make", ".makefile": "make", ".mk": "make", ".mkfile": "make", ".md": "markdown", ".livemd": "markdown", ".markdown": "markdown", ".mdown": "markdown", ".mdwn": "markdown", ".mkd": "markdown", ".mkdn": "markdown", ".mkdown": "markdown", ".ronn": "markdown", ".scd": "markdown", ".workbook": "markdown", ".marko": "marko", ".maxpat": "json", ".maxhelp": "json", ".maxproj": "json", ".mxt": "json", ".pat": "json", ".mmd": "mermaid", ".mermaid": "mermaid", ".druby": "ruby", ".duby": "ruby", ".mirah": "ruby", ".mojo": "mojo", ".mbt": "moonbit", ".move": "move", ".nsi": "nsis", ".nsh": "nsis", ".nf": "nextflow", ".nginx": "nginx", ".nginxconf": "nginx", ".nim": "nim", ".nim.cfg": "nim", ".nimble": "nim", ".nimrod": "nim", ".nims": "nim", ".nix": "nix", ".nu": "nushell", ".yaml": "yaml", ".yml": "yaml", ".ml": "ocaml", ".eliom": "ocaml", ".eliomi": "ocaml", ".ml4": "ocaml", ".mli": "ocaml", ".mll": "ocaml", ".mly": "ocaml", ".mm": "objective-cpp", ".odin": "odin", ".opencl": "c", ".scad": "openscad", ".org": "org", ".aw": "php", ".ctp": "php", ".php3": "php", ".php4": "php", ".php5": "php", ".phps": "php", ".phpt": "php", ".pls": "plsql", ".bdy": "plsql", ".ddl": "plsql", ".fnc": "plsql", ".pck": "plsql", ".pkb": "plsql", ".pks": "plsql", ".plb": "plsql", ".plsql": "plsql", ".prc": "plsql", ".spc": "plsql", ".sql": "sql", ".tpb": "plsql", ".tps": "plsql", ".trg": "plsql", ".vw": "plsql", ".pgsql": "sql", ".pas": "pascal", ".dfm": "pascal", ".dpr": "pascal", ".lpr": "pascal", ".pascal": "pascal", ".pp": "puppet", ".pl": "perl", ".al": "perl", ".cgi": "perl", ".perl": "perl", ".ph": "perl", ".plx": "perl", ".pm": "perl", ".psgi": "perl", ".t": "perl", ".pkl": "pkl", ".polar": "polar", ".pcss": "postcss", ".postcss": "postcss", ".pq": "powerquery", ".ps1": "powershell", ".psd1": "powershell", ".psm1": "powershell", ".prisma": "prisma", ".pc": "c", ".prolog": "prolog", ".yap": "prolog", ".proto": "proto", ".jade": "pug", ".pug": "pug", ".purs": "purescript", ".py": "python", ".gyp": "python", ".gypi": "python", ".lmi": "python", ".py3": "python", ".pyde": "python", ".pyi": "python", ".pyp": "python", ".pyt": "python", ".pyw": "python", ".rpy": "python", ".spec": "python", ".tac": "python", ".wsgi": "python", ".xpy": "python", ".qml": "qml", ".qbs": "qml", ".qs": "javascript", ".sip": "tcl", ".r": "r", ".rd": "r", ".rhistory": "r", ".rsx": "r", ".raml": "yaml", ".rbs": "rbs", ".ron": "ron", ".msg": "rosmsg", ".action": "rosmsg", ".srv": "rosmsg", ".x": "c", ".rkt": "racket", ".rktd": "racket", ".rktl": "racket", ".scrbl": "racket", ".6pl": "raku", ".6pm": "raku", ".nqp": "raku", ".p6": "raku", ".p6l": "raku", ".p6m": "raku", ".pl6": "raku", ".pm6": "raku", ".raku": "raku", ".rakumod": "raku", ".regexp": "regexp", ".regex": "regexp", ".v": "coq", ".coq": "coq", ".rg": "clojure", ".rb": "ruby", ".builder": "ruby", ".eye": "ruby", ".gemspec": "ruby", ".god": "ruby", ".jbuilder": "ruby", ".mspec": "ruby", ".pluginspec": "ruby", ".podspec": "ruby", ".prawn": "ruby", ".rabl": "ruby", ".rake": "ruby", ".rbi": "ruby", ".rbuild": "ruby", ".rbw": "ruby", ".rbx": "ruby", ".ru": "ruby", ".ruby": "ruby", ".thor": "ruby", ".watchr": "ruby", ".rs": "rust", ".rs.in": "rust", ".sas": "sas", ".scss": "scss", ".sparql": "sparql", ".rq": "sparql", ".mysql": "sql", ".tab": "sql", ".udf": "sql", ".viw": "sql", ".db2": "sql", ".sage": "python", ".sagews": "python", ".sass": "sass", ".scala": "scala", ".kojo": "scala", ".sbt": "scala", ".sc": "scala", ".scm": "scheme", ".sld": "scheme", ".sls": "scheme", ".sps": "scheme", ".ss": "scheme", ".sh": "shellscript", ".bash": "shellscript", ".bats": "shellscript", ".command": "shellscript", ".ksh": "shellscript", ".pacscript": "shellscript", ".sbatch": "shellscript", ".sh.in": "shellscript", ".slurm": "shellscript", ".tmux": "shellscript", ".tool": "shellscript", ".zsh": "shellscript", ".zsh-theme": "shellscript", ".sh-session": "shellsession", ".st": "smalltalk", ".smithy": "smithy", ".smk": "python", ".snakefile": "python", ".sol": "solidity", ".bzl": "python", ".star": "python", ".do": "stata", ".ado": "stata", ".doh": "stata", ".ihlp": "stata", ".mata": "stata", ".matah": "stata", ".sthlp": "stata", ".styl": "stylus", ".surql": "surrealql", ".svelte": "svelte", ".swift": "swift", ".sv": "system-verilog", ".svh": "system-verilog", ".vh": "system-verilog", ".toml": "toml", ".toml.example": "toml", ".tsv": "tsv", ".vcf": "tsv", ".tsx": "tsx", ".talon": "talonscript", ".tcl": "tcl", ".adp": "tcl", ".sdc": "tcl", ".tcl.in": "tcl", ".tm": "tcl", ".xdc": "tcl", ".tcsh": "shellscript", ".csh": "shellscript", ".tex": "tex", ".aux": "tex", ".bbx": "tex", ".cbx": "tex", ".dtx": "tex", ".ins": "tex", ".lbx": "tex", ".ltx": "tex", ".mkii": "tex", ".mkiv": "tex", ".mkvi": "tex", ".sty": "tex", ".toc": "tex", ".tftpl": "terraform", ".ttl": "turtle", ".twig": "twig", ".ts": "typescript", ".cts": "typescript", ".mts": "typescript", ".tsp": "typespec", ".typ": "typst", ".upc": "c", ".anim": "yaml", ".asset": "yaml", ".mask": "yaml", ".mat": "yaml", ".meta": "yaml", ".prefab": "yaml", ".unity": "yaml", ".uno": "csharp", ".uc": "java", ".vhdl": "vhdl", ".vhd": "vhdl", ".vhf": "vhdl", ".vhi": "vhdl", ".vho": "vhdl", ".vhs": "vhdl", ".vht": "vhdl", ".vhw": "vhdl", ".vala": "vala", ".vapi": "vala", ".veo": "verilog", ".vim": "viml", ".vba": "viml", ".vimrc": "viml", ".vmb": "viml", ".vb": "vb", ".vbhtml": "vb", ".volt": "d", ".vue": "vue", ".vy": "vyper", ".wgsl": "wgsl", ".owl": "xml", ".wast": "wasm", ".wat": "wasm", ".wit": "wit", ".mediawiki": "wikitext", ".wiki": "wikitext", ".wikitext": "wikitext", ".reg": "reg", ".mathematica": "wolfram", ".cdf": "wolfram", ".ma": "wolfram", ".mt": "wolfram", ".nb": "wolfram", ".nbp": "wolfram", ".wl": "wolfram", ".wls": "wolfram", ".wlt": "wolfram", ".xbm": "c", ".xpm": "c", ".xml": "xml", ".adml": "xml", ".admx": "xml", ".ant": "xml", ".axaml": "xml", ".axml": "xml", ".builds": "xml", ".ccproj": "xml", ".ccxml": "xml", ".clixml": "xml", ".cproject": "xml", ".cscfg": "xml", ".csdef": "xml", ".csproj": "xml", ".ct": "xml", ".depproj": "xml", ".dita": "xml", ".ditamap": "xml", ".ditaval": "xml", ".dll.config": "xml", ".dotsettings": "xml", ".filters": "xml", ".fsproj": "xml", ".fxml": "xml", ".glade": "xml", ".gml": "xml", ".gmx": "xml", ".gpx": "xml", ".grxml": "xml", ".gst": "xml", ".hzp": "xml", ".icls": "xml", ".iml": "xml", ".ivy": "xml", ".jelly": "xml", ".jsproj": "xml", ".kml": "xml", ".launch": "xml", ".mdpolicy": "xml", ".meta4": "xml", ".mjml": "xml", ".mod": "xml", ".mxml": "xml", ".natvis": "xml", ".ncl": "xml", ".ndproj": "xml", ".nproj": "xml", ".nuspec": "xml", ".odd": "xml", ".osm": "xml", ".pkgproj": "xml", ".proj": "xml", ".props": "xml", ".ps1xml": "xml", ".psc1": "xml", ".pt": "xml", ".pubxml": "xml", ".qhelp": "xml", ".rbxmx": "xml", ".rdf": "xml", ".res": "xml", ".resx": "xml", ".rss": "xml", ".scxml": "xml", ".sfproj": "xml", ".shproj": "xml", ".slnx": "xml", ".srdf": "xml", ".storyboard": "xml", ".sublime-snippet": "xml", ".sw": "xml", ".targets": "xml", ".tml": "xml", ".ui": "xml", ".urdf": "xml", ".ux": "xml", ".vbproj": "xml", ".vcxproj": "xml", ".vsixmanifest": "xml", ".vssettings": "xml", ".vstemplate": "xml", ".vxml": "xml", ".wixproj": "xml", ".wsdl": "xml", ".wsf": "xml", ".wxi": "xml", ".wxl": "xml", ".wxs": "xml", ".x3d": "xml", ".xacro": "xml", ".xaml": "xml", ".xib": "xml", ".xlf": "xml", ".xliff": "xml", ".xmi": "xml", ".xml.dist": "xml", ".xmp": "xml", ".xproj": "xml", ".xsd": "xml", ".xspec": "xml", ".xul": "xml", ".zcml": "xml", ".xsp-config": "xml", ".xsp.metadata": "xml", ".xpl": "xml", ".xproc": "xml", ".xs": "c", ".xslt": "xsl", ".xsl": "xsl", ".xsh": "python", ".mir": "yaml", ".reek": "yaml", ".rviz": "yaml", ".sublime-syntax": "yaml", ".syntax": "yaml", ".yaml-tmlanguage": "yaml", ".yaml.sed": "yaml", ".yml.mysql": "yaml", ".zs": "zenscript", ".zig": "zig", ".zig.zon": "zig", ".desktop": "desktop", ".desktop.in": "desktop", ".edn": "clojure", ".fish": "fish", ".rst": "rst", ".rest": "rst", ".rest.txt": "rst", ".rst.txt": "rst", ".templ": "templ", ".wisp": "clojure" }, filenames: { APKBUILD: "shellscript", ".htaccess": "apache", "apache2.conf": "apache", "httpd.conf": "apache", "bird.conf": "bird2", "gradlew.bat": "bat", "mvnw.cmd": "bat", "CMakeLists.txt": "cmake", CODEOWNERS: "codeowners", "riemann.config": "clojure", Cakefile: "coffee", Containerfile: "docker", Dockerfile: "docker", ".env": "dotenv", ".env.ci": "dotenv", ".env.dev": "dotenv", ".env.development": "dotenv", ".env.development.local": "dotenv", ".env.example": "dotenv", ".env.local": "dotenv", ".env.prod": "dotenv", ".env.production": "dotenv", ".env.sample": "dotenv", ".env.staging": "dotenv", ".env.template": "dotenv", ".env.test": "dotenv", ".env.testing": "dotenv", "mix.lock": "elixir", ".abbrev_defs": "emacs-lisp", ".emacs": "emacs-lisp", ".emacs.desktop": "emacs-lisp", ".gnus": "emacs-lisp", ".spacemacs": "emacs-lisp", ".viper": "emacs-lisp", Cask: "emacs-lisp", Eask: "emacs-lisp", "Project.ede": "emacs-lisp", _emacs: "emacs-lisp", abbrev_defs: "emacs-lisp", Emakefile: "erlang", "rebar.config": "erlang", "rebar.config.lock": "erlang", "rebar.lock": "erlang", ".gn": "gn", ".gitmessage": "git-commit", COMMIT_EDITMSG: "git-commit", "project.godot": "gdresource", Jenkinsfile: "groovy", ".buckconfig": "ini", ".coveragerc": "ini", ".flake8": "ini", ".gitreview": "ini", ".pylintrc": "ini", HOSTS: "ini", "buildozer.spec": "ini", hosts: "ini", pylintrc: "ini", vlcrc: "ini", "MANIFEST.MF": "yaml", ".all-contributorsrc": "json", ".arcconfig": "json", ".auto-changelog": "json", ".c8rc": "json", ".htmlhintrc": "json", ".imgbotconfig": "json", ".nycrc": "json", ".releaserc": "json", ".secrets.baseline": "json", ".tern-config": "json", ".tern-project": "json", ".watchmanconfig": "json", "MODULE.bazel.lock": "json", "Package.resolved": "json", "Pipfile.lock": "json", "bun.lock": "json", "composer.lock": "json", "deno.lock": "json", "flake.lock": "json", "mcmod.info": "json", ".babelrc": "jsonc", ".devcontainer.json": "jsonc", ".eslintrc": "jsonc", ".eslintrc.json": "jsonc", ".jscsrc": "jsonc", ".jshintrc": "jsonc", ".jslintrc": "jsonc", ".oxlintrc.json": "jsonc", ".swcrc": "jsonc", "api-extractor.json": "jsonc", "devcontainer.json": "jsonc", "jsconfig.json": "jsonc", "language-configuration.json": "jsonc", "tsconfig.json": "jsonc", "tslint.json": "jsonc", Jakefile: "javascript", Notebook: "json", ".JUSTFILE": "just", ".Justfile": "just", ".justfile": "just", JUSTFILE: "just", Justfile: "just", justfile: "just", ".luacheckrc": "lua", BSDmakefile: "make", GNUmakefile: "make", Kbuild: "make", Makefile: "make", "Makefile.am": "make", "Makefile.boot": "make", "Makefile.frag": "make", "Makefile.in": "make", "Makefile.inc": "make", "Makefile.pc": "make", "Makefile.wat": "make", makefile: "make", "makefile.sco": "make", mkfile: "make", "contents.lr": "markdown", "nextflow.config": "nextflow", "nginx.conf": "nginx", "nim.cfg": "nim", Nukefile: "nushell", ".php": "php", ".php_cs": "php", ".php_cs.dist": "php", Phakefile: "php", ".latexmkrc": "perl", "Makefile.PL": "perl", Rexfile: "perl", ack: "perl", cpanfile: "perl", latexmkrc: "perl", Modulefile: "puppet", ".gclient": "python", DEPS: "python", SConscript: "python", SConstruct: "python", wscript: "python", "installscript.qs": "javascript", "toolchain_installscript.qs": "javascript", ".Rapp.history": "r", ".Rhistory": "r", ".Rprofile": "r", "expr-dist": "r", ".irbrc": "ruby", ".pryrc": "ruby", ".simplecov": "ruby", Appraisals: "ruby", Berksfile: "ruby", Brewfile: "ruby", Buildfile: "ruby", Capfile: "ruby", Dangerfile: "ruby", Deliverfile: "ruby", Fastfile: "ruby", Gemfile: "ruby", Guardfile: "ruby", Jarfile: "ruby", Mavenfile: "ruby", Podfile: "ruby", Puppetfile: "ruby", Rakefile: "ruby", Snapfile: "ruby", Steepfile: "ruby", Thorfile: "ruby", Vagrantfile: "ruby", buildfile: "ruby", "ssh-config": "ssh-config", ssh_config: "ssh-config", sshconfig: "ssh-config", "sshconfig.snip": "ssh-config", "sshd-config": "ssh-config", sshd_config: "ssh-config", ".bash_aliases": "shellscript", ".bash_functions": "shellscript", ".bash_history": "shellscript", ".bash_logout": "shellscript", ".bash_profile": "shellscript", ".bashrc": "shellscript", ".cshrc": "shellscript", ".envrc": "shellscript", ".flaskenv": "shellscript", ".kshrc": "shellscript", ".login": "shellscript", ".profile": "shellscript", ".tmux.conf": "shellscript", ".xinitrc": "shellscript", ".xsession": "shellscript", ".zlogin": "shellscript", ".zlogout": "shellscript", ".zprofile": "shellscript", ".zshenv": "shellscript", ".zshrc": "shellscript", "9fs": "shellscript", PKGBUILD: "shellscript", bash_aliases: "shellscript", bash_logout: "shellscript", bash_profile: "shellscript", bashrc: "shellscript", cshrc: "shellscript", gradlew: "shellscript", kshrc: "shellscript", login: "shellscript", man: "shellscript", mvnw: "shellscript", profile: "shellscript", "tmux.conf": "shellscript", xinitrc: "shellscript", xsession: "shellscript", zlogin: "shellscript", zlogout: "shellscript", zprofile: "shellscript", zshenv: "shellscript", zshrc: "shellscript", Snakefile: "python", BUCK: "python", BUILD: "python", "BUILD.bazel": "python", "MODULE.bazel": "python", Tiltfile: "python", WORKSPACE: "python", "WORKSPACE.bazel": "python", "WORKSPACE.bzlmod": "python", "Cargo.lock": "toml", "Cargo.toml.orig": "toml", "Gopkg.lock": "toml", Pipfile: "toml", "mise.local.lock": "toml", "mise.lock": "toml", "pdm.lock": "toml", "poetry.lock": "toml", "uv.lock": "toml", owh: "tcl", starfield: "tcl", ".exrc": "viml", ".gvimrc": "viml", ".nvimrc": "viml", ".vimrc": "viml", _vimrc: "viml", gvimrc: "viml", nvimrc: "viml", vimrc: "viml", ".classpath": "xml", ".cproject": "xml", ".project": "xml", "App.config": "xml", "NuGet.config": "xml", "Settings.StyleCop": "xml", "Web.Debug.config": "xml", "Web.Release.config": "xml", "Web.config": "xml", "packages.config": "xml", ".clang-format": "yaml", ".clang-tidy": "yaml", ".clangd": "yaml", ".gemrc": "yaml", "CITATION.cff": "yaml", "glide.lock": "yaml", "pixi.lock": "yaml", "yarn.lock": "yaml" }, names: { abap: "abap", "actionscript-3": "actionscript-3", actionscript: "actionscript-3", as3: "actionscript-3", ada: "ada", ahk: "ahk", autohotkey: "ahk", ahk1: "ahk", ahk2: "ahk2", autohotkey2: "ahk2", "angular-html": "angular-html", "angular html": "angular-html", "angular-ts": "angular-ts", "angular typescript": "angular-ts", apache: "apache", "apache conf": "apache", apex: "apex", apl: "apl", applescript: "applescript", ara: "ara", asciidoc: "asciidoc", adoc: "asciidoc", asm: "asm", assembly: "asm", astro: "astro", awk: "awk", ballerina: "ballerina", bat: "bat", "batch file": "bat", batch: "bat", cmd: "bat", beancount: "beancount", berry: "berry", be: "berry", bibtex: "bibtex", bicep: "bicep", bird2: "bird2", "bird2 configuration": "bird2", bird: "bird2", blade: "blade", bsl: "bsl", "1c (enterprise)": "bsl", "1c": "bsl", c: "c", c3: "c3", cadence: "cadence", cdc: "cadence", cairo: "cairo", chapel: "chapel", chpl: "chapel", clarity: "clarity", clojure: "clojure", clj: "clojure", cmake: "cmake", cobol: "cobol", codeowners: "codeowners", codeql: "codeql", ql: "codeql", coffee: "coffee", coffeescript: "coffee", "common-lisp": "common-lisp", "common lisp": "common-lisp", lisp: "common-lisp", coq: "coq", rocq: "coq", cpp: "cpp", "c++": "cpp", crystal: "crystal", csharp: "csharp", "c#": "csharp", cs: "csharp", css: "css", csv: "csv", cue: "cue", cypher: "cypher", cql: "cypher", d: "d", dart: "dart", dax: "dax", desktop: "desktop", diff: "diff", docker: "docker", dockerfile: "docker", dotenv: "dotenv", "dream-maker": "dream-maker", "dream maker": "dream-maker", edge: "edge", elixir: "elixir", elm: "elm", "emacs-lisp": "emacs-lisp", "emacs lisp": "emacs-lisp", elisp: "emacs-lisp", erb: "erb", erlang: "erlang", erl: "erlang", fennel: "fennel", fish: "fish", fluent: "fluent", ftl: "fluent", "fortran-fixed-form": "fortran-fixed-form", "fortran (fixed form)": "fortran-fixed-form", f: "fortran-fixed-form", for: "fortran-fixed-form", f77: "fortran-fixed-form", "fortran-free-form": "fortran-free-form", "fortran (free form)": "fortran-free-form", f90: "fortran-free-form", f95: "fortran-free-form", f03: "fortran-free-form", f08: "fortran-free-form", f18: "fortran-free-form", fsharp: "fsharp", "f#": "fsharp", fs: "fsharp", gdresource: "gdresource", tscn: "gdresource", tres: "gdresource", gdscript: "gdscript", gd: "gdscript", gdshader: "gdshader", genie: "genie", gherkin: "gherkin", "git-commit": "git-commit", "git commit message": "git-commit", "git-rebase": "git-rebase", "git rebase message": "git-rebase", gleam: "gleam", "glimmer-js": "glimmer-js", "glimmer js": "glimmer-js", gjs: "glimmer-js", "glimmer-ts": "glimmer-ts", "glimmer ts": "glimmer-ts", gts: "glimmer-ts", glsl: "glsl", gn: "gn", gnuplot: "gnuplot", go: "go", graphql: "graphql", gql: "graphql", groovy: "groovy", hack: "hack", haml: "haml", "ruby haml": "haml", handlebars: "handlebars", hbs: "handlebars", haskell: "haskell", hs: "haskell", haxe: "haxe", hcl: "hcl", "hashicorp hcl": "hcl", hjson: "hjson", hlsl: "hlsl", html: "html", "html-derivative": "html-derivative", "html (derivative)": "html-derivative", http: "http", hurl: "hurl", hxml: "hxml", hy: "hy", imba: "imba", ini: "ini", properties: "ini", java: "java", javascript: "javascript", js: "javascript", cjs: "javascript", mjs: "javascript", jinja: "jinja", jison: "jison", json: "json", json5: "json5", jsonc: "jsonc", "json with comments": "jsonc", jsonl: "jsonl", "json lines": "jsonl", jsonnet: "jsonnet", jssm: "jssm", fsl: "jssm", jsx: "jsx", julia: "julia", jl: "julia", just: "just", justfile: "just", kdl: "kdl", kotlin: "kotlin", kt: "kotlin", kts: "kotlin", kusto: "kusto", kql: "kusto", latex: "latex", lean: "lean", "lean 4": "lean", lean4: "lean", less: "less", liquid: "liquid", llvm: "llvm", "llvm ir": "llvm", log: "log", "log file": "log", logo: "logo", lua: "lua", luau: "luau", make: "make", makefile: "make", markdown: "markdown", md: "markdown", marko: "marko", matlab: "matlab", mdc: "mdc", mdx: "mdx", mermaid: "mermaid", mmd: "mermaid", mipsasm: "mipsasm", "mips assembly": "mipsasm", mips: "mipsasm", mojo: "mojo", moonbit: "moonbit", mbt: "moonbit", mbti: "moonbit", move: "move", narrat: "narrat", "narrat language": "narrat", nar: "narrat", nextflow: "nextflow", nf: "nextflow", "nextflow-groovy": "nextflow-groovy", "nextflow groovy": "nextflow-groovy", nginx: "nginx", nim: "nim", nix: "nix", nsis: "nsis", nushell: "nushell", nu: "nushell", "objective-c": "objective-c", objc: "objective-c", "objective-cpp": "objective-cpp", "objective-c++": "objective-cpp", ocaml: "ocaml", odin: "odin", openscad: "openscad", scad: "openscad", org: "org", "org markup": "org", pascal: "pascal", perl: "perl", php: "php", pkl: "pkl", plsql: "plsql", "pl/sql": "plsql", po: "po", "gettext po": "po", pot: "po", potx: "po", polar: "polar", postcss: "postcss", powerquery: "powerquery", powershell: "powershell", ps: "powershell", ps1: "powershell", pwsh: "powershell", prisma: "prisma", prolog: "prolog", proto: "proto", "protocol buffer 3": "proto", protobuf: "proto", pug: "pug", jade: "pug", puppet: "puppet", purescript: "purescript", python: "python", py: "python", qml: "qml", qmldir: "qmldir", "qml directory": "qmldir", qss: "qss", "qt style sheets": "qss", r: "r", racket: "racket", raku: "raku", perl6: "raku", razor: "razor", "asp.net razor": "razor", rbs: "rbs", "ruby-signature": "rbs", reg: "reg", "windows registry script": "reg", regexp: "regexp", regex: "regexp", rel: "rel", riscv: "riscv", "risc-v": "riscv", ron: "ron", rosmsg: "rosmsg", "ros interface": "rosmsg", rst: "rst", restructuredtext: "rst", ruby: "ruby", rb: "ruby", rust: "rust", rs: "rust", sas: "sas", sass: "sass", scala: "scala", scheme: "scheme", scss: "scss", sdbl: "sdbl", "1c (query)": "sdbl", "1c-query": "sdbl", shaderlab: "shaderlab", shader: "shaderlab", shellscript: "shellscript", shell: "shellscript", bash: "shellscript", sh: "shellscript", zsh: "shellscript", shellsession: "shellsession", "shell session": "shellsession", console: "shellsession", smalltalk: "smalltalk", "gnu smalltalk": "smalltalk", smithy: "smithy", solidity: "solidity", soy: "soy", "closure templates": "soy", "closure-templates": "soy", sparql: "sparql", splunk: "splunk", "splunk query language": "splunk", spl: "splunk", sql: "sql", "ssh-config": "ssh-config", "ssh config": "ssh-config", stata: "stata", stylus: "stylus", styl: "stylus", surrealql: "surrealql", surql: "surrealql", svelte: "svelte", swift: "swift", "system-verilog": "system-verilog", systemverilog: "system-verilog", systemd: "systemd", "systemd units": "systemd", talonscript: "talonscript", talon: "talonscript", tasl: "tasl", tcl: "tcl", templ: "templ", terraform: "terraform", tf: "terraform", tfvars: "terraform", tex: "tex", toml: "toml", "ts-tags": "ts-tags", "typescript with tags": "ts-tags", lit: "ts-tags", tsv: "tsv", tsx: "tsx", turtle: "turtle", twig: "twig", typescript: "typescript", ts: "typescript", cts: "typescript", mts: "typescript", typespec: "typespec", tsp: "typespec", typst: "typst", typ: "typst", v: "v", vala: "vala", vb: "vb", "visual basic": "vb", verilog: "verilog", vhdl: "vhdl", viml: "viml", "vim script": "viml", vim: "viml", vimscript: "viml", vue: "vue", "vue-html": "vue-html", "vue html": "vue-html", "vue-vine": "vue-vine", "vue vine": "vue-vine", vyper: "vyper", vy: "vyper", wasm: "wasm", webassembly: "wasm", wenyan: "wenyan", \u6587\u8A00: "wenyan", wgsl: "wgsl", wikitext: "wikitext", mediawiki: "wikitext", wiki: "wikitext", wit: "wit", "webassembly interface types": "wit", wolfram: "wolfram", wl: "wolfram", xml: "xml", xsl: "xsl", yaml: "yaml", yml: "yaml", zenscript: "zenscript", zig: "zig", "1c enterprise": "bsl", "actionscript 3": "actionscript-3", actionscript3: "actionscript-3", ada95: "ada", ada2005: "ada", "alpine abuild": "shellscript", abuild: "shellscript", apkbuild: "shellscript", "altium designer": "ini", altium: "ini", apacheconf: "apache", aconf: "apache", apples: "applescript", osascript: "applescript", nasm: "asm", b: "c", bird3: "bird2", batchfile: "bat", dosbatch: "bat", winbatch: "bat", beef: "csharp", buildstream: "yaml", cake: "csharp", cakescript: "csharp", "c2hs haskell": "haskell", c2hs: "haskell", collada: "xml", cson: "coffee", "cairo zero": "cairo", chuck: "java", "coffee-script": "coffee", "component pascal": "pascal", cycript: "javascript", dlang: "d", dm: "dream-maker", byond: "dream-maker", dtrace: "c", "dtrace-script": "c", dhall: "haskell", udiff: "diff", containerfile: "docker", eq: "csharp", eagle: "xml", easybuild: "python", "ecere projects": "json", cask: "emacs-lisp", eask: "emacs-lisp", emacs: "emacs-lisp", emberscript: "coffee", freemarker: "fluent", frege: "haskell", "gentoo ebuild": "shellscript", "gentoo eclass": "shellscript", "gettext catalog": "po", cucumber: "gherkin", "git commit": "git-commit", commit: "git-commit", glyph: "tcl", golang: "go", "godot resource": "gdresource", "gradle kotlin dsl": "kotlin", "hashicorp configuration language": "hcl", opentofu: "hcl", xhtml: "html", "html+erb": "erb", rhtml: "erb", "html+ruby": "erb", "html+razor": "razor", htmlbars: "handlebars", hylang: "hy", conf: "ini", dosini: "ini", "jar manifest": "yaml", geojson: "json", sarif: "json", topojson: "json", jsonld: "javascript", node: "javascript", "javascript+erb": "javascript", django: "jinja", "html+django": "jinja", "html+jinja": "jinja", htmldjango: "jinja", "jupyter notebook": "json", "ipython notebook": "json", "kaitai struct": "yaml", ksy: "yaml", kit: "html", labview: "xml", "less-css": "less", lookml: "yaml", octave: "matlab", mtml: "html", bsdmake: "make", mf: "make", pandoc: "markdown", markojs: "marko", max: "json", "max/msp": "json", maxmsp: "json", "mermaid example": "mermaid", mirah: "ruby", "nginx configuration file": "nginx", nixos: "nix", nush: "nushell", "nu-script": "nushell", "nushell-script": "nushell", "oasv2-json": "json", "oasv2-yaml": "yaml", "oasv3-json": "json", "oasv3-yaml": "yaml", "obj-c": "objective-c", objectivec: "objective-c", "obj-c++": "objective-cpp", "objc++": "objective-cpp", "objectivec++": "objective-cpp", odinlang: "odin", "odin-lang": "odin", opencl: "c", "openrc runscript": "shellscript", openrc: "shellscript", inc: "php", plpgsql: "sql", delphi: "pascal", objectpascal: "pascal", cperl: "perl", "power query": "powerquery", posh: "powershell", "pro*c": "c", "protocol buffer": "proto", "protocol buffers": "proto", py3: "python", python3: "python", rusthon: "python", "qt script": "javascript", "quartus simulation ip": "tcl", rscript: "r", splus: "r", raml: "yaml", rpc: "c", rpcgen: "c", oncrpc: "c", xdr: "c", "perl-6": "raku", "regular expression": "regexp", "rocq prover": "coq", rouge: "clojure", jruby: "ruby", macruby: "ruby", rake: "ruby", rbx: "ruby", sqlpl: "sql", sshconfig: "ssh-config", sshdconfig: "ssh-config", ssh_config: "ssh-config", sshd_config: "ssh-config", sage: "python", "shell-script": "shellscript", envrc: "shellscript", "bash session": "shellsession", squeak: "smalltalk", snakemake: "python", snakefile: "python", starlark: "python", bazel: "python", bzl: "python", "tab-seperated values": "tsv", typescriptreact: "tsx", sdc: "tcl", xdc: "tcl", tcsh: "shellscript", "terraform template": "terraform", "unified parallel c": "c", "unity3d asset": "yaml", uno: "csharp", unrealscript: "java", vlang: "v", nvim: "viml", "visual basic .net": "vb", vbnet: "vb", "vb .net": "vb", "vb.net": "vb", volt: "d", "web ontology language": "xml", wast: "wasm", "webassembly interface type": "wit", "windows registry entries": "reg", "wolfram language": "wolfram", mathematica: "wolfram", mma: "wolfram", "wolfram lang": "wolfram", "x bitmap": "c", xbm: "c", "x pixmap": "c", xpm: "c", rss: "xml", xsd: "xml", wsdl: "xml", xpages: "xml", xproc: "xml", xs: "c", xslt: "xsl", xonsh: "python", edn: "clojure", wisp: "clojure" }, grammars: { abap: { sha256: "d665cc8a82dcf96eaf4b0543459786f0d9192a5e712b757e526dc60369bce96e" }, "actionscript-3": { sha256: "617a08d5cfe2fe49e9595ead20ef782736818e88f33d43741cb90838a47c6e9f" }, ada: { sha256: "79ab75d131fd46981a2e13af4b159ff8a827f2140195dc05038cdc5883aa4fe0" }, ahk: { sha256: "2ad57e24f70aa2c03030b94dd1be23281aa0098a77406b903651965ce367ca4d" }, ahk2: { sha256: "2f469451115474bde9d93b09c48081940ffcda82f5986321bee03a7bba1adb29" }, "angular-html": { sha256: "c65057850a021d5c725c424cb936a9ef5cbfa8cdf28a05261090e0800ef777eb", embedded: ["html", "angular-expression", "angular-let-declaration", "angular-template", "angular-template-blocks"] }, "angular-ts": { sha256: "226afba87e11e01ecfd479c6c44858b8de7c87af30f902cab2524d31fc4e4331", embedded: ["angular-expression", "angular-inline-style", "angular-inline-template", "angular-let-declaration", "angular-template", "angular-template-blocks"] }, apache: { sha256: "37d28440d01d2d70a961f8f25f58a7e6e591556e5afbfdd5f3b5345657d9b82c" }, apex: { sha256: "1d270d92de461aae47f30186e8693144fd37a4cc0405c71a3c4141b661f02006" }, apl: { sha256: "2571df1b33bf5d2f735eb7a0697eb40adcd1f9d7559b2c1382b9974a088a59c4", embedded: ["html", "xml", "css", "javascript", "json"] }, applescript: { sha256: "5649f528fcc7c4866159bc0aa5a13ab07473fccfc21be7be619cbd8731a212bc" }, ara: { sha256: "c61143712af64cb8119b95c7dd2773a58500168f22f93e065c06e09e7af7b576" }, asciidoc: { sha256: "890bbf5f9fa6a6347c53c1119edd3dd20a8c400f6e98968ff6c30ecdfebde4a9", embedded: ["html", "yaml", "csv", "css", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "git-commit", "git-rebase", "go", "groovy", "pug", "javascript", "json", "jsonc", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "regexp", "rust", "scala", "shellscript", "typescript", "tsx", "csharp", "fsharp", "dart", "handlebars", "markdown", "log", "erlang", "elixir", "latex", "bibtex", "abap", "rst", "haskell", "kotlin"], lazy: ["html", "yaml", "csv", "css", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "git-commit", "git-rebase", "go", "groovy", "pug", "javascript", "json", "jsonc", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "regexp", "rust", "scala", "shellscript", "typescript", "tsx", "csharp", "fsharp", "dart", "handlebars", "markdown", "log", "erlang", "elixir", "latex", "bibtex", "abap", "rst", "haskell", "kotlin"] }, asm: { sha256: "fb2985f84149f8d230ec89d4b09c305b92660b372e6e8295f2a92553f7ad7426" }, astro: { sha256: "570296dd8ce84a7fe5e64dbb95e180a0c1554a9065aeb2868fbedf2eafbb6c97", embedded: ["json", "javascript", "typescript", "stylus", "sass", "css", "scss", "less", "postcss", "tsx"], lazy: ["sass", "scss", "stylus", "less"] }, awk: { sha256: "10d61873d5e08a77781a058910d6e17ce5626cd8026012714dfbaafcc2f9f5e6" }, ballerina: { sha256: "08d1179dc57551a0084d4a48a627d1e2d04a5d5673d2f815dd3215d88d021c6a" }, bat: { sha256: "187895f26d25236be6501e8c8d94192ceace95a4f6ae1f47e47fed19103ae904" }, beancount: { sha256: "2d84b71a502299747a1d0a2abf210aa6fc8dfa4386cba7531d7fcbb588a7116e" }, berry: { sha256: "71ce1be49a48ff357f03545f410a76e4b8f51a9b0156169eabd8cfb9867c06ae" }, bibtex: { sha256: "2031f0fe56abab3490a9768ffa6ee94a7c8d05dc1fba8b130effea9d7587136c" }, bicep: { sha256: "42a31507fec15f20372067f7f05bf77bf5d414b96ac36a3a016df024ff8446ad" }, bird2: { sha256: "dd066764165bc60aeba82f10488ce6291899bb444446b941c541c37023c08606" }, blade: { sha256: "1913ab44249fb5ba7ff5d93828165c7c817cdb8413ab84b1cc36b8ebabf21c4a", embedded: ["html-derivative", "html", "xml", "sql", "javascript", "json", "css"] }, bsl: { sha256: "e87ca277cc8daa5f1b7e23863e0848dd193e098791a866a33ecc16be91ec6d20", embedded: ["sdbl"] }, c: { sha256: "6a783a491f44106a4c4710b87422bdcd8540ebe6ec2510dfcdcf7df7edd403f9" }, c3: { sha256: "abeba47760cb650ec622bb2f81b13a878a4a2c11440183d045558093d5245bab" }, cadence: { sha256: "d2d5fef00e56f61005590ed953f90f4da53502411a94183939e9f043a8afbf75" }, cairo: { sha256: "63bcccfa07952be82564b438969de40417314cefeed51e73a3f4e40bb21144b6", embedded: ["python"] }, chapel: { sha256: "03b6937c978a6320b5823d1eb11b37a2885831d0e917899ba5524aec3b7b2b99", embedded: ["c"] }, clarity: { sha256: "fbf9bc255029db55bbb7444dd67a55f0a684bfaa99feb99744ed003ad2250174" }, clojure: { sha256: "de03d10ea8a39ba74fda529e0c25c977cfce6a59f3eef8c1224f536a27c984d4" }, cmake: { sha256: "c02ac569fe3d30b1e36ee5ff9f8548b9f10ce6d8ae7338ef867a1133c1c130b3" }, cobol: { sha256: "e4165fee038b07de87049bef3bf3f02f41d4dbe3d99e9f12aaea0c49e685bf3b", embedded: ["html", "java"] }, codeowners: { sha256: "f4a20cbf42bafc1e34f84da7461979bb229bf14506b2539e42cfce5cf12325a0" }, codeql: { sha256: "a970b5ed5568449349aba1a17e0af933e9789eb3e941b886a3944cc6c65a558b" }, coffee: { sha256: "b22b4e8fbbe6a2683f65265aa071c4815646e5b955ee1dd1662d76efb1761104", embedded: ["javascript"] }, "common-lisp": { sha256: "2e0efc1439447982e8f534de23c9c4f2a393c070e602e503f74ba07ccb21b95a" }, coq: { sha256: "00c967655ff6dafee4a474150b749d0b9099e984090b474038557e9955780390" }, cpp: { sha256: "6a8899737f618f3ae6da693c782b32d5d1bb7c772ce9994a29b0d332cf8d0c83", embedded: ["cpp-macro", "regexp", "glsl"] }, crystal: { sha256: "e3fc3a4417144fbbdfa5e7fe3bcfd3f3d0b898a20e3fbb941485803a2cc7c9e7", embedded: ["html", "sql", "css", "c", "javascript", "shellscript"] }, csharp: { sha256: "31ffc2468705f77f9dc601c83e496e61b752d15ed7c3f6f6ac43758ca15c8518" }, css: { sha256: "02060a327b550d015f0b9b0c1aff69e87951f9a6b18a1c75e4405d50ee83c95d" }, csv: { sha256: "7b270d9c4ce6c1db8442f682146ddb337f4c245b999b5a81c6287fe0aa2b1eb7" }, cue: { sha256: "206716eb41ec7d426dff3c1ac8ac3f85f4fe183ebefc4ad64200eec200c1cd82" }, cypher: { sha256: "cd00bf1f7383fcd72f7679d268c61c32556cdb32354a80202bf3e0d96606d5bc" }, d: { sha256: "3f9ad1e7119398651dc6ed30f5fcce770b53d566512685548e1a63cc363965df" }, dart: { sha256: "6e4eec104a6881fcb6ae63a318b6b20d560ff44c2a069e541dedd81297c79eee" }, dax: { sha256: "c55a889051da21cca214c006a75a7ab31a273fd445602189313609979e342c2b" }, desktop: { sha256: "e7fe0a770ad2e726d5d736fa7cc315105f4486084de3b1664afbba62355f83e7" }, diff: { sha256: "a711eda13cbf7abe386bf729dc088e127613641f2d0d1a28b62a9fece2877756" }, docker: { sha256: "4b407996ccef6df7feae745ed51e82a6a683339022d3a22cf5e5b2ea0a6db75e" }, dotenv: { sha256: "71426f619467549b623ca2ca3bd826a6596d599faaf0f65b808f6d0fc1a815a7" }, "dream-maker": { sha256: "3e807e766a98ff523b380d3bcc771d5f3c57f3717a5371fcc8651d607e5c4783" }, edge: { sha256: "b2d4c31946713943b3abdde58ea63c8fa419b1b51cc25306684e9b760c714a01", embedded: ["typescript", "html", "html-derivative"] }, elixir: { sha256: "feb3a4de9674321042744c3c0934f97639379a885e42bfee5a9a191fd68db01d", embedded: ["html"] }, elm: { sha256: "e1f1f560d87dc5148d47f4f71589c88dd1bd2e27c1e265cd35edf919b4bb8ece", embedded: ["glsl"] }, "emacs-lisp": { sha256: "bec5f69637fd69dfbe65811d71aaf0fd0016841fdbaa7b04ec154c59d373bc92" }, erb: { sha256: "12d8c9209174f117d09e8bce5b2237c1cc4049dc1336b0eb68706531c8df4cf2", embedded: ["html", "ruby"] }, erlang: { sha256: "42de67bb8d971786462e99f0c8d59bc9166163dd60655bd9220e1b11dc02f92e", embedded: ["markdown"] }, fennel: { sha256: "e1bbbd66d2f08396aec83c5f5d83445f825bef2678d65abe877700fdb4d49ade" }, fish: { sha256: "17a34e3a0003c35fe0cca0fc5be36928addfaeabbd04adefcd8083529a61c854" }, fluent: { sha256: "73c7a2e94da069af7f6092cfd9a29775e319e9ef4fdb0bd5eccc2b18bb703366" }, "fortran-fixed-form": { sha256: "3476527231cded8daa9f95ef228ea2b370ccb6a3cb54d2816c7cb66eff7b670c", embedded: ["fortran-free-form"] }, "fortran-free-form": { sha256: "8f5cdc19cbb98f244521158c0e9e24cbf4d6660ed60c5bd316f1058b17adc54c" }, fsharp: { sha256: "8e4c5c084814e2264771730fb40e2e9919d3c6512031c43cfe7a4f6b0239d955", embedded: ["markdown"] }, gdresource: { sha256: "1e858e080db64e878ef3d6ea36b61229be9759da33839177714a11abe604a2a3", embedded: ["gdshader", "gdscript"] }, gdscript: { sha256: "69eab8c23ab46c66068eb3644de73d3527a60465b4c2947ee03c7eef6495c955" }, gdshader: { sha256: "197dc28eee040ba1974bb31173cbd9cc35eefa14e1509129834f4f9ebcec6426" }, genie: { sha256: "959113f8405fd5fb8eea778aaf90e571838220edb276ac1f5d9e6774b959f307" }, gherkin: { sha256: "61e128931e5243c24f86afc24191f380ebd231e47854a37d0ae15d82596c6483" }, "git-commit": { sha256: "21be35dcd1572e2d08c3d788840475744765c9b9d148e82057a0b68af109cba9", embedded: ["diff"] }, "git-rebase": { sha256: "d3abee61347a7bafa3623fddb1bbca3707b565e9e32cd7b886ba3ab06de6f504", embedded: ["shellscript"] }, gleam: { sha256: "64ab9915c3e21f9787b4b789ea68c59d2c3cf81fd40df7f1eb87ff7fafca79c5" }, "glimmer-js": { sha256: "4c1bcb5c99c4b9b173087c960a82fe715d6ffc7072424497669d7d2e8440c842", embedded: ["javascript", "typescript", "css", "html"] }, "glimmer-ts": { sha256: "1dda048a83b57ffe159d7147927371bdb9797b81aaf2e4cbcb7398899680bbfe", embedded: ["typescript", "css", "javascript", "html"] }, glsl: { sha256: "c4dd4bd5b1ff3a8c0fd729261a06e0d7cd2141177cf34f53684297d524e72bef", embedded: ["c"] }, gn: { sha256: "d6276992d21a3493b7ab64f4e1da75d107beb782ffd3138d08351d86a02bf8c9" }, gnuplot: { sha256: "8a396e2c4d8aa121156d0069aabbdfc70451ac888583472eb5cf3476aa27d26f" }, go: { sha256: "ce39c438983c2eb8680c6612fb949598fdf780f79c91711d1380a5cd988a7dd7" }, graphql: { sha256: "f24255a06c7e9e80256fe65e3d8b68505e4a4f20f068007a739219ec386e73c8", embedded: ["javascript", "typescript", "jsx", "tsx"] }, groovy: { sha256: "1d3f39d1e474ae3bbd92480f9f985fe660d4af5e72b2ef7aee9e3937970bf8be" }, hack: { sha256: "435fb268a4223fc8b6facaa6243be1103bf21b6e9296472f7f3e36ecd2fb818f", embedded: ["html", "sql"] }, haml: { sha256: "2ae1dd6bf77a716f4d96a90097c59a3a1548d64d92045a8cc8c19c2a55af5de9", embedded: ["ruby", "javascript", "sass", "coffee", "markdown", "css"], lazy: ["ruby", "sass", "coffee", "markdown"] }, handlebars: { sha256: "63410dba62699aa84008274fec2f733461b97b23d948e23cd1831b62c68c76fa", embedded: ["html", "css", "javascript", "yaml"] }, haskell: { sha256: "030927a96a7d4ca5548e6d6631efb048617b6098fde26049d87dd7d17221af00" }, haxe: { sha256: "a26d9810c50a1b4775a4562c1b897294d12e7e04aefbe89d948c0659d22ddd41" }, hcl: { sha256: "8ad2847f1765adbe564202c7bf0226ffa7a11c3e14c3cf9ff79812c69d250a1b" }, hjson: { sha256: "eee2f1aa3472ed3d3fc82443ace80be33a921dcdd8fb7210e6822c060790d4e8" }, hlsl: { sha256: "451c884bbe6acdd0b94c7564fed3d161746619d47bb71a6de0ca2032ababb428" }, html: { sha256: "7538c38e0d1703bae90fb097a0fbc8501bc112ae06f149934ea6464f2c5ddae4", embedded: ["javascript", "css"] }, "html-derivative": { sha256: "9e90d5770e508d0c8a43004f782014fe0bfa97867e27c06fef46bcc82f0dfe4c", embedded: ["html"] }, http: { sha256: "577c6a4259737bb723f693300e2dc80b868aa34c00ba824a695a9473cf5ac6e1", embedded: ["shellscript", "json", "xml", "graphql"] }, hurl: { sha256: "2eee942fd805099f11c9572d44eff05a5649a97ae3f9f3338d943eaa31f945f1", embedded: ["graphql", "xml", "csv"] }, hxml: { sha256: "5b6cee11134d967bb91c0803dbba0804618e422eb64b4804b7aeac8efb8c5dec", embedded: ["haxe"] }, hy: { sha256: "d5a356367e00a46688b348d186cca39893e15bcde35dfb807e541e1c78d63ff1" }, imba: { sha256: "f244f61f9358ae6fab62c15134dc209a8ba1c7cee72bf294576998cb3d7a1446" }, ini: { sha256: "5b4a4ef9673429f7f13fec73eae543e3e00e1245762aacd89bb1849322338b61" }, java: { sha256: "c2d622b901b19119f2b3469583ef50fe6998788c179c0d3bbd7a0eab019378cb" }, javascript: { sha256: "a30cb0504491961b3d1bc99971daa5c2aedc7387f4782b567e1f0ac47aa83cba" }, jinja: { sha256: "f17c9a7064fcf6f1fb7b900b4180650f69505cb53e82123203541c1af26b40a0", embedded: ["jinja-html"] }, jison: { sha256: "984b4ec444bdbf651160f6d787ba626c44ae7e7a586e7ded188765704b4b553a", embedded: ["javascript"] }, json: { sha256: "f726cfcd953e00567c714a93c15a6227ef7bdb92c939cb07217e036ef5716dc0" }, json5: { sha256: "f034701d1180b6e9b05ed45f135a9798790f42a4ca757a5eedf46bf621413fca" }, jsonc: { sha256: "87374ba1bee9a9af779038accbcbe4ecc7c30ae891b2fefcbc411aa88db24cfc" }, jsonl: { sha256: "d9d9f117f348eec4d85e1ea2133b1e07316c566a8cafc151a42da87d1fb28ccc" }, jsonnet: { sha256: "b8d23e7e2736ca5139ff9f61461ddedb7950654b3e1f84d46be38cdad073c8ab" }, jssm: { sha256: "f643722c2aacda4fe77e95469c410565861ba77206534e135adab59dbe24c7c4" }, jsx: { sha256: "e1a2dadc98b5750946aca0a754a974216fb0d7d5d0c9bdb9d9ad19450a56322b" }, julia: { sha256: "95d3eeb8f35d9ea5fe10edb3a6bdb9fb5e6b9363e71965614141993aeabc7893", embedded: ["cpp", "python", "javascript", "r", "sql"] }, just: { sha256: "9c6ed82a9fef493c9cc7857f44c2b72128153dac9ec5f80f6a47c51056d42d44", embedded: ["shellscript", "javascript", "typescript", "perl", "python", "ruby"] }, kdl: { sha256: "f19e3edcd2e8f387a7cd3ee1414e3a0656eed4c675afd1e2bb15c8e84887aec9" }, kotlin: { sha256: "df113ce9452b3938bdee7a18e88f688eb7eb2023607e62dbad46e756c68f7729" }, kusto: { sha256: "266102e01feea9e67812dee2539f1dc5535e5fa391973f59beb65131c8faf873" }, latex: { sha256: "aab4fa80c27b22be4dfbe68ed55411c13534929b5fa96ba4a8af1d18d749ad53", embedded: ["tex", "shellscript", "css", "gnuplot", "haskell", "html", "java", "julia", "javascript", "lua", "python", "ruby", "rust", "typescript", "xml", "yaml", "scala"], lazy: ["shellscript", "css", "gnuplot", "haskell", "html", "java", "julia", "javascript", "lua", "python", "ruby", "rust", "typescript", "xml", "yaml", "scala"] }, lean: { sha256: "fa48db0d69244fe7556e5201525cf04bb8ee5146d8626deac1989ddff768fb59" }, less: { sha256: "2dcc623cd0f6457b77ce12765db469707d9da44c2033aa63bfb645bc670f44e9" }, liquid: { sha256: "c94cd418d9f839d5dc922c5cc1a9cffb35d4c82c5be56bf64bc823d29fded9de", embedded: ["html", "css", "json", "javascript"] }, llvm: { sha256: "74bd5b6a9f59612cec2943ce36bbf102fb9914a55b95db5733b1a48531a9dd48" }, log: { sha256: "41f32399f600df1710db2e417b5160a3c015c71f97ce851bce3068dd6b157860" }, logo: { sha256: "b8e96bdf1cafe536ed9b79c7de10ddb10e1b102fb58e5716729d742f7384f19a" }, lua: { sha256: "cba0798e8a1155fa81b72d029332e097a6b7b1f2e45eff036adba602d2efea93", embedded: ["c"] }, luau: { sha256: "8fcbabf53a194b6f687cf36b5a462717fa6200949603998842d70fbeddaf9ea7" }, make: { sha256: "b39266e91f2b7619395e7c164674bb52ecf7c9ce815beb1065297766e1e2af03" }, markdown: { sha256: "02f472fd0df82f212be5dfde4d9ee90982885247a884323d8a6c80ecf87114b3", embedded: ["css", "html", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "yaml", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "git-commit", "git-rebase", "go", "groovy", "pug", "javascript", "json", "jsonc", "jsonl", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "regexp", "rust", "scala", "shellscript", "typescript", "tsx", "csharp", "fsharp", "dart", "handlebars", "log", "erlang", "elixir", "latex", "bibtex", "abap", "rst", "html-derivative"], lazy: ["css", "html", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "yaml", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "git-commit", "git-rebase", "go", "groovy", "pug", "javascript", "json", "jsonc", "jsonl", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "regexp", "rust", "scala", "shellscript", "typescript", "tsx", "csharp", "fsharp", "dart", "handlebars", "log", "erlang", "elixir", "latex", "bibtex", "abap", "rst", "html-derivative"] }, marko: { sha256: "bbbd87a18b6a4a8b328049bcba9509be13afc09cac40a7887544bb70c526e5e4", embedded: ["css", "less", "scss", "typescript"] }, matlab: { sha256: "ab688e8332e7a7bf7cffbf8f98a9d0d32cab1fe51bc1b589297e45de6a6c2f8f" }, mdc: { sha256: "f5188840eede1fdeb22e1bbcb772e560998d8668bb701b69426608eb9de53e52", embedded: ["markdown", "yaml", "html-derivative"] }, mdx: { sha256: "1b9569f7369728ba9d088a1720121b4f8129441306e8968fdd747a1c3d73d7d6", embedded: ["tsx", "toml", "yaml", "c", "clojure", "coffee", "cpp", "csharp", "css", "diff", "docker", "elixir", "elm", "erlang", "go", "graphql", "haskell", "html", "ini", "java", "javascript", "json", "julia", "kotlin", "less", "lua", "make", "markdown", "objective-c", "perl", "python", "r", "ruby", "rust", "scala", "scss", "shellscript", "shellsession", "sql", "xml", "swift", "typescript"], lazy: ["tsx", "toml", "yaml", "c", "clojure", "coffee", "cpp", "csharp", "css", "diff", "docker", "elixir", "elm", "erlang", "go", "graphql", "haskell", "html", "ini", "java", "javascript", "json", "julia", "kotlin", "less", "lua", "make", "markdown", "objective-c", "perl", "python", "r", "ruby", "rust", "scala", "scss", "shellscript", "shellsession", "sql", "xml", "swift", "typescript"] }, mermaid: { sha256: "00f2399649293bcd4d9557a82d5e414628d4c675f366fbd73a419b53922e76e7" }, mipsasm: { sha256: "1e677d62ff64d2c00cb0adac472217d7a3dcd403b8cd244876f234b66a651df1" }, mojo: { sha256: "742bbf1145b3bc47391927128c427a27f3f694d62cb4c4b10fecb8bc3984f148" }, moonbit: { sha256: "0f9cf0bfe8609d49144685dd00b4be9d97aa1e4ee91a80ecf2e039ac389fa8a3" }, move: { sha256: "d37f59207665d42415f071b11116c58e815ca06310409aa917e6007168cda985" }, narrat: { sha256: "7aea8b615eba280e7919a2e63c9ce3bd6fa5f45901d9ba5b60dc8570c8d9b6f0" }, nextflow: { sha256: "cac2155ebedb2522f277e1f45d2800b995d72cc2fa39d0b330868c3ce65cb4aa", embedded: ["nextflow-groovy"] }, "nextflow-groovy": { sha256: "02333af8e2fc69b7dff83bd432036048c5829bc28c89db75ed9572b40f2bcbbc" }, nginx: { sha256: "c63bba1384fe4dec1c650015f6f102f2355c48dc75b3e653929d218229db7317", embedded: ["lua"] }, nim: { sha256: "d1302634a0b1396a7642330d9c4115eda66f4e277f2b067531b981cf325d72a3", embedded: ["c", "html", "xml", "javascript", "css", "glsl", "markdown"] }, nix: { sha256: "33555de7449551044cf017d1f3c12ee9df1c7f6a7eb2d9b7357eade16f2363af", embedded: ["markdown-nix"] }, nsis: { sha256: "4636d51d848f215e1811b3432c9e747554a9cdcf2273c066774e04e8f8039c37" }, nushell: { sha256: "186d3aa0dd8914008bcd4d2284a92613d35e63cfc67cd868ecd41d5fc21c1674" }, "objective-c": { sha256: "b4d74efae95f6320e43e77a7d2f944b6ad08a647ea9818aa846fea89601ece31" }, "objective-cpp": { sha256: "6afdca5beb7414f0861cf8b02d688356b60705b4fb3bba793b70b1519f097eb9" }, ocaml: { sha256: "663942ddd7e33be24edf4dd2029642e171a54bb42aeb3074b542fa2b67410a7b" }, odin: { sha256: "547d78475dbe5677c9caf6e6d32701dd9bdf4541eb61a0107d7d87329b8e4c01" }, openscad: { sha256: "9f997b66068ccd2df78a692dbd0d6b1ade1080dfa97dbca235a828626fa5ac04" }, org: { sha256: "776225e588c8e91e28afcb1eb68b50b35a26f73c2828b7478044e19f5654e1c1", embedded: ["javascript", "typescript", "tsx", "java", "python", "regexp", "css", "lua", "ini", "make", "perl", "r", "ruby", "php", "sql", "vb", "clojure", "coffee", "c", "cpp", "objective-c", "diff", "docker", "go", "groovy", "less", "scss", "raku", "rust", "scala", "shellscript", "csharp", "dart", "nim", "elixir", "erlang", "ocaml", "zig", "yaml", "json", "xml", "xsl", "markdown", "html", "git-commit", "git-rebase", "latex"] }, pascal: { sha256: "a7fb5cdb176b58d998c4af0eb61976c2d487201e2691fc2b3cedbb6e2ed1b7a1" }, perl: { sha256: "f13691f0d72752898f390d2dfbf014a43abe493995140986562e91ed99693688", embedded: ["html", "xml", "css", "javascript", "sql"] }, php: { sha256: "f2981c0553e5c0b95f11cc5d2435d6022fcf3bf0a2179c4e52407e8b61d7089f", embedded: ["html", "xml", "sql", "javascript", "json", "css"] }, pkl: { sha256: "7bd32ba65e24636ac96bbc382eff195c61ef2774db9f30843b4e8dc9f891b479" }, plsql: { sha256: "f1bda1268a547a0b588cc944f6685b94f585cdcf204e96509981d6d671acc09d" }, po: { sha256: "2e1303ec69fb38db11b1e18517b5ebb1c98361ce2a86c640620fab0db2266db1" }, polar: { sha256: "86403d6999b32c8ce513a64a578032b9d15dc54847109f8e92667d48ea187845" }, postcss: { sha256: "14e9809ba04f4ca03e8f05675f3e56dadfdfb5a4c12263d6935685baae064659" }, powerquery: { sha256: "e73f4b6e59ec522738180f7ac55e458963ecbad0cabe659679bb772d8a57fc9a" }, powershell: { sha256: "4e01664d850d278e259858fd436eb969aae620f70c4d925ffe3c8d0a188c1479" }, prisma: { sha256: "cb83788493581bebd52594eb6f7a7b66edfc869dbc099c1c42e4e655ba42cbd1" }, prolog: { sha256: "490a5743f8a293cd0bb18db7a79701837869f84595520abc04c01f69fbcd9ffc" }, proto: { sha256: "61d8dbdaf915b9628ce53f13e0d467c95db1b263edc827dfd2499745d7f0f9fc" }, pug: { sha256: "98b0c9fe3464e55029a964658a6a701022957df0391006248ae857bc82b96174", embedded: ["javascript", "css", "sass", "scss", "stylus", "coffee", "html"], lazy: ["sass", "scss", "stylus", "coffee"] }, puppet: { sha256: "6e7a8494e4b619a4efc2018ac86121e816c1e2631fed7eafc0a8beb6aa84fb67" }, purescript: { sha256: "b18d2ab9e7a31d3c1d453fd6f585786f65f6044743f5b0cad7f6867ee2f41340" }, python: { sha256: "8b6b4cb21cce413b2f764ef6b71dfae059a77433530f9dd77ea9b5a53af1ee35" }, qml: { sha256: "51471372dd6d2fbe5f08d26b7100b7b5ae8890560b6b9f21c48deb0cc6316972", embedded: ["javascript"] }, qmldir: { sha256: "dc22b0d9a691e863ffe3ba9ccb32ab7343eb62bb0db537005353d0569974659c" }, qss: { sha256: "d1e706c75c490163dee96ff70e12cebb656dc4a52cc8ef77c15cc9a12440e09b" }, r: { sha256: "87050d7d24035c6d7bc5c7b409e134f85d1dcaf2a5f08ef532fe1e25491c47de" }, racket: { sha256: "f1c7ab4fe54e0b57f22afe4978c1b2dbea5bba4f9c06b2256a35a15a87bd9d56" }, raku: { sha256: "30014c56087f97be1c4732dd86ac845d521de27b54264bc205d01d86ee6bfd50" }, razor: { sha256: "e094c40aa157fb020ee9204de9661370cd0851a4c56b30bd19344707ae29f279", embedded: ["html", "csharp"] }, rbs: { sha256: "198654ecccaa8c7bb2b27e86f24d55eb14e8c5d24a72f2f56caa8437f3cbb579" }, reg: { sha256: "88bdcd8fea9759d67beae18d7f6255a8c66dd2aebaf48f3a18cf2af110bc75f3" }, regexp: { sha256: "87b56f94dc703cea1cd330d4cd088e4944d8df4358b235f2ae867cfb14143f2d" }, rel: { sha256: "8ac2d6f1f12c13ec1c6f9e3a641d569fbc51c7ee88579c5d322ceec81a88b002" }, riscv: { sha256: "edd55d53350f5f34c37278d75c23c1dcb36dbea5d5c039d4923513c5df88b2f2" }, ron: { sha256: "0862776e3d701003f381f7877e096a4ccc16fe190e492ac78f80b53b6ee2e72c" }, rosmsg: { sha256: "2997167030755ea64c7e88d79241864d1b87d19b1a7886df3b2d20eee2107d62" }, rst: { sha256: "0de16f7839b2057fda5d59bf9c973185e5d596381d779e60131a350fc6d7620b", embedded: ["html-derivative", "cpp", "python", "javascript", "shellscript", "yaml", "cmake", "ruby"] }, ruby: { sha256: "ff3e48c0958a75e6bbc794978083320f761c9bc3cfe20a6435f479c7be4c78b0", embedded: ["html", "haml", "xml", "sql", "graphql", "css", "cpp", "c", "javascript", "shellscript", "lua", "yaml"] }, rust: { sha256: "e6ecf805e26ea7db8f32dfca38afcf19192cc45c942f7cedfff33889183c548d" }, sas: { sha256: "730592dc6a79b52f65731e083e3228ea5f694a0465155648b5970b43957059e9", embedded: ["sql"] }, sass: { sha256: "17504b4f319ae6ac8b1e137754bcde9ed6c0be6de46082999aa57467d3bd7fc8" }, scala: { sha256: "ac7c4f2cc8b0f79e975048eefb40751ed6435727cac6dd4df07ce949436b1df5" }, scheme: { sha256: "14620ef4a000f89a39f9e6c53301abbb231b686d8b4fc089f2a91ed6d494e4d4" }, scss: { sha256: "35977f043318d4877b31e40064d90028bfeb085e240e72ae0defa167346112bf", embedded: ["css"] }, sdbl: { sha256: "02add596f17115e7bbf80764f2981e135e3b7a6737e985ae34a6128b3dd08ada" }, shaderlab: { sha256: "a1173a39c7ac3b5376606c1457f287a6d42c5c39cf7942fbcc9a97b3ed5fe9a3", embedded: ["hlsl"] }, shellscript: { sha256: "f9a7ca3def50407b4500311cc47275295f6a2d3f9f683f1f0accc3056f0e4cc8" }, shellsession: { sha256: "0a19fe818f6021a6ffdd6768d35c33cc9469deeab9adcc6754039f71e1f39ef4", embedded: ["shellscript"] }, smalltalk: { sha256: "f557c22367520ded3fd0c296e124f3a2f56466a2e12dff9bf38273b97c1d87cf" }, smithy: { sha256: "cb8a779be9c53ab1f14a86ba8a5f1c068a9014351ac0d78c3ff11a138d5b2ae1" }, solidity: { sha256: "3b8236fbb32ac373e43629032d477e773e76f3d5d262090e824c3d9b42d0deab" }, soy: { sha256: "56901c68e495d7d2c96d6da6ca5e9aed7c50c12352102373d17d657590284ae3", embedded: ["html"] }, sparql: { sha256: "27cd16ef126d0fe2567d8b86128f54d4c33a155225742fb2c6a490b8f254aa19", embedded: ["turtle"] }, splunk: { sha256: "3f7a7a37dc07e259eb0c15b8d201b2f0d8fc4d32a6d911a6d0d20f7e93b541fa" }, sql: { sha256: "a79bd625f928c0c2297ee4d96248b30c357e7c33aba8d6cb8d41d6ae801c8758" }, "ssh-config": { sha256: "067252a98779c19bef2fe1a507994ee4c28965659b4276afea269f6bd43e7523" }, stata: { sha256: "cee50b9b4cad9f9f1a4685384ae7869a2b445e76c5ffa7381a6844827ee6a3cc", embedded: ["sql"] }, stylus: { sha256: "39d238fe3c42cd48f150dc0f21bc92beee534585f7026e5b1ef4c445ba797045" }, surrealql: { sha256: "889e98d5adcb1cbe88ef1a8fa12210c1af5923208eaf849916a1037b31ecc196", embedded: ["javascript"] }, svelte: { sha256: "cf6fdcd8f16b676bee9d727e661718a6e3b7ac4722c13987d94db551a7d183d5", embedded: ["javascript", "typescript", "coffee", "stylus", "sass", "css", "scss", "less", "postcss", "pug", "markdown"], lazy: ["coffee", "stylus", "sass", "scss", "less", "pug", "markdown"] }, swift: { sha256: "1bb401139dda5ef99bc39dc1719ffeefcb3ba4c2ad6a72457e2b3ff8248e86f9" }, "system-verilog": { sha256: "26b3ef7f1bbe16faff89f8059e590667078628fdccb641ca3c02b35082bd265e" }, systemd: { sha256: "6bc98263dec1c7365221ab9488b2dc547f06f2997b195db91c2c1e922913b123" }, talonscript: { sha256: "281d25bf296a66728878265b732d01d0d7fd06e1aecdb2c69a52b945d5994c03" }, tasl: { sha256: "e8d2ce8082be37c7021bf5a173e5ae277143ddb64050bb8ad703a282c13fa205" }, tcl: { sha256: "3abed0f91139705027c0fbfbf0e977ed3550a191b68a53e93ec0199f34fc08e5" }, templ: { sha256: "8e4d5ba677ec70c2376d672a1523e45ac716b77591b6b23894f7cb22d85cc2a9", embedded: ["go", "javascript", "css"] }, terraform: { sha256: "3c4984f932c6c9d672505b737e75fb6612b1849ca32cffd62efaf731babb6c6e" }, tex: { sha256: "5a6795ecb5dcc0bccc65ed86b9beebbd1410c80fc92e325041ba974fe6f19b77", embedded: ["r"] }, toml: { sha256: "d54ac615bfbf5d7f05c11723cf145470f74ea8cc59bb7b2a20e598d0abf92d08" }, "ts-tags": { sha256: "4868de0363ce6bedfd18b7f1e70578c3a6c7eef87a05091ebcd0c125e1470a92", embedded: ["typescript", "es-tag-css", "es-tag-glsl", "es-tag-html", "es-tag-sql", "es-tag-xml"] }, tsv: { sha256: "16ecf93386f646cdb792c5cde49ce05ed397ca9e5eb55bfa262943dc43f62fc5" }, tsx: { sha256: "367120b5adb2fe51f4c4b3edcab86e569e5a1e2a6c3652e318ba52281033fddd" }, turtle: { sha256: "554934a49f95ae4be3e607de5c645c0929dda389a4683a3e62634caacb52fa0d" }, twig: { sha256: "ef429919b88bb9da5fcc40188c40d51611a4fb21571b69e53593d48f0077e5da", embedded: ["javascript", "css", "scss", "php", "python", "ruby"] }, typescript: { sha256: "e86e45f551919f50ac5e5cf89990c3520877305b35708294de5ae83c9b6ca559" }, typespec: { sha256: "23ace3084f239c237574e53e53b31e8267859422d5360aa65860010d3176c886" }, typst: { sha256: "5cc026431ee28ba576cd67fbdea31b5bf9de6bc4de6c08dd34f642e3b03a55f7", embedded: ["bat", "bibtex", "c", "clojure", "coffee", "cpp", "css", "csharp", "dart", "diff", "docker", "elixir", "erlang", "fsharp", "git-commit", "git-rebase", "go", "groovy", "handlebars", "html", "ini", "java", "javascript", "jsonc", "json", "julia", "latex", "less", "log", "lua", "make", "markdown", "objective-c", "perl", "raku", "php", "powershell", "pug", "r", "regexp", "ruby", "scss", "sql", "swift", "xml", "xsl", "yaml", "python", "rust", "scala", "shellscript", "typescript", "tsx", "twig", "verilog", "system-verilog", "vb"] }, v: { sha256: "27e96ecd7a289dcfc9f474c110c8bc91d24ab156bd8ed15630bc6d236003cad0" }, vala: { sha256: "b4e9fbb5d6527685fd7eed19c4267a5af6105ed425b731bb55c08702fc01728d" }, vb: { sha256: "f69b366bee20af30507108d1e4ebf1844114084ea8af19fa704dc011081ba0d5" }, verilog: { sha256: "b82b36604f451426f04efe26f6d83ca27e2f2b6eae8fb3c2ac9beef316bfdfff" }, vhdl: { sha256: "36eb1d1977150f0c4b8d2eaf5c5cc80a3c1089c5f66d2518f79850fb74e302bf" }, viml: { sha256: "56bd0d022416dd0458949fd36ea0e35fb63c049cb8f597c7b77f2f41e660b43d" }, vue: { sha256: "86b4d7e883cb346849cce467711eb100695d8ab029481f3e1e82e30626c8a185", embedded: ["markdown", "pug", "stylus", "sass", "css", "scss", "less", "javascript", "typescript", "jsx", "tsx", "coffee", "json", "jsonc", "json5", "yaml", "toml", "graphql", "html", "html-derivative", "markdown-vue", "vue-directives", "vue-interpolations", "vue-sfc-style-variable-injection"], lazy: ["markdown", "pug", "stylus", "sass", "scss", "less", "jsx", "tsx", "coffee", "jsonc", "json5", "yaml", "toml", "graphql"] }, "vue-html": { sha256: "c01bbff38118975292729762527dfd3f68cc67ddf4886a3b51675acc24bfd958", embedded: ["javascript"] }, "vue-vine": { sha256: "6a5274d61e01a5928e4b496613b4be72cf835eac3c5c64bbbaff15219598cae7", embedded: ["css", "scss", "less", "stylus", "postcss", "javascript"] }, vyper: { sha256: "4c34391c19b7cd5ee8da086e13435b1c0577c0dc7fc8fb45b4ee2a8d3b78fb70" }, wasm: { sha256: "6609162d75e0569dd829b754675695ecb5c02fd27fb290a42f4e8aed6c5197b4" }, wenyan: { sha256: "8bc2aaa23401eb0720eb0eb1d2be0a7b52a1ee78e396a66d394f3d684d2f8623" }, wgsl: { sha256: "7b5f275146ead9da3d0ff8c9bd0a72cc898060c55aa872357fb21cbabbf76aa7" }, wikitext: { sha256: "86dba29565e8a2697a9d7befc6587b1c8b10c742096fa1a9b9f1d9725d2dcaf7", embedded: ["html", "css", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "yaml", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "go", "groovy", "pug", "javascript", "jsonc", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "rust", "scala", "shellscript", "typescript", "csharp", "fsharp", "dart", "handlebars", "markdown", "erlang", "elixir", "latex", "bibtex", "json"], lazy: ["html", "css", "ini", "java", "lua", "make", "perl", "r", "ruby", "php", "sql", "vb", "xml", "xsl", "yaml", "bat", "clojure", "coffee", "c", "cpp", "diff", "docker", "go", "groovy", "pug", "javascript", "jsonc", "less", "objective-c", "swift", "scss", "raku", "powershell", "python", "julia", "rust", "scala", "shellscript", "typescript", "csharp", "fsharp", "dart", "handlebars", "markdown", "erlang", "elixir", "latex", "bibtex", "json"] }, wit: { sha256: "c23035ea7b269b51f9bce46732cc7016185b3e825302e2b2c3d4145e85bd7b4c" }, wolfram: { sha256: "8601f9148462061df5cb1c22714314ca4244ae78a93fef44ae8a0d984f3db27a" }, xml: { sha256: "4432e3aa5974256559326a692830cc5b375a21aac895de739e8b0a73a396edf6", embedded: ["java"] }, xsl: { sha256: "bda17f37f2f316482c6d85a9edd4c36819c101904f0de2bdcad0db44b949fdd4", embedded: ["xml"] }, yaml: { sha256: "960c376ae415e3258da44b8afe603828c919a2d6efbf8072b26b744246116542" }, zenscript: { sha256: "9794c14bd839a6dfe19274c89bd5d8c3e4d3d99359e0cae55e7175fb4e4095d7" }, zig: { sha256: "109b561fe38adb2bf9961089e42212ed27e160ab4178dfb5ec4c377cbe2a402f" }, "angular-expression": { sha256: "0fc8f4c158dccc522d0ad27153e5e63aa4d26f733c25bd54bebb87309f9d9da8" }, "angular-inline-style": { sha256: "733ce2509055659080e36ad58d83eb057242ea8ed7ede118696cc270e7d7e866", embedded: ["scss"] }, "angular-inline-template": { sha256: "23eeb4a08a3f67a9d40d09a327a8a43621ab054c6fb45eea8eb0ee05b7edd517", embedded: ["angular-html", "angular-template"] }, "angular-let-declaration": { sha256: "d68fe60f06ddfbeaeef3168c66999cc5d986668bd489d5783ff2e95d24489005", embedded: ["angular-expression"] }, "angular-template": { sha256: "67dbbdbb936ff0e9f5fb8cadefc0c33984369872576f45ee13685ec2316a84b5", embedded: ["angular-expression"] }, "angular-template-blocks": { sha256: "0dbb6a2872a8ea633687db4bb8e5a75064a78fb3628ae809a296920abd4b0615", embedded: ["angular-expression", "angular-template"] }, "cpp-macro": { sha256: "02e157a7c1a96d98a3c8d3b3f3f33719886410de3a6fdbd6e05826ce2987a7e5", embedded: ["regexp", "glsl"] }, "es-tag-css": { sha256: "e7ab773b39220851de32dd949cd2d875f9acc49914401b729a0bea0fff9027b4", embedded: ["typescript", "css", "javascript"] }, "es-tag-glsl": { sha256: "f7475721a2c19e907b97146ef9153ecba8fc948432e0ec203539ca9b6a0288ed", embedded: ["typescript", "glsl", "javascript"] }, "es-tag-html": { sha256: "e5e5d8b20bc4ac5a022f3cd541d6ca4de49867e9b845fb8e0db7fc84f5009107", embedded: ["typescript", "html", "javascript"] }, "es-tag-sql": { sha256: "dbf6329640c027e24a918c76a45463185230b0d7b690352a437d0bd6a15a22a0", embedded: ["typescript", "sql"] }, "es-tag-xml": { sha256: "ee89cadce96b92902cf8bd25ca50c26d0b1db92636c76365504433c6b2a96db9", embedded: ["xml"] }, "jinja-html": { sha256: "6e2c5dff69a40d21cecc2dda253bd453fb96e9d1259294fa1a0052978e429632", embedded: ["html"] }, "markdown-nix": { sha256: "3112dca736910793b9fbe583de8d0159873d3b96fa78f766b43db2fbc2d62199" }, "markdown-vue": { sha256: "90267df7bb8adc7cc8a9e9dc379f3b7e53f4f5547c80c534c64cb613a05355c2" }, "vue-directives": { sha256: "9bb72cafd98da0395423779319c2bb696063c30dd4cbd2219d30db1be3d86593" }, "vue-interpolations": { sha256: "2397d16983e9cc60afcb239833b5ed35c9e48369d435642eff0fc3e64235465e" }, "vue-sfc-style-variable-injection": { sha256: "4cf171a65bc6c036ed0d26c7c36c3984a33a57ee9aa6d492905aac21dbc2fa0b", embedded: ["javascript"] } } };
+  }
+});
+
 // node_modules/graceful-fs/polyfills.js
 var require_polyfills = __commonJS({
   "node_modules/graceful-fs/polyfills.js"(exports, module) {
+    init_define_GRAMMARS();
     var constants = __require("constants");
     var origCwd = process.cwd;
     var cwd = null;
@@ -91,14 +108,14 @@ var require_polyfills = __commonJS({
       fs13.fstatSync = statFixSync(fs13.fstatSync);
       fs13.lstatSync = statFixSync(fs13.lstatSync);
       if (fs13.chmod && !fs13.lchmod) {
-        fs13.lchmod = function(path13, mode, cb) {
+        fs13.lchmod = function(path14, mode, cb) {
           if (cb) process.nextTick(cb);
         };
         fs13.lchmodSync = function() {
         };
       }
       if (fs13.chown && !fs13.lchown) {
-        fs13.lchown = function(path13, uid, gid, cb) {
+        fs13.lchown = function(path14, uid, gid, cb) {
           if (cb) process.nextTick(cb);
         };
         fs13.lchownSync = function() {
@@ -107,10 +124,10 @@ var require_polyfills = __commonJS({
       if (platform === "win32") {
         fs13.rename = typeof fs13.rename !== "function" ? fs13.rename : (function(fs$rename) {
           function rename(from, to, cb) {
-            var start2 = Date.now();
+            var start3 = Date.now();
             var backoff = 0;
             fs$rename(from, to, function CB(er) {
-              if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start2 < 6e4) {
+              if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start3 < 6e4) {
                 setTimeout(function() {
                   fs13.stat(to, function(stater, st) {
                     if (stater && stater.code === "ENOENT")
@@ -165,9 +182,9 @@ var require_polyfills = __commonJS({
         };
       })(fs13.readSync);
       function patchLchmod(fs14) {
-        fs14.lchmod = function(path13, mode, callback) {
+        fs14.lchmod = function(path14, mode, callback) {
           fs14.open(
-            path13,
+            path14,
             constants.O_WRONLY | constants.O_SYMLINK,
             mode,
             function(err, fd) {
@@ -183,8 +200,8 @@ var require_polyfills = __commonJS({
             }
           );
         };
-        fs14.lchmodSync = function(path13, mode) {
-          var fd = fs14.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
+        fs14.lchmodSync = function(path14, mode) {
+          var fd = fs14.openSync(path14, constants.O_WRONLY | constants.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
@@ -205,8 +222,8 @@ var require_polyfills = __commonJS({
       }
       function patchLutimes(fs14) {
         if (constants.hasOwnProperty("O_SYMLINK") && fs14.futimes) {
-          fs14.lutimes = function(path13, at, mt, cb) {
-            fs14.open(path13, constants.O_SYMLINK, function(er, fd) {
+          fs14.lutimes = function(path14, at, mt, cb) {
+            fs14.open(path14, constants.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
@@ -218,8 +235,8 @@ var require_polyfills = __commonJS({
               });
             });
           };
-          fs14.lutimesSync = function(path13, at, mt) {
-            var fd = fs14.openSync(path13, constants.O_SYMLINK);
+          fs14.lutimesSync = function(path14, at, mt) {
+            var fd = fs14.openSync(path14, constants.O_SYMLINK);
             var ret;
             var threw = true;
             try {
@@ -330,6 +347,7 @@ var require_polyfills = __commonJS({
 // node_modules/graceful-fs/legacy-streams.js
 var require_legacy_streams = __commonJS({
   "node_modules/graceful-fs/legacy-streams.js"(exports, module) {
+    init_define_GRAMMARS();
     var Stream = __require("stream").Stream;
     module.exports = legacy;
     function legacy(fs13) {
@@ -337,11 +355,11 @@ var require_legacy_streams = __commonJS({
         ReadStream,
         WriteStream
       };
-      function ReadStream(path13, options) {
-        if (!(this instanceof ReadStream)) return new ReadStream(path13, options);
+      function ReadStream(path14, options) {
+        if (!(this instanceof ReadStream)) return new ReadStream(path14, options);
         Stream.call(this);
         var self = this;
-        this.path = path13;
+        this.path = path14;
         this.fd = null;
         this.readable = true;
         this.paused = false;
@@ -386,10 +404,10 @@ var require_legacy_streams = __commonJS({
           self._read();
         });
       }
-      function WriteStream(path13, options) {
-        if (!(this instanceof WriteStream)) return new WriteStream(path13, options);
+      function WriteStream(path14, options) {
+        if (!(this instanceof WriteStream)) return new WriteStream(path14, options);
         Stream.call(this);
-        this.path = path13;
+        this.path = path14;
         this.fd = null;
         this.writable = true;
         this.flags = "w";
@@ -427,6 +445,7 @@ var require_legacy_streams = __commonJS({
 var require_clone = __commonJS({
   "node_modules/graceful-fs/clone.js"(exports, module) {
     "use strict";
+    init_define_GRAMMARS();
     module.exports = clone;
     var getPrototypeOf = Object.getPrototypeOf || function(obj) {
       return obj.__proto__;
@@ -449,6 +468,7 @@ var require_clone = __commonJS({
 // node_modules/graceful-fs/graceful-fs.js
 var require_graceful_fs = __commonJS({
   "node_modules/graceful-fs/graceful-fs.js"(exports, module) {
+    init_define_GRAMMARS();
     var fs13 = __require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
@@ -532,14 +552,14 @@ var require_graceful_fs = __commonJS({
       fs14.createWriteStream = createWriteStream;
       var fs$readFile = fs14.readFile;
       fs14.readFile = readFile;
-      function readFile(path13, options, cb) {
+      function readFile(path14, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$readFile(path13, options, cb);
-        function go$readFile(path14, options2, cb2, startTime) {
-          return fs$readFile(path14, options2, function(err) {
+        return go$readFile(path14, options, cb);
+        function go$readFile(path15, options2, cb2, startTime) {
+          return fs$readFile(path15, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$readFile, [path14, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$readFile, [path15, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -549,14 +569,14 @@ var require_graceful_fs = __commonJS({
       }
       var fs$writeFile = fs14.writeFile;
       fs14.writeFile = writeFile;
-      function writeFile(path13, data, options, cb) {
+      function writeFile(path14, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$writeFile(path13, data, options, cb);
-        function go$writeFile(path14, data2, options2, cb2, startTime) {
-          return fs$writeFile(path14, data2, options2, function(err) {
+        return go$writeFile(path14, data, options, cb);
+        function go$writeFile(path15, data2, options2, cb2, startTime) {
+          return fs$writeFile(path15, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$writeFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$writeFile, [path15, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -567,14 +587,14 @@ var require_graceful_fs = __commonJS({
       var fs$appendFile = fs14.appendFile;
       if (fs$appendFile)
         fs14.appendFile = appendFile;
-      function appendFile(path13, data, options, cb) {
+      function appendFile(path14, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$appendFile(path13, data, options, cb);
-        function go$appendFile(path14, data2, options2, cb2, startTime) {
-          return fs$appendFile(path14, data2, options2, function(err) {
+        return go$appendFile(path14, data, options, cb);
+        function go$appendFile(path15, data2, options2, cb2, startTime) {
+          return fs$appendFile(path15, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$appendFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$appendFile, [path15, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -605,31 +625,31 @@ var require_graceful_fs = __commonJS({
       var fs$readdir = fs14.readdir;
       fs14.readdir = readdir;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir(path13, options, cb) {
+      function readdir(path14, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path14, options2, cb2, startTime) {
-          return fs$readdir(path14, fs$readdirCallback(
-            path14,
+        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path15, options2, cb2, startTime) {
+          return fs$readdir(path15, fs$readdirCallback(
+            path15,
             options2,
             cb2,
             startTime
           ));
-        } : function go$readdir2(path14, options2, cb2, startTime) {
-          return fs$readdir(path14, options2, fs$readdirCallback(
-            path14,
+        } : function go$readdir2(path15, options2, cb2, startTime) {
+          return fs$readdir(path15, options2, fs$readdirCallback(
+            path15,
             options2,
             cb2,
             startTime
           ));
         };
-        return go$readdir(path13, options, cb);
-        function fs$readdirCallback(path14, options2, cb2, startTime) {
+        return go$readdir(path14, options, cb);
+        function fs$readdirCallback(path15, options2, cb2, startTime) {
           return function(err, files3) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
               enqueue([
                 go$readdir,
-                [path14, options2, cb2],
+                [path15, options2, cb2],
                 err,
                 startTime || Date.now(),
                 Date.now()
@@ -700,7 +720,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      function ReadStream(path13, options) {
+      function ReadStream(path14, options) {
         if (this instanceof ReadStream)
           return fs$ReadStream.apply(this, arguments), this;
         else
@@ -720,7 +740,7 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function WriteStream(path13, options) {
+      function WriteStream(path14, options) {
         if (this instanceof WriteStream)
           return fs$WriteStream.apply(this, arguments), this;
         else
@@ -738,22 +758,22 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function createReadStream(path13, options) {
-        return new fs14.ReadStream(path13, options);
+      function createReadStream(path14, options) {
+        return new fs14.ReadStream(path14, options);
       }
-      function createWriteStream(path13, options) {
-        return new fs14.WriteStream(path13, options);
+      function createWriteStream(path14, options) {
+        return new fs14.WriteStream(path14, options);
       }
       var fs$open = fs14.open;
       fs14.open = open2;
-      function open2(path13, flags, mode, cb) {
+      function open2(path14, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
-        return go$open(path13, flags, mode, cb);
-        function go$open(path14, flags2, mode2, cb2, startTime) {
-          return fs$open(path14, flags2, mode2, function(err, fd) {
+        return go$open(path14, flags, mode, cb);
+        function go$open(path15, flags2, mode2, cb2, startTime) {
+          return fs$open(path15, flags2, mode2, function(err, fd) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$open, [path14, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$open, [path15, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -819,6 +839,7 @@ var require_graceful_fs = __commonJS({
 // node_modules/retry/lib/retry_operation.js
 var require_retry_operation = __commonJS({
   "node_modules/retry/lib/retry_operation.js"(exports, module) {
+    init_define_GRAMMARS();
     function RetryOperation(timeouts, options) {
       if (typeof options === "boolean") {
         options = { forever: options };
@@ -950,6 +971,7 @@ var require_retry_operation = __commonJS({
 // node_modules/retry/lib/retry.js
 var require_retry = __commonJS({
   "node_modules/retry/lib/retry.js"(exports) {
+    init_define_GRAMMARS();
     var RetryOperation = require_retry_operation();
     exports.operation = function(options) {
       var timeouts = exports.timeouts(options);
@@ -1036,6 +1058,7 @@ var require_retry = __commonJS({
 // node_modules/retry/index.js
 var require_retry2 = __commonJS({
   "node_modules/retry/index.js"(exports, module) {
+    init_define_GRAMMARS();
     module.exports = require_retry();
   }
 });
@@ -1043,6 +1066,7 @@ var require_retry2 = __commonJS({
 // node_modules/signal-exit/signals.js
 var require_signals = __commonJS({
   "node_modules/signal-exit/signals.js"(exports, module) {
+    init_define_GRAMMARS();
     module.exports = [
       "SIGABRT",
       "SIGALRM",
@@ -1080,6 +1104,7 @@ var require_signals = __commonJS({
 // node_modules/signal-exit/index.js
 var require_signal_exit = __commonJS({
   "node_modules/signal-exit/index.js"(exports, module) {
+    init_define_GRAMMARS();
     var process2 = global.process;
     var processOk = function(process3) {
       return process3 && typeof process3 === "object" && typeof process3.removeListener === "function" && typeof process3.emit === "function" && typeof process3.reallyExit === "function" && typeof process3.listeners === "function" && typeof process3.kill === "function" && typeof process3.pid === "number" && typeof process3.on === "function";
@@ -1240,6 +1265,7 @@ var require_signal_exit = __commonJS({
 var require_mtime_precision = __commonJS({
   "node_modules/proper-lockfile/lib/mtime-precision.js"(exports, module) {
     "use strict";
+    init_define_GRAMMARS();
     var cacheSymbol = /* @__PURE__ */ Symbol();
     function probe(file2, fs13, callback) {
       const cachedPrecision = fs13[cacheSymbol];
@@ -1282,7 +1308,8 @@ var require_mtime_precision = __commonJS({
 var require_lockfile = __commonJS({
   "node_modules/proper-lockfile/lib/lockfile.js"(exports, module) {
     "use strict";
-    var path13 = __require("path");
+    init_define_GRAMMARS();
+    var path14 = __require("path");
     var fs13 = require_graceful_fs();
     var retry = require_retry2();
     var onExit = require_signal_exit();
@@ -1293,7 +1320,7 @@ var require_lockfile = __commonJS({
     }
     function resolveCanonicalPath(file2, options, callback) {
       if (!options.realpath) {
-        return callback(null, path13.resolve(file2));
+        return callback(null, path14.resolve(file2));
       }
       options.fs.realpath(file2, callback);
     }
@@ -1519,6 +1546,7 @@ var require_lockfile = __commonJS({
 var require_adapter = __commonJS({
   "node_modules/proper-lockfile/lib/adapter.js"(exports, module) {
     "use strict";
+    init_define_GRAMMARS();
     var fs13 = require_graceful_fs();
     function createSyncFs(fs14) {
       const methods2 = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
@@ -1584,6 +1612,7 @@ var require_adapter = __commonJS({
 var require_proper_lockfile = __commonJS({
   "node_modules/proper-lockfile/index.js"(exports, module) {
     "use strict";
+    init_define_GRAMMARS();
     var lockfile = require_lockfile();
     var { toPromise, toSync, toSyncOptions } = require_adapter();
     async function lock2(file2, options) {
@@ -1620,6 +1649,7 @@ var require_proper_lockfile = __commonJS({
 var require_punycode = __commonJS({
   "node_modules/punycode.js/punycode.js"(exports, module) {
     "use strict";
+    init_define_GRAMMARS();
     var maxInt = 2147483647;
     var base = 36;
     var tMin = 1;
@@ -1859,6 +1889,7 @@ var require_punycode = __commonJS({
 var require_types = __commonJS({
   "node_modules/diff2html/lib/types.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ColorSchemeType = exports.DiffStyleType = exports.LineMatchingType = exports.OutputFormatType = exports.LineType = void 0;
     var LineType2;
@@ -1893,6 +1924,7 @@ var require_types = __commonJS({
 var require_utils = __commonJS({
   "node_modules/diff2html/lib/utils.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.escapeForRegExp = escapeForRegExp2;
     exports.unifyPath = unifyPath;
@@ -1920,8 +1952,8 @@ var require_utils = __commonJS({
     function escapeForRegExp2(str) {
       return str.replace(regex2, "\\$&");
     }
-    function unifyPath(path13) {
-      return path13 ? path13.replace(/\\/g, "/") : path13;
+    function unifyPath(path14) {
+      return path14 ? path14.replace(/\\/g, "/") : path14;
     }
     function hashCode(text2) {
       let i, chr, len;
@@ -1948,6 +1980,7 @@ var require_utils = __commonJS({
 var require_diff_parser = __commonJS({
   "node_modules/diff2html/lib/diff-parser.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.parse = parse2;
     var types_1 = require_types();
@@ -2249,6 +2282,7 @@ var require_diff_parser = __commonJS({
 var require_base = __commonJS({
   "node_modules/diff/libcjs/diff/base.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     var Diff = (
       /** @class */
@@ -2357,16 +2391,16 @@ var require_base = __commonJS({
             }
           }
         };
-        Diff2.prototype.addToPath = function(path13, added, removed, oldPosInc, options) {
-          var last = path13.lastComponent;
+        Diff2.prototype.addToPath = function(path14, added, removed, oldPosInc, options) {
+          var last = path14.lastComponent;
           if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
             return {
-              oldPos: path13.oldPos + oldPosInc,
+              oldPos: path14.oldPos + oldPosInc,
               lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
             };
           } else {
             return {
-              oldPos: path13.oldPos + oldPosInc,
+              oldPos: path14.oldPos + oldPosInc,
               lastComponent: { count: 1, added, removed, previousComponent: last }
             };
           }
@@ -2470,6 +2504,7 @@ var require_base = __commonJS({
 var require_character = __commonJS({
   "node_modules/diff/libcjs/diff/character.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2514,6 +2549,7 @@ var require_character = __commonJS({
 var require_string = __commonJS({
   "node_modules/diff/libcjs/util/string.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.longestCommonPrefix = longestCommonPrefix;
     exports.longestCommonSuffix = longestCommonSuffix;
@@ -2668,6 +2704,7 @@ var require_string = __commonJS({
 var require_word = __commonJS({
   "node_modules/diff/libcjs/diff/word.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2860,6 +2897,7 @@ var require_word = __commonJS({
 var require_params = __commonJS({
   "node_modules/diff/libcjs/util/params.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.generateOptions = generateOptions;
     function generateOptions(options, defaults) {
@@ -2881,6 +2919,7 @@ var require_params = __commonJS({
 var require_line = __commonJS({
   "node_modules/diff/libcjs/diff/line.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2970,6 +3009,7 @@ var require_line = __commonJS({
 var require_sentence = __commonJS({
   "node_modules/diff/libcjs/diff/sentence.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3038,6 +3078,7 @@ var require_sentence = __commonJS({
 var require_css = __commonJS({
   "node_modules/diff/libcjs/diff/css.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3085,6 +3126,7 @@ var require_css = __commonJS({
 var require_json = __commonJS({
   "node_modules/diff/libcjs/diff/json.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3199,6 +3241,7 @@ var require_json = __commonJS({
 var require_array = __commonJS({
   "node_modules/diff/libcjs/diff/array.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __extends = exports && exports.__extends || /* @__PURE__ */ (function() {
       var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3252,6 +3295,7 @@ var require_array = __commonJS({
 var require_line_endings = __commonJS({
   "node_modules/diff/libcjs/patch/line-endings.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __assign = exports && exports.__assign || function() {
       __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -3331,6 +3375,7 @@ var require_line_endings = __commonJS({
 var require_parse = __commonJS({
   "node_modules/diff/libcjs/patch/parse.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.parsePatch = parsePatch;
     function parsePatch(uniDiff) {
@@ -3443,9 +3488,10 @@ var require_parse = __commonJS({
 var require_distance_iterator = __commonJS({
   "node_modules/diff/libcjs/util/distance-iterator.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = default_1;
-    function default_1(start2, minLine, maxLine) {
+    function default_1(start3, minLine, maxLine) {
       var wantForward = true, backwardExhausted = false, forwardExhausted = false, localOffset = 1;
       return function iterator() {
         if (wantForward && !forwardExhausted) {
@@ -3454,8 +3500,8 @@ var require_distance_iterator = __commonJS({
           } else {
             wantForward = false;
           }
-          if (start2 + localOffset <= maxLine) {
-            return start2 + localOffset;
+          if (start3 + localOffset <= maxLine) {
+            return start3 + localOffset;
           }
           forwardExhausted = true;
         }
@@ -3463,8 +3509,8 @@ var require_distance_iterator = __commonJS({
           if (!forwardExhausted) {
             wantForward = true;
           }
-          if (minLine <= start2 - localOffset) {
-            return start2 - localOffset++;
+          if (minLine <= start3 - localOffset) {
+            return start3 - localOffset++;
           }
           backwardExhausted = true;
           return iterator();
@@ -3479,6 +3525,7 @@ var require_distance_iterator = __commonJS({
 var require_apply = __commonJS({
   "node_modules/diff/libcjs/patch/apply.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.applyPatch = applyPatch;
     exports.applyPatches = applyPatches;
@@ -3683,6 +3730,7 @@ var require_apply = __commonJS({
 var require_reverse = __commonJS({
   "node_modules/diff/libcjs/patch/reverse.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __assign = exports && exports.__assign || function() {
       __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -3727,6 +3775,7 @@ var require_reverse = __commonJS({
 var require_create = __commonJS({
   "node_modules/diff/libcjs/patch/create.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __assign = exports && exports.__assign || function() {
       __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -3952,6 +4001,7 @@ var require_create = __commonJS({
 var require_dmp = __commonJS({
   "node_modules/diff/libcjs/convert/dmp.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convertChangesToDMP = convertChangesToDMP;
     function convertChangesToDMP(changes) {
@@ -3977,6 +4027,7 @@ var require_dmp = __commonJS({
 var require_xml = __commonJS({
   "node_modules/diff/libcjs/convert/xml.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convertChangesToXML = convertChangesToXML;
     function convertChangesToXML(changes) {
@@ -4012,6 +4063,7 @@ var require_xml = __commonJS({
 var require_libcjs = __commonJS({
   "node_modules/diff/libcjs/index.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.canonicalize = exports.convertChangesToXML = exports.convertChangesToDMP = exports.reversePatch = exports.parsePatch = exports.applyPatches = exports.applyPatch = exports.OMIT_HEADERS = exports.FILE_HEADERS_ONLY = exports.INCLUDE_HEADERS = exports.formatPatch = exports.createPatch = exports.createTwoFilesPatch = exports.structuredPatch = exports.arrayDiff = exports.diffArrays = exports.jsonDiff = exports.diffJson = exports.cssDiff = exports.diffCss = exports.sentenceDiff = exports.diffSentences = exports.diffTrimmedLines = exports.lineDiff = exports.diffLines = exports.wordsWithSpaceDiff = exports.diffWordsWithSpace = exports.wordDiff = exports.diffWords = exports.characterDiff = exports.diffChars = exports.Diff = void 0;
     var base_js_1 = require_base();
@@ -4129,6 +4181,7 @@ var require_libcjs = __commonJS({
 var require_rematch = __commonJS({
   "node_modules/diff2html/lib/rematch.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.levenshtein = levenshtein;
     exports.newDistanceFn = newDistanceFn;
@@ -4222,6 +4275,7 @@ var require_rematch = __commonJS({
 var require_render_utils = __commonJS({
   "node_modules/diff2html/lib/render-utils.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -4456,6 +4510,7 @@ var require_render_utils = __commonJS({
 var require_file_list_renderer = __commonJS({
   "node_modules/diff2html/lib/file-list-renderer.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -4532,6 +4587,7 @@ var require_file_list_renderer = __commonJS({
 var require_line_by_line_renderer = __commonJS({
   "node_modules/diff2html/lib/line-by-line-renderer.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -4756,6 +4812,7 @@ var require_line_by_line_renderer = __commonJS({
 var require_side_by_side_renderer = __commonJS({
   "node_modules/diff2html/lib/side-by-side-renderer.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -4990,6 +5047,7 @@ var require_side_by_side_renderer = __commonJS({
 // node_modules/@profoundlogic/hogan/lib/compiler.js
 var require_compiler = __commonJS({
   "node_modules/@profoundlogic/hogan/lib/compiler.js"(exports) {
+    init_define_GRAMMARS();
     (function(Hogan2) {
       var rIsWhitespace = /\S/, rQuot = /\"/g, rNewline = /\n/g, rCr = /\r/g, rSlash = /\\/g, rLineSep = /\u2028/, rParagraphSep = /\u2029/;
       Hogan2.tags = {
@@ -5318,6 +5376,7 @@ var require_compiler = __commonJS({
 // node_modules/@profoundlogic/hogan/lib/template.js
 var require_template = __commonJS({
   "node_modules/@profoundlogic/hogan/lib/template.js"(exports) {
+    init_define_GRAMMARS();
     var Hogan2 = {};
     (function(Hogan3) {
       Hogan3.Template = function(codeObj, text2, compiler, options) {
@@ -5404,13 +5463,13 @@ var require_template = __commonJS({
           }
         },
         // maybe start a section
-        s: function(val, ctx, partials, inverted, start2, end, tags) {
+        s: function(val, ctx, partials, inverted, start3, end, tags) {
           var pass;
           if (isArray(val) && val.length === 0) {
             return false;
           }
           if (typeof val == "function") {
-            val = this.ms(val, ctx, partials, inverted, start2, end, tags);
+            val = this.ms(val, ctx, partials, inverted, start3, end, tags);
           }
           pass = !!val;
           if (!inverted && pass && ctx) {
@@ -5488,14 +5547,14 @@ var require_template = __commonJS({
           return r;
         },
         // method replace section
-        ms: function(func, ctx, partials, inverted, start2, end, tags) {
+        ms: function(func, ctx, partials, inverted, start3, end, tags) {
           var textSource, cx = ctx[ctx.length - 1], result = func.call(cx);
           if (typeof result == "function") {
             if (inverted) {
               return true;
             } else {
               textSource = this.activeSub && this.subsText && this.subsText[this.activeSub] ? this.subsText[this.activeSub] : this.text;
-              return this.ls(result, cx, ctx, partials, textSource.substring(start2, end), tags);
+              return this.ls(result, cx, ctx, partials, textSource.substring(start3, end), tags);
             }
           }
           return result;
@@ -5580,6 +5639,7 @@ var require_template = __commonJS({
 // node_modules/@profoundlogic/hogan/lib/hogan.js
 var require_hogan = __commonJS({
   "node_modules/@profoundlogic/hogan/lib/hogan.js"(exports, module) {
+    init_define_GRAMMARS();
     var Hogan2 = require_compiler();
     Hogan2.Template = require_template().Template;
     Hogan2.template = Hogan2.Template;
@@ -5591,6 +5651,7 @@ var require_hogan = __commonJS({
 var require_diff2html_templates = __commonJS({
   "node_modules/diff2html/lib/diff2html-templates.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -6043,6 +6104,7 @@ var require_diff2html_templates = __commonJS({
 var require_hoganjs_utils = __commonJS({
   "node_modules/diff2html/lib/hoganjs-utils.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -6118,6 +6180,7 @@ var require_hoganjs_utils = __commonJS({
 var require_diff2html = __commonJS({
   "node_modules/diff2html/lib/diff2html.js"(exports) {
     "use strict";
+    init_define_GRAMMARS();
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
       var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -6186,12 +6249,14 @@ var require_diff2html = __commonJS({
 });
 
 // src/cli.ts
+init_define_GRAMMARS();
 import { spawnSync as spawnSync4 } from "node:child_process";
 import fs12 from "node:fs";
-import path12 from "node:path";
+import path13 from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 
 // src/change.ts
+init_define_GRAMMARS();
 import { execFile, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -6199,7 +6264,14 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 
+// src/diff.ts
+init_define_GRAMMARS();
+
+// node_modules/diff2html/lib-esm/diff-parser.js
+init_define_GRAMMARS();
+
 // node_modules/diff2html/lib-esm/types.js
+init_define_GRAMMARS();
 var LineType;
 (function(LineType2) {
   LineType2["INSERT"] = "insert";
@@ -6214,6 +6286,7 @@ var ColorSchemeType;
 })(ColorSchemeType || (ColorSchemeType = {}));
 
 // node_modules/diff2html/lib-esm/utils.js
+init_define_GRAMMARS();
 var specials = [
   "-",
   "[",
@@ -6631,8 +6704,8 @@ function fileStats(cwd, base, head) {
   const stats = [];
   for (let at = 0; at < fields.length - 1; ) {
     const [added = "", deleted = "", name2 = ""] = (fields[at++] ?? "").split("	");
-    const path13 = name2 || (at += 2, fields[at - 1] ?? "");
-    stats.push(added === "-" ? { path: path13 } : { path: path13, additions: Number(added), deletions: Number(deleted) });
+    const path14 = name2 || (at += 2, fields[at - 1] ?? "");
+    stats.push(added === "-" ? { path: path14 } : { path: path14, additions: Number(added), deletions: Number(deleted) });
   }
   return stats;
 }
@@ -6682,11 +6755,13 @@ function defaultTarget(cwd) {
 }
 
 // src/prune.ts
+init_define_GRAMMARS();
 import { spawnSync as spawnSync3 } from "node:child_process";
 import fs9 from "node:fs";
-import path9 from "node:path";
+import path10 from "node:path";
 
 // src/json-files.ts
+init_define_GRAMMARS();
 var import_proper_lockfile = __toESM(require_proper_lockfile(), 1);
 import fs2 from "node:fs";
 import path2 from "node:path";
@@ -6729,14 +6804,15 @@ async function locked(file2, work, stale = 1e4) {
 }
 
 // src/paths.ts
+init_define_GRAMMARS();
 import fs3 from "node:fs";
 import os2 from "node:os";
 import path3 from "node:path";
 var outsideOwn = (dir) => {
   if (!process.env["WALKTHROUGH_TEST_SANDBOX"]) return dir;
-  const own = path3.join(os2.userInfo().homedir, ".local", "state", "walkthrough");
+  const own2 = path3.join(os2.userInfo().homedir, ".local", "state", "walkthrough");
   const full = path3.resolve(dir);
-  if (full === own || full.startsWith(own + path3.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
+  if (full === own2 || full.startsWith(own2 + path3.sep)) throw new Error(`a test reached ${full}; tests keep to their sandbox`);
   return dir;
 };
 var stateDir = () => outsideOwn(
@@ -6767,17 +6843,166 @@ function inInbox(file2) {
 }
 
 // src/server.ts
+init_define_GRAMMARS();
 import { spawn as spawn2 } from "node:child_process";
 import crypto5 from "node:crypto";
 import fs8 from "node:fs";
 import http from "node:http";
-import path8 from "node:path";
+import path9 from "node:path";
 import { fileURLToPath } from "node:url";
 
+// src/colours.ts
+init_define_GRAMMARS();
+var PLAIN = "plain";
+var KINDS = /* @__PURE__ */ new Set(["c", "k", "n", "e", "t", "s", "r", "v", "x"]);
+var joinLines = (lines) => lines.flatMap((line, at) => at ? [[1, ""], ...line] : line);
+function colourHtml(html, runs) {
+  let out = "";
+  let at = 0;
+  let run = -1;
+  let end = 0;
+  let open2 = "";
+  const close = () => {
+    if (open2) out += "</span>";
+    open2 = "";
+  };
+  for (const part of html.match(/<[^>]*>|&[^;\s]+;|[\s\S]/g) ?? []) {
+    if (part.startsWith("<") && part.length > 1) {
+      close();
+      out += part;
+      continue;
+    }
+    while (at >= end && run < runs.length) end += runs[++run]?.[0] ?? 0;
+    const kind = runs[run]?.[1] ?? "";
+    if (kind !== open2) {
+      close();
+      if (KINDS.has(kind)) {
+        out += `<span class="sx-${kind}">`;
+        open2 = kind;
+      }
+    }
+    out += part;
+    at++;
+  }
+  close();
+  return at === runs.reduce((sum, [length]) => sum + length, 0) ? out : null;
+}
+
+// src/highlight.ts
+init_define_GRAMMARS();
+import { Worker } from "node:worker_threads";
+
+// src/grammars.ts
+init_define_GRAMMARS();
+import path4 from "node:path";
+var own = (table2, key2) => Object.hasOwn(table2, key2) ? table2[key2] : void 0;
+function grammarOf(file2) {
+  const name2 = path4.posix.basename(file2);
+  const byName = own(define_GRAMMARS_default.filenames, name2);
+  if (byName) return byName;
+  for (let dot = name2.indexOf(".", 1); dot !== -1; dot = name2.indexOf(".", dot + 1)) {
+    const found = own(define_GRAMMARS_default.extensions, name2.slice(dot).toLowerCase());
+    if (found) return found;
+  }
+  return null;
+}
+var grammarNamed = (language) => own(define_GRAMMARS_default.names, language.trim().toLowerCase()) ?? null;
+
+// src/highlight.ts
+var worker = null;
+function start() {
+  const thread = new Worker(new URL("./highlight-worker.mjs", import.meta.url));
+  const waiting = /* @__PURE__ */ new Map();
+  let next = 0;
+  const hold2 = () => {
+    if (waiting.size) thread.ref();
+    else thread.unref();
+  };
+  const answer2 = ({ id, runs }) => {
+    waiting.get(id)?.(runs);
+    waiting.delete(id);
+    hold2();
+  };
+  const fail = () => {
+    if (worker === self) worker = null;
+    for (const done of waiting.values()) done(null);
+    waiting.clear();
+  };
+  thread.on("message", answer2).on("error", fail).on("exit", fail);
+  hold2();
+  const self = {
+    post: (job) => new Promise((resolve2) => {
+      const id = next++;
+      waiting.set(id, resolve2);
+      hold2();
+      thread.postMessage({ ...job, id });
+    })
+  };
+  return self;
+}
+var tokenise = (text2, grammar) => grammar ? (worker ??= start()).post({ text: text2, grammar }) : Promise.resolve(null);
+var byBlob = /* @__PURE__ */ new Map();
+function tokensAt(cwd, rev, file2) {
+  const grammar = grammarOf(file2);
+  if (!grammar || !/^[0-9a-f]{40,64}$/.test(rev)) return Promise.resolve(null);
+  let blob;
+  try {
+    blob = git(cwd, "rev-parse", "--verify", "--quiet", `${rev}:${file2}`).trim();
+  } catch {
+    return Promise.resolve(null);
+  }
+  const key2 = `${blob}:${grammar}`;
+  let found = byBlob.get(key2);
+  if (!found) {
+    found = tokenise(git(cwd, "cat-file", "blob", blob), grammar);
+    byBlob.set(key2, found);
+  }
+  return found;
+}
+var tokensFor = (code2, { language, file: file2 }) => tokenise(code2, language !== void 0 ? grammarNamed(language) : file2 !== void 0 ? grammarOf(file2) : null);
+var orders = /* @__PURE__ */ new Map();
+function warm(cwd, base, head, first) {
+  const range = `${base}..${head}`;
+  const running = orders.has(range);
+  orders.set(range, first);
+  if (running) return;
+  void (async () => {
+    const files3 = await changedFiles(cwd, base, head);
+    const done = /* @__PURE__ */ new Set();
+    for (; ; ) {
+      const order = orders.get(range) ?? [];
+      const file2 = [...order.flatMap((one) => files3.filter((changed) => changed.path === one)), ...files3].find((changed) => !done.has(changed.path));
+      if (!file2) return;
+      done.add(file2.path);
+      await Promise.all([tokensAt(cwd, base, file2.from ?? file2.path), tokensAt(cwd, head, file2.path)]);
+    }
+  })().catch(() => {
+  });
+}
+
+// src/preview.ts
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/index.js
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/lookup.js
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/detector.js
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/types/index.js
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/types/bmp.js
+init_define_GRAMMARS();
+
 // node_modules/image-size/dist/esm/types/utils.js
+init_define_GRAMMARS();
 var decoder = new TextDecoder();
-var toUTF8String = (input, start2 = 0, end = input.length) => decoder.decode(input.slice(start2, end));
-var toHexString = (input, start2 = 0, end = input.length) => input.slice(start2, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
+var toUTF8String = (input, start3 = 0, end = input.length) => decoder.decode(input.slice(start3, end));
+var toHexString = (input, start3 = 0, end = input.length) => input.slice(start3, end).reduce((memo, i) => memo + `0${i.toString(16)}`.slice(-2), "");
 var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
 var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
 var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
@@ -6854,7 +7079,11 @@ var BMP = {
   })
 };
 
+// node_modules/image-size/dist/esm/types/cur.js
+init_define_GRAMMARS();
+
 // node_modules/image-size/dist/esm/types/ico.js
+init_define_GRAMMARS();
 var TYPE_ICON = 1;
 var SIZE_HEADER = 2 + 2 + 2;
 var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
@@ -6913,6 +7142,7 @@ var CUR = {
 };
 
 // node_modules/image-size/dist/esm/types/dds.js
+init_define_GRAMMARS();
 var DDS = {
   validate: (input) => readUInt32LE(input, 0) === 542327876,
   calculate: (input) => ({
@@ -6922,6 +7152,7 @@ var DDS = {
 };
 
 // node_modules/image-size/dist/esm/types/gif.js
+init_define_GRAMMARS();
 var gifRegexp = /^GIF8[79]a/;
 var GIF = {
   validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
@@ -6932,6 +7163,7 @@ var GIF = {
 };
 
 // node_modules/image-size/dist/esm/types/heif.js
+init_define_GRAMMARS();
 var brandMap = {
   avif: "avif",
   mif1: "heif",
@@ -6998,6 +7230,7 @@ var HEIF = {
 };
 
 // node_modules/image-size/dist/esm/types/icns.js
+init_define_GRAMMARS();
 var SIZE_HEADER2 = 4 + 4;
 var FILE_LENGTH_OFFSET = 4;
 var ENTRY_LENGTH_OFFSET = 4;
@@ -7077,6 +7310,7 @@ var ICNS = {
 };
 
 // node_modules/image-size/dist/esm/types/j2c.js
+init_define_GRAMMARS();
 var J2C = {
   validate: (input) => readUInt32BE(input, 0) === 4283432785,
   calculate: (input) => ({
@@ -7086,6 +7320,7 @@ var J2C = {
 };
 
 // node_modules/image-size/dist/esm/types/jp2.js
+init_define_GRAMMARS();
 var JP2 = {
   validate(input) {
     const boxType = toUTF8String(input, 4, 8);
@@ -7111,6 +7346,7 @@ var JP2 = {
 };
 
 // node_modules/image-size/dist/esm/types/jpg.js
+init_define_GRAMMARS();
 var EXIF_MARKER = "45786966";
 var APP1_DATA_SIZE_BYTES = 2;
 var EXIF_HEADER_BYTES = 6;
@@ -7133,12 +7369,12 @@ function extractOrientation(exifBlock, isBigEndian) {
   const offset = EXIF_HEADER_BYTES + idfOffset;
   const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
   for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
-    const start2 = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
-    const end = start2 + IDF_ENTRY_BYTES;
-    if (start2 > exifBlock.length) {
+    const start3 = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start3 + IDF_ENTRY_BYTES;
+    if (start3 > exifBlock.length) {
       return;
     }
-    const block2 = exifBlock.slice(start2, end);
+    const block2 = exifBlock.slice(start3, end);
     const tagNumber = readUInt(block2, 16, 0, isBigEndian);
     if (tagNumber === 274) {
       const dataFormat = readUInt(block2, 16, 2, isBigEndian);
@@ -7201,7 +7437,14 @@ var JPG = {
   }
 };
 
+// node_modules/image-size/dist/esm/types/jxl.js
+init_define_GRAMMARS();
+
+// node_modules/image-size/dist/esm/types/jxl-stream.js
+init_define_GRAMMARS();
+
 // node_modules/image-size/dist/esm/utils/bit-reader.js
+init_define_GRAMMARS();
 var BitReader = class {
   input;
   endianness;
@@ -7334,6 +7577,7 @@ var JXL = {
 };
 
 // node_modules/image-size/dist/esm/types/ktx.js
+init_define_GRAMMARS();
 var KTX = {
   validate: (input) => {
     const signature = toUTF8String(input, 1, 7);
@@ -7351,6 +7595,7 @@ var KTX = {
 };
 
 // node_modules/image-size/dist/esm/types/png.js
+init_define_GRAMMARS();
 var pngSignature = "PNG\r\n\n";
 var pngImageHeaderChunkName = "IHDR";
 var pngFriedChunkName = "CgBI";
@@ -7383,6 +7628,7 @@ var PNG = {
 };
 
 // node_modules/image-size/dist/esm/types/pnm.js
+init_define_GRAMMARS();
 var PNMTypes = {
   P1: "pbm/ascii",
   P2: "pgm/ascii",
@@ -7463,6 +7709,7 @@ var PNM = {
 };
 
 // node_modules/image-size/dist/esm/types/psd.js
+init_define_GRAMMARS();
 var PSD = {
   validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
   calculate: (input) => ({
@@ -7472,6 +7719,7 @@ var PSD = {
 };
 
 // node_modules/image-size/dist/esm/types/svg.js
+init_define_GRAMMARS();
 var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
 var extractorRegExps = {
   height: /\sheight=(['"])([^%]+?)\1/,
@@ -7559,6 +7807,7 @@ var SVG = {
 };
 
 // node_modules/image-size/dist/esm/types/tga.js
+init_define_GRAMMARS();
 var TGA = {
   validate(input) {
     return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
@@ -7572,6 +7821,7 @@ var TGA = {
 };
 
 // node_modules/image-size/dist/esm/types/tiff.js
+init_define_GRAMMARS();
 var CONSTANTS = {
   TAG: {
     WIDTH: 256,
@@ -7687,6 +7937,7 @@ var TIFF = {
 };
 
 // node_modules/image-size/dist/esm/types/webp.js
+init_define_GRAMMARS();
 function calculateExtended(input) {
   return {
     height: 1 + readUInt24LE(input, 7),
@@ -7760,6 +8011,9 @@ var typeHandlers = /* @__PURE__ */ new Map([
 ]);
 var types = Array.from(typeHandlers.keys());
 
+// node_modules/markdown-it/dist/markdown-it.mjs
+init_define_GRAMMARS();
+
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
 __export(mdurl_exports, {
@@ -7768,8 +8022,10 @@ __export(mdurl_exports, {
   format: () => format,
   parse: () => parse_default
 });
+init_define_GRAMMARS();
 
 // node_modules/mdurl/lib/decode.mjs
+init_define_GRAMMARS();
 var decodeCache = {};
 function getDecodeCache(exclude) {
   let cache = decodeCache[exclude];
@@ -7853,6 +8109,7 @@ decode.componentChars = "";
 var decode_default = decode;
 
 // node_modules/mdurl/lib/encode.mjs
+init_define_GRAMMARS();
 var encodeCache = {};
 function getEncodeCache(exclude) {
   let cache = encodeCache[exclude];
@@ -7917,6 +8174,7 @@ encode.componentChars = "-_.!~*'()";
 var encode_default = encode;
 
 // node_modules/mdurl/lib/format.mjs
+init_define_GRAMMARS();
 function format(url) {
   let result = "";
   result += url.protocol || "";
@@ -7935,6 +8193,7 @@ function format(url) {
 }
 
 // node_modules/mdurl/lib/parse.mjs
+init_define_GRAMMARS();
 function Url() {
   this.protocol = null;
   this.slashes = null;
@@ -8126,6 +8385,7 @@ __export(build_exports, {
   S: () => S,
   Z: () => Z
 });
+init_define_GRAMMARS();
 var Any = /[\0-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/;
 var Cc = /[\0-\x1F\x7F-\x9F]/;
 var Cf = /[\xAD\u0600-\u0605\u061C\u06DD\u070F\u0890\u0891\u08E2\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\uFEFF\uFFF9-\uFFFB]|\uD804[\uDCBD\uDCCD]|\uD80D[\uDC30-\uDC3F]|\uD82F[\uDCA0-\uDCA3]|\uD834[\uDD73-\uDD7A]|\uDB40[\uDC01\uDC20-\uDC7F]/;
@@ -8133,7 +8393,14 @@ var P = /[!-#%-\*,-\/:;\?@\[-\]_\{\}\xA1\xA7\xAB\xB6\xB7\xBB\xBF\u037E\u0387\u05
 var S = /[\$\+<->\^`\|~\xA2-\xA6\xA8\xA9\xAC\xAE-\xB1\xB4\xB8\xD7\xF7\u02C2-\u02C5\u02D2-\u02DF\u02E5-\u02EB\u02ED\u02EF-\u02FF\u0375\u0384\u0385\u03F6\u0482\u058D-\u058F\u0606-\u0608\u060B\u060E\u060F\u06DE\u06E9\u06FD\u06FE\u07F6\u07FE\u07FF\u0888\u09F2\u09F3\u09FA\u09FB\u0AF1\u0B70\u0BF3-\u0BFA\u0C7F\u0D4F\u0D79\u0E3F\u0F01-\u0F03\u0F13\u0F15-\u0F17\u0F1A-\u0F1F\u0F34\u0F36\u0F38\u0FBE-\u0FC5\u0FC7-\u0FCC\u0FCE\u0FCF\u0FD5-\u0FD8\u109E\u109F\u1390-\u1399\u166D\u17DB\u1940\u19DE-\u19FF\u1B61-\u1B6A\u1B74-\u1B7C\u1FBD\u1FBF-\u1FC1\u1FCD-\u1FCF\u1FDD-\u1FDF\u1FED-\u1FEF\u1FFD\u1FFE\u2044\u2052\u207A-\u207C\u208A-\u208C\u20A0-\u20C1\u2100\u2101\u2103-\u2106\u2108\u2109\u2114\u2116-\u2118\u211E-\u2123\u2125\u2127\u2129\u212E\u213A\u213B\u2140-\u2144\u214A-\u214D\u214F\u218A\u218B\u2190-\u2307\u230C-\u2328\u232B-\u2429\u2440-\u244A\u249C-\u24E9\u2500-\u2767\u2794-\u27C4\u27C7-\u27E5\u27F0-\u2982\u2999-\u29D7\u29DC-\u29FB\u29FE-\u2B73\u2B76-\u2BFF\u2CE5-\u2CEA\u2E50\u2E51\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFF\u3004\u3012\u3013\u3020\u3036\u3037\u303E\u303F\u309B\u309C\u3190\u3191\u3196-\u319F\u31C0-\u31E5\u31EF\u3200-\u321E\u322A-\u3247\u3250\u3260-\u327F\u328A-\u32B0\u32C0-\u33FF\u4DC0-\u4DFF\uA490-\uA4C6\uA700-\uA716\uA720\uA721\uA789\uA78A\uA828-\uA82B\uA836-\uA839\uAA77-\uAA79\uAB5B\uAB6A\uAB6B\uFB29\uFBB2-\uFBD2\uFD40-\uFD4F\uFD90\uFD91\uFDC8-\uFDCF\uFDFC-\uFDFF\uFE62\uFE64-\uFE66\uFE69\uFF04\uFF0B\uFF1C-\uFF1E\uFF3E\uFF40\uFF5C\uFF5E\uFFE0-\uFFE6\uFFE8-\uFFEE\uFFFC\uFFFD]|\uD800[\uDD37-\uDD3F\uDD79-\uDD89\uDD8C-\uDD8E\uDD90-\uDD9C\uDDA0\uDDD0-\uDDFC]|\uD802[\uDC77\uDC78\uDEC8]|\uD803[\uDD8E\uDD8F\uDED1-\uDED8]|\uD805\uDF3F|\uD807[\uDFD5-\uDFF1]|\uD81A[\uDF3C-\uDF3F\uDF45]|\uD82F\uDC9C|\uD833[\uDC00-\uDCEF\uDCFA-\uDCFC\uDD00-\uDEB3\uDEBA-\uDED0\uDEE0-\uDEF0\uDF50-\uDFC3]|\uD834[\uDC00-\uDCF5\uDD00-\uDD26\uDD29-\uDD64\uDD6A-\uDD6C\uDD83\uDD84\uDD8C-\uDDA9\uDDAE-\uDDEA\uDE00-\uDE41\uDE45\uDF00-\uDF56]|\uD835[\uDEC1\uDEDB\uDEFB\uDF15\uDF35\uDF4F\uDF6F\uDF89\uDFA9\uDFC3]|\uD836[\uDC00-\uDDFF\uDE37-\uDE3A\uDE6D-\uDE74\uDE76-\uDE83\uDE85\uDE86]|\uD838[\uDD4F\uDEFF]|\uD83B[\uDCAC\uDCB0\uDD2E\uDEF0\uDEF1]|\uD83C[\uDC00-\uDC2B\uDC30-\uDC93\uDCA0-\uDCAE\uDCB1-\uDCBF\uDCC1-\uDCCF\uDCD1-\uDCF5\uDD0D-\uDDAD\uDDE6-\uDE02\uDE10-\uDE3B\uDE40-\uDE48\uDE50\uDE51\uDE60-\uDE65\uDF00-\uDFFF]|\uD83D[\uDC00-\uDED8\uDEDC-\uDEEC\uDEF0-\uDEFC\uDF00-\uDFD9\uDFE0-\uDFEB\uDFF0]|\uD83E[\uDC00-\uDC0B\uDC10-\uDC47\uDC50-\uDC59\uDC60-\uDC87\uDC90-\uDCAD\uDCB0-\uDCBB\uDCC0\uDCC1\uDCD0-\uDCD8\uDD00-\uDE57\uDE60-\uDE6D\uDE70-\uDE7C\uDE80-\uDE8A\uDE8E-\uDEC6\uDEC8\uDECD-\uDEDC\uDEDF-\uDEEA\uDEEF-\uDEF8\uDF00-\uDF92\uDF94-\uDFEF\uDFFA]/;
 var Z = /[ \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/;
 
+// node_modules/entities/dist/index.js
+init_define_GRAMMARS();
+
+// node_modules/entities/dist/decode.js
+init_define_GRAMMARS();
+
 // node_modules/entities/dist/decode-codepoint.js
+init_define_GRAMMARS();
 var c1 = [
   8364,
   0,
@@ -8184,7 +8451,11 @@ function codePointToString(codePoint) {
   return codePoint - 1 >>> 0 < 127 || codePoint - 160 >>> 0 < 55136 ? String.fromCharCode(codePoint) : String.fromCodePoint(replaceCodePoint(codePoint));
 }
 
+// node_modules/entities/dist/generated/decode-data-html.js
+init_define_GRAMMARS();
+
 // node_modules/entities/dist/internal/decode-shared.js
+init_define_GRAMMARS();
 var BASE91_INVERSE = /* @__PURE__ */ (() => {
   const table2 = new Uint8Array(127);
   let code2 = 0;
@@ -8209,7 +8480,7 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
   const single = new Int32Array(slotCount);
   single.fill(-1, dict1AtomCount, dictSize);
   single.fill(-1, dictSize + dict2AtomCount, slotCount);
-  const start2 = new Int32Array(slotCount);
+  const start3 = new Int32Array(slotCount);
   const length = new Int32Array(slotCount);
   function decodeDelta(count, off) {
     let previous = 0;
@@ -8245,7 +8516,7 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
       references[ngramIndex * 2] = a;
       references[ngramIndex * 2 + 1] = b;
       ngramIndex += 1;
-      start2[slot] = poolSize;
+      start3[slot] = poolSize;
       const entryLength = (single[a] < 0 ? length[a] : 1) + (single[b] < 0 ? length[b] : 1);
       length[slot] = entryLength;
       poolSize += entryLength;
@@ -8260,7 +8531,7 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
       const source = references[index * 2 + half];
       const value = single[source];
       if (value < 0) {
-        let read2 = start2[source];
+        let read2 = start3[source];
         const readEnd = read2 + length[source];
         while (read2 < readEnd)
           pool[write++] = pool[read2++];
@@ -8278,7 +8549,7 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
     }
     const value = single[slot];
     if (value < 0) {
-      let read2 = start2[slot];
+      let read2 = start3[slot];
       const readEnd = read2 + length[slot];
       while (read2 < readEnd)
         out[outIndex++] = pool[read2++];
@@ -8293,6 +8564,7 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
 var htmlDecodeTree = /* @__PURE__ */ decodeTrieDict("!}.&u%}'&}*'~!6*)%&,~!J~!J~%L~y<~!R,~~%Lu~~#GD~~#|)1#%}^%}2%+#.##%##%}&%##%'#%##&%#%#'%#&#%#&#'#%%#&#%##%#)%''%&%#%#'%#%%#%%}%%%#%#&(23#%%#&-%0%('1#(##%#'##+%'*.:1}#%#6-+(%'%%#%%%}#L'2351&('%}&/N'(0(/*-%(%%}#'+&T%7.2}#&%&#%#36/5##%&%%#&#%%#))2%%##%&&'0~!#*+&'%1~!%).'3q?&%'1~!.##%6(~!+%%%(Gw'rT~!E#<nA%#jZ~!H%(~!42##~!*31&~!G%U~#)5~#`3~!J~!Z~%]~%Y~%C~!q~!u~#kz~%#~!6'~!D~!U~!?~#T~!c%~!G#'~%7|~!G~!J~!G&~#pb~(Df}#%}*&}#%##%##%##&#-}&'#'&%#.++}%mI,#,@&(}*%}*'%&##&#%##%}&0}#.},U},%}+%}&%}#%##&}B%(}(%}+%)})%##%#&}&%##%&}<%}>%#%&}*%}(%}9%}/%})%}*%}*%}?&}&%}3%}&*#%})%#%#)}#&#-#+*%E%%'%'#%}#*V##&##I}#&&##%&%#&&Qf%%))w/0+&%#(#.%-''''++++7}>%4'',##1,#%#&%##&#'##&#*#9)%&%}#*}%,#+P(%A&%#'&##wSD',9E00#y#@}(+}&%&>~!#~!X}#*}(&&}(&}(,%}%&#+&}#&}I%#%}%)#(},'%#*}4%%#%}(''}#/##(##),%-##%%)#&}(.}&%#&}%%}*&#%},&&}&%}#%*'#%})%}D&}&%}-&}6&#&}-,%}#%})-(~+`~,=?~I9'9%~!,#%})%})%}@%}?%}(~!?~#<~#pP~#BG~#=1#%K+~#?#~%;)~#A~#mF1~#A'~'X%'~#lR~#N~'N~#r~#m#-~#i'?%#'%~#B%##%,%#~#_%#0%~#]732~,w~2+#:&#%&'0%&>%}#>##F+)#%&&#(+_}4&}-%}(&}@&}O7Fdf0@+/v4}&WU##&/0#&'('B#%}.%}'+#%}#%%&#&%#%##+#&#)#6#'#.},%}c%},%#%##%&#&%#&~#>'*-.%##%##%}#%%}%'~#)D1}#%*&~#_%%'(~#S2%'.}#~#=##*'*-%}&'%'##&&~'E%.#&~#M4}%%##&'%#~#O1##%&#'+~#<B%##%%'%+~#;#@%}#&%#&&%#(~#H1}'%'##&&~#?A}&'~#D#%32}'&&&&~#[}'(#%}'~#;C})&}%%#%~#=&%,3}%'(#%%~#^'#&&)#%'~#Y%-~#d-%'~#^%%&#&&&}#~#b~2t*&'~&(~&@~0%~e~3}%*''0})&}+~!9##-}#%-hD*)1fC#%/&/fB#40~!+#)*4~!+~!K'&:~!/*7~!.#~!H~!L':~%x&~!H#~!*~%1~!I#~!+A~#p'~!F~~#-#~,,(~.Z~!V~%;'B'mq-W~!N~%I%#&&#&}#%},%%}'%}+X#%}#&}(%}'%}<%}#%}%%'}'%}:~![)9@~%>~#UA%-%##&~!C%~!-.9:~!1~!-^2/:a~!y,D*J#-5)/4~%23,~#G~!L1~!0X3`~!2+~!!0-~&E~!W~!o,>Y&]~%cZx_&~#O*9#A#'#+I'%#)~!0B*-5A+-((F&*M#)(-7-5+'-3a5Vi~!Y~!?+[)%3),ERHm~!+:D,VG.+)?fB%%*(%)'(#&80%1'8`K8?`+'Z#&O&'H5#*9)A%%5&3))0%39+.*7#()&&*=4@**L)<'_&*+..;(#*+)./&0#3)%')-8(4ixD(&.}%,('aI:,)%,k2231T)I'#/-W7,/'Q#.'Y24+h')37</31&83##&0#),H(?'&?/1##%#&&#%''-%&&&#(&''&#.-'%#%%(,')*'&#&#'##%(%(#%('#&##%%%%('%#%#%%#%#&%##h>w+v<ayvyvcg.uuhKr}g/v|g>u9i[~>g5uI~=RvdwEg;v/g;uk!!TTSx]@RT!U!#!@VBRUU!'UTe-d0c`e&gSdicedFcrdTaqb.kYcAohdYd@a3e+d}dMdtd.aJ#bqcK`dle/e.e'dwdPdodddjbEb}ogd^ofdpduc6j?l%d{drdqc)d7bacOdQ%T#Y)X.sR[yH>6Vyv3[xwLu>vo'!*.[yBacahoj>6Rew3[xqdZa#!a&#^(X-[yG>6Vyu3[xvg3sEr|g.u/Ri9db0T#^(Xa)!-[y;>6Vylg4wKs{JwNZt3@3r=c4Z([xlg;wKt!cpq's@v7A'*a(a+!-a#[y<3Dt?3Dt'>6Vym3[xmg9rxsNJwLZt4~?r?db1T#`-!(Xa,!0[yS>6Vz%NuQs.g4wKtnJwNZtS@3r>c4Z([y%g;wKtrdga8!a(!#&T*Y-Xa#!a0<or[yc3Dtq>6Vz43[y3JwNZtf@3s!Ju}!%Dti:pm3c_%X#tjB5pkd6q!r]u?voC'*-a.a2!0a&a+[yI3DtI3Ds~3DtH>6Vyw3[xx;:s#~<5pKJwNZtE@3r~d`a)!a2T#a.(!+U.X1[yT3Dt`3Dtv>6Vz&3[y&g9rxwzcxstPu.<rAJwLZtT~?r@dZa%!a.&^*Za(/Reu[ya>6Vz23[y1g3sEr}wkg{NuQRg{ci(U#5@b`~,cg#U(2WnH5wugcRh7dX#T(Y,a'Ta!!a,[yZ<]mj>6Vz,3[y+Pv#5ReZKu+=,%!H}7ABwkaS?Rh:BcW(X#<]mrj:ubv/ARekdg%!(!a.*Ta(Y.X1!#sP>Rl*Dt6[y>>6Vyo3Wf*jOvuumvuRgRJuq*!:9<B@bX~3jVv&v@s@5Re[d/rQt{uAvo&a&a*)a2!,0Wf!3Dt0=Bs'>6Re}3[xy~<5s%JwJZt1~Gs)c;&!#2sJkNuXvzq7rxu,Re8dka4!a8(aEZ+a@Y.X1Xa)[yd=Bs(3DtP>6Vz53[y4cX#X&Re:avRe9~<5s&JwJZtQ~Gs*i^rzvdRg+Jv{%!2sbB@bX}kdga,!Za?&^*T1/!a'Dt+[y6>6Vyf3Wf%g/u;s4hGu6?Rh-JvZ,!c%#&RoX54Rivj7uyvf8RgTKvZB%*!2sGh<vu5Rgq<=C::9bb~#dZ#T&Ta6Y.X*Dt>[y93Wf)coZ(T,6VyifluvRgC@95@B@bX~/hFu34cC#T,k/unq8w8Q5RkUklwQuzunq8w8Q5Rk8d/rJu?v8w9)-&!a0a;a&aIWejg3sEr/h1s<DtDJvyZqY5aws3Jvy!&Wei~Hr1:au5@Bag>23E~5c:Z&bX};kKv?w&unuVu5Rjc;>bs)#~@:Rh.=ay<a]C;b`}Vd6s/t{uAvoaxa()!a,a7%-a#a2Dt,[yF2Wo[>6Vyt3[xuNuPRi&NuPwpi#RoWh?vf8Ri%Jv]!%Ri:KvxD!.'2WeAjZu`q9rxu,Re7woeAg-unLq(qA_/*2Wg_g3u5q^9:4E}/jTrxrzv=Wkkd~0UX#^^Xa-a1a5T&a=U1a'*aEa]!a*aPaA-adok[y54Rn>;:p3~Dp5g9rpsFNvZqjg3uJp4~<5p0Pw;5qlJwNZt*@3p1Pw:5p/Ou!5p2JvG'!6Vye=<qnJvh_[xhg3v,Rh3kOwOw-sDuev/Re^dha[a%!%!a+#Ta7)-5TaCaO!aka!a)sf[yb2>Rl!9ARiq5E}Qg=ucRkBE|oJrJ_@Wk~@Wk{JrJ_@Wk|@WkyJrJ_@Wk}@WkzJvO_[y2g-vMRmiKuYC!)&>Ri;>Ri<@3RkNc](X#@9Rk=g5vuRmhKvDB!+'=]meg3u4Rmgd)#Y'Vz3CARmfd`a+!%T'!+#Ta1Ta6TaM-sTDt9[yA9sYd'%Y#s[[xpj:ueunaXRgEjRq,v-vuqdd2'`#6Rev<32@5>:2<E}5xIo9a*X#Y(;5RePJvD_g>vyRgNj8w)v8<wggs:RgXiZt|vjx,hSq3ah!-(~@:Ro/Ou!5RhWj^v(pyw8unRhUdx-UY#^Ua.a3a70!)%UX1TaDa)'omRiRRhE[y:3Dsz=Br,>6Vyj3[xkg6ruwjcqsrPw;5r*Ku]D'Zt-@3r(~?r.i[vwv]dU1a--U#`a4(g/vsRhPOu!5RhLj:rmu9Wo!~@:wdh@g/vsRiTjXuvvNr}:RhBj^v(pyw8unRn]dz1UYa'a+^Y(!aETZalaRY.Ta?a4[yDJw1!#qLsW>6Vyrfzq-pLflpwRe|Js>%!Dt@3Dt&Jvy_[xs~HrnjMuwpsw'RecKu+D#'!t<~Grl~?rjg5u-x,gwp{ah!-(~@:Rg~Ou!5Rh'jXuvvNr}:Rh#cW#X/c;&!#2sLi[v7u7RgpJv)(!iLrxu,Re6j7v@s@5Se[e7d`aW!Za(a`T.a#!a3!&aDa-!9)Dt_=6s+3[x~~DR|h~DS6avhGun5RkZj3w)v-]mkKunB!&*]kb97R|i<ARk<c:Z(6Vy}Juh'!wziMRoS:F|vkLuauJv5vtvQRh1d='T+Y#VyO~DR|jcF#T'7R|g97R|kJv3'!ay<Rj,Jvh&!:ReXcsa6*a+#a#_aIRf9aLRf?c,Z&Rf5Rf7c.Z&Rf;Rf>cQ#%T'p-Rf8Rf=ct#%'(*!,p,Rf4p+Rf6Rf:Rf<d~'Ua%U*^UYa(!a,-!#a4YaTalaEX0a8a<Weo3Dt/3Dsx=Br93Wen~Dr;~<5p<JwNZt2@3p=Pw:5p;Ou!5r3c7&!#:p>3Ds}KvGB)_6Vyk2sM=<r7x'eovA(!hFu1ARf}cV#X&@r5j6rvwQa^Rf3c=Za'wkghJv__g;unRggA53B9=b^}%j6uduo5Jq;!(hIv%2Re`Ou4ARe_e%a#^^^Xa&!a*a2!&a6YaP!*ad!#a:aE/5Rn?[y@>6Vyp;:pE~DrY~<5pBJwNZt8@3pCh=rt3rWPw:5pAJup_[xoNuPpF9c!#'45pD5ARn)d8#X'X*3@rU72s]h>v<<sSjJpqvewOJq/(!hNw'5ReBk0s2u3w/w'5ReE5@Jq.!a+JQ!&WeU23d(#Y&RjG5]jBk!u7w&u0udARjEe#+^^^Ub#!a2/a`Z(agT1!a-a;|@TaG!aS[yV=Re~fow'RguNuPRe?bz#'>RoUWeL>:Cbb|?JwPZtVg6ruRmzJvD'!6Vz(g/vmRh~Jvy_[y(g9voRgyx*cy(#2>Ri2B9b]~9kIw9u7rluJu3Rg]dI#a%UY'@=p%CAx.gQZ&RhwwygtRm{x5g_Z'+ABqR9Woa=Bp&dV#^*Xa'!&@o{g4v]Rk;Jv{!%Rk[wkkiA5RkiwwfUB=x,fUuqC&*!>RfTg8v0RfV~ARfSd;rJsAuAv9wR'ae+/aO!a@aza/a#[yQ@Wg!2Wemg3sEr0JvB_g>uvReWg2v+Re=KupB_+[y!2AbY~-~Hr2AJwD!(h<~El>h<~El?Kun@+_:9b`}Kg-v/Ri3g;vtwyk_9]k_d=&T#*U.6qh@Ab`|K9:H|CJv[!&3Dtex'fDwC%!Rf[9WlMd[(^X,!a%Z06Vz!@WgBg=v~Rgvg,QRe@awd,#Y+jTv|Q~EfWj]uNr|~FRfXdy#Y&^Ua%!aO.!(a)Ua;=!a@aKap!a-,a!Ta]a[rSa]p?[y82sK=Bq~;:p:~<5p8Pw:5p7d'#Y'Wf(;RnRi[u4w&RgJJvG'!6Vyh=<r#ijuuv/sIKuYD'ZtG@3p9~Gr&d2#`(g<vtRgFj`u5w&rqpxRf2CJuY!+:wfnTOu!5Rg}jNs1ucv&RfwJvA!&3@q|BDcC#T,k/unq8w8Q5RkTklwQuzunq8w8Q5Rk9dga#!a'!a=#a0!:+Tb*b@aO.a4!aba8aFJv^}?!VyR~Dr<g;u%Rn.~<5p[x'e`wNZtR@3p]Pw:5pZhNvjBp.woe_g5u-r4JwF!%DtO3:ooc7&!#:p^3DtpLuGw(!+%)Dtk6Vz#2sd=<r8d'#Y([y#<x3gJt`w@!)%}MRiowzikRij=]ilxAf3,U(#B2Rf#g0v-Rm[ck{`U#]giKv3>)!&6Ri154s,KuGB_%@r68r:dJ|t`#X(9<E|u2@H|rx3gJu?w'!+'1Nu7Reg4=H~+9<wxgY95Rm]xLggZ-`(X}U2:Ri4h<uOawRmsJv__5@bb{jbV~3dka#a'a]!,#a+U=a>b6a3b%!/aKa/)!arwve^VyJ;:pR~DpTg3uJpS~<5pOPw;5qmPw:5pNOu!5pQJvG'!6Vyx=<qoJvA!{~Jup!%@qk7Rn/KvyD!}''[xz;>wkh'?Rh,x8gyt`w5D!&),(SgyccRgztJ@3pPB5p#d'(Y#<]mmifubw&RgoJvE&!82s^JvF&!8Rf,ADb]~;x=h'rNu]vK!,%'*0RnORh)4Rh*AqQg-vaRnNg;wHwkh'ba~4cE#Ta*x3gctyw@'!+%RnFRnD<4Rn@hFvK5RnCxWg[#`&a0Ua()`1Rm75Rg[c]%X#qi8Rg^NvdRj>BwzgZauwji7Rm6A4wgg]d1#&(*,.0a#Rm;Rm<Rm=Rm>Rm?Rm@RmARmBe%#^^^Xaea?aC/b+(,!a+a#!a/!>a&Ta<aKbD!2wphBRnk[yPw}hE|.=Br-3Dtm>6Vy~g6urRf.x,hPrNav!%'RnqRo%Ro#Nu;q[Pw;5r+JwNZtM@3r)d'#Y'Weh;xChL#`&RnmRnoKu}>%(!Rne~Bs-;2wjcussJv+'!aYSO}6@B<5?ba~8LrNvj!.%*ROwungw~ng~:9;Ri^>wtnig;wHRnixDh@|(UZ.x1h@|)!#:2<H|*xHn]#-UX'3Ro)z=iT}6ARns=Bwsn_wpnaRncw]aR(#UXa&Ua*a/=]iPd'#Y&Ro'WnXf{QRm2hNvj]nZd`'T~&1`{|`#9b]{}c:'!#Wl{>@=be}]?cl{{U#:5Abb}Jds#^YaF!a*b4a#a3aPa>&Tb!bH!*a_!Eau?/a&RjY<]gj>6Vz*;:pe~DrZg,QRj1JwNZtX@wihspcJvZ&!VyX9WmOJu|!|N2WmHJvh&!]ht~Bpbcn&T(!#RmQ<s7Nu;padH#X'`+WmJ@>RmKCARhnKup=!)&Wf+:RhqNuPpf9c!#'45pd5AwghpARn(Ls@w!%,)!RmP@Wfe<E|IJva!&WmNg8vsRmLd`*.`#Y'Xa!axRn*]hrA8Rhug5s@rXg8u!RmMd8#X'X*3@rV72smdI*#UY&RmICARho~GsgxVgd)Ta'U-Y&Xa!T#RnEWnA@Wffg1uDRi0hFvK5RnBxGnG&#`%owp)@wsf+bX}Ze-*1!a*^^^Ua|!#a.aq&Ya2!a>.a6!a:aO`aJDtL[y`@Wg#>6Vz12@wzoYRoZNuPRi!NuPRhzg=ucRi,@=b`{Yg=ucRi-ACJvB!&Sh[ebSh]ebi`wUuFRm4Jw2_[y0JvB!.<Ju(!&SoG}6Shd}6<Ju(!&SoH}6She}6Kur@._g5vHRieJvx!{L2G{Kx6gd'T#?Rh82Wi5cZ#X(g1w)Rm5dW-Y(Ta#!a)!#aYa=wnfE=su2>>bU{0j9udv:<svj8uQv-7RgHdE%#^'sq9sp=>Bb_{TJv`!&g/r|snj6v(us5d,#Y(56H}[978H}]Jw5!&g1rushJvB!+j;v{u5?zDhd}6}bj;v{u5?zDhe}6}ce*#`(^^^a[aea!=!a6a*aoXb1a.!aAbL!b>,b'aL!aV@Wf|2Wlg3[y/JwNZt^@3piPw:5pgJunZou3@rsJva&!Vy_g<v~Rm#JvG'!6Vz0=<r{Ju{%!:pj@WfsiXuJu3Rm:JvZ&!WfA~Bph@c4Z&Dtwax5rubx(#:awRk1@d,#Y&RfjRfid1#,Y(@Wfp2Wlrg5s@ryKu[@!,'=]ig9wlk?Rk>g5u-rqJvy'!@9RkQcH(T#=>Ri~@<wkj(Wj(KuZB*!&<7rw@9RkRcH(T#=>Ri}@<wkj)Wj)dg(Ta2Xa9X#`-!a*CARhg@@=I}d9x;c~#X%so=<sj>2@@=aybb}XjWv0Q~EfEj3vLv;<d,#Y(56H}`978H}_dgaPaFa'a/!#a3Y0a_a;a|!1(a7-[yE3[xt;:pJNvZrrg3uJrvJwNZt=@3pIh=rt3rxPw:5pGOu!5rpJvG'!6Vys=<rz@c4Z&Dt(ax5rtJvZ!&~BpH@wsfNg-vaRlNci*U#=<wei<F}a5@Jq.!a*JQ!%@qZ23d(#Y&RjH5]jCk!u7w&u0udARjFd/prq=tyvpaEa(a:.!a1aZ(@@=I}:9wpd%=<sX55w_h}@@=I{t=ay<aU@@=I}T=ay<2@@=I})?C9:9au@9Cb]}DP~=x-fAZ(2Wl1=ay<aU@@=I}>5@d##Y+jTv|vV~EfFj]uNpn~FRfGdgaK!Z2&!a8a-Tb({E!acTbM*!a(DtY[yYd'%Y#sl[y*hHvh>Re5x2c{Z}.j4uCvcawRiMd+#X+_x&d!},<5RkX;2Hzw@x,gavfB-!{CcF&T#Roe;RodwWbBg5urRgaKvHC*_6Vz+<4opieuew&Rmq@d]&Y)X,T#X0Rh}<BqP=4qS9:ReMg/ujReNJw0!/<Jui%!bd{kawwnemRelAxUa?a3#*.&UX(Ya+a/RhvRnQ<o}9Wmtd-#Y&RgSRmw9;Rmxay=Rmyg-vaRmuxEhSrNu,v-voC!%(aR.a(a7+1Ro1>Ro5CE{A9b]{@;5x#eO{:g;urRi+KrNA!%(Ro3>Ro79;Ri_Ku@>{;&!x%gX|{KunA_+g5QRj/g3u5Rj#g>uERj%wio/xRhS&!,!#^1U}wba{8>>@=be}qC@:D5ba{7Ku+A&!}x?ba}t>>@=be}se(aA^^^Uat!b0#{pa+awUazbGa#aLb9bgaWac'a5TbS=Br!d1#`%scp_Jvl!#rT>Re0JvX&!VyN=H{Fcm#U&:pY=ReaJv2&!]h0=]nUJvG'!6Vy|=<r%JrM_=]h2@Wlud'#)U'Wf'b]{i=]h/Jvh!&~BpWg=v]RnMx+ny#'Nu;pVwjnu=]nwxJnx,T#`&Reqwjnt=]nvieu9vrRjLLuYwP(#+!th@wih5pX~Gr'g5v/Rh4KunA'!-CARnP@wwiN:Rm_9x'cvw>!|l=<saKvAA!0&3@q}>w^e1bp#&Re2Re3BDx7gH#T|f5H|eKuZ>!%(:qNAH{]Jv6!+3B2B9=b^{X<5<B92:E{ZLvhwA(a;a%!igQuyRmad+#Y}m@3Rh5d8#X'X*:AqUAHzmaxwbh<aXRnVcF}RT#Nw&cj#U(BWnug/vsRntdka)(a3+.Zb7aYYan1!bVa@Xa}[y^@b[{G=H{+hFu73Rj&Pv#5ReQcK%T#sig1v{Rj'Ku+D#'!t]~Grm~?rkKuMB!01d5#`'Vy.ta3Dtu~Hroc8#'{^45s85AwZbP&!#Rn!wghxWn#KvEA!)&2RlA2RlBx:h|#(T,=]j09Wobz>x]z/@awRoTd+#Y(az]hFhCrm4d,#Y+jTv|Q~EfMj]uNr|~FRfOdCa!Xa9_X#@<plJvf!%b`{(9;Rgwc;.!#2x7cw#T|UDb]|T5Ju={(!=@E{&Jv)&!Ab`{'awJvf!~*>>@=be{#KuY>!+&4Ezyi[ugv&RjIdea+T)#UXa&T-T&a!Rh9auRmW=]kLg5vuRn+g3u4Rn-Ow6ARn,hHus5xNk?#UX(U~)/g8v0RkD~AwkkF?Ri.OuNBwkkA?Ri/d|a2`a*^UYa.!aBTZaTa'Xa;!(!2!-a#b2[yC>6Vyq3[xr2Wi?g1rusVh%s?DtF~<5rbJs;%!DtBfswKtCj[uvuSsEu3RgVx3o:u+wN'*Zt;@3rd~Grh~?rfg8w)Lq)qE&-a%!>bI|`jWv0vV~EfCjTv|vV~Ef@j]uNpn~FRfBcK#T']gWNu7x,k7q4ai(0!hHv8<RhmkMu9vrsBuev/RhlCJvB!,g<v{wchh~@:Rhji[vrv{wchi~@:RhkdS&a5UY#Ta!RgPwwiI5BwciI~@:Rh`x'iJvj'!5]iJPu8Bwch]~@:Rhach)U#h3rp]gLh@t|Ax,hTq3ah!-(~@:Ro0Ou!5RhXj^v(pyw8unRhVd|)`,^UYas!a?/a2Z'a^Ta{Tb7Ta(a#!a,Wf&9sZ3DtAadamov=Bqt3[xig8vsRm~>waiL2b`{QJv*_Ouv2qgj<v]v2BqfdR'X*X#Y-@3qr~Gqv~?p6hHv-]glPup5Lq+q?_%*b_{qF{n9b^{rOu4ARhpKvCD!+&~Bqp:5Dbb}nwoiKl&unuTuBv]v+ueunaXRf0=Jvh!0nKufu8v1w&w7q%w&uHrz:Rgnj5w,uxDJq/(!hNw'5ReCk0s2u3w/w'5ReFd>Za&!*UaA=<wkgsRnSJv^!%Refifw3vyRgOKu_B'!,<]gkiiu:w&Rh<=C@a^<B57@2F{[<B5@aW:=3away9A5aW=<B=C@a^<B57@2F{Ie-#`(^^^bCara.b8aza6!/bZ,!adTbnTbOb+aFaS!aAT9@Wf~2Wli3Dtl2@d,#Y&RfnRfmJwJZtN~GqyJva&!VyMg<v~Rm%iXuJu3Rm9Jv[_=]ih9wlkDRkCd1#`(@Wg>2Wls3cH#T(@<Rj*=>Ri|b~'#23s9h<~El.d'#Y&Dtxi^rzvdRl#d*#U%(o|B2s`hJwSaxRmDKv4B&!1:Rmdd5#`'Vx}to~Hq{x'f1v3(!BA5ba|bJv_&!Wfug1v]ReIdO+U/Y#&G}-8wze=Rh{g1v]ReHg/uQRf/by#)ibQwERl/cH#T(@<Rj+=>Ri{cNu+vlax-!(#a0qa9<Rii2;;bU{H;x<i=&X#Rk`<4wwi=C9H~8xAI(Y#<azRi@45wXI<B9;5bb~7dL(X#Xa(+!aL6Vy{g5QqOau:5au2@ay547EzbxOcU(UX-T#Ta#:Cbb|A?wjh/b_|SOw6ARgtihr}u7Rhy<d1#T)X1@@=I|~=ay<2@@=aybb}Sj3vLv;<d,#Y(56H}A978H}@dGpvs@uAu`vcw9*!aFa+ai%(b!aXa8.a?a[ozWey=sU2@G}Nch&U#Rf_WexKu+D#'!t:~Gr`~?r^j]uNr|~FRg*j^psurwJt|RmcKv)@&!)7Rkv~Br[@wxfO:Rl3co#U'6Rezj_q#vIuavjRltwzeyh@vr5JqD0!>aY?C9:9au@9Cb]}9cl#U*5;5<H||jbuus1ucv&Rfvg1v~d/pppzqFr^a--a~!aMat1(hFv;Wiz@@=Izoj5uuv-7Rix~Cw`fk2WlVcZ#X,k)u3vWs@u2]ktg;wEx'fBq(_2Wg/jTv|vV~EfoJv]!15x'hzqG!(P~EfU~CRl_j6v(us5x4i-#T(2WmZ?C2F|d>Kq<aj1!*jTqIsBv=Wl`~Cw`fi2WlWj`v0u*~>RlR=c>Z,k#u3vWs@u2]kr<c1Z+jTqIsBv=Wla~Cw`fm2WlXdmb3!a{(arZa`bkTa%TbQTa-a9+c'!aM!/[yL=Bqug.w'RifhFvyDRj.g>vgwyk^9]k^Jv3_@WfbAARkhJw2_[x|JvB_wkoIRoKwkoJRoLd'(Y#<]gm=<9<H|yd'%_X#skDtb3awwqkgNulRkgdB#^',9:p'hJwSaxRmEBwVb8@4=H|qLu+w50&!)@3qs~?pU>Awwn;;Rn=c:Z'ARn<=<qwKvC@!/&~BqqJv6!&]eVb^z^xRge'/a%+^`#Sge}6<4Rn3=]n0Pw2>Rn8Jw0!&>Rn:>Rn6cY#a7+!a&=<wkaNw~h3z_c5Z{=wjh#=]nLKv^D!&)Vyz=bW|swYb<WetcG#T(2wxa@qVx@gD#Y&b^|V5JwG&!5bb|pg/w&RgD@x=kHs=uAvn!a%%/'+RmSRh694Ro`g-vaRmRhHv-]mlxCcS#`&ba~.5cD#Ta)P~=d,#Y(56H{>978H{Dd_#{2^Y%_+qbbb{6g3sERhsbU{?dfa.,`a(Xa<!aiX#(55RiG54RiHcI#T'WiU3RiVNvdwtfcRlKNvdd,#Y&RlHRlExQgf.1*^T'X#Sgf}6Wn4=]hfPrk>Rn7Jw0!&>Rn5>Rn9Lunw?&a2!,5<oq@@wqfdRlJj5Q~=d,#Y(~ARfcOuN]fdDKw;ay(}i!547E}j?cI#T(@5bV}iCbV}hdv(^^Tb?a40,b##Tbo!a*bR!a<b|a/!aKai!aU[yK=]o^g:v>ReGJwPZtK<7Rh+h<~El,Pv#5ReR@awwxjCg,ulRjDJv6&!]j!z?aQeeg>w=Sh<eeJw;!&axEzOg,Qosc!#*:wkeJ]eJ>x'h-u(!%Ro.w~h.zPdNZ(X,Ya![x{;9ReY;wkgxRiF:x?ap#Y&RmUg<s2Rkod]+UY0TZ'!a&A9sw<=bczLNvuw{gqzNhJwSaxRmCKuLay!#&s_Rf-55b^{uJvZa!!c%#(55Ri654wmiu5RiuawLu,vp!+}^%b_}Y9;wkgxba}o>A9:=b^}zKuh=a''!3awRk3c*'!#aHRk6c+Z&Rk5Rk4Jv)&!awRjSawd9*`#0?C2@EzMj8u<uJ5RmbjQrquJu3x,k>uq@_+=ayb^|W~ARkEOuN]k@7dhzV^X/X&a-#zRzSb`zXcJzTT#2WkVKvDBzW!%FzY9;5bbzWjQrquJu3Jw3%!b`zU=ayb^zQd:#X(T-a!6Vyywxh}=b]{Jg=u1RiAdGp~qHtzv!w(wA+a+a;<!aJaYai'anasb(=azRmV:Cbb{MLq2vb!%')RjuRjrRjtRjqx3jnqCw3!%')Rk(Rk+Rk&Rk)Lq2vb!%')Rj{RjxRjzRjwLq2vb!%')RjsRjpRjfRjex3jcqCw3!%')Rk'Rk*RjkRjl9<CbbzfOu4ARhxLq2vb!%')RjyRjvRjhRjgx=joq*uKvb!%')+-Rk.Rk%Rj~Rk-Rk#Rj}x=jdq*uKvb!%')+-Rk,Rk!Rj|RjmRjjRjidAq&qKs@uAv8Aa.'*-a@a&0!aM@a5[y73Dsy3Ds|3Dt):wxgI2sHJwJZt.~Gqxwsf0ikrzt}Rl0Jvy_[xj~HqzKv_A|D!&WfP8axRoVcf,U#k(v]v+ueunaXRf1Ju}'!g8u#Ri=jQw!sCunLprq>!,')~<5qeGzq9F{W=c##%s5au:5aU3CBE|;d4#X(D!a&6Vygx(b;#(=]ed?C2F{N<capoq2r[a&!aPa9,'Pw;5s:@@=I|,55w_h|@@=IzcP~=x'fCqB_2Wl2>aU@@=I|1OuNBc1Z+jTqIsBv=Wlc~Cw`fl2WlZ~AcTa%!Z+jTqIsBv=Wlb~Cw`fh2WlYk+uNqJsBv=WlSg,u3dca3#UXaMYa)TaB-=cM|7T#<bI}l5@B932:aV2G{BOuNBJq:|M!5Ezt=<B=C@a^<B57@2F{v>cB{/T#=ay<bI{3Jv6!a.6BKq0ah&+!5E}HP~Ef{978BaU@@=Iza<7d#.Y#978BaU@@=IzH~AJq0!(@@=IzG978BaU@@=IzFe,aU*Y&^^^bvJb,b:bFad!a,c2Ta>aL.bo6!a#CbTa'T#Re{2Wlh2@G{yg6t~Ro_NvdRfticuRQRllJv3&!x&c|zs@Jw3!%RflwpfkRlpKuL;%(!Re<@G|C2GzdhIvuBwgjAg-u0RjAKQB%!(GzZ@G|5NuuRl7d='T+Y#Vy[g<v~Rm!==G|>JvA!)@wma=]m1ifuaw&RmnLs@vT'!|/+[y,g:v>ReTJw1!#qX=x!eC{bLu+wT&)ZtZauq_~Graci&U#F|89:r_Lupvq!.)&2RlG8RfaC=x!eF{_h?rpWlmd&'!#X|&]k::xJey#`'T|+<E|&2@H|%dE#(^,g;u.RiEg6vjRiC9xCkA{O|zY#g=ucRmXKs0@!&*@G|m@awRknJuh!,3d(}gY}eJvj!%Rm):Jw3!%Rm+Rm-Ls0w(&!a(a#@b[|6cZ#X'7RkxWgAOu4ARn'dH'U#Y*Vz-Wm'CARm}d]*#a%^a*T'aK!a<9bV{PC=p*Jw4!&SgxcbB5r]idw(wBRmF7xFkt#&`(Rm/Rm8E|!JuY_9:Rl5=wrgr2:bbxd@xXfB(a*#T+!.X0X1Ta/a'T&RlDRfL>RlyARl9b[z[>RfZ:RlL:RfRwlg/ARl;9;RlxKv,A/!%7s69<74=BA5ba{-8Bde#`a<XaKYa1,a'P~=wxfB2bZ}}?C972@@=I}r8@55B9;5bb}G978B2@@=aybb}3j3vLv;<Jw3&!>Rfk=ayb^}4~Ad1#`*@@=aybb{w2@>==<bbz]dx+UY#^UaF!a9!bB'Ya1.!ajXa#%olRhD[y=3Dt#Ov5BrHKuMB%!(Rf^Wep~HrJwkiQjKr|~FRg)Ku+D#'!t5~GrF~?rDdV)UY,Z/_7RkuG{<~BrBg,rlsO:235B@bX}|d?a1!#`(6Vyn5@d##Y+jTv|vV~EfIj]uNpn~FRfH7Lq2vb1!a9-978BaU@@=Iz9978BbU}#~AJq0!(@@=Iz8978BaU@@=Iz7~AJQ|}!978BbU}!JvkaK!AdUa21-U#`a+(g/vsRn~Ou!5RPj:rmu9WhOjXuvvNr}:RhAj^v(pyw8unRn[kPr}p|u7vwv]RiSBd;pppzq@qHQa?(b.!a.a`@.|xa(hFv;Wiyj5uuv-7Riw~Cw`fg2WlU978BbU|wOuNBJqG!(P~EfD~CRlQcZ#X,k)u3vWs@u2]ksg;wEx'f@q1_2Wg.j]uNpn~FRfqJv]!15x'h{qG!(@@=IzK~CRl^j6v(us5x4i,#T(2WmY?C2F{1>Kq<aj1!*jTqIsBv=Wld~Cw`fj2Wl[j`v0u*~>RlT=c>Z,k#u3vWs@u2]kq<c1Z+jTqIsBv=Wle~Cw`fn2Wl]dn1#c(a(b^a2!b/bAT(bj!aDa7bu,a_a{c0!2T0g:v>ReD2@G{42@G{5~DpM~<5rc=Bx6i>{RT#RnI@zCx]y]z:2Jv[!zr5Awyk]9]k]dD(Y+X#6Vz.g=wKtgwhaCwgmTWj2Lu,w%_+/[y-B;b^xeg3u3Rj-2@bX{*KrJ<!+'@Wg(g?QRlC@Jv`!%b[zIwsfII}8JQ_@w|kW|=Jv(%!AqcOuNBJvEzh!bYzjLs@wP#(0!oy@>RkdJwMZtc3Dtd@BcG#T'9bWxg2@2Fznd*#Y+;2x'c}w<zizixNgwa#Z'U+!/!a'!a+w~g~z6wcn{Rn}wcnzRn|5Rh%=]nJg5vuRmvNvdRlvcprJu}w*az*a#!%.a.'Bot9qT]kj@Wg'ay2Gzv@Jv`!%b[zEwsfHI}1;ck#Ux`<Cbbx_Lu+w!a&0*!wko*wwo,So,}6Juqxf!E}PigQuyRm`d3(`#8>Rn%:A5B;bZ~%KvhCa!a2!x>k7#Uxb@b{#xaRk7Jw0!)>wwhlShl}6>wwhmShm}6CJvB!.x'hhvj{!!5Bwkhhbaz}x'hivjz~!5Bwkhibaz|xEhTrNu,v-vpD!a%&/)a3a.,%Ro2t[CE{)@3re9b]{%wjo09:rgc:Z&Ro6=<riifuaw&RmoKrNA!%(Ro4>Ro89;Ri`dSaL'UYzxZb)7Rka3xRhT&!,!#^1U}vbaz{>>@=be}yC@:D5bazzKu+A&!}{?ba}y>>@=be}wxBh[t`u~vJvr!%a!a()a,a0a4RoC=]o;Ju(!%RoGRhdwjh`=]oAg>w#Ro?g5vuRo=NvdRl|Ku]C.!&;RoEJvB!%RoORoMBx'h[v+_?w~h`}~5?w~hd~!xKh]oiptu-utv.vp!#%&a30a@a'a+(a/aOp(o~p!RoDJu(!%RoHRhewjha=]oBNvdRl}g>w#Ro@g5vuRo>c[#X']o<CauRoRAd-#Y':RkpauRoQKu]C.!&;RoFJvB!%RoNRoPBx'h]v+_?w~ha}t5?w~he}ue!/UbhYacXaW^Tc&a;b:a-c/#b&aja1(!cL+!bKbt!bmcRc9aIc?8[yW3Dtt94Rg`Jv}!&SiRMzBhEebShEMNuPRe>x7gL#TzuwjirRipc<Z&>on;>z=h-MSh.Mwqczx'a7vj&!>Re4@=ResJt__NuPRi*NuPRi)j]uNr|~FRfzKrJ>_+@Wfy@Wf]2WocKrJ<!+'@Wg%g/QRl@@Jv`!&awRl<wsfFIzgLu(w*!.*&ShBMwvhIRhI9;RhNx1hK'!#Sn]Mx1hK~0!#:2<H~7cNu+w7D*'1ZtW>Rn1~?rOc:Z&Rn2=<rQ<7wjh&=BSnLMc]#X(6Vz)w[b=a!U#9wzgMc3#&(RgMRitRis<x,gKt`ax!&+SioM=BSilMc3#&(RgKRinRimKurB,!&SiQMzBhDebShDM6BJQ!(P~Efx978B2@@=I}WLrJw!!,a*&@G}O@9wkibRid@@x'fKwC!&SlDMSfLMjUv~Q~EfKKv3@a+!(hFv-]mpx/hYZ(C5RiWz<o/MwkhY?So/M@x,gbvfB*&!SgEM:SoeeehFu3:Rgbda(,^TZa)X/7Sg[eb:2RgI~BrMC@wgkc:wwkcRerx3h(uUvK!&*,SnOM4Sh*MArRg;wHRh(x=h;rJvPwI!a4',a'0@Wg&=BSh/Mg>w=Rh=g3w*wwgGRgGcW(X#;Sg}M2Gzk@Jv`!&awRl=wsfGIz`dKZ*T'Y-:RhR7RhQg5u-p`j6v(us5d,#Y+~Awkia?RicOuNBwkibba}Ld6p~tyu_vbAa'a+!a/'a3aEa8a!>Sh,ebJv{!&Sh@ebSaReb9;SgwebNuPRi(NvdRl)NuPRi'hHu^<Rm^Jvv_@Wl(g;u1Si/ebKu'B&!*Sh?eb@Wl'z@aPeb95Si.ebcpputyvjB)!,&a+0a%ShAMWeK@G}C@WfJ9;RhMwvhH9w{ia}ix,hJvRA1(!zAn[MRhHx1hJ~*!#hFv(BSn[MBJQ!(@@=I~'978B2@@=I}2db.Ua<'X}+T#a0XaG2G}E;wkg|wuh!Rh!x,hZu,@)!&So0MVy)C5RiXACJvB!&5RiY5RiZg8w)cG}*T#2@bU}=KsA>(!a.3wkhZba~(x,h^u(A!&(SoCMRhb5Bz=h[eb?w~hb~6x,h_u(A!&(SoDMRhc5Bz=h]eb?w~hc~6e)aA1T#T,^^^c-bMb&blcPaP(a/!0!bA=b5c@a(!bfbrc#2afwmhARnjwchORnp2Wlf3DtsNvdRl-2@wpa<]m0bx(#:awRk2@Jw3!%RfhwpfgRlnKQB%!(G{V@G|'NuuRl6d='T+Y#VyUg<v~Rl~==G|<Jv+'!aYShC}6@B<5?ba~8@Jw3'!g2QRljhLrpWlOd+#Y'g.w'rIg>w*wgj@g-u0Rj@Lu+wT&)ZtUauq]~GrGci&U#F|39:rELrNvj!.%*RhCwunfw~nf~:9;Ri]>wtnhg;wHRnhx3hDs@v~!/+'@Wfr@9RkSNu&Rlo=@<5GzoKs0@_+@Wl+@awRkmJuh!-3d(}pY#qWJvj!%Rm(:Jw3!%Rm,Rm*de&!1U-U#`)Re;@G|.@9Ri82@wjfvRlq=@<5GzpLvOvr!).&2RlF8Rf`C=x!eE{.Jw3_g2QRlkhLrpWlPde(!#U{s,UXa*Ta'[y'g:v>ReS;x0PZ&RnlRnn~HrKJw1}f!=x!eB|2w]aP(#Xa&a*Ta.Ua2a7=]iOd'#Y&Ro&WnWg;u.RiDg6vjRiBNvdRlzhNvj]nYJuW_2Wm3x)kFze{9d])!a.!,Y01!#&aC!a3RndC=ox~BrC@2b^{pg,rlse7x'ksuq!%Rm.E{xidw(wBRmGx9o+)X#wwo-So-}69:Rl4@xSf@a#XZ'X)X,Ta(/ARl8b[xc>RfY:RlI:RfQwlg.ARl:9;Rlwdn'#^XafaQa1X1TaHTa)@b[{zcZ#X'7RkwWg@Ou4ARn&x)kG#{,g7u/RkGdH'U#Y*Vz'Wm&CARm|bx#(A]gUbUzJj9Q~=d,#Y(56H}l978H{U7d,0#U*2>ABb_xZ978BbU{e~AJQ{g!978BbU{hxMh?ad{oUYZ.x1h?{l!#:2<H{mx3n[t{vl!,&a%3Ro(z=iS}6ARnr=Bwsn^wvn`Rnbd`*T}B0!#^X'BG{c9b]{a>>@=be}F?JvS!&BG{d7BG}(Bde#`a1X,Ya@!a'P~=wxf@2bZ}I56B2@@=aybb}08@55B9;5bb}<j3vLv;<Jw3&!>Rfg=ayb^}&OuNBKuLA!)a!P~=x#fD{f2@>==<bbzl?C972@@=Ix^d6rSu,v7w*C(0a)a6#B+a%!sQ[y?3Dt%3[xn~<5rLOu!5p@Ku+D#'!t7~GrP~?rNKvlaya7'!h+v-5qMg=t|cd,U#5AAaa5Abb{S@52B5@a[@52B5Gx[iXueu;d<#`a(!/549C;ag>23ExY5@Dah89b^~689Jv)!~2b[~1Lv'w(%*!a#bX|aPrmawRe]keu7uhv-q6rxu,q`xTo]/a5aU!bNaDXbi!b-!ao!b<bwA!#5@B932:aV2G|:d-)Y#hJrL>RhG<7@C5<H|_=Cau:5aj5@B932:bJ|ng>vIbs)#?C2F|9jPv0w.vISh-MKvUaz(.!9ABbb|[5;5<H|Eg>unwfh;9:4E|YjQsBt|vjx'hYq3!(?C2F|J:2<BaY?C2F|GOu!5x,g|p{ah!-(?C2F|c9:4E|OjXuvvNr}:Rh&i[w*t|cd+U#jJvsu)vsSn~Mkfrmu9p}u7vwv]So!McW#Xa!ax5@A5aY:5;5<H|>kJv~vYrquJu3x4ib#T)2@SmZM?C2F|Bj:rmu9@xPhI(a*a#U#`a3-5Abb|L~@:RhK9:4E|0@52B5G|#C::aY?C2F|-:2<BaY?C2F|.5Jvk!a)javYrquJu3x4ia#T)2@SmYM?C2F|HAxPhH(!a#U#`a*-5Abb|4~@:RhJ9:4E|R@52B5G|F:2<BaY?C2F|Sc^#Xa2j=Qq5CJvB!-g<v{z;hhM?C2F|Zi[vrv{z;hiM?C2F|XKsA>!a)-g<v{z;h[eb?C2F|]i[vrv{z;h]eb?C2F|^iZu.vix,hZq3ah!.(?C2F|QOu!5ShXM:2<BaY?C2F|P", 13494, 2713, 49, 25, 61);
 
 // node_modules/entities/dist/internal/bin-trie-flags.js
+init_define_GRAMMARS();
 var BinTrieFlags;
 (function(BinTrieFlags2) {
   BinTrieFlags2[BinTrieFlags2["VALUE_LENGTH"] = 49152] = "VALUE_LENGTH";
@@ -8592,6 +8864,7 @@ var EncodingMode;
 })(EncodingMode || (EncodingMode = {}));
 
 // node_modules/linkify-it/build/index.mjs
+init_define_GRAMMARS();
 var REBuilder = class {
   src_Any = Any.source;
   src_Cc = Cc.source;
@@ -9297,21 +9570,21 @@ function isAsciiTrimmable(c) {
   return c === 32 || c === 9 || c === 10 || c === 13;
 }
 function asciiTrim(str) {
-  let start2 = 0;
-  for (; start2 < str.length; start2++) if (!isAsciiTrimmable(str.charCodeAt(start2))) break;
+  let start3 = 0;
+  for (; start3 < str.length; start3++) if (!isAsciiTrimmable(str.charCodeAt(start3))) break;
   let end = str.length - 1;
-  for (; end >= start2; end--) if (!isAsciiTrimmable(str.charCodeAt(end))) break;
-  return str.slice(start2, end + 1);
+  for (; end >= start3; end--) if (!isAsciiTrimmable(str.charCodeAt(end))) break;
+  return str.slice(start3, end + 1);
 }
 var lib = {
   mdurl: mdurl_exports,
   ucmicro: build_exports
 };
-function parseLinkLabel(state, start2, disableNested) {
+function parseLinkLabel(state, start3, disableNested) {
   let level, found, marker, prevPos;
   const max = state.posMax;
   const oldPos = state.pos;
-  state.pos = start2 + 1;
+  state.pos = start3 + 1;
   level = 1;
   while (state.pos < max) {
     marker = state.src.charCodeAt(state.pos);
@@ -9337,9 +9610,9 @@ function parseLinkLabel(state, start2, disableNested) {
   state.pos = oldPos;
   return labelEnd;
 }
-function parseLinkDestination(str, start2, max) {
+function parseLinkDestination(str, start3, max) {
   let code2;
-  let pos = start2;
+  let pos = start3;
   const result = {
     ok: false,
     pos: 0,
@@ -9353,7 +9626,7 @@ function parseLinkDestination(str, start2, max) {
       if (code2 === 60) return result;
       if (code2 === 62) {
         result.pos = pos + 1;
-        result.str = unescapeAll(str.slice(start2 + 1, pos));
+        result.str = unescapeAll(str.slice(start3 + 1, pos));
         result.ok = true;
         return result;
       }
@@ -9388,16 +9661,16 @@ function parseLinkDestination(str, start2, max) {
     }
     pos++;
   }
-  if (start2 === pos) return result;
+  if (start3 === pos) return result;
   if (level !== 0) return result;
-  result.str = unescapeAll(str.slice(start2, pos));
+  result.str = unescapeAll(str.slice(start3, pos));
   result.pos = pos;
   result.ok = true;
   return result;
 }
-function parseLinkTitle(str, start2, max, prev_state) {
+function parseLinkTitle(str, start3, max, prev_state) {
   let code2;
-  let pos = start2;
+  let pos = start3;
   const state = {
     ok: false,
     can_continue: false,
@@ -9412,7 +9685,7 @@ function parseLinkTitle(str, start2, max, prev_state) {
     if (pos >= max) return state;
     let marker = str.charCodeAt(pos);
     if (marker !== 34 && marker !== 39 && marker !== 40) return state;
-    start2++;
+    start3++;
     pos++;
     if (marker === 40) marker = 41;
     state.marker = marker;
@@ -9421,7 +9694,7 @@ function parseLinkTitle(str, start2, max, prev_state) {
     code2 = str.charCodeAt(pos);
     if (code2 === state.marker) {
       state.pos = pos + 1;
-      state.str += unescapeAll(str.slice(start2, pos));
+      state.str += unescapeAll(str.slice(start3, pos));
       state.ok = true;
       return state;
     } else if (code2 === 40 && state.marker === 41) return state;
@@ -9429,7 +9702,7 @@ function parseLinkTitle(str, start2, max, prev_state) {
     pos++;
   }
   state.can_continue = true;
-  state.str += unescapeAll(str.slice(start2, pos));
+  state.str += unescapeAll(str.slice(start3, pos));
   return state;
 }
 var helpers_exports = /* @__PURE__ */ __exportAll({
@@ -10382,7 +10655,7 @@ var StateBlock = class {
     this.env = env;
     this.tokens = tokens;
     const s = this.src;
-    for (let start2 = 0, pos = 0, indent = 0, offset = 0, len = s.length, indent_found = false; pos < len; pos++) {
+    for (let start3 = 0, pos = 0, indent = 0, offset = 0, len = s.length, indent_found = false; pos < len; pos++) {
       const ch = s.charCodeAt(pos);
       if (!indent_found) {
         if (isSpace(ch)) {
@@ -10394,7 +10667,7 @@ var StateBlock = class {
       }
       if (ch === 10 || pos === len - 1) {
         if (ch !== 10) pos++;
-        this.bMarks.push(start2);
+        this.bMarks.push(start3);
         this.eMarks.push(pos);
         this.tShift.push(indent);
         this.sCount.push(offset);
@@ -10402,7 +10675,7 @@ var StateBlock = class {
         indent_found = false;
         indent = 0;
         offset = 0;
-        start2 = pos + 1;
+        start3 = pos + 1;
       }
     }
     this.bMarks.push(s.length);
@@ -10806,9 +11079,9 @@ function skipBulletListMarker(state, startLine) {
   return pos;
 }
 function skipOrderedListMarker(state, startLine) {
-  const start2 = state.bMarks[startLine] + state.tShift[startLine];
+  const start3 = state.bMarks[startLine] + state.tShift[startLine];
   const max = state.eMarks[startLine];
-  let pos = start2;
+  let pos = start3;
   if (pos + 1 >= max) return -1;
   let ch = state.src.charCodeAt(pos++);
   if (ch < 48 || ch > 57) return -1;
@@ -10816,7 +11089,7 @@ function skipOrderedListMarker(state, startLine) {
     if (pos >= max) return -1;
     ch = state.src.charCodeAt(pos++);
     if (ch >= 48 && ch <= 57) {
-      if (pos - start2 >= 10) return -1;
+      if (pos - start3 >= 10) return -1;
       continue;
     }
     if (ch === 41 || ch === 46) break;
@@ -10837,7 +11110,7 @@ function markTightParagraphs(state, idx) {
   }
 }
 function list(state, startLine, endLine, silent) {
-  let max, pos, start2, token;
+  let max, pos, start3, token;
   let nextLine = startLine;
   let tight = true;
   if (state.sCount[nextLine] - state.blkIndent >= 4) return false;
@@ -10851,8 +11124,8 @@ function list(state, startLine, endLine, silent) {
   let posAfterMarker;
   if ((posAfterMarker = skipOrderedListMarker(state, nextLine)) >= 0) {
     isOrdered = true;
-    start2 = state.bMarks[nextLine] + state.tShift[nextLine];
-    markerValue = Number(state.src.slice(start2, posAfterMarker - 1));
+    start3 = state.bMarks[nextLine] + state.tShift[nextLine];
+    markerValue = Number(state.src.slice(start3, posAfterMarker - 1));
     if (isTerminatingParagraph && markerValue !== 1) return false;
   } else if ((posAfterMarker = skipBulletListMarker(state, nextLine)) >= 0) isOrdered = false;
   else return false;
@@ -10895,7 +11168,7 @@ function list(state, startLine, endLine, silent) {
     token.markup = String.fromCharCode(markerCharCode);
     const itemLines = [nextLine, 0];
     token.map = itemLines;
-    if (isOrdered) token.info = state.src.slice(start2, posAfterMarker - 1);
+    if (isOrdered) token.info = state.src.slice(start3, posAfterMarker - 1);
     const oldTight = state.tight;
     const oldTShift = state.tShift[nextLine];
     const oldSCount = state.sCount[nextLine];
@@ -10930,7 +11203,7 @@ function list(state, startLine, endLine, silent) {
     if (isOrdered) {
       posAfterMarker = skipOrderedListMarker(state, nextLine);
       if (posAfterMarker < 0) break;
-      start2 = state.bMarks[nextLine] + state.tShift[nextLine];
+      start3 = state.bMarks[nextLine] + state.tShift[nextLine];
     } else {
       posAfterMarker = skipBulletListMarker(state, nextLine);
       if (posAfterMarker < 0) break;
@@ -11513,24 +11786,24 @@ var StateInline = class {
     this.tokens_meta.push(token_meta);
     return token;
   }
-  scanDelims(start2, canSplitWord) {
+  scanDelims(start3, canSplitWord) {
     const max = this.posMax;
-    const marker = this.src.charCodeAt(start2);
+    const marker = this.src.charCodeAt(start3);
     let lastChar;
-    if (start2 === 0) lastChar = 32;
-    else if (start2 === 1) {
+    if (start3 === 0) lastChar = 32;
+    else if (start3 === 1) {
       lastChar = this.src.charCodeAt(0);
       if ((lastChar & 63488) === 55296) lastChar = 65533;
     } else {
-      lastChar = this.src.charCodeAt(start2 - 1);
+      lastChar = this.src.charCodeAt(start3 - 1);
       if ((lastChar & 64512) === 56320) {
-        const highSurr = this.src.charCodeAt(start2 - 2);
+        const highSurr = this.src.charCodeAt(start3 - 2);
         lastChar = (highSurr & 64512) === 55296 ? 65536 + (highSurr - 55296 << 10) + (lastChar - 56320) : 65533;
       } else if ((lastChar & 64512) === 55296) lastChar = 65533;
     }
-    let pos = start2;
+    let pos = start3;
     while (pos < max && this.src.charCodeAt(pos) === marker) pos++;
-    const count = pos - start2;
+    const count = pos - start3;
     let nextChar = pos < max ? this.src.charCodeAt(pos) : 32;
     if ((nextChar & 64512) === 55296) {
       const lowSurr = this.src.charCodeAt(pos + 1);
@@ -11710,20 +11983,20 @@ function buildLastRuns(src) {
   const lastRuns = {};
   let pos = 0;
   while ((pos = src.indexOf("`", pos)) !== -1) {
-    const start2 = pos;
+    const start3 = pos;
     while (src.charCodeAt(++pos) === 96) ;
-    lastRuns[pos - start2] = start2;
+    lastRuns[pos - start3] = start3;
   }
   return lastRuns;
 }
 function backtick(state, silent) {
   var _state$backticks$open;
-  const start2 = state.pos;
-  if (state.src.charCodeAt(start2) !== 96) return false;
+  const start3 = state.pos;
+  if (state.src.charCodeAt(start3) !== 96) return false;
   const max = state.posMax;
-  let pos = start2 + 1;
+  let pos = start3 + 1;
   while (pos < max && state.src.charCodeAt(pos) === 96) pos++;
-  const marker = state.src.slice(start2, pos);
+  const marker = state.src.slice(start3, pos);
   const openerLength = marker.length;
   if (!state.backticksScanned) {
     state.backticks = buildLastRuns(state.src);
@@ -11754,8 +12027,8 @@ function backtick(state, silent) {
   return true;
 }
 function strikethrough_tokenize(state, silent) {
-  const start2 = state.pos;
-  const marker = state.src.charCodeAt(start2);
+  const start3 = state.pos;
+  const marker = state.src.charCodeAt(start3);
   if (silent) return false;
   if (marker !== 126) return false;
   const scanned = state.scanDelims(state.pos, true);
@@ -11833,8 +12106,8 @@ var strikethrough_default = {
   postProcess: strikethrough_postProcess
 };
 function emphasis_tokenize(state, silent) {
-  const start2 = state.pos;
-  const marker = state.src.charCodeAt(start2);
+  const start3 = state.pos;
+  const marker = state.src.charCodeAt(start3);
   if (silent) return false;
   if (marker !== 95 && marker !== 42) return false;
   const scanned = state.scanDelims(state.pos, marker === 42);
@@ -11899,7 +12172,7 @@ function link(state, silent) {
   let code2, label, res, ref;
   let href = "";
   let title = "";
-  let start2 = state.pos;
+  let start3 = state.pos;
   let parseReference = true;
   if (state.src.charCodeAt(state.pos) !== 91) return false;
   const oldPos = state.pos;
@@ -11916,19 +12189,19 @@ function link(state, silent) {
       if (!isSpace(code2) && code2 !== 10) break;
     }
     if (pos >= max) return false;
-    start2 = pos;
+    start3 = pos;
     res = state.md.helpers.parseLinkDestination(state.src, pos, state.posMax);
     if (res.ok) {
       href = state.md.normalizeLink(res.str);
       if (state.md.validateLink(href)) pos = res.pos;
       else href = "";
-      start2 = pos;
+      start3 = pos;
       for (; pos < max; pos++) {
         code2 = state.src.charCodeAt(pos);
         if (!isSpace(code2) && code2 !== 10) break;
       }
       res = state.md.helpers.parseLinkTitle(state.src, pos, state.posMax);
-      if (pos < max && start2 !== pos && res.ok) {
+      if (pos < max && start3 !== pos && res.ok) {
         title = res.str;
         pos = res.pos;
         for (; pos < max; pos++) {
@@ -11943,9 +12216,9 @@ function link(state, silent) {
   if (parseReference) {
     if (typeof state.env.references === "undefined") return false;
     if (pos < max && state.src.charCodeAt(pos) === 91) {
-      start2 = pos + 1;
+      start3 = pos + 1;
       pos = state.md.helpers.parseLinkLabel(state, pos);
-      if (pos >= 0) label = state.src.slice(start2, pos++);
+      if (pos >= 0) label = state.src.slice(start3, pos++);
       else pos = labelEnd + 1;
     } else pos = labelEnd + 1;
     if (!label) label = state.src.slice(labelStart, labelEnd);
@@ -11980,7 +12253,7 @@ function link(state, silent) {
   return true;
 }
 function image(state, silent) {
-  let code2, content, label, pos, ref, res, title, start2;
+  let code2, content, label, pos, ref, res, title, start3;
   let href = "";
   const oldPos = state.pos;
   const max = state.posMax;
@@ -11997,20 +12270,20 @@ function image(state, silent) {
       if (!isSpace(code2) && code2 !== 10) break;
     }
     if (pos >= max) return false;
-    start2 = pos;
+    start3 = pos;
     res = state.md.helpers.parseLinkDestination(state.src, pos, state.posMax);
     if (res.ok) {
       href = state.md.normalizeLink(res.str);
       if (state.md.validateLink(href)) pos = res.pos;
       else href = "";
     }
-    start2 = pos;
+    start3 = pos;
     for (; pos < max; pos++) {
       code2 = state.src.charCodeAt(pos);
       if (!isSpace(code2) && code2 !== 10) break;
     }
     res = state.md.helpers.parseLinkTitle(state.src, pos, state.posMax);
-    if (pos < max && start2 !== pos && res.ok) {
+    if (pos < max && start3 !== pos && res.ok) {
       title = res.str;
       pos = res.pos;
       for (; pos < max; pos++) {
@@ -12026,9 +12299,9 @@ function image(state, silent) {
   } else {
     if (typeof state.env.references === "undefined") return false;
     if (pos < max && state.src.charCodeAt(pos) === 91) {
-      start2 = pos + 1;
+      start3 = pos + 1;
       pos = state.md.helpers.parseLinkLabel(state, pos);
-      if (pos >= 0) label = state.src.slice(start2, pos++);
+      if (pos >= 0) label = state.src.slice(start3, pos++);
       else pos = labelEnd + 1;
     } else pos = labelEnd + 1;
     if (!label) label = state.src.slice(labelStart, labelEnd);
@@ -12066,7 +12339,7 @@ var AUTOLINK_RE = /^([a-zA-Z][a-zA-Z0-9+.-]{1,31}):([^<>\x00-\x20]*)$/;
 function autolink(state, silent) {
   let pos = state.pos;
   if (state.src.charCodeAt(pos) !== 60) return false;
-  const start2 = state.pos;
+  const start3 = state.pos;
   const max = state.posMax;
   for (; ; ) {
     if (++pos >= max) return false;
@@ -12074,7 +12347,7 @@ function autolink(state, silent) {
     if (ch === 60) return false;
     if (ch === 62) break;
   }
-  const url = state.src.slice(start2 + 1, pos);
+  const url = state.src.slice(start3 + 1, pos);
   if (AUTOLINK_RE.test(url)) {
     const fullUrl = state.md.normalizeLink(url);
     if (!state.md.validateLink(fullUrl)) return false;
@@ -12123,25 +12396,25 @@ function isLetter(ch) {
 }
 function scanSpecial(state, pos) {
   const src = state.src;
-  let start2;
+  let start3;
   let terminator;
   if (src.startsWith("<!--", pos)) {
     if (src.startsWith(">", pos + 4)) return pos + 5;
     if (src.startsWith("->", pos + 4)) return pos + 6;
-    start2 = pos + 4;
+    start3 = pos + 4;
     terminator = "-->";
   } else if (src.startsWith("<![CDATA[", pos)) {
-    start2 = pos + 9;
+    start3 = pos + 9;
     terminator = "]]>";
   } else if (src.charCodeAt(pos + 1) === 63) {
-    start2 = pos + 2;
+    start3 = pos + 2;
     terminator = "?>";
   } else if (isLetter(src.charCodeAt(pos + 2))) {
-    start2 = pos + 3;
+    start3 = pos + 3;
     terminator = ">";
   } else return -1;
   if (state.skipHtmlSpecial) return -1;
-  const end = src.indexOf(terminator, start2);
+  const end = src.indexOf(terminator, start3);
   if (end < 0) {
     state.skipHtmlSpecial = true;
     return -1;
@@ -12859,6 +13132,7 @@ var parser = new MarkdownItCallable();
 var imagesIn = (markdownFile, text2) => parser.parse(text2, {}).flatMap((token) => token.children ?? []).filter((token) => token.type === "image").map((token) => imagePath(markdownFile, String(token.attrGet("src") ?? "")));
 
 // src/processes.ts
+init_define_GRAMMARS();
 import { spawnSync as spawnSync2 } from "node:child_process";
 var psStart = (pid) => spawnSync2("ps", ["-p", String(pid), "-o", "lstart="], { encoding: "utf8" }).stdout.trim();
 function alive(record2) {
@@ -12871,18 +13145,22 @@ function alive(record2) {
 }
 
 // src/list.ts
+init_define_GRAMMARS();
 import fs6 from "node:fs";
-import path6 from "node:path";
+import path7 from "node:path";
 
 // src/review.ts
+init_define_GRAMMARS();
 import crypto3 from "node:crypto";
 import fs5 from "node:fs";
-import path5 from "node:path";
+import path6 from "node:path";
 
 // src/lines.ts
+init_define_GRAMMARS();
 import crypto2 from "node:crypto";
 
 // src/input.ts
+init_define_GRAMMARS();
 import fs4 from "node:fs";
 function readInput(file2) {
   if (file2 === void 0) return fs4.readFileSync(0, "utf8");
@@ -12920,6 +13198,11 @@ function shownLines(step, file2) {
 var codeOf = (shown, [first, last]) => [...shown].filter(([number]) => number >= first && number <= last);
 var hashOf = (shown, lines) => crypto2.createHash("sha256").update(JSON.stringify(codeOf(shown, lines).map(([, line]) => line))).digest("hex").slice(0, 16);
 var stepOf = ({ steps: steps3 }, file2) => steps3.find((one) => one.files.includes(file2));
+function codeAt(walkthrough, file2, lines) {
+  const found = stepOf(walkthrough, file2);
+  const shown = found && shownLines(found, file2);
+  return shown ? codeOf(shown, lines) : [];
+}
 var stepOfFile = (walkthrough, file2) => stepOf(walkthrough, file2)?.id;
 function anchorOf(walkthrough, place) {
   const found = stepOf(walkthrough, place.file);
@@ -12945,17 +13228,18 @@ function placeIn(walkthrough, { file: file2, lines }) {
 }
 
 // src/walkthrough.ts
-import path4 from "node:path";
+init_define_GRAMMARS();
+import path5 from "node:path";
 var CRITERION_STATUSES = ["met", "partly", "not-met", "not-checked"];
-var file = (dir) => path4.join(dir, "walkthrough.json");
+var file = (dir) => path5.join(dir, "walkthrough.json");
 function walkthroughDir(repo, source) {
   const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
   if (Buffer.byteLength(name2) > 255)
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
-  return path4.join(stateDir(), repo, name2);
+  return path5.join(stateDir(), repo, name2);
 }
 var branchOfDir = (dir) => {
-  const name2 = path4.basename(dir);
+  const name2 = path5.basename(dir);
   return name2.startsWith("branch-") ? name2.slice("branch-".length).replaceAll("~", "/") : void 0;
 };
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
@@ -13038,12 +13322,12 @@ var markOpened = (dir) => updateWalkthrough(dir, (walkthrough) => {
 // src/review.ts
 var REVIEW_TYPES = ["comment", "approve", "request-changes"];
 var files = (dir) => ({
-  log: path5.join(dir, "review.jsonl"),
-  inbox: path5.join(dir, "inbox.jsonl"),
-  listener: path5.join(dir, "listener.json"),
-  viewed: path5.join(dir, "viewed.json")
+  log: path6.join(dir, "review.jsonl"),
+  inbox: path6.join(dir, "inbox.jsonl"),
+  listener: path6.join(dir, "listener.json"),
+  viewed: path6.join(dir, "viewed.json")
 });
-var hold = (dir, work) => locked(path5.join(dir, "review"), work, 2e3);
+var hold = (dir, work) => locked(path6.join(dir, "review"), work, 2e3);
 function readLines(file2) {
   let text2 = "";
   try {
@@ -13152,11 +13436,12 @@ function replay(walkthrough, log) {
   const placed2 = (place) => {
     const step = anchorOf(walkthrough, place);
     const fileStep = step === null ? stepOfFile(walkthrough, place.file) : void 0;
+    const code2 = "lines" in place ? place.code ?? (step === null ? void 0 : codeAt(walkthrough, place.file, place.lines)) : void 0;
     return {
       file: place.file,
       ..."lines" in place && { lines: place.lines },
       step,
-      ...step === null && "lines" in place && place.code && { code: place.code },
+      ...code2?.length && { code: code2 },
       ...fileStep !== void 0 && { fileStep }
     };
   };
@@ -13191,7 +13476,7 @@ function fileMarks(steps3) {
 function walkthroughVersion(dir) {
   const branch = branchOfDir(dir);
   const stats = ["walkthrough.json", "review.jsonl", "viewed.json", "listener.json"].map((name2) => {
-    const stat = fs5.statSync(path5.join(dir, name2), { throwIfNoEntry: false });
+    const stat = fs5.statSync(path6.join(dir, name2), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
   });
   return fingerprint([...stats, String(listenerGone(dir)), branch === void 0 ? "" : branchHead(branch) ?? ""].join(":"));
@@ -13422,10 +13707,10 @@ var ACTIVITY = ["walkthrough.json", "review.jsonl", "viewed.json"];
 function listView(repoDir2) {
   const entries = fs6.existsSync(repoDir2) ? fs6.readdirSync(repoDir2, { withFileTypes: true }) : [];
   const listed = entries.flatMap((entry) => {
-    const dir = path6.join(repoDir2, entry.name);
+    const dir = path7.join(repoDir2, entry.name);
     const view = entry.isDirectory() ? walkthroughView(dir) : null;
     if (!view) return [];
-    const changed = ACTIVITY.map((file2) => fs6.statSync(path6.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
+    const changed = ACTIVITY.map((file2) => fs6.statSync(path7.join(dir, file2), { throwIfNoEntry: false })?.mtimeMs ?? 0);
     return [
       {
         id: entry.name,
@@ -13440,19 +13725,22 @@ function listView(repoDir2) {
   return listed.sort((one, other) => other.last.localeCompare(one.last));
 }
 var listPage = (repoDir2) => ({
-  repo: path6.basename(repoDir2).replace(/-[0-9a-f]{8}$/, ""),
+  repo: path7.basename(repoDir2).replace(/-[0-9a-f]{8}$/, ""),
   walkthroughs: listView(repoDir2)
 });
 
 // src/steps.ts
+init_define_GRAMMARS();
 import crypto4 from "node:crypto";
 import fs7 from "node:fs";
-import path7 from "node:path";
+import path8 from "node:path";
 
 // src/copies.ts
+init_define_GRAMMARS();
 import { spawn } from "node:child_process";
 
 // src/moves.ts
+init_define_GRAMMARS();
 var MIN_LINES = 3;
 var MIN_ALNUM = 20;
 function runsOf(files3, type) {
@@ -13617,12 +13905,12 @@ var MAX_LOOK = 2;
 var LOOK_WORDS = 4;
 var wordCount = (text2) => text2.trim().split(/\s+/).length;
 function parseLook(given, name2) {
-  const { file: file2, start: start2, end, label } = fieldsOf(given);
+  const { file: file2, start: start3, end, label } = fieldsOf(given);
   if (!filled(file2)) throw new Error(`${name2} needs a file`);
-  if (!Number.isInteger(start2) || !Number.isInteger(end) || start2 < 1 || start2 > end)
+  if (!Number.isInteger(start3) || !Number.isInteger(end) || start3 < 1 || start3 > end)
     throw new Error(`${name2} needs a start and an end line, the start first`);
   if (!filled(label) || wordCount(label) > LOOK_WORDS) throw new Error(`${name2} needs a label of 1 to ${String(LOOK_WORDS)} words`);
-  return { file: file2, start: start2, end, label: label.trim() };
+  return { file: file2, start: start3, end, label: label.trim() };
 }
 var SCREENSHOT_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
 var MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
@@ -13660,10 +13948,10 @@ function parseSteps(text2) {
     const folded = {};
     const paths = files3.map((file2) => {
       if (filled(file2)) return file2;
-      const { path: path13, folded: reason } = fieldsOf(file2);
-      if (!filled(path13) || !filled(reason)) throw new Error(`${name2}: each file is a path, or a path with the reason it is folded`);
-      folded[path13] = reason.trim();
-      return path13;
+      const { path: path14, folded: reason } = fieldsOf(file2);
+      if (!filled(path14) || !filled(reason)) throw new Error(`${name2}: each file is a path, or a path with the reason it is folded`);
+      folded[path14] = reason.trim();
+      return path14;
     });
     if (!Array.isArray(look) || look.length > MAX_LOOK) throw new Error(`${name2}: look must be a list of at most ${String(MAX_LOOK)} pointers`);
     return {
@@ -13692,9 +13980,9 @@ function stepIds({ steps: steps3, lastStep = 0 }, inputs) {
     }
   return ids.map((id) => id ?? String(++next));
 }
-var lookShown = (step, { file: file2, start: start2, end }) => {
+var lookShown = (step, { file: file2, start: start3, end }) => {
   const shown = step.files.includes(file2) ? shownLines(step, file2) : null;
-  return !!shown?.has(start2) && shown.has(end);
+  return !!shown?.has(start3) && shown.has(end);
 };
 async function buildSteps(cwd, dir, walkthrough, inputs) {
   const { base, head } = walkthrough;
@@ -13733,7 +14021,7 @@ async function buildSteps(cwd, dir, walkthrough, inputs) {
   ${astray.join("\n  ")}`);
   for (const shot of shots)
     if (shot && typeof shot !== "string") {
-      fs7.writeFileSync(path7.join(dir, shot.name), shot.bytes, { mode: 384 });
+      fs7.writeFileSync(path8.join(dir, shot.name), shot.bytes, { mode: 384 });
       if (inInbox(shot.file)) fs7.rmSync(shot.file);
     }
   return withCopies(cwd, head, steps3);
@@ -13754,6 +14042,7 @@ async function carrySteps(cwd, { base, head, steps: steps3 }) {
 }
 
 // src/viewer.ts
+init_define_GRAMMARS();
 var THEMES = ["system", "light", "dark"];
 var DEFAULT_VIEWER = { theme: "system", colourBlind: false };
 function mergeViewer(base, change) {
@@ -13764,6 +14053,7 @@ function mergeViewer(base, change) {
 }
 
 // src/words.ts
+init_define_GRAMMARS();
 var plural = (count, word) => `${String(count)} ${word}${count === 1 ? "" : "s"}`;
 var MAX_TEXT = 4e3;
 function tooLong(fields) {
@@ -13774,11 +14064,10 @@ function tooLong(fields) {
 // src/server.ts
 var MAX_BODY_BYTES = 256 * 1024;
 var IDLE_MS = 30 * 60 * 1e3;
-var PAGE = path8.join(import.meta.dirname, "page");
+var PAGE = path9.join(import.meta.dirname, "page");
 var SHARED_FILES = {
   "style.css": { file: "style.css", type: "text/css; charset=utf-8" },
-  "favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
-  "favicon-reviewing.svg": { file: "favicon-reviewing.svg", type: "image/svg+xml" },
+  ...Object.fromEntries(["reading", "awake", "done", "ended", "asleep"].map((state) => [`favicon-${state}.svg`, { file: `favicon-${state}.svg`, type: "image/svg+xml" }])),
   "apple-touch-icon.png": { file: "app-icon-180.png", type: "image/png" }
 };
 var PAGE_FILES = {
@@ -13799,17 +14088,17 @@ var SECURITY_HEADERS = {
   "x-frame-options": "DENY",
   "cross-origin-resource-policy": "same-origin"
 };
-var viewerFile = () => path8.join(stateDir(), "viewer.json");
+var viewerFile = () => path9.join(stateDir(), "viewer.json");
 var readViewer = (file2 = viewerFile()) => mergeViewer(DEFAULT_VIEWER, readJson(file2, {}));
 function saveViewer(change, file2 = viewerFile()) {
   const saved = mergeViewer(readViewer(file2), change);
   writeJson(file2, saved);
   return saved;
 }
-var recordFile = (dir) => path8.join(dir, "server.json");
+var recordFile = (dir) => path9.join(dir, "server.json");
 var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
-  const file2 = path8.join(dir, "token");
+  const file2 = path9.join(dir, "token");
   try {
     const kept = fs8.readFileSync(file2, "utf8").trim();
     if (/^[0-9a-f]{48}$/.test(kept)) return kept;
@@ -13832,7 +14121,7 @@ function ensureServer(dir, list3 = false) {
   return locked(recordFile(dir), async () => {
     const running = readRecord(dir);
     if (running && alive(running)) return running.url;
-    const log = fs8.openSync(path8.join(dir, "server.log"), "a", 384);
+    const log = fs8.openSync(path9.join(dir, "server.log"), "a", 384);
     const child = spawn2(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
       // Not the folder start ran in, which may be a worktree removed while the page is open.
       cwd: commonDir(process.cwd()),
@@ -13845,7 +14134,7 @@ function ensureServer(dir, list3 = false) {
       const record2 = readRecord(dir);
       if (record2 && record2.pid === child.pid) return record2.url;
     }
-    throw new Error(`the page server did not start; see ${path8.join(dir, "server.log")}`);
+    throw new Error(`the page server did not start; see ${path9.join(dir, "server.log")}`);
   });
 }
 async function stopServer(dir) {
@@ -13874,6 +14163,7 @@ function serve(dir, list3 = false) {
     "/resolve": async (fields) => answered(dir, await resolve(dir, fields)),
     "/unresolve": async (fields) => answered(dir, await unresolve(dir, fields)),
     "/submit": async (fields) => answered(dir, await submit(dir, fields)),
+    "/code": async ({ language, file: file2, code: code2 }) => typeof code2 === "string" && (typeof language === "string" || typeof file2 === "string") ? { status: 200, body: await tokensFor(code2, typeof language === "string" ? { language } : { file: String(file2) }) ?? PLAIN } : { status: 400 },
     "/stop": stop
   };
   let seen = Date.now();
@@ -13909,7 +14199,7 @@ function serve(dir, list3 = false) {
 var answered = (dir, done) => done ? { status: 200, body: walkthroughView(dir) } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
-  return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
+  return listed ? { status: 200, body: { url: await ensureServer(path9.join(repoDir2, listed.id)) } } : { status: 400 };
 }
 var logged = (error) => {
   console.error(`walkthrough server: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
@@ -13923,7 +14213,7 @@ async function inChange(base, head, file2, type) {
   const changed = (await changedFiles(process.cwd(), base, head)).map((one) => one.path);
   if (changed.includes(file2)) return true;
   return type.startsWith("image/") && changed.some(
-    (markdown2) => previewType(markdown2)?.startsWith("text/markdown") && imagesIn(markdown2, fileAt(process.cwd(), head, markdown2)?.toString("utf8") ?? "").includes(file2)
+    (markdown) => previewType(markdown)?.startsWith("text/markdown") && imagesIn(markdown, fileAt(process.cwd(), head, markdown)?.toString("utf8") ?? "").includes(file2)
   );
 }
 async function serveFileAt(dir, file2, atBase, res) {
@@ -13944,6 +14234,8 @@ async function serveFileAt(dir, file2, atBase, res) {
 function serveFile(dir, list3, what, req, res) {
   const query = new URL(req.url ?? "", "http://127.0.0.1").searchParams;
   if (!list3 && what === "data/walkthrough.json") {
+    const walkthrough = readWalkthrough(dir);
+    if (walkthrough) warm(process.cwd(), walkthrough.base, walkthrough.head, walkthrough.steps.flatMap((step) => step.files));
     const tag = `"${walkthroughVersion(dir)}"`;
     if (req.headers["if-none-match"] === tag) res.writeHead(304, { etag: tag, "cache-control": "no-store" }).end();
     else res.writeHead(200, { ...JSON_HEADERS, etag: tag }).end(JSON.stringify(walkthroughView(dir)));
@@ -13955,10 +14247,16 @@ function serveFile(dir, list3, what, req, res) {
     });
     return;
   }
+  if (!list3 && what === "tokens") {
+    tokensAt(process.cwd(), query.get("rev") ?? "", query.get("path") ?? "").then((lines) => res.writeHead(200, JSON_HEADERS).end(JSON.stringify(lines ?? PLAIN))).catch((error) => {
+      failRequest(res, error);
+    });
+    return;
+  }
   const screenshot = list3 ? null : /^screenshot\/([0-9a-f]{64}\.(png|jpg|gif|webp))$/.exec(what);
   if (screenshot) {
     const [, name2 = "", extension = ""] = screenshot;
-    const file2 = path8.join(dir, name2);
+    const file2 = path9.join(dir, name2);
     if (fs8.existsSync(file2))
       res.writeHead(200, { "content-type": SCREENSHOT_TYPES[extension], "cache-control": "private, max-age=31536000, immutable" }).end(fs8.readFileSync(file2));
     else res.writeHead(404).end();
@@ -13980,7 +14278,7 @@ function serveFile(dir, list3, what, req, res) {
     return;
   }
   res.writeHead(200, { "content-type": known.type, "cache-control": "no-store" });
-  fs8.createReadStream(path8.join(PAGE, known.file)).pipe(res);
+  fs8.createReadStream(path9.join(PAGE, known.file)).pipe(res);
 }
 function readBody(req, res, onBody) {
   let size = 0;
@@ -14013,9 +14311,9 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
     if (req.complete) answer2();
     else req.once("end", answer2);
   };
-  const own = ["127.0.0.1", "localhost"].map((host2) => `${host2}:${port}`);
+  const own2 = ["127.0.0.1", "localhost"].map((host2) => `${host2}:${port}`);
   const { host = "", origin } = req.headers;
-  if (!own.includes(host) || origin !== void 0 && !own.includes(origin.replace(/^http:\/\//, ""))) {
+  if (!own2.includes(host) || origin !== void 0 && !own2.includes(origin.replace(/^http:\/\//, ""))) {
     refuse(403);
     return;
   }
@@ -14067,11 +14365,11 @@ async function remove(dir, name2, why) {
   return `Removed the walkthrough of ${name2}: ${why}.`;
 }
 async function prune(cwd) {
-  const repoDir2 = path9.join(stateDir(), currentRepo(cwd));
+  const repoDir2 = path10.join(stateDir(), currentRepo(cwd));
   const removed = [];
   if (!fs9.existsSync(repoDir2)) return removed;
   for (const entry of fs9.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
-    const dir = path9.join(repoDir2, entry.name);
+    const dir = path10.join(repoDir2, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
     if (walkthrough && why) removed.push(await remove(dir, nameOf(walkthrough), why));
@@ -14084,7 +14382,7 @@ async function pruneOne(dir, name2) {
 }
 var DAY_MS = 24 * 60 * 60 * 1e3;
 async function pruneDaily(cwd) {
-  const marker = path9.join(stateDir(), currentRepo(cwd), "last-prune.json");
+  const marker = path10.join(stateDir(), currentRepo(cwd), "last-prune.json");
   const due = await locked(marker, () => {
     const { at = "" } = readJson(marker, {});
     if (Date.now() - Date.parse(at) < DAY_MS) return false;
@@ -14095,35 +14393,149 @@ async function pruneDaily(cwd) {
 }
 
 // src/export.ts
+init_define_GRAMMARS();
 var import_diff2html = __toESM(require_diff2html(), 1);
 import crypto6 from "node:crypto";
 import fs10 from "node:fs";
-import path10 from "node:path";
+import path11 from "node:path";
+
+// src/page/markdown.ts
+init_define_GRAMMARS();
+function renderer() {
+  const markdown = new MarkdownItCallable({ html: false, linkify: true });
+  markdown.core.ruler.push("align_by_class", (state) => {
+    for (const token of state.tokens) {
+      const align = /^text-align:(left|center|right)$/.exec(String(token.attrGet("style")))?.[1];
+      if (!align) continue;
+      token.attrs = (token.attrs ?? []).filter(([name2]) => name2 !== "style");
+      token.attrJoin("class", `align-${align}`);
+    }
+  });
+  markdown.renderer.rules["link_open"] = (tokens, at, options, _env, self) => {
+    tokens[at]?.attrSet("target", "_blank");
+    tokens[at]?.attrSet("rel", "noopener noreferrer");
+    return self.renderToken(tokens, at, options);
+  };
+  return markdown;
+}
+var withImages = renderer();
+var image2 = withImages.renderer.rules["image"];
+withImages.renderer.rules["image"] = (tokens, at, options, env, self) => {
+  const token = tokens[at];
+  const file2 = env?.file ?? "";
+  const repoPath = token && imagePath(file2, String(token.attrGet("src") ?? ""));
+  if (repoPath) token.attrSet("src", `file?path=${encodeURIComponent(repoPath)}`);
+  return image2 ? image2(tokens, at, options, env, self) : "";
+};
+withImages.core.ruler.push("mark_added", (state) => {
+  const added = state.env?.added;
+  if (!added?.size) return;
+  for (const token of state.tokens) {
+    if (token.level !== 0 || token.nesting === -1 || !token.map) continue;
+    const [first, end] = token.map;
+    for (let line = first + 1; line <= end; line++)
+      if (added.has(line)) {
+        token.attrJoin("class", "inserted");
+        break;
+      }
+  }
+});
+var withoutImages = renderer().disable("image");
+var fence2 = withoutImages.renderer.rules["fence"];
+withoutImages.renderer.rules["fence"] = (tokens, at, options, env, self) => {
+  const token = tokens[at];
+  const code2 = env?.code;
+  if (!token || !code2?.length || token.info.trim() !== "suggestion") return fence2 ? fence2(tokens, at, options, env, self) : "";
+  const { escapeHtml: escapeHtml2 } = withoutImages.utils;
+  const row = (kind, before, after, text2) => `<tr class="suggestion-${kind}"><td class="suggestion-number">${before}</td><td class="suggestion-number">${after}</td><td class="suggestion-line"><span class="suggestion-sign">${kind === "del" ? "-" : "+"}</span>${escapeHtml2(text2)}</td></tr>`;
+  const first = code2[0]?.[0] ?? 1;
+  const added = token.content ? token.content.replace(/\n$/, "").split("\n") : [];
+  return `<div class="suggestion"><div class="suggestion-head">Suggested change</div><div class="suggestion-scroll"><table class="suggestion-code">${[
+    ...code2.map(([number, text2]) => row("del", String(number), "", text2)),
+    ...added.map((text2, offset) => row("add", "", String(first + offset), text2))
+  ].join("")}</table></div></div>
+`;
+};
+var renderMarkdown = (text2, file2, added) => file2 === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file: file2, added });
+var renderComment = (text2, code2) => withoutImages.render(text2, { code: code2 });
+
+// src/export.ts
 var hash = (text2) => `'sha256-${crypto6.createHash("sha256").update(text2).digest("base64")}'`;
-var markdown = new MarkdownItCallable({ html: false, linkify: true }).disable("image");
 var escape2 = (text2) => text2.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
 var STATUS = { met: "Met", partly: "Partly met", "not-met": "Not met", "not-checked": "Not checked" };
 var who = (said2) => said2.by === "colleague" ? said2.author ?? "" : said2.by === "ai" ? "AI" : "You";
-function exportPage(dir) {
+var unescape = (text2) => text2.replace(/&(amp|lt|gt|quot);/g, (_, name2) => ({ amp: "&", lt: "<", gt: ">", quot: '"' })[name2] ?? "");
+var painted = (html, runs) => (runs && colourHtml(html, runs)) ?? html;
+async function colourDiff(html, file2, base, head) {
+  const [before, after] = await Promise.all([
+    file2.isNew ? null : tokensAt(process.cwd(), base, file2.oldName),
+    file2.isDeleted ? null : tokensAt(process.cwd(), head, file2.newName)
+  ]);
+  return html.replace(/<tr>[\s\S]*?<\/tr>/g, (row) => {
+    const removed = row.includes("d2h-code-linenumber d2h-del");
+    const line = Number(new RegExp(`<div class="line-num${removed ? "1" : "2"}">(\\d+)</div>`).exec(row)?.[1]);
+    const tokens = (removed ? before : after)?.[line - 1];
+    return row.replace(/(<span class="d2h-code-line-ctn">)([\s\S]*?)(<\/span>)/, (_, open2, code2, close) => open2 + painted(code2, tokens) + close);
+  });
+}
+async function stepDiff(diff, base, head) {
+  const files3 = parseDiff(diff);
+  const [start3 = "", ...chunks] = (0, import_diff2html.html)(files3, { outputFormat: "line-by-line", drawFileList: false, matching: "lines" }).split(/(?=<div id="d2h-\d+" class="d2h-file-wrapper")/);
+  const coloured = await Promise.all(chunks.map((chunk, at) => {
+    const file2 = files3[at];
+    return file2 ? colourDiff(chunk, file2, base, head) : Promise.resolve(chunk);
+  }));
+  return start3 + coloured.join("");
+}
+async function colourBlocks(html) {
+  const blocks = /<pre><code class="language-([^"\s]+)">([\s\S]*?)<\/code><\/pre>/g;
+  const tokens = await Promise.all([...html.matchAll(blocks)].map(([, language = "", code2 = ""]) => tokensFor(unescape(code2), { language: unescape(language) })));
+  let at = 0;
+  return html.replace(blocks, (block2, language, code2) => {
+    const lines = tokens[at++];
+    return lines ? `<pre><code class="language-${language}">${painted(code2, joinLines(lines))}</code></pre>` : block2;
+  });
+}
+async function colourSuggestions(html, file2, head) {
+  const rows = /(<tr class="suggestion-(del|add)"><td class="suggestion-number">(\d*)<\/td><td class="suggestion-number">\d*<\/td><td class="suggestion-line"><span class="suggestion-sign">.<\/span>)([\s\S]*?)(<\/td><\/tr>)/g;
+  const found = [...html.matchAll(rows)];
+  if (!found.length) return html;
+  const added = found.flatMap(([, , kind, , code2 = ""]) => kind === "add" ? [unescape(code2)] : []);
+  const [atHead, addedLines] = await Promise.all([tokensAt(process.cwd(), head, file2), added.length ? tokensFor(added.join("\n"), { file: file2 }) : null]);
+  let at = 0;
+  return html.replace(
+    rows,
+    (_, open2, kind, number, code2, close) => open2 + painted(code2, kind === "del" ? atHead?.[Number(number) - 1] : addedLines?.[at++]) + close
+  );
+}
+async function exportPage(dir) {
   const view = walkthroughView(dir);
   if (!view) throw new Error("there is no such walkthrough");
   const title = view.pr ? `#${view.pr.number} ${view.pr.title}` : nameOf(view);
-  const steps3 = view.steps.map((step, at) => {
-    const threads3 = view.threads.filter((thread) => thread.step === step.id);
-    const comments3 = threads3.flatMap(
-      (thread) => thread.comments.map(
-        (said2) => `<li><code>${escape2(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ""}</code> <strong>${escape2(who(said2))}</strong>${said2.by === "ai" && (said2.pending || said2.review) ? " <code>[AI]</code>" : ""}${markdown.render(said2.body)}</li>`
+  const diffs = await Promise.all(view.steps.map((step) => stepDiff(step.diff, view.base, view.head)));
+  const comments3 = await Promise.all(
+    view.steps.map(
+      (step) => Promise.all(
+        view.threads.filter((thread) => thread.step === step.id).flatMap(
+          (thread) => thread.comments.map(
+            async (said2) => `<li><code>${escape2(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ""}</code> <strong>${escape2(who(said2))}</strong>${said2.by === "ai" && (said2.pending || said2.review) ? " <code>[AI]</code>" : ""}<div class="markdown">${await colourSuggestions(renderComment(said2.body, thread.code ?? []), thread.file, view.head)}</div></li>`
+          )
+        )
       )
-    );
+    )
+  );
+  const steps3 = view.steps.map((step, at) => {
+    const said2 = comments3[at] ?? [];
     const shot = step.screenshot;
     const type = shot && SCREENSHOT_TYPES[shot.name.split(".").pop()];
-    const figure = shot && type ? `<figure class="screenshot open"><img class="screenshot-image" src="data:${type};base64,${fs10.readFileSync(path10.join(dir, shot.name)).toString("base64")}" alt="${escape2(shot.alt)}" />${shot.alt ? `<figcaption>${escape2(shot.alt)}</figcaption>` : ""}</figure>` : "";
-    const diff = (0, import_diff2html.html)(parseDiff(step.diff), { outputFormat: "line-by-line", drawFileList: false, matching: "lines" });
+    const figure = shot && type ? `<figure class="screenshot open"><img class="screenshot-image" src="data:${type};base64,${fs10.readFileSync(path11.join(dir, shot.name)).toString("base64")}" alt="${escape2(shot.alt)}" />${shot.alt ? `<figcaption>${escape2(shot.alt)}</figcaption>` : ""}</figure>` : "";
+    const diff = diffs[at] ?? "";
     return `<section class="export-step"><h2>${String(at + 1)}. ${escape2(step.title)}</h2>
-<div class="markdown">${markdown.render(step.explanation)}</div>${figure}${diff}${comments3.length ? `<ul class="export-comments">${comments3.join("")}</ul>` : ""}</section>`;
+<div class="markdown">${renderMarkdown(step.explanation)}</div>${figure}${diff}${said2.length ? `<ul class="export-comments">${said2.join("")}</ul>` : ""}</section>`;
   });
+  const body = await colourBlocks(steps3.join("\n"));
   const criteria3 = (view.criteria ?? []).map((one) => `<li>${escape2(one.text)}: ${STATUS[one.status]}</li>`);
-  const style = fs10.readFileSync(path10.join(PAGE, "style.css"), "utf8");
+  const style = fs10.readFileSync(path11.join(PAGE, "style.css"), "utf8");
   const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   return `<!doctype html>
 <html lang="en">
@@ -14137,7 +14549,7 @@ function exportPage(dir) {
   <body class="export">
     <main class="export-main">
       <h1>${escape2(title)}</h1>
-      ${steps3.join("\n")}
+      ${body}
       ${criteria3.length ? `<section class="export-step"><h2>Acceptance criteria</h2><ul>${criteria3.join("")}</ul></section>` : ""}
     </main>
   </body>
@@ -14146,6 +14558,7 @@ function exportPage(dir) {
 }
 
 // src/guide.ts
+init_define_GRAMMARS();
 var steps = [
   {
     title: "Parse due dates in the API",
@@ -14217,6 +14630,7 @@ walkthrough ready
 walkthrough comment --file <file>
   Adds the AI's pending comments on lines, or on a whole file without "lines", and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
   the person can edit them. Write the body without the [AI] prefix.
+  A fix may follow the sentence as a \`\`\`suggestion block whose lines replace exactly the comment's lines.
 ${JSON.stringify(comments, null, 2)}
 
 walkthrough threads --file <file>
@@ -14278,13 +14692,14 @@ walkthrough stop | list | stop --list | prune [<branch> | <id>]
 `;
 
 // src/policy.ts
+init_define_GRAMMARS();
 import crypto7 from "node:crypto";
 import fs11 from "node:fs";
 import os3 from "node:os";
-import path11 from "node:path";
+import path12 from "node:path";
 import { parseArgs } from "node:util";
-var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
-var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
+var TEMPLATE = path12.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
+var policyPath = () => path12.join(process.env["XDG_CONFIG_HOME"] || path12.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
 var read = (file2) => fs11.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
   "04a602b5efc4cedc0336c7639cc560bc68f235c755eb6bc60d7289d274c0bc0f",
@@ -14299,6 +14714,7 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "45ae6552e2e54e8b7f2382e1479a5a7fd868b1767b6ddcf490b9388c87110907",
   "6cd73d656df167adb620983b8a3984e2b03cf002c72f7a6b72147db3dcc22ac9",
   "861b6dbfccfb2976660872d1ffa1357c0ac3d831ab8609dded6e2504f923a92c",
+  "86b6daff264a624c939e9ef7e385ea4a698b0430698dbc84e9d3c1605e252a1f",
   "92c69616a59edfa307d9a8926543aa369d2134bd0aefd71a13ee10b828a96359",
   "9af98052435443bb10e4fca9dabe52f60de24564bf55ba7909423b37cd663303",
   "9f08ac1081cb9c42e8b0d6a2cf515f02b00fc338d0d90acb5284ee9648d7f813",
@@ -14330,7 +14746,7 @@ function status() {
 }
 function save(text2, what) {
   const policy = policyPath();
-  fs11.mkdirSync(path11.dirname(policy), { recursive: true });
+  fs11.mkdirSync(path12.dirname(policy), { recursive: true });
   fs11.writeFileSync(policy, text2);
   console.log(`${what} ${policy}.`);
 }
@@ -14351,6 +14767,7 @@ function policyCommand(args) {
 }
 
 // src/record.ts
+init_define_GRAMMARS();
 var placed = (walkthrough, where, name2) => {
   try {
     return placeIn(walkthrough, where);
@@ -14428,7 +14845,7 @@ function located(args, {
   else source = { kind: "range", base, head, label };
   return { ...parsed3, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
 }
-async function start(args) {
+async function start2(args) {
   const { cwd, source, dir, values } = located(args, { options: { pr: { type: "string" }, title: { type: "string" } } });
   const number = values.pr?.trim();
   if (number === "") throw new Error("--pr needs the number of the pull request");
@@ -14485,7 +14902,7 @@ function openPage(url, what, dir) {
     browser.status === 0 ? `${what} is open in your browser.` : `Could not open a browser; the address of ${what.toLowerCase()} is in ${dir}/server.json.`
   );
 }
-var repoDir = () => path12.join(stateDir(), currentRepo(process.cwd()));
+var repoDir = () => path13.join(stateDir(), currentRepo(process.cwd()));
 async function list2(args) {
   parseArgs2({ args, options: {} });
   openPage(await ensureServer(repoDir(), true), "The list of walkthroughs", repoDir());
@@ -14498,7 +14915,7 @@ function current2(args, config2 = {}) {
 }
 async function files2(args) {
   const { base, head } = current2(args).walkthrough;
-  for (const { path: path13 } of await changedFiles(process.cwd(), base, head)) console.log(path13);
+  for (const { path: path14 } of await changedFiles(process.cwd(), base, head)) console.log(path14);
 }
 var FILE_OPTION = { options: { file: { type: "string" } } };
 async function steps2(args) {
@@ -14544,10 +14961,10 @@ async function posted(args) {
   await markPosted(dir, address);
   console.log(address ? `Recorded that the review went to ${address}.` : "Recorded that the review went out.");
 }
-function exportCommand(args) {
+async function exportCommand(args) {
   const { values, dir, walkthrough } = current2(args, { options: { out: { type: "string" } } });
-  const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
-  fs12.writeFileSync(out, exportPage(dir));
+  const out = path13.resolve(values.out ?? path13.join(dir, "export.html"));
+  fs12.writeFileSync(out, await exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 async function listenCommand(args) {
@@ -14577,7 +14994,7 @@ async function sayCommand(args) {
   console.log("Answered on the page.");
 }
 var COMMANDS = {
-  start,
+  start: start2,
   files: files2,
   steps: steps2,
   open: openCommand,
@@ -14616,7 +15033,7 @@ var COMMANDS = {
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === "range") throw new Error("name a branch or a range, not both");
     const listed = readWalkthrough(dir) ? void 0 : listView(repoDir()).find((one) => one.id === positionals[0] || decodeURIComponent(one.id) === positionals[0]);
-    console.log(await (listed ? pruneOne(path12.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
+    console.log(await (listed ? pruneOne(path13.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = "", mode]) => {

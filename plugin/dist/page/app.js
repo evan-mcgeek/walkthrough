@@ -249,8 +249,8 @@ var require_compiler = __commonJS({
         }
         return this.makeTemplate(context, text2, options);
       };
-      Hogan4.wrapMain = function(code2) {
-        return 'var t=this;t.b(i=i||"");' + code2 + "return t.fl();";
+      Hogan4.wrapMain = function(code3) {
+        return 'var t=this;t.b(i=i||"");' + code3 + "return t.fl();";
       };
       Hogan4.template = Hogan4.Template;
       Hogan4.makeTemplate = function(codeObj, text2, options) {
@@ -674,6 +674,11 @@ var ICONS = {
   "not-met": [ring(), line("M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8")],
   partly: [ring(), line("M5 8h6")],
   unchecked: [ring({ "stroke-dasharray": "2.4 2.2" })],
+  /** A checkbox; its menu item's aria-checked fills it. */
+  checkbox: [
+    ["rect", { x: 2.5, y: 2.5, width: 11, height: 11, rx: 2.5, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    line("M5 8.2l2 2 4-4.3")
+  ],
   eye: [
     ["path", { d: "M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z", ...round, "stroke-width": 1.4 }],
     ["circle", { cx: 8, cy: 8, r: 2, fill: "currentColor" }]
@@ -866,6 +871,116 @@ function scene(markup) {
   };
 }
 
+// src/colours.ts
+var PLAIN = "plain";
+var KINDS = /* @__PURE__ */ new Set(["c", "k", "n", "e", "t", "s", "r", "v", "x"]);
+var joinLines = (lines2) => lines2.flatMap((line2, at) => at ? [[1, ""], ...line2] : line2);
+function colourHtml(html2, runs) {
+  let out = "";
+  let at = 0;
+  let run = -1;
+  let end = 0;
+  let open = "";
+  const close = () => {
+    if (open) out += "</span>";
+    open = "";
+  };
+  for (const part of html2.match(/<[^>]*>|&[^;\s]+;|[\s\S]/g) ?? []) {
+    if (part.startsWith("<") && part.length > 1) {
+      close();
+      out += part;
+      continue;
+    }
+    while (at >= end && run < runs.length) end += runs[++run]?.[0] ?? 0;
+    const kind = runs[run]?.[1] ?? "";
+    if (kind !== open) {
+      close();
+      if (KINDS.has(kind)) {
+        out += `<span class="sx-${kind}">`;
+        open = kind;
+      }
+    }
+    out += part;
+    at++;
+  }
+  close();
+  return at === runs.reduce((sum, [length]) => sum + length, 0) ? out : null;
+}
+
+// src/page/highlight.ts
+function paint(element, runs) {
+  if ("coloured" in element.dataset) return;
+  const coloured = runs && colourHtml(element.innerHTML, runs);
+  if (!runs || !coloured) return;
+  element.dataset["coloured"] = "";
+  element.innerHTML = coloured;
+}
+var lines = async (answer) => {
+  const response = await answer;
+  const body = response?.ok ? await response.json() : PLAIN;
+  return body === PLAIN ? null : body;
+};
+var asked = /* @__PURE__ */ new Map();
+var once = (key2, ask) => {
+  let found2 = asked.get(key2);
+  if (!found2) {
+    found2 = ask().catch(() => null);
+    asked.set(key2, found2);
+  }
+  return found2;
+};
+var code = (body) => once(JSON.stringify(body), () => lines(postQuietly("code", body)));
+var fileAt = (rev, file) => once(`${rev}:${file}`, () => lines(fetch(`tokens?rev=${encodeURIComponent(rev)}&path=${encodeURIComponent(file)}`).catch(() => null)));
+async function colourDiff(table2, file, revs) {
+  const [before, after] = await Promise.all([
+    revs.base && !file.isNew ? fileAt(revs.base, file.oldName) : null,
+    file.isDeleted ? null : fileAt(revs.head, file.newName)
+  ]);
+  if (!before && !after) return;
+  for (const row of table2.querySelectorAll("tr")) {
+    const removed = !!row.querySelector("td.d2h-del");
+    const line2 = Number(row.querySelector(removed ? ".line-num1" : ".line-num2")?.textContent.trim());
+    const cell = row.querySelector(".d2h-code-line-ctn");
+    if (line2 && cell) paint(cell, (removed ? before : after)?.[line2 - 1]);
+  }
+}
+function colourCode(box2) {
+  for (const block2 of box2.querySelectorAll('pre > code[class*="language-"]')) {
+    const language = /(?:^|\s)language-(\S+)/.exec(block2.className)?.[1];
+    if (language)
+      void code({ language, code: block2.textContent }).then((tokens) => {
+        if (tokens) paint(block2, joinLines(tokens));
+      });
+  }
+}
+function colourLines(cells, file, skip = 0) {
+  const open = cells.filter((cell) => !("coloured" in cell.dataset));
+  if (!open.length) return;
+  void code({ file, code: open.map((cell) => cell.textContent.slice(skip)).join("\n") }).then((tokens) => {
+    open.forEach((cell, at) => {
+      const runs = tokens?.[at];
+      paint(cell, runs && [[skip, ""], ...runs]);
+    });
+  });
+}
+function colourSuggestions(box2, file, head) {
+  for (const table2 of box2.querySelectorAll("table.suggestion-code")) {
+    const cells = (kind) => [...table2.querySelectorAll(`tr.suggestion-${kind}`)].flatMap((row) => {
+      const cell = row.querySelector("td.suggestion-line");
+      return cell && !("coloured" in cell.dataset) ? [{ row, cell }] : [];
+    });
+    const removed = cells("del");
+    if (removed.length)
+      void fileAt(head, file).then((tokens) => {
+        for (const { row, cell } of removed) {
+          const runs = tokens?.[Number(row.querySelector("td.suggestion-number")?.textContent) - 1];
+          paint(cell, runs && [[1, ""], ...runs]);
+        }
+      });
+    colourLines(cells("add").map(({ cell }) => cell), file, 1);
+  }
+}
+
 // node_modules/mdurl/index.mjs
 var mdurl_exports = {};
 __export(mdurl_exports, {
@@ -990,20 +1105,20 @@ function encode(string, exclude, keepEscaped) {
   const cache = getEncodeCache(exclude);
   let result = "";
   for (let i = 0, l = string.length; i < l; i++) {
-    const code2 = string.charCodeAt(i);
-    if (keepEscaped && code2 === 37 && i + 2 < l) {
+    const code3 = string.charCodeAt(i);
+    if (keepEscaped && code3 === 37 && i + 2 < l) {
       if (/^[0-9a-f]{2}$/i.test(string.slice(i + 1, i + 3))) {
         result += string.slice(i, i + 3);
         i += 2;
         continue;
       }
     }
-    if (code2 < 128) {
-      result += cache[code2];
+    if (code3 < 128) {
+      result += cache[code3];
       continue;
     }
-    if (code2 >= 55296 && code2 <= 57343) {
-      if (code2 >= 55296 && code2 <= 56319 && i + 1 < l) {
+    if (code3 >= 55296 && code3 <= 57343) {
+      if (code3 >= 55296 && code3 <= 56319 && i + 1 < l) {
         const nextCode = string.charCodeAt(i + 1);
         if (nextCode >= 56320 && nextCode <= 57343) {
           result += encodeURIComponent(string[i] + string[i + 1]);
@@ -1293,10 +1408,10 @@ function codePointToString(codePoint) {
 // node_modules/entities/dist/internal/decode-shared.js
 var BASE91_INVERSE = /* @__PURE__ */ (() => {
   const table2 = new Uint8Array(127);
-  let code2 = 0;
+  let code3 = 0;
   for (let char = 33; char <= 126; char++) {
     if (char !== 34 && char !== 36 && char !== 92) {
-      table2[char] = code2++;
+      table2[char] = code3++;
     }
   }
   return table2;
@@ -1322,11 +1437,11 @@ function decodeTrieDict(input, resultLength, atomCount, dict1AtomCount, ngramCou
     let slot = off;
     const end = off + count;
     while (slot < end) {
-      const code2 = BASE91_INVERSE[input.charCodeAt(pos++)];
-      if (code2 < 89) {
-        previous += code2;
+      const code3 = BASE91_INVERSE[input.charCodeAt(pos++)];
+      if (code3 < 89) {
+        previous += code3;
         single[slot++] = previous;
-      } else if (code2 === 89) {
+      } else if (code3 === 89) {
         let runLength = BASE91_INVERSE[input.charCodeAt(pos++)] + 2;
         while (runLength--)
           single[slot++] = ++previous;
@@ -1429,17 +1544,17 @@ function unpackConsumed(packed) {
   const consumed = packed >>> CONSUMED_SHIFT;
   return consumed === CONSUMED_OVERFLOW ? longNumericConsumed : consumed;
 }
-function isNumber(code2) {
-  return code2 - CharCodes.ZERO >>> 0 <= 9;
+function isNumber(code3) {
+  return code3 - CharCodes.ZERO >>> 0 <= 9;
 }
-function isHexadecimalCharacter(code2) {
-  return (code2 | TO_LOWER_BIT) - CharCodes.LOWER_A >>> 0 <= 5;
+function isHexadecimalCharacter(code3) {
+  return (code3 | TO_LOWER_BIT) - CharCodes.LOWER_A >>> 0 <= 5;
 }
-function isAlpha(code2) {
-  return (code2 | TO_LOWER_BIT) - CharCodes.LOWER_A >>> 0 <= 25;
+function isAlpha(code3) {
+  return (code3 | TO_LOWER_BIT) - CharCodes.LOWER_A >>> 0 <= 25;
 }
-function isEntityInAttributeInvalidEnd(code2) {
-  return code2 === CharCodes.EQUALS || isAlpha(code2) || isNumber(code2);
+function isEntityInAttributeInvalidEnd(code3) {
+  return code3 === CharCodes.EQUALS || isAlpha(code3) || isNumber(code3);
 }
 var EntityDecoderState;
 (function(EntityDecoderState2) {
@@ -2519,8 +2634,8 @@ var UNESCAPE_ALL_RE = new RegExp(`${UNESCAPE_MD_RE.source}|${/&([a-z#][a-z0-9]{1
 var DIGITAL_ENTITY_TEST_RE = /^#((?:x[a-f0-9]{1,8}|[0-9]{1,8}))$/i;
 function replaceEntityPattern(match, name) {
   if (name.charCodeAt(0) === 35 && DIGITAL_ENTITY_TEST_RE.test(name)) {
-    const code2 = name[1].toLowerCase() === "x" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
-    if (isValidEntityCode(code2)) return fromCodePoint(code2);
+    const code3 = name[1].toLowerCase() === "x" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
+    if (isValidEntityCode(code3)) return fromCodePoint(code3);
     return match;
   }
   const decoded = decodeHTMLStrict(match);
@@ -2557,17 +2672,17 @@ var REGEXP_ESCAPE_RE = /[.?*+^$[\]\\(){}|-]/g;
 function escapeRE(str) {
   return str.replace(REGEXP_ESCAPE_RE, "\\$&");
 }
-function isSpace(code2) {
-  switch (code2) {
+function isSpace(code3) {
+  switch (code3) {
     case 9:
     case 32:
       return true;
   }
   return false;
 }
-function isWhiteSpace(code2) {
-  if (code2 >= 8192 && code2 <= 8202) return true;
-  switch (code2) {
+function isWhiteSpace(code3) {
+  if (code3 >= 8192 && code3 <= 8202) return true;
+  switch (code3) {
     case 9:
     case 10:
     case 11:
@@ -2586,8 +2701,8 @@ function isWhiteSpace(code2) {
 function isPunctChar(ch) {
   return P.test(ch) || S.test(ch);
 }
-function isPunctCharCode(code2) {
-  return isPunctChar(fromCodePoint(code2));
+function isPunctCharCode(code3) {
+  return isPunctChar(fromCodePoint(code3));
 }
 function isMdAsciiPunct(ch) {
   switch (ch) {
@@ -2677,7 +2792,7 @@ function parseLinkLabel(state2, start, disableNested) {
   return labelEnd;
 }
 function parseLinkDestination(str, start, max2) {
-  let code2;
+  let code3;
   let pos = start;
   const result = {
     ok: false,
@@ -2687,16 +2802,16 @@ function parseLinkDestination(str, start, max2) {
   if (str.charCodeAt(pos) === 60) {
     pos++;
     while (pos < max2) {
-      code2 = str.charCodeAt(pos);
-      if (code2 === 10) return result;
-      if (code2 === 60) return result;
-      if (code2 === 62) {
+      code3 = str.charCodeAt(pos);
+      if (code3 === 10) return result;
+      if (code3 === 60) return result;
+      if (code3 === 62) {
         result.pos = pos + 1;
         result.str = unescapeAll(str.slice(start + 1, pos));
         result.ok = true;
         return result;
       }
-      if (code2 === 92 && pos + 1 < max2) {
+      if (code3 === 92 && pos + 1 < max2) {
         pos += 2;
         continue;
       }
@@ -2706,10 +2821,10 @@ function parseLinkDestination(str, start, max2) {
   }
   let level = 0;
   while (pos < max2) {
-    code2 = str.charCodeAt(pos);
-    if (code2 === 32) break;
-    if (code2 < 32 || code2 === 127) break;
-    if (code2 === 92 && pos + 1 < max2) {
+    code3 = str.charCodeAt(pos);
+    if (code3 === 32) break;
+    if (code3 < 32 || code3 === 127) break;
+    if (code3 === 92 && pos + 1 < max2) {
       if (str.charCodeAt(pos + 1) === 32) {
         pos++;
         continue;
@@ -2717,11 +2832,11 @@ function parseLinkDestination(str, start, max2) {
       pos += 2;
       continue;
     }
-    if (code2 === 40) {
+    if (code3 === 40) {
       level++;
       if (level > 32) return result;
     }
-    if (code2 === 41) {
+    if (code3 === 41) {
       if (level === 0) break;
       level--;
     }
@@ -2735,7 +2850,7 @@ function parseLinkDestination(str, start, max2) {
   return result;
 }
 function parseLinkTitle(str, start, max2, prev_state) {
-  let code2;
+  let code3;
   let pos = start;
   const state2 = {
     ok: false,
@@ -2757,14 +2872,14 @@ function parseLinkTitle(str, start, max2, prev_state) {
     state2.marker = marker;
   }
   while (pos < max2) {
-    code2 = str.charCodeAt(pos);
-    if (code2 === state2.marker) {
+    code3 = str.charCodeAt(pos);
+    if (code3 === state2.marker) {
       state2.pos = pos + 1;
       state2.str += unescapeAll(str.slice(start, pos));
       state2.ok = true;
       return state2;
-    } else if (code2 === 40 && state2.marker === 41) return state2;
-    else if (code2 === 92 && pos + 1 < max2) pos++;
+    } else if (code3 === 40 && state2.marker === 41) return state2;
+    else if (code3 === 92 && pos + 1 < max2) pos++;
     pos++;
   }
   state2.can_continue = true;
@@ -3776,13 +3891,13 @@ var StateBlock = class {
     while (pos > min) if (!isSpace(this.src.charCodeAt(--pos))) return pos + 1;
     return pos;
   }
-  skipChars(pos, code2) {
-    for (let max2 = this.src.length; pos < max2; pos++) if (this.src.charCodeAt(pos) !== code2) break;
+  skipChars(pos, code3) {
+    for (let max2 = this.src.length; pos < max2; pos++) if (this.src.charCodeAt(pos) !== code3) break;
     return pos;
   }
-  skipCharsBack(pos, code2, min) {
+  skipCharsBack(pos, code3, min) {
     if (pos <= min) return pos;
-    while (pos > min) if (code2 !== this.src.charCodeAt(--pos)) return pos + 1;
+    while (pos > min) if (code3 !== this.src.charCodeAt(--pos)) return pos + 1;
     return pos;
   }
   getLines(begin, end, indent, keepLastLF) {
@@ -3947,7 +4062,7 @@ function table(state2, startLine, endLine, silent) {
   state2.line = nextLine;
   return true;
 }
-function code(state2, startLine, endLine) {
+function code2(state2, startLine, endLine) {
   if (state2.sCount[startLine] - state2.blkIndent < 4) return false;
   let nextLine = startLine + 1;
   let last = nextLine;
@@ -4097,14 +4212,14 @@ function blockquote(state2, startLine, endLine, silent) {
   state2.blkIndent = 0;
   const token_o = state2.push("blockquote_open", "blockquote", 1);
   token_o.markup = ">";
-  const lines = [startLine, 0];
-  token_o.map = lines;
+  const lines2 = [startLine, 0];
+  token_o.map = lines2;
   state2.md.block.tokenize(state2, startLine, nextLine);
   const token_c = state2.push("blockquote_close", "blockquote", -1);
   token_c.markup = ">";
   state2.lineMax = oldLineMax;
   state2.parentType = oldParentType;
-  lines[1] = state2.line;
+  lines2[1] = state2.line;
   for (let i = 0; i < oldTShift.length; i++) {
     state2.bMarks[i + startLine] = oldBMarks[i];
     state2.tShift[i + startLine] = oldTShift[i];
@@ -4685,7 +4800,7 @@ var _rules$1 = [
     table,
     ["paragraph", "reference"]
   ],
-  ["code", code],
+  ["code", code2],
   [
     "fence",
     fence,
@@ -4926,11 +5041,11 @@ function text(state2, silent) {
   state2.pos = pos;
   return true;
 }
-function isAsciiAlpha(code2) {
-  return code2 >= 65 && code2 <= 90 || code2 >= 97 && code2 <= 122;
+function isAsciiAlpha(code3) {
+  return code3 >= 65 && code3 <= 90 || code3 >= 97 && code3 <= 122;
 }
-function isSchemeChar(code2) {
-  return code2 >= 65 && code2 <= 90 || code2 >= 97 && code2 <= 122 || code2 >= 48 && code2 <= 57 || code2 === 43 || code2 === 45 || code2 === 46;
+function isSchemeChar(code3) {
+  return code3 >= 65 && code3 <= 90 || code3 >= 97 && code3 <= 122 || code3 >= 48 && code3 <= 57 || code3 === 43 || code3 === 45 || code3 === 46;
 }
 function linkify(state2, silent) {
   if (!state2.md.options.linkify) return false;
@@ -5235,7 +5350,7 @@ var emphasis_default = {
   postProcess: emphasis_post_process
 };
 function link(state2, silent) {
-  let code2, label, res, ref;
+  let code3, label, res, ref;
   let href = "";
   let title = "";
   let start = state2.pos;
@@ -5251,8 +5366,8 @@ function link(state2, silent) {
     parseReference = false;
     pos++;
     for (; pos < max2; pos++) {
-      code2 = state2.src.charCodeAt(pos);
-      if (!isSpace(code2) && code2 !== 10) break;
+      code3 = state2.src.charCodeAt(pos);
+      if (!isSpace(code3) && code3 !== 10) break;
     }
     if (pos >= max2) return false;
     start = pos;
@@ -5263,16 +5378,16 @@ function link(state2, silent) {
       else href = "";
       start = pos;
       for (; pos < max2; pos++) {
-        code2 = state2.src.charCodeAt(pos);
-        if (!isSpace(code2) && code2 !== 10) break;
+        code3 = state2.src.charCodeAt(pos);
+        if (!isSpace(code3) && code3 !== 10) break;
       }
       res = state2.md.helpers.parseLinkTitle(state2.src, pos, state2.posMax);
       if (pos < max2 && start !== pos && res.ok) {
         title = res.str;
         pos = res.pos;
         for (; pos < max2; pos++) {
-          code2 = state2.src.charCodeAt(pos);
-          if (!isSpace(code2) && code2 !== 10) break;
+          code3 = state2.src.charCodeAt(pos);
+          if (!isSpace(code3) && code3 !== 10) break;
         }
       }
     }
@@ -5319,7 +5434,7 @@ function link(state2, silent) {
   return true;
 }
 function image(state2, silent) {
-  let code2, content2, label, pos, ref, res, title, start;
+  let code3, content2, label, pos, ref, res, title, start;
   let href = "";
   const oldPos = state2.pos;
   const max2 = state2.posMax;
@@ -5332,8 +5447,8 @@ function image(state2, silent) {
   if (pos < max2 && state2.src.charCodeAt(pos) === 40) {
     pos++;
     for (; pos < max2; pos++) {
-      code2 = state2.src.charCodeAt(pos);
-      if (!isSpace(code2) && code2 !== 10) break;
+      code3 = state2.src.charCodeAt(pos);
+      if (!isSpace(code3) && code3 !== 10) break;
     }
     if (pos >= max2) return false;
     start = pos;
@@ -5345,16 +5460,16 @@ function image(state2, silent) {
     }
     start = pos;
     for (; pos < max2; pos++) {
-      code2 = state2.src.charCodeAt(pos);
-      if (!isSpace(code2) && code2 !== 10) break;
+      code3 = state2.src.charCodeAt(pos);
+      if (!isSpace(code3) && code3 !== 10) break;
     }
     res = state2.md.helpers.parseLinkTitle(state2.src, pos, state2.posMax);
     if (pos < max2 && start !== pos && res.ok) {
       title = res.str;
       pos = res.pos;
       for (; pos < max2; pos++) {
-        code2 = state2.src.charCodeAt(pos);
-        if (!isSpace(code2) && code2 !== 10) break;
+        code3 = state2.src.charCodeAt(pos);
+        if (!isSpace(code3) && code3 !== 10) break;
       }
     } else title = "";
     if (pos >= max2 || state2.src.charCodeAt(pos) !== 41) {
@@ -5520,9 +5635,9 @@ function entity(state2, silent) {
     const match = state2.src.slice(pos).match(DIGITAL_RE);
     if (match) {
       if (!silent) {
-        const code2 = match[1][0].toLowerCase() === "x" ? parseInt(match[1].slice(1), 16) : parseInt(match[1], 10);
+        const code3 = match[1][0].toLowerCase() === "x" ? parseInt(match[1].slice(1), 16) : parseInt(match[1], 10);
         const token3 = state2.push("text_special", "", 0);
-        token3.content = isValidEntityCode(code2) ? fromCodePoint(code2) : fromCodePoint(65533);
+        token3.content = isValidEntityCode(code3) ? fromCodePoint(code3) : fromCodePoint(65533);
         token3.markup = match[0];
         token3.info = "entity";
       }
@@ -7007,13 +7122,13 @@ function extractTags(input, { isBigEndian, isBigTiff }) {
   const view = new DataView(input.buffer, input.byteOffset);
   const le = !isBigEndian;
   for (let offset = 0; offset + entrySize < input.length; offset += entrySize) {
-    const code2 = view.getUint16(offset, le);
+    const code3 = view.getUint16(offset, le);
     const type = view.getUint16(offset + 2, le);
     const length = isBigTiff ? Number(view.getBigUint64(offset + 4, le)) : view.getUint32(offset + 4, le);
-    if (code2 === 0)
+    if (code3 === 0)
       break;
     if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
-      tags[code2] = readTagValue(view, type, offset + valueOffset, le);
+      tags[code3] = readTagValue(view, type, offset + valueOffset, le);
     }
   }
   return tags;
@@ -7223,7 +7338,23 @@ withImages.core.ruler.push("mark_added", (state2) => {
   }
 });
 var withoutImages = renderer().disable("image");
+var fence2 = withoutImages.renderer.rules["fence"];
+withoutImages.renderer.rules["fence"] = (tokens, at, options, env, self) => {
+  const token3 = tokens[at];
+  const code3 = env?.code;
+  if (!token3 || !code3?.length || token3.info.trim() !== "suggestion") return fence2 ? fence2(tokens, at, options, env, self) : "";
+  const { escapeHtml: escapeHtml2 } = withoutImages.utils;
+  const row = (kind, before, after, text2) => `<tr class="suggestion-${kind}"><td class="suggestion-number">${before}</td><td class="suggestion-number">${after}</td><td class="suggestion-line"><span class="suggestion-sign">${kind === "del" ? "-" : "+"}</span>${escapeHtml2(text2)}</td></tr>`;
+  const first2 = code3[0]?.[0] ?? 1;
+  const added = token3.content ? token3.content.replace(/\n$/, "").split("\n") : [];
+  return `<div class="suggestion"><div class="suggestion-head">Suggested change</div><div class="suggestion-scroll"><table class="suggestion-code">${[
+    ...code3.map(([number, text2]) => row("del", String(number), "", text2)),
+    ...added.map((text2, offset) => row("add", "", String(first2 + offset), text2))
+  ].join("")}</table></div></div>
+`;
+};
 var renderMarkdown = (text2, file, added) => file === void 0 ? withoutImages.render(text2) : withImages.render(text2, { file, added });
+var renderComment = (text2, code3) => withoutImages.render(text2, { code: code3 });
 
 // src/page/state.ts
 var PAGE = { name: "walkthrough", lost: () => {
@@ -7264,10 +7395,11 @@ var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.
 var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
 var linesLabel = ([first2, last]) => first2 === last ? String(first2) : `${String(first2)}\u2013${String(last)}`;
 var baseName = (file) => file.slice(file.lastIndexOf("/") + 1);
-function markdown(text2, className) {
+function markdown(text2, className, code3) {
   const box2 = document.createElement("div");
   box2.className = `markdown ${className}`.trim();
-  box2.innerHTML = renderMarkdown(text2);
+  box2.innerHTML = code3 ? renderComment(text2, code3) : renderMarkdown(text2);
+  colourCode(box2);
   return box2;
 }
 var UNITS = [
@@ -7283,6 +7415,7 @@ function ago(iso) {
   for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
   return "now";
 }
+var suggestionCode = (thread) => thread.lines && thread.step !== null ? thread.code : void 0;
 var goesOut = (comment) => comment.by === "ai" && (comment.pending === true || comment.review !== void 0);
 
 // src/page/end.ts
@@ -8535,7 +8668,7 @@ var LineByLineRenderer = class {
   generateFileHtml(file) {
     const matcher2 = newMatcherFn(newDistanceFn((e) => deconstructLine(e.content, file.isCombined).content));
     return file.blocks.map((block2) => {
-      let lines = this.hoganUtils.render(genericTemplatesPath, "block-header", {
+      let lines2 = this.hoganUtils.render(genericTemplatesPath, "block-header", {
         CSSLineClass,
         blockHeader: file.isTooBig ? block2.header : escapeForHtml(block2.header),
         lineClass: "d2h-code-linenumber",
@@ -8545,13 +8678,13 @@ var LineByLineRenderer = class {
         if (oldLines.length && newLines.length && !contextLines.length) {
           this.applyRematchMatching(oldLines, newLines, matcher2).map(([oldLines2, newLines2]) => {
             const { left, right } = this.processChangedLines(file, file.isCombined, oldLines2, newLines2);
-            lines += left;
-            lines += right;
+            lines2 += left;
+            lines2 += right;
           });
         } else if (contextLines.length) {
           contextLines.forEach((line2) => {
             const { prefix, content: content2 } = deconstructLine(line2.content, file.isCombined);
-            lines += this.generateSingleLineHtml(file, {
+            lines2 += this.generateSingleLineHtml(file, {
               type: CSSLineClass.CONTEXT,
               prefix,
               content: content2,
@@ -8561,13 +8694,13 @@ var LineByLineRenderer = class {
           });
         } else if (oldLines.length || newLines.length) {
           const { left, right } = this.processChangedLines(file, file.isCombined, oldLines, newLines);
-          lines += left;
-          lines += right;
+          lines2 += left;
+          lines2 += right;
         } else {
           console.error("Unknown state reached while processing groups of lines", contextLines, oldLines, newLines);
         }
       });
-      return lines;
+      return lines2;
     }).join("\n");
   }
   applyLineGroupping(block2) {
@@ -9401,7 +9534,7 @@ function runsOf(files, type) {
   }
   return runs;
 }
-var enough = (lines) => lines.length >= MIN_LINES && lines.reduce((sum, { text: text2 }) => sum + (text2.match(/[\p{L}\p{N}]/gu)?.length ?? 0), 0) >= MIN_ALNUM;
+var enough = (lines2) => lines2.length >= MIN_LINES && lines2.reduce((sum, { text: text2 }) => sum + (text2.match(/[\p{L}\p{N}]/gu)?.length ?? 0), 0) >= MIN_ALNUM;
 function findMoves(files) {
   const added = runsOf(files, LineType.INSERT);
   const starts = /* @__PURE__ */ new Map();
@@ -9533,12 +9666,18 @@ var moving = { show: (() => {
 }) };
 function drawMoves(table2, file, copies = []) {
   const row = (type, line2) => [...table2.querySelectorAll(`tr:has(> td.d2h-${type})`)].find((one) => Number(one.querySelector(type === "del" ? ".line-num1" : ".line-num2")?.textContent.trim()) === line2);
-  const link2 = (onclick, down, text2) => el("button", { type: "button", className: "moved-link", onclick }, icon(down ? "chevron-down" : "chevron-right"), text2);
+  const link2 = (onclick, down, ...text2) => el("button", { type: "button", className: "moved-link", onclick }, icon(down ? "chevron-down" : "chevron-right"), el("span", {}, ...text2));
   const label = (number, content2) => el("tr", { className: "moved-label" }, el("td", { className: "d2h-code-linenumber" }, el("div", { className: "line-num1" }, number)), el("td", {}, el("div", { className: "d2h-code-line" }, content2)));
   const goTo = (move, to) => () => {
     moving.show(move, to);
   };
   const where = (one, other) => one === other ? "" : `${other} `;
+  const source = (verb, { file: from, line: line2 }, count) => {
+    const lines2 = count === 1 ? `line ${String(line2)}` : `lines ${String(line2)}\u2013${String(line2 + count - 1)}`;
+    const cut = from.lastIndexOf("/") + 1;
+    if (from === file) return { title: "", text: [`${verb} from ${lines2}`] };
+    return { title: cut ? `${verb} from ${from} ${lines2}` : "", text: [`${verb} from `, el("span", { className: "long" }, from.slice(0, cut)), `${from.slice(cut)} ${lines2}`] };
+  };
   for (const move of shownMoves()) {
     const { from, to, count } = move;
     if (from.file === file) {
@@ -9553,24 +9692,30 @@ function drawMoves(table2, file, copies = []) {
     }
     if (to.file === file) {
       const rows = Array.from({ length: count }, (_, at) => row("ins", to.line + at));
-      rows[0]?.before(label("", link2(goTo(move, "from"), false, `Moved from ${where(to.file, from.file)}line ${String(from.line)}`)));
+      const { title, text: text2 } = source("Moved", from, count);
+      rows[0]?.before(label("", Object.assign(link2(goTo(move, "from"), false, ...text2), { title })));
       for (const one of rows) {
         one?.classList.add("moved");
         for (const cell of one?.cells ?? []) cell.classList.replace("d2h-ins", "d2h-cntx");
         const prefix = one?.querySelector(".d2h-code-line-prefix");
         if (prefix) prefix.textContent = " ";
-        const code2 = one?.querySelector(".d2h-code-line-ctn");
-        if (code2) code2.textContent = code2.textContent;
+        const code3 = one?.querySelector(".d2h-code-line-ctn");
+        if (code3) code3.textContent = code3.textContent;
       }
     }
   }
   for (const copy of copies) {
-    const { from, to } = copy;
-    const text2 = `Copied from ${where(to.file, from.file)}line ${String(from.line)}`;
+    const { from, to, count } = copy;
+    if (to.file !== file) continue;
+    const { title, text: text2 } = source("Copied", from, count);
     const go2 = () => {
       moving.copied(copy);
     };
-    if (to.file === file) row("ins", to.line)?.before(label("", copy.inDiff ? link2(go2, false, text2) : el("span", {}, text2)));
+    const rows = Array.from({ length: count }, (_, at) => row("ins", to.line + at));
+    const top = label("", Object.assign(copy.inDiff ? link2(go2, false, ...text2) : el("span", {}, ...text2), { title }));
+    rows[0]?.before(top);
+    for (const one of [top, ...rows]) one?.classList.add("copied");
+    rows.at(-1)?.classList.add("copied-end");
   }
 }
 
@@ -9581,14 +9726,14 @@ function avatar(comment) {
   const text2 = comment.by === "you" ? "Y" : comment.by === "ai" ? "AI" : initials(comment.author ?? "");
   return attrs(el("span", { className: `avatar avatar-${comment.by}` }, text2), { "aria-hidden": "true" });
 }
-function commentBody(comment) {
-  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, "comment-text");
+function commentBody(comment, code3) {
+  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, "comment-text", code3);
   if (goesOut(comment)) (body.querySelector("p") ?? body).prepend(el("span", { className: "ai-tag" }, "[AI]"), " ");
   return body;
 }
-function composer({ placeholder, text: text2 = "", primary, onPrimary, onAsk, onCancel }) {
+function composer({ placeholder, label = placeholder, text: text2 = "", primary, onPrimary, onAsk, onCancel }) {
   const area = el("textarea", { className: "composer-text", placeholder, value: text2, rows: 3 });
-  area.setAttribute("aria-label", placeholder);
+  area.setAttribute("aria-label", label);
   const add = el("button", { type: "button", className: "btn primary small", disabled: !text2.trim() }, primary);
   const busy = (doing) => {
     for (const button of box2.querySelectorAll("button")) button.disabled = doing;
@@ -9641,9 +9786,10 @@ var ThreadBox = class {
   outdated = el("div", { className: "outdated", hidden: true });
   body = el("div", { className: "thread-body" }, el("div", { className: "thread-inner" }, this.outdated, this.list, this.foot));
   resolvedPending = el("span", { className: "pending-tag" }, "Pending");
-  resolvedText = el("span", { className: "resolved-text" }, el("strong", {}, "AI"), " marked this conversation as resolved.");
+  resolver = el("strong", {}, "AI");
+  resolvedText = el("span", { className: "resolved-text" }, this.resolver, " marked this conversation as resolved.");
   showButton = attrs(el("button", { type: "button", className: "btn small ghost" }), { "aria-expanded": "false" });
-  /** The collapsed line of a thread the AI resolved. */
+  /** GitHub's collapsed line of a resolved thread, naming who resolved it. */
   resolvedLine = el(
     "div",
     { className: "resolved-line" },
@@ -9668,10 +9814,10 @@ var ThreadBox = class {
     };
     this.update(thread);
   }
-  /** Opens or closes a thread the AI resolved; any other thread is always open. */
+  /** Opens or closes a resolved thread; an open thread is always open. */
   show(open = true) {
     this.showResolved = open;
-    const folded = this.thread.resolvedBy === "ai" && !open;
+    const folded = !!this.thread.resolvedBy && !open;
     this.box.classList.toggle("folded", folded);
     this.body.inert = folded;
     this.showButton.textContent = open ? "Hide resolved" : "Show resolved";
@@ -9681,23 +9827,30 @@ var ThreadBox = class {
     const { thread } = this;
     this.outdated.hidden = thread.step !== null;
     if (thread.step !== null || this.outdated.hasChildNodes()) return;
-    const code2 = (thread.code ?? []).flatMap(([number, text2], at, all) => [
+    const texts = (thread.code ?? []).map(([, text2]) => el("span", {}, text2));
+    const code3 = (thread.code ?? []).flatMap(([number], at, all) => [
       ...at > 0 && number !== (all[at - 1]?.[0] ?? 0) + 1 ? [attrs(el("div", { className: "outdated-gap" }), { "aria-hidden": "true" })] : [],
-      el("div", { className: "outdated-line" }, el("span", { className: "outdated-number" }, String(number)), el("span", {}, text2))
+      el("div", { className: "outdated-line" }, el("span", { className: "outdated-number" }, String(number)), texts[at] ?? "")
     ]);
+    colourLines(texts, thread.file);
     this.outdated.append(
       el("div", { className: "outdated-head" }, el("span", { className: "outdated-path", title: thread.file }, thread.file), el("span", { className: "outdated-tag" }, "Outdated")),
-      ...code2.length ? [el("div", { className: "outdated-code" }, ...code2)] : []
+      ...code3.length ? [el("div", { className: "outdated-code" }, ...code3)] : []
     );
   }
   /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
   update(thread) {
     this.thread = thread;
-    const byAi = thread.resolvedBy === "ai";
-    this.box.classList.toggle("resolved", !!thread.resolved && !byAi);
-    this.box.classList.toggle("ai-resolved", byAi);
-    if (!byAi) this.resolvedLine.remove();
-    else if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    const by = thread.resolvedBy;
+    this.box.classList.toggle("resolved", !!by);
+    if (!by) this.resolvedLine.remove();
+    else {
+      if (this.resolver.textContent !== (by === "ai" ? "AI" : "You")) {
+        this.resolver.textContent = by === "ai" ? "AI" : "You";
+        this.resolvedLine.firstElementChild?.replaceWith(avatar({ by }));
+      }
+      if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    }
     if (thread.resolvePending) {
       if (!this.resolvedPending.isConnected) this.resolvedText.after(this.resolvedPending);
     } else this.resolvedPending.remove();
@@ -9712,7 +9865,7 @@ var ThreadBox = class {
       }
     let before = null;
     for (const comment of thread.comments) {
-      const key2 = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id]);
+      const key2 = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id, suggestionCode(thread)]);
       const was = this.shown.get(comment.id);
       let element = was?.element;
       if (!was || was.key !== key2 && this.editing !== comment.id || this.editing === comment.id && !was.element.querySelector("textarea")) {
@@ -9787,7 +9940,7 @@ var ThreadBox = class {
         this.editing = null;
         this.update(this.thread);
       }
-    }) : commentBody(comment);
+    }) : commentBody(comment, suggestionCode(this.thread));
     row.append(avatar(comment), el("div", { className: "comment-main" }, head, body));
     return row;
   }
@@ -9866,7 +10019,7 @@ var FilePane = class {
     const area = el("div", { className: "diff-area" }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
     if (this.preview) area.append(this.preview);
-    this.body.append(el("div", { className: "file-inner" }, this.outdatedZone, this.fileZone, area));
+    this.body.append(el("div", { className: "file-inner" }, this.band, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add("overview-stripe");
     attrs(this.stripe, { "aria-hidden": "true", preserveAspectRatio: "none" });
@@ -9882,11 +10035,10 @@ var FilePane = class {
   rows = /* @__PURE__ */ new Map();
   /** Runs of added and removed lines, by their first and last row. */
   runs = [];
-  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone or the file's own. */
+  /** Each thread with what holds it: a row under its line, or its own box in the band above the diff. */
   threads = /* @__PURE__ */ new Map();
-  outdatedZone = el("div", { className: "outdated-zone", hidden: true });
-  /** Comments on the whole file and their composer, under the outdated ones. */
-  fileZone = el("div", { className: "file-threads", hidden: true });
+  /** Above the diff: the composer for the whole file, its threads oldest first, then outdated threads. */
+  band = el("div", { className: "file-threads", hidden: true });
   stripe = document.createElementNS(SVG3, "svg");
   composerRow = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
@@ -9967,7 +10119,9 @@ var FilePane = class {
     }
     const changed = this.header.querySelector(".changed-tag");
     if (changed) changed.hidden = !view.changed.includes(this.name);
-    return this.drawThreads(shows, closed);
+    const arrived2 = this.drawThreads(shows, closed);
+    colourSuggestions(this.box, this.name, view.head);
+    return arrived2;
   }
   drawHeader(parsed) {
     const chevron = el("button", { type: "button", className: "icon-button file-toggle" }, icon("chevron-right"));
@@ -10002,10 +10156,16 @@ var FilePane = class {
       el("label", { className: "viewed-toggle", title: "Viewed (V)" }, viewed, "Viewed"),
       attrs(
         el("button", { type: "button", className: "icon-button file-comment", title: "Comment on this file", onclick: () => {
-          this.open();
-          pick({ step: this.step.id, file: this.name });
+          if (this.fileComposing()) {
+            const draft = this.band.querySelector(".composer textarea");
+            if (draft?.value.trim()) draft.focus();
+            else pick(null);
+          } else {
+            this.open();
+            pick({ step: this.step.id, file: this.name });
+          }
         } }, icon("message")),
-        { "aria-label": "Comment on this file" }
+        { "aria-label": "Comment on this file", "aria-pressed": "false" }
       )
     );
   }
@@ -10076,23 +10236,23 @@ var FilePane = class {
       })
     );
   }
-  /** Puts each thread under its last line, at the top of the file once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, in the band above the diff once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
   drawThreads(shows, closed) {
     const here = threadsIn(this.step.id, this.name);
-    const outdated = outdatedIn(this.step.id, this.name);
+    const onFile2 = here.filter((one) => !one.lines).sort((one, other) => Date.parse(one.comments[0]?.at ?? "") - Date.parse(other.comments[0]?.at ?? ""));
+    const banded = [...onFile2, ...outdatedIn(this.step.id, this.name)];
     const arrived2 = [];
-    const ids = new Set([...here, ...outdated].map((one) => one.id));
+    const ids = new Set([...here, ...banded].map((one) => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id) || row.parentElement === this.outdatedZone !== outdated.some((one) => one.id === id) || row.parentElement === this.fileZone !== here.some((one) => one.id === id && !one.lines)) {
+      if (!ids.has(id) || row.parentElement === this.band !== banded.some((one) => one.id === id)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll(".gutter-mark")) old.remove();
-    this.outdatedZone.hidden = !outdated.length;
-    if (here.some((one) => !one.lines)) this.fileZone.hidden = false;
-    for (const thread of [...outdated, ...here]) {
+    if (banded.length) this.band.hidden = false;
+    for (const thread of [...banded, ...here.filter((one) => one.lines)]) {
       const anchor = thread.step !== null && thread.lines ? this.rows.get(thread.lines[1]) : void 0;
-      const holder = anchor ?? (thread.step === null ? this.outdatedZone : thread.lines ? void 0 : this.fileZone);
+      const holder = anchor ?? (banded.includes(thread) ? this.band : void 0);
       if (!holder) continue;
       const held = !closed && shows(holder);
       const kept = this.threads.get(thread.id);
@@ -10106,18 +10266,26 @@ var FilePane = class {
       const row = anchor ? threadRow(box2.box) : box2.box;
       row.dataset["thread"] = thread.id;
       if (anchor) this.placeAfter(anchor, row);
-      else if (holder === this.fileZone && this.composerRow?.parentElement === holder) this.composerRow.before(row);
       else holder.append(row);
       this.threads.set(thread.id, { row, box: box2 });
       if (held) arrived2.push(hold(row));
       else if (this.drawn) for (const one of box2.box.querySelectorAll(".comment")) one.classList.add("arrive");
     }
     this.drawn = true;
+    banded.forEach((thread, at) => {
+      const row = this.threads.get(thread.id)?.row;
+      const now = this.band.children[at + (this.composerRow?.parentElement === this.band ? 1 : 0)];
+      if (row && row !== now) this.band.insertBefore(row, now ?? null);
+    });
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
-    this.fileZone.hidden = !this.fileZone.childElementCount;
+    this.header.querySelector(".file-comment")?.setAttribute("aria-pressed", String(this.fileComposing()));
+    this.band.hidden = !this.band.childElementCount;
     this.drawStripe();
     return arrived2;
+  }
+  fileComposing() {
+    return picked?.step === this.step.id && picked.file === this.name && picked.start === void 0;
   }
   placeAfter(anchor, row) {
     let last = anchor;
@@ -10134,19 +10302,20 @@ var FilePane = class {
   }
   drawComposer() {
     const mine = picked?.step === this.step.id && picked.file === this.name ? picked : null;
-    const lines = mine?.start !== void 0 && mine.end !== void 0 ? [mine.start, mine.end] : null;
-    for (const [line2, row] of this.rows) row.classList.toggle("picked", !!lines && line2 >= lines[0] && line2 <= lines[1]);
-    const key2 = mine && (lines ? lines.join("-") : "file");
+    const lines2 = mine?.start !== void 0 && mine.end !== void 0 ? [mine.start, mine.end] : null;
+    for (const [line2, row] of this.rows) row.classList.toggle("picked", !!lines2 && line2 >= lines2[0] && line2 <= lines2[1]);
+    const key2 = mine && (lines2 ? lines2.join("-") : "file");
     if (this.composerRow && this.composerRow.dataset["lines"] !== key2) {
       this.composerRow.remove();
       this.composerRow = null;
     }
     if (!mine || this.composerRow) return;
-    const anchor = lines && this.rows.get(lines[1]);
-    if (lines && !anchor) return;
-    const where = { file: this.name, ...lines && { lines } };
+    const anchor = lines2 && this.rows.get(lines2[1]);
+    if (lines2 && !anchor) return;
+    const where = { file: this.name, ...lines2 && { lines: lines2 } };
     const box2 = composer({
       placeholder: "Leave a comment",
+      ...!lines2 && { label: "Comment on this file" },
       primary: "Add comment",
       onPrimary: async (text2) => {
         const done = await send2("comment", { ...where, text: text2 });
@@ -10167,7 +10336,7 @@ var FilePane = class {
     this.composerRow.classList.add("composer-line");
     this.composerRow.dataset["lines"] = key2 ?? "";
     if (anchor) this.placeAfter(anchor, this.composerRow);
-    else this.fileZone.append(this.composerRow);
+    else this.band.prepend(this.composerRow);
     const cell = this.composerRow.querySelector(".thread-cell");
     if (cell) grow(cell);
   }
@@ -10224,6 +10393,7 @@ var FilePane = class {
     }
     box2.innerHTML = renderMarkdown(await answer.text(), this.name, added);
     box2.classList.add("markdown");
+    colourCode(box2);
   }
 };
 var threadRow = (content2) => el("tr", { className: "thread-row" }, el("td", { colSpan: 2 }, el("div", { className: "thread-cell" }, content2)));
@@ -10241,8 +10411,13 @@ function drawFiles(step, { own, quiet } = {}) {
   };
   const holder = el("div");
   holder.innerHTML = html(parsed, { outputFormat: "line-by-line", drawFileList: false, matching: "lines" });
-  const wrappers = [...holder.querySelectorAll(".d2h-file-wrapper")];
-  const panes2 = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector(".d2h-file-diff") ?? null, shown(file)));
+  const tables = [...holder.querySelectorAll(".d2h-file-wrapper")].map((wrapper) => wrapper.querySelector(".d2h-file-diff"));
+  const panes2 = parsed.map((file, at) => new FilePane(step, file, tables[at] ?? null, shown(file)));
+  const revs = { base: own ? state.view.since?.head : state.view.base, head: state.view.head };
+  parsed.forEach((file, at) => {
+    const table2 = tables[at];
+    if (table2) void colourDiff(table2, file, revs);
+  });
   return step.files.flatMap((file) => panes2.filter((pane) => pane.file === file));
 }
 
@@ -10495,7 +10670,12 @@ var CRITERIA = {
   "not-met": ["not-met", "Not met"],
   "not-checked": ["unchecked", "Not checked"]
 };
-var plainText = (body) => markdown(body, "row-text").textContent.replace(/\s+/g, " ").trim();
+function rowText(body) {
+  const box2 = markdown(body, "row-text");
+  const blocks = [...box2.querySelectorAll("pre > code.language-suggestion")];
+  for (const block2 of blocks) block2.parentElement?.remove();
+  return { text: box2.textContent.replace(/\s+/g, " ").trim(), suggests: blocks.length > 0 };
+}
 var resolvedByAi = () => state.view.threads.filter((one) => one.resolvedBy === "ai" && (one.resolveReview === void 0 || one.resolveReview === state.view.submitted?.id));
 var SummaryPane = class {
   constructor(reveal2, end) {
@@ -10593,14 +10773,14 @@ var SummaryPane = class {
   /** The thread's file and lines, or the file alone for a comment on the whole file; a link to it while it shows in a step. */
   where(thread) {
     const where = thread.lines ? `${baseName(thread.file)}:${linesLabel(thread.lines)}` : baseName(thread.file);
-    return threadStep(thread) === void 0 ? el("span", { className: "where", title: thread.file }, where) : el("a", { className: "where", href: "#", title: thread.file, onclick: (event) => {
+    return threadStep(thread) === void 0 ? el("span", { className: "where", title: thread.file }, where) : el("a", { className: "where", href: "#", title: thread.lines ? thread.file : `${thread.file}: go to the comment`, onclick: (event) => {
       event.preventDefault();
       this.reveal({ thread: thread.id });
     } }, where);
   }
   row(thread, comment, pending) {
     const link2 = this.where(thread);
-    const text2 = plainText(comment.body);
+    const { text: text2, suggests } = rowText(comment.body);
     const item = el("li", { className: "going-row" });
     item.dataset["comment"] = comment.id;
     const actions = pending ? [
@@ -10619,6 +10799,7 @@ var SummaryPane = class {
       "span",
       { className: "row-text", title: comment.by === "ai" ? `[AI] ${text2}` : text2 },
       ...thread.step === null && comment.id === thread.id ? [el("span", { className: "outdated-tag" }, "Outdated")] : [],
+      ...suggests && suggestionCode(thread) ? [el("span", { className: "suggestion-tag" }, "Suggested change")] : [],
       ...comment.by === "ai" ? [el("span", { className: "ai-tag" }, "[AI]"), " "] : [],
       text2
     );
@@ -10653,7 +10834,7 @@ var SummaryPane = class {
           "ul",
           { className: "going-out" },
           ...rows.map((thread) => {
-            const text2 = plainText(thread.comments[0]?.body ?? "");
+            const { text: text2 } = rowText(thread.comments[0]?.body ?? "");
             const item = el(
               "li",
               { className: "going-row resolved-row" },
@@ -10743,8 +10924,8 @@ var SummaryPane = class {
   }
   done() {
     const end = el("button", { type: "button", className: "btn small ghost", onclick: this.end }, "End session");
-    const lines = state.view.pr ? [el("strong", {}, "Review submitted"), el("p", {}, sentLine()), el("p", { className: "outcome-actions" }, ...viewReview(), end)] : [el("strong", {}, "Sent to the agent"), el("p", {}, `${sentLine()} The agent is fixing ${them()}; follow along there.`), el("p", { className: "outcome-actions" }, end)];
-    return attrs(el("div", { className: "review-box done" }, icon("met"), el("div", {}, ...lines)), { role: "status" });
+    const lines2 = state.view.pr ? [el("strong", {}, "Review submitted"), el("p", {}, sentLine()), el("p", { className: "outcome-actions" }, ...viewReview(), end)] : [el("strong", {}, "Sent to the agent"), el("p", {}, `${sentLine()} The agent is fixing ${them()}; follow along there.`), el("p", { className: "outcome-actions" }, end)];
+    return attrs(el("div", { className: "review-box done" }, icon("met"), el("div", {}, ...lines2)), { role: "status" });
   }
 };
 
@@ -10754,7 +10935,7 @@ var nav = region("nav");
 var main = region("main");
 var pill = attrs(el("button", { type: "button", className: "new-pill", hidden: true }), { "aria-live": "polite" });
 var content = el("div", { className: "content" });
-main.append(pill, content);
+main.append(el("div", { className: "pill-dock" }, pill), content);
 new ResizeObserver(() => {
   main.style.setProperty("--pane", `${String(content.clientWidth)}px`);
 }).observe(content);
@@ -10865,7 +11046,8 @@ function readingAnchor() {
   const top = main.getBoundingClientRect().top;
   for (const element of content.firstElementChild?.querySelectorAll(".step-head, .file-header, tr, .step-foot") ?? []) {
     const box2 = element.getBoundingClientRect();
-    if (box2.height && box2.bottom > top) return { element, top: box2.top };
+    const stuck = element.classList.contains("file-header") && (element.parentElement?.getBoundingClientRect().top ?? top) < top;
+    if (box2.height && box2.bottom > top && !stuck) return { element, top: box2.top };
   }
   return null;
 }
@@ -10887,7 +11069,7 @@ function drawPill() {
     );
 }
 pill.onclick = () => {
-  const [first2] = arrived;
+  const [first2] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove("arriving");
   for (const one of arrived) grow(one.querySelector(":scope > td > .thread-cell") ?? one);
   arrived = [];
@@ -10958,7 +11140,9 @@ function drawHeader(onSummary) {
   const reviewing = !view.ready && !view.sessionGone && !ending;
   const title = `${reviewing ? "Reviewing \xB7 " : ""}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} \xB7 Walkthrough`;
   if (document.title !== title) document.title = title;
-  const favicon = reviewing ? "favicon-reviewing.svg" : "favicon.svg";
+  const asleep = ending?.kind === "lost" || view.sessionGone;
+  const ended = ending?.kind === "ended" ? view.submitted ? "done" : "ended" : null;
+  const favicon = `favicon-${asleep ? "asleep" : ended ?? (view.ready ? "awake" : "reading")}.svg`;
   const icon2 = document.querySelector('link[rel="icon"]');
   if (icon2 && icon2.getAttribute("href") !== favicon) icon2.setAttribute("href", favicon);
   const files = allFiles().length;
@@ -10981,7 +11165,7 @@ function drawHeader(onSummary) {
   if (changesSwitch.box.hidden) changesSwitch.close(false);
   if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
   else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
-  drawBehind(ready && view.behind && !ending);
+  drawBehind(view.behind && !view.sessionGone && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
@@ -11038,10 +11222,10 @@ function toggleMenu() {
       viewer.theme === one
     )
   );
-  const colourBlind = item("Colour-blind diff", "menuitemcheckbox", () => {
+  const colourBlind = item("Colorblind", "menuitemcheckbox", () => {
     viewer = chooseViewer(viewer, { colourBlind: !viewer.colourBlind });
   }, viewer.colourBlind);
-  if (viewer.colourBlind) colourBlind.prepend(el("span", { className: "menu-check" }, icon("met")));
+  colourBlind.prepend(el("span", { className: "menu-check" }, icon("checkbox")));
   const opened = attrs(
     el(
       "div",
