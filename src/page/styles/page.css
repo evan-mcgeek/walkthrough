@@ -1419,8 +1419,8 @@ tr.flash td {
   background: var(--canvas);
 }
 
-/* A thread the AI resolved: one resolved line, the thread opening under it by grid rows. */
-.thread.ai-resolved {
+/* A resolved thread: one resolved line, the thread opening under it by grid rows. */
+.thread.resolved {
   background: var(--surface);
 }
 
@@ -1433,7 +1433,7 @@ tr.flash td {
   font-size: 13px;
 }
 
-.thread.ai-resolved:not(.folded) .resolved-line {
+.thread.resolved:not(.folded) .resolved-line {
   border-bottom: 1px solid var(--rule-soft);
 }
 

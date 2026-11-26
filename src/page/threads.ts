@@ -100,9 +100,10 @@ export class ThreadBox {
   private readonly outdated = el('div', { className: 'outdated', hidden: true });
   private readonly body = el('div', { className: 'thread-body' }, el('div', { className: 'thread-inner' }, this.outdated, this.list, this.foot));
   private readonly resolvedPending = el('span', { className: 'pending-tag' }, 'Pending');
-  private readonly resolvedText = el('span', { className: 'resolved-text' }, el('strong', {}, 'AI'), ' marked this conversation as resolved.');
+  private readonly resolver = el('strong', {}, 'AI');
+  private readonly resolvedText = el('span', { className: 'resolved-text' }, this.resolver, ' marked this conversation as resolved.');
   private readonly showButton = attrs(el('button', { type: 'button', className: 'btn small ghost' }), { 'aria-expanded': 'false' });
-  /** The collapsed line of a thread the AI resolved. */
+  /** GitHub's collapsed line of a resolved thread, naming who resolved it. */
   private readonly resolvedLine = el(
     'div',
     { className: 'resolved-line' },
@@ -129,10 +130,10 @@ export class ThreadBox {
     this.update(thread);
   }
 
-  /** Opens or closes a thread the AI resolved; any other thread is always open. */
+  /** Opens or closes a resolved thread; an open thread is always open. */
   show(open = true): void {
     this.showResolved = open;
-    const folded = this.thread.resolvedBy === 'ai' && !open;
+    const folded = !!this.thread.resolvedBy && !open;
     this.box.classList.toggle('folded', folded);
     this.body.inert = folded;
     this.showButton.textContent = open ? 'Hide resolved' : 'Show resolved';
@@ -159,12 +160,17 @@ export class ThreadBox {
   /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
   update(thread: ThreadView): HTMLElement[] {
     this.thread = thread;
-    const byAi = thread.resolvedBy === 'ai';
-    this.box.classList.toggle('resolved', !!thread.resolved && !byAi);
-    this.box.classList.toggle('ai-resolved', byAi);
+    const by = thread.resolvedBy;
+    this.box.classList.toggle('resolved', !!by);
     // In the page only while they apply, so a thread never holds a hidden "Pending".
-    if (!byAi) this.resolvedLine.remove();
-    else if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    if (!by) this.resolvedLine.remove();
+    else {
+      if (this.resolver.textContent !== (by === 'ai' ? 'AI' : 'You')) {
+        this.resolver.textContent = by === 'ai' ? 'AI' : 'You';
+        this.resolvedLine.firstElementChild?.replaceWith(avatar({ by }));
+      }
+      if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    }
     if (thread.resolvePending) {
       if (!this.resolvedPending.isConnected) this.resolvedText.after(this.resolvedPending);
     }

@@ -41,6 +41,22 @@ test.describe('a pull request', () => {
     await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
     await expect(page.locator('.resolved-row')).toHaveCount(0);
   });
+
+  test('a colleague’s thread you resolve folds to GitHub’s resolved line, Pending until it goes out', async ({ page, repo, url }) => {
+    record(repo, ONE_STEP);
+    record(repo, [{ id: '1042', file: 'login.ts', lines: [1, 1], author: 'dana-k', at: '2026-11-23T09:30:00Z', body: 'Why everyone?' }], 'threads');
+    await open(page, url);
+
+    const thread = page.locator('.thread[data-thread="1042"]');
+    await thread.getByRole('button', { name: 'Resolve' }).click();
+    await expect(thread.locator('.resolved-line')).toHaveText(/^YYou marked this conversation as resolved\.PendingShow resolved$/);
+    await expect(thread.locator('.thread-body')).toHaveJSProperty('inert', true);
+
+    await thread.getByRole('button', { name: 'Show resolved' }).click();
+    await thread.getByRole('button', { name: 'Unresolve conversation' }).click();
+    await expect(thread.locator('.resolved-line')).toBeHidden();
+    await expect(thread.getByRole('button', { name: 'Resolve' })).toBeVisible();
+  });
 });
 
 test('an outdated comment sits at the top of its file, under the file’s own comments, with the code it was written on, and its Summary row links there', async ({ page, repo, url }) => {
