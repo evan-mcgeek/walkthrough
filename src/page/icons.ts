@@ -35,6 +35,11 @@ const ICONS = {
   'not-met': [ring(), line('M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8')],
   partly: [ring(), line('M5 8h6')],
   unchecked: [ring({ 'stroke-dasharray': '2.4 2.2' })],
+  /** A checkbox; its menu item's aria-checked fills it. */
+  checkbox: [
+    ['rect', { x: 2.5, y: 2.5, width: 11, height: 11, rx: 2.5, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.4 }],
+    line('M5 8.2l2 2 4-4.3'),
+  ],
   eye: [
     ['path', { d: 'M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z', ...round, 'stroke-width': 1.4 }],
     ['circle', { cx: 8, cy: 8, r: 2, fill: 'currentColor' }],
