@@ -55,6 +55,9 @@ test('the AI and you comment on a whole file in the band above its diff, oldest 
   await expect(band.locator('> :first-child textarea')).toBeFocused();
   await expect(band.locator('> :first-child textarea')).toHaveAttribute('placeholder', 'Leave a comment');
   await page.keyboard.type('Name it for what it does.');
+  // A second click keeps the draft.
+  await button.click();
+  await expect(band.locator('> :first-child textarea')).toHaveValue('Name it for what it does.');
   await band.getByRole('button', { name: 'Add comment' }).click();
   await expect(button).toHaveAttribute('aria-pressed', 'false');
   const threads = band.locator('> .thread');

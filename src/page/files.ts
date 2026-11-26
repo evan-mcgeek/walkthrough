@@ -201,8 +201,12 @@ export class FilePane {
       el('label', { className: 'viewed-toggle', title: 'Viewed (V)' }, viewed, 'Viewed'),
       attrs(
         el('button', { type: 'button', className: 'icon-button file-comment', title: 'Comment on this file', onclick: () => {
-          if (this.fileComposing()) pick(null);
-          else {
+          if (this.fileComposing()) {
+            // A draft survives a second click: only an empty composer closes.
+            const draft = this.band.querySelector<HTMLTextAreaElement>('.composer textarea');
+            if (draft?.value.trim()) draft.focus();
+            else pick(null);
+          } else {
             this.open();
             pick({ step: this.step.id, file: this.name });
           }
