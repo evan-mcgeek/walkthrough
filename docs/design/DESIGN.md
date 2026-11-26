@@ -11,9 +11,11 @@ colors:
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
-  ultramarine: "#2433b8"
-  ultramarine-hover: "#1b2896"
-  ultramarine-text: "#2433b8"
+  ultramarine: "#2d3a9e"
+  ultramarine-hover: "#252f85"
+  ultramarine-text: "#2d3a9e"
+  ultramarine-fill: "#2d3a9e"
+  ultramarine-fill-hover: "#252f85"
   ultramarine-wash: "#eceefc"
   ultramarine-line: "#d3d7f7"
   on-ultramarine: "#ffffff"
@@ -48,7 +50,9 @@ colors:
   ultramarine-text-dark: "#a9b1ff"
   ultramarine-wash-dark: "#1e2346"
   ultramarine-line-dark: "#333b70"
-  on-ultramarine-dark: "#0b0f2e"
+  ultramarine-fill-dark: "#4f5bd5"
+  ultramarine-fill-hover-dark: "#5b67e0"
+  on-ultramarine-dark: "#ffffff"
   icon-knockout-dark: "#15181d"
   amber-dark: "#e3b260"
   ok-dark: "#5fd38d"
@@ -172,15 +176,15 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.control}"
     padding: "0 12px"
     height: "30px"
   button-primary-hover:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-primary-active:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -262,7 +266,7 @@ components:
     rounded: "{rounded.xl}"
     padding: "12px 16px"
   add-comment:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.sm}"
     size: "20px"
@@ -317,7 +321,8 @@ A cool grey neutral scale with one fixed accent, Ultramarine, and status colour 
 
 ### Primary (the accent)
 - **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the gutter "+" for a new comment, and the mark. It never carries status: not in the files-viewed bar, not in the step list.
-- **Ultramarine Hover** (`ultramarine-hover`): the primary button's hover and active fill. A disabled primary stays plain Ultramarine on hover.
+- **Ultramarine Hover** (`ultramarine-hover`): the accent's hover where it is not a fill.
+- **Ultramarine Fill / Fill Hover** (`ultramarine-fill`, `ultramarine-fill-hover`; decision 34): the three filled things, the primary button (rest, hover, active and the disabled hover), your avatar and the gutter "+", with white on them (`on-ultramarine`). In light they are Ultramarine and Ultramarine Hover; in dark a mid-tone, #4f5bd5 and #5b67e0, so the primary is never the brightest thing on screen (white on them 5.5:1 and 4.7:1). Light Ultramarine is #2d3a9e (was #2433b8): white on it 9.5:1, as text 8.2:1 or more on canvas, surface and its wash.
 - **Ultramarine Text** (`ultramarine-text`): the accent at text contrast, for links, step-number links, the "Look at" links, the selected-line gutter number, the reviewer's own gutter marker and "Your comment" label.
 - **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, your avatar, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
 
