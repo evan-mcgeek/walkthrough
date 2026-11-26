@@ -44,6 +44,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Explanations
 
 - An explanation says what changed and why, from the code and the ticket; the author session's own summary of the change is never a source.
+- The first step's explanation opens with one sentence on what the change makes behave differently.
 - Its first paragraph is one or two sentences, 30 words at most, and stands on its own.
   Anything more goes in a second paragraph, behind More, in at most three sentences.
 - Give the why, and the alternative the change rejected when the code or the ticket shows one.

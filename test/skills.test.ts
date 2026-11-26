@@ -24,6 +24,25 @@ describe('the skills', () => {
     expect(skill('pr')).toContain('"Shared rules" and "Someone else\'s change"');
   });
 
+  test('/walkthrough:init holds the policy interview and the voice offer, and the review skills send the person there', () => {
+    const init = skill('init');
+
+    for (const text of [
+      'walkthrough policy init',
+      'walkthrough policy save --file <file>',
+      '"Your [AI] comments go out under your name; the voice plugin makes them read like you. Want it?"',
+      '"Write the comments that go out in my voice, from my VOICE.md."',
+      '"Never offer the voice plugin."',
+      '`claude plugin marketplace add evan-mcgeek/skills`',
+      '`claude plugin install voice@evan-mcgeek-skills`',
+    ])
+      expect(init).toContain(text);
+    for (const name of ['walkthrough', 'pr']) {
+      expect(skill(name)).not.toContain('walkthrough policy init');
+      expect(skill(name)).toContain('invoke `/walkthrough:init`');
+    }
+  });
+
   test('the policy template has the parts the skills name', () => {
     const template = fs.readFileSync(path.join(SKILLS, 'walkthrough', 'REVIEW.md'), 'utf8');
     const parts = [...template.matchAll(/^## (.+)$/gm)].map(match => match[1]);
