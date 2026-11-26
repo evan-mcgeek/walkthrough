@@ -17,7 +17,8 @@ The build spec for the Walkthrough review page. It replaces every earlier brief,
 | `COPY.md` | Every string the page shows, with its cap. Anything not in it is removed. |
 | `screens.html` | The boards: every state, light and dark, 1440 and 390. Also the source for the desk scene and farewell robot SVG and CSS. |
 | `prototype.html` | Clickable reference for interaction and motion (not for decisions 18, 19 and 21 onward; see the table below). |
-| `brand/` | The mark, favicons, app icons, and the mascot Walky (`brand/mascot/`, light and dark, with a README). |
+| `mascot.html` | Walky's page: the figure, expressions, favicons, scenes, README banners and the rules, from the files in `brand/`. |
+| `brand/` | The mark, favicons, app icons; the mascot Walky (`brand/mascot/`, light and dark, with a README); README and social banners (`brand/banner/`, with a README and the `<picture>` snippet). |
 
 ## Where each decision is drawn
 
