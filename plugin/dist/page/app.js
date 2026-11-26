@@ -7431,8 +7431,9 @@ var viewReview = () => {
   const address = state.view.submitted?.address;
   return address ? [el("a", { className: "btn small", href: address, target: "_blank", rel: "noopener noreferrer" }, icon("external"), "View review")] : [];
 };
-function commandBox() {
-  const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : "/walkthrough";
+function commandBox(update = false) {
+  const skill = update ? "/walkthrough:update" : state.view.pr ? "/walkthrough:pr" : "/walkthrough";
+  const command = state.view.pr ? `${skill} ${state.view.pr.number}` : skill;
   const word = el("span", {}, "Copy command");
   const copy = attrs(el("button", { type: "button", className: "btn small" }, icon("copy"), word), { "aria-live": "polite" });
   let shown = 0;
@@ -10670,6 +10671,8 @@ var CRITERIA = {
   "not-met": ["not-met", "Not met"],
   "not-checked": ["unchecked", "Not checked"]
 };
+var ORDER = ["not-met", "partly", "not-checked", "met"];
+var linesWord = (lines2) => `${lines2[0] === lines2[1] ? "line" : "lines"} ${linesLabel(lines2)}`;
 function rowText(body) {
   const box2 = markdown(body, "row-text");
   const blocks = [...box2.querySelectorAll("pre > code.language-suggestion")];
@@ -10866,13 +10869,44 @@ var SummaryPane = class {
         el(
           "ul",
           { className: "criteria" },
-          ...criteria.map(({ text: text2, status }) => {
+          ...[...criteria].sort((one, other) => ORDER.indexOf(one.status) - ORDER.indexOf(other.status)).map((criterion) => {
+            const { text: text2, status } = criterion;
             const [mark, word] = CRITERIA[status];
-            return el("li", { className: `criterion ${status}` }, icon(mark), el("span", { className: "criterion-text", title: text2 }, text2), el("span", { className: "criterion-word" }, word));
+            const shows = this.shows(criterion);
+            return el(
+              "li",
+              { className: `criterion ${status}` },
+              icon(mark),
+              el("span", { className: "criterion-body" }, el("span", { className: "criterion-text" }, text2), ...shows.length ? [el("span", { className: "criterion-shows" }, ...shows)] : []),
+              el("span", { className: "criterion-word" }, word)
+            );
           })
         )
       )
     ];
+  }
+  /** A gap's link to the AI comment that closes it and what is missing; met's link to its lines; not checked's reason. */
+  shows({ comment, missing, file, lines: lines2, reason }) {
+    if (reason) return [reason];
+    if (file && lines2)
+      return [
+        el(
+          "a",
+          { className: "where", href: "#", title: `${file} ${linesWord(lines2)}: go to the lines`, onclick: (event) => {
+            event.preventDefault();
+            this.reveal({ file, lines: lines2 });
+          } },
+          `${baseName(file)}:${linesLabel(lines2)}`
+        )
+      ];
+    const thread = comment === void 0 ? void 0 : state.view.threads.find((one) => one.comments.some((said) => said.id === comment));
+    const where = thread ? `${baseName(thread.file)}${thread.lines ? `:${linesLabel(thread.lines)}` : ""}` : "";
+    const title = thread ? `${thread.file}${thread.lines ? ` ${linesWord(thread.lines)}` : ""}: go to the comment` : "";
+    const link2 = !thread ? [] : threadStep(thread) === void 0 ? [el("span", { className: "where", title }, where)] : [el("a", { className: "where", href: "#", title, onclick: (event) => {
+      event.preventDefault();
+      this.reveal({ thread: thread.id });
+    } }, where)];
+    return [...link2, ...missing ? [missing] : []];
   }
   reviewBox() {
     const own = !state.view.pr;
@@ -11024,7 +11058,12 @@ function leave(old, scrolled) {
     }
   );
 }
-function reveal({ thread: id, edit, file }) {
+function reveal({ thread: id, edit, file, lines: lines2 }) {
+  if (file !== void 0 && lines2) {
+    const look = { file, start: lines2[0], end: lines2[1], label: "" };
+    if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+    return;
+  }
   const thread = state.view.threads.find((one) => one.id === id);
   const stepId = thread ? threadStep(thread) : file === void 0 ? void 0 : stepOfFile(file)?.id;
   if (stepId === void 0) return;
@@ -11069,8 +11108,8 @@ function drawPill() {
     );
 }
 pill.onclick = () => {
-  const [first2] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove("arriving");
+  const [first2] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) grow(one.querySelector(":scope > td > .thread-cell") ?? one);
   arrived = [];
   drawPill();
@@ -11176,7 +11215,7 @@ function drawHeader(onSummary) {
 }
 function drawBehind(behind) {
   if (behind && !behindLine.hasChildNodes())
-    behindLine.append(icon("info"), el("span", { className: "behind-text" }, "The branch has new commits. Run the walkthrough again to see them:"), commandBox());
+    behindLine.append(icon("info"), el("span", { className: "behind-text" }, "The branch has new commits. Run the walkthrough again to see them:"), commandBox(true));
   behindLine.hidden = !behind;
 }
 function showDrawer(open) {

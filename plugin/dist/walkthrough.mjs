@@ -1789,7 +1789,7 @@ var require_punycode = __commonJS({
       }
       return String.fromCodePoint(...output);
     };
-    var encode2 = function(input) {
+    var encode3 = function(input) {
       const output = [];
       input = ucs2decode(input);
       const inputLength = input.length;
@@ -1855,7 +1855,7 @@ var require_punycode = __commonJS({
     };
     var toASCII = function(input) {
       return mapDomain(input, function(string) {
-        return regexNonASCII.test(string) ? "xn--" + encode2(string) : string;
+        return regexNonASCII.test(string) ? "xn--" + encode3(string) : string;
       });
     };
     var punycode2 = {
@@ -1877,7 +1877,7 @@ var require_punycode = __commonJS({
         "encode": ucs2encode
       },
       "decode": decode2,
-      "encode": encode2,
+      "encode": encode3,
       "toASCII": toASCII,
       "toUnicode": toUnicode
     };
@@ -13232,15 +13232,27 @@ init_define_GRAMMARS();
 import path5 from "node:path";
 var CRITERION_STATUSES = ["met", "partly", "not-met", "not-checked"];
 var file = (dir) => path5.join(dir, "walkthrough.json");
+var encode2 = (name2) => encodeURIComponent(name2).replace(/[!'()*~]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 function walkthroughDir(repo, source) {
-  const name2 = source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`;
+  const name2 = `${source.kind}-${encode2(nameOf(source))}`;
   if (Buffer.byteLength(name2) > 255)
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
   return path5.join(stateDir(), repo, name2);
 }
+var earlierDir = (repo, source) => path5.join(
+  stateDir(),
+  repo,
+  source.kind === "branch" ? `branch-${source.branch.replaceAll("/", "~")}` : `range-${encodeURIComponent(source.label)}`
+);
 var branchOfDir = (dir) => {
   const name2 = path5.basename(dir);
-  return name2.startsWith("branch-") ? name2.slice("branch-".length).replaceAll("~", "/") : void 0;
+  if (!name2.startsWith("branch-")) return void 0;
+  const branch = name2.slice("branch-".length).replaceAll("~", "/");
+  try {
+    return decodeURIComponent(branch);
+  } catch {
+    return branch;
+  }
 };
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
@@ -13264,7 +13276,9 @@ function openWalkthrough(dir, source, change, pr, carry) {
       return { walkthrough: relabelled, opened: "resumed" };
     }
     if (saved) {
+      const reviewedAt = saved.ready === false ? saved.reviewedAt : saved.head;
       const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
+      if (reviewedAt) moved.reviewedAt = reviewedAt;
       const { steps: steps3, unplaced } = await carry(moved);
       setSteps(moved, steps3);
       if (saved.steps.length && unplaced.length) moved.unplaced = unplaced;
@@ -13603,8 +13617,10 @@ async function markViewed(dir, { file: file2, viewed }) {
   });
   return true;
 }
-function aiComments(dir, given) {
-  return Promise.all(given.map(({ place, body }) => record(dir, { kind: "comment", by: "ai", text: body, place })));
+async function aiComments(dir, given) {
+  const recorded = [];
+  for (const { place, body } of given) recorded.push(await record(dir, { kind: "comment", by: "ai", text: body, place }));
+  return recorded;
 }
 async function answer(dir, id, text2) {
   if (!logOf(dir).some((event) => event.kind === "ask" && event.id === id)) throw new Error(`the page asked nothing with the id ${id}`);
@@ -14534,7 +14550,7 @@ async function exportPage(dir) {
 <div class="markdown">${renderMarkdown(step.explanation)}</div>${figure}${diff}${said2.length ? `<ul class="export-comments">${said2.join("")}</ul>` : ""}</section>`;
   });
   const body = await colourBlocks(steps3.join("\n"));
-  const criteria3 = (view.criteria ?? []).map((one) => `<li>${escape2(one.text)}: ${STATUS[one.status]}</li>`);
+  const criteria3 = (view.criteria ?? []).map((one) => `<li>${escape2(one.text)}: ${STATUS[one.status]}${one.missing || one.reason ? `. ${escape2(one.missing ?? one.reason ?? "")}` : ""}</li>`);
   const style = fs10.readFileSync(path11.join(PAGE, "style.css"), "utf8");
   const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   return `<!doctype html>
@@ -14583,8 +14599,9 @@ var threads = [
   }
 ];
 var criteria = [
-  { text: "Optional due date on create and edit", status: "met" },
-  { text: "Invalid dates rejected with a clear error", status: "not-met" }
+  { text: "Invalid dates rejected with a clear error", status: "not-met", comment: "48f3f82c", missing: "An invalid date becomes null and clears the field." },
+  { text: "Date picker works on phones", status: "not-checked", reason: "Needs the running app." },
+  { text: "Optional due date on create and edit", status: "met", file: "src/api/tasks.ts", lines: [19, 22] }
 ];
 var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
   Starts or resumes a walkthrough and serves its page without opening it; nothing is checked out.
@@ -14639,7 +14656,9 @@ walkthrough threads --file <file>
 ${JSON.stringify(threads, null, 2)}
 
 walkthrough criteria --file <file>
-  Records the acceptance criteria as checked, replacing those before; read-only on the page. status: met, partly, not-met or not-checked.
+  Records the acceptance criteria as checked, replacing those before; read-only on the page, gaps first. status: met, partly, not-met or not-checked.
+  partly and not-met need comment, the id walkthrough comment printed for your comment that closes the gap, and missing: what is missing, in 12 words, never the fix.
+  met needs the file and lines that meet it, in a step's diff; the page opens them as a Look at pointer does. not-checked needs reason: why, in 8 words.
 ${JSON.stringify(criteria, null, 2)}
 
 walkthrough listen
@@ -14721,6 +14740,7 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "b1e132469f1ddd7e0510aeafb7838227ad910716f3e5749a089a44e7b73ca1fa",
   "c89e17025c15f4a8a307dfe9592ada903dbe8aa8d2853b04a4c591b8ad31c124",
   "cb297b6ef136a939ba2feeff2b2b8bfdb1f40198d734abbeb10b0aa229990e2e",
+  "da354a418bf4ef499a80d0df61d80ffd38fa0b694c8e7d4e09129a7a38e52b07",
   "db5b3659a66f85035f2d88cd736295dee60a1e20e9a714c470a40af11b8eaef4",
   "e6d323edff72a83d70cc1cd901d1b1ec6d5a07530bd4d8f63194db09b8a23571",
   "f19c5bc5ed0114e350a43a510d0edbcdfa071fade96a6d0c1caace5cf192dccf",
@@ -14811,12 +14831,27 @@ function parseThreads(text2, walkthrough) {
     };
   });
 }
-function parseCriteria(text2) {
-  return parseList(text2, "the criteria", ({ text: criterion, status: status2 }, number) => {
+function parseCriteria(text2, walkthrough, aiComments2) {
+  return parseList(text2, "the criteria", ({ text: criterion, status: status2, comment: comment2, missing, file: file2, lines, reason }, number) => {
     const name2 = `criterion ${String(number)}`;
     if (!filled(criterion)) throw new Error(`${name2} needs a text`);
     if (!CRITERION_STATUSES.includes(status2)) throw new Error(`${name2}: status must be one of ${CRITERION_STATUSES.join(", ")}`);
-    return { text: criterion.trim(), status: status2 };
+    const checked = { text: criterion.trim(), status: status2 };
+    if (status2 === "partly" || status2 === "not-met") {
+      if (!filled(comment2) || !aiComments2.has(comment2.trim()))
+        throw new Error(`${name2} is ${status2}: comment must be the id of your comment that closes the gap, as walkthrough comment printed it`);
+      if (!filled(missing)) throw new Error(`${name2} is ${status2}: it needs missing, what is missing`);
+      return { ...checked, comment: comment2.trim(), missing: missing.trim() };
+    }
+    if (status2 === "met") {
+      if (!filled(file2) || !isLines(lines)) throw new Error(`${name2} is met: it needs the file and lines that meet it`);
+      const step = walkthrough.steps.find((one) => one.files.includes(file2));
+      if (!step || !lookShown(step, { file: file2, start: lines[0], end: lines[1] }))
+        throw new Error(`${name2}: lines ${String(lines[0])}-${String(lines[1])} of ${file2} are not in a step's diff`);
+      return { ...checked, file: file2, lines };
+    }
+    if (!filled(reason)) throw new Error(`${name2} is not-checked: it needs a reason`);
+    return { ...checked, reason: reason.trim() };
   });
 }
 
@@ -14843,7 +14878,15 @@ function located(args, {
   else if (target !== void 0) throw new Error("--target is for the current branch; a range has its --base");
   else if (!label?.trim()) throw new Error("--base and --head need a --label that names the change");
   else source = { kind: "range", base, head, label };
-  return { ...parsed3, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
+  return { ...parsed3, cwd, source, dir: renamedDir(currentRepo(cwd), source) };
+}
+function renamedDir(repo, source) {
+  const dir = walkthroughDir(repo, source);
+  const earlier = earlierDir(repo, source);
+  if (earlier === dir || !fs12.existsSync(earlier) || fs12.existsSync(dir)) return dir;
+  if (serverRunning(earlier)) return earlier;
+  fs12.renameSync(earlier, dir);
+  return dir;
 }
 async function start2(args) {
   const { cwd, source, dir, values } = located(args, { options: { pr: { type: "string" }, title: { type: "string" } } });
@@ -14863,6 +14906,7 @@ async function start2(args) {
     const line = reviewedLine(dir);
     if (line) console.log(line);
   }
+  if (walkthrough.ready === false && walkthrough.reviewedAt) console.log(`Last reviewed at ${short(walkthrough.reviewedAt)}.`);
   if (opened === "moved" && steps3.length > 0) {
     console.log(`The head moved: ${plural(steps3.length, "step")} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
@@ -14937,10 +14981,9 @@ async function threads2(args) {
 }
 async function criteria2(args) {
   const { dir, values } = located(args, FILE_OPTION);
-  const recorded = parseCriteria(readInput(values.file));
-  await updateWalkthrough(dir, (walkthrough) => {
-    walkthrough.criteria = recorded;
-  });
+  const text2 = readInput(values.file);
+  const ai = new Set(logOf(dir).flatMap((event) => event.kind === "comment" && event.by === "ai" ? [event.id] : []));
+  const recorded = await updateWalkthrough(dir, (walkthrough) => walkthrough.criteria = parseCriteria(text2, walkthrough, ai));
   console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? "criterion" : "criteria"}.`);
 }
 function comments2(args) {

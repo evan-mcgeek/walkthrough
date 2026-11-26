@@ -17,7 +17,7 @@ For their own change, `/walkthrough` is the procedure instead.
    Give the same label whenever the person opens this change again, so the walkthrough goes on where they left it; fetch its head again first.
    When the change's description shows a screenshot of the change, download it into the inbox start printed, as the policy says; the person approves the download as usual.
    Give it to the step whose UI it shows, as `walkthrough guide` says; leave out a screenshot that fits no step.
-4. Unless start printed "Already reviewed at this head", ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
+4. Unless start printed "Already reviewed at this head" or "Last reviewed at", ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
    Read the change while they answer; their answer sets how much your explanations say, as the policy says.
 5. Go on as "Walking through" says, until the walkthrough stops.
    The page ends in Submit review: nothing goes out before it, and then one finished review goes out, as the policy's "Someone else's change" part says.
@@ -47,8 +47,13 @@ Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the 
 6. Once the walkthrough is ready, the person reads, marks files Viewed, comments and submits on the page.
    Running `walkthrough start` again on the same head resumes the walkthrough as they left it; run `walkthrough open` if they need the page again.
    On a new head (the branch moved, or the same label on a new range) the walkthrough is not ready again, each step keeps the files that still change, and start names the files in no step yet.
-   Record the steps again with those files, review what changed as "Reviewing" says, skipping `walkthrough open` while their page is still open, and tell the person in one line what is new.
-   For each of your comments from an earlier review that the new code fixes, found with `walkthrough comments --all`, run `walkthrough resolve <id>`; do not reply to it.
+   When start also prints "Last reviewed at <head>", ask the person with your question tool what to review, before anything else:
+   - "What changed" (recommended): the commits since that head, and whether each comment was addressed.
+   - "The whole change": everything again, as in the first review.
+   For what changed, read `git log` and `git diff` from that head to the new one, record the steps again with the files start named, and review only those commits as "Reviewing" says, measuring them rather than the whole change; check each comment in `walkthrough comments --all` against them.
+   For the whole change, review as "Reviewing" says, without repeating a comment already there.
+   Either way, skip `walkthrough open` while their page is still open, and for each of your comments the new code fixes run `walkthrough resolve <id>`, without a reply.
+   Tell the person in one line what is new, and which of their comments the new code addresses; they resolve those themselves.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
 8. When the person asks to share or keep the walkthrough, run `walkthrough export`, with `--out <file>` when they name a place (the person approves that one, since it writes where it names), and tell them the path it prints.
 9. When the person asks which walkthroughs they have open or wants to find one they left, run `walkthrough list`; `walkthrough stop --list` ends that page.
@@ -96,7 +101,7 @@ Until you run `walkthrough ready`, the page shows the AI at work and the changed
    When the policy asks for the person's voice, read their VOICE.md (the project root, then `~/.claude/VOICE.md`) before writing the comments that go out; with none, write as the policy says.
    Each comment is pending: it goes out with the review unless the person edits or deletes it.
 4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
-5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`.
+5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`, after your comments: one partly or not met links the comment that closes its gap, as the policy says.
 6. Run `walkthrough ready` once every comment, thread and criterion is recorded; it opens the page too if it was never opened.
    A comment you record after that lands on the page while the person reads.
 
@@ -117,6 +122,7 @@ Keep listening until the walkthrough stops.
      A comment with `"subject": "file"` has no lines: post it as a comment on that file.
      A resolve line with `"by": "ai"` is one you resolved: resolve that thread on the code host too, finding it by the file, lines (or subject) and body the line gives.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.
+     End the fix list with the line "Once these are fixed and committed, run /walkthrough:update.", so the agent that fixes them asks for the next review; when you make the fixes yourself, invoke `/walkthrough:update` with your skill tool once they are committed.
      How to post comes from the policy; when something could not go out, tell the person in the chat, and run `walkthrough posted` only once the review is out.
      Then, when the policy asks you to learn from the review, read `walkthrough comments --all`: a comment of yours with "deleted" was deleted, and one with "wrote" was reworded from what you wrote; save a policy change the person agrees to with `walkthrough policy save --file <file>`, writing the whole policy from `walkthrough policy show`.
      When the comments they reworded differ mostly in tone rather than content, and the policy has no line about their voice and no "Never offer the voice plugin.", suggest `/walkthrough:init`'s voice offer in one line instead of a policy line.

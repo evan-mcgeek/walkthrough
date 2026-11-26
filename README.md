@@ -45,6 +45,7 @@ claude --plugin-dir /path/to/walkthrough/plugin
 /walkthrough:init     set up your review policy, once
 /walkthrough          your current branch
 /walkthrough:pr 123   a pull request, by number or link
+/walkthrough:update   review the new commits, such as the fixes
 ```
 
 For another branch or a range of commits, just say so in the chat.
@@ -72,7 +73,8 @@ On a pull request, Submit review posts one review with your summary and comments
 On your own change, Send to agent hands your comments back to the agent as a fix list.
 So, nothing leaves before you submit.
 
-When new commits arrive, the same walkthrough goes on, and a file you viewed opens again as "Changed since last view".
+When new commits arrive, such as the fixes, `/walkthrough:update` goes on with the same walkthrough; the fix list ends by asking the agent to run it.
+It asks whether to review only what changed, with whether each comment was addressed, or the whole change again, and a file you viewed opens again as "Changed since last view".
 It works on a phone as well.
 
 <img alt="A walkthrough at 390px wide" src="docs/images/phone.png" width="300">
