@@ -90,7 +90,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | `<what is missing>` | after the link, under a partly or not met criterion | decision 35; written by the session; 12 words; the gap, never the fix (the fix is the comment's) |
 | `<why not checked>` | under a not checked criterion | decision 35; written by the session; 8 words, e.g. "Needs the running app." |
 | Finish your review | review box title | **GH** |
-| Comment / Approve / Request changes | review type | **GH** |
+| Comment / Approve / Request changes | review type | **GH**; none on a pull request you opened: its author can only comment, so it goes out as a Comment |
 | Submit review | pull request | **GH** |
 | Send to agent | your own change | no review type on your own change; disabled with no comments (decision 11) |
 | Add a comment to send it. | under a disabled Send to agent | |

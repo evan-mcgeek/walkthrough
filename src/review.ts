@@ -402,7 +402,8 @@ export async function submit(dir: string, { type, summary }: Record<string, unkn
   const view = walkthroughView(dir);
   if (!view || (summary !== undefined && typeof summary !== 'string') || view.submitted) return false;
   const pending = view.threads.flatMap(one => one.comments).some(one => one.pending);
-  if (view.pr ? !REVIEW_TYPES.includes(type as ReviewType) : type !== undefined || !pending) return false;
+  // The author of a pull request can only comment on it.
+  if (view.pr ? !REVIEW_TYPES.includes(type as ReviewType) || (view.pr.yours && type !== 'comment') : type !== undefined || !pending) return false;
   return !!(await record(dir, { kind: 'submit', ...(view.pr && { type: type as ReviewType }), summary: cleanText(summary), head: view.head }));
 }
 

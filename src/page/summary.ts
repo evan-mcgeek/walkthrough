@@ -269,6 +269,8 @@ export class SummaryPane {
       this.draft = area.value;
     };
     // Your own change has no review type: it goes to the agent with its comments, so it needs one.
+    // Your own pull request has none either: its author can only comment.
+    const types = !own && !state.view.pr?.yours;
     const blocked = own && pendingComments().length === 0;
     const submit = el('button', { type: 'button', className: 'btn primary wide', disabled: blocked || this.sending }, own ? 'Send to agent' : 'Submit review');
     const note = el('p', { className: 'review-note', hidden: !blocked }, 'Add a comment to send it.');
@@ -291,7 +293,7 @@ export class SummaryPane {
         fill: 'forwards',
       });
       this.sentBox = { box, fading };
-      const done = await send('submit', { ...(!own && { type: this.type }), summary: this.draft.trim() });
+      const done = await send('submit', { ...(!own && { type: types ? this.type : 'comment' }), summary: this.draft.trim() });
       this.sending = false;
       if (done) this.draft = '';
       else {
@@ -304,7 +306,7 @@ export class SummaryPane {
       { className: 'review-box' },
       el('h2', { className: 'section-head' }, 'Finish your review'),
       area,
-      ...(own ? [] : [attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' })]),
+      ...(types ? [attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' })] : []),
       submit,
       note,
     );

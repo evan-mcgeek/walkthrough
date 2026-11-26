@@ -44,6 +44,7 @@ describe('walkthrough start', () => {
     repo.run('start');
     expect(await pr()).toEqual({ number: '212', title: 'Due dates for tasks' });
     expect(repo.run('start', '--title', 'Alone').stderr).toContain('--title goes with --pr');
+    expect(repo.run('start', '--yours').stderr).toContain('--yours goes with --pr');
   });
 
   test('a target with no remote branch of its name is the local branch', () => {

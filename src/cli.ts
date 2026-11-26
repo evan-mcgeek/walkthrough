@@ -72,11 +72,12 @@ function renamedDir(repo: string, source: Source): string {
 }
 
 async function start(args: string[]): Promise<void> {
-  const { cwd, source, dir, values } = located(args, { options: { pr: { type: 'string' }, title: { type: 'string' } } });
+  const { cwd, source, dir, values } = located(args, { options: { pr: { type: 'string' }, title: { type: 'string' }, yours: { type: 'boolean' } } });
   const number = values.pr?.trim();
   if (number === '') throw new Error('--pr needs the number of the pull request');
   if (values.title !== undefined && number === undefined) throw new Error('--title goes with --pr');
-  const pr = number === undefined ? undefined : { number, title: values.title?.trim() || nameOf(source) };
+  if (values.yours && number === undefined) throw new Error('--yours goes with --pr');
+  const pr = number === undefined ? undefined : { number, title: values.title?.trim() || nameOf(source), ...(values.yours && { yours: true as const }) };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = await openWalkthrough(dir, source, change, pr, moved => carrySteps(cwd, moved));
@@ -298,7 +299,7 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n' +
+        '  commands: start [--pr <number> [--title <text>] [--yours]] | guide | files | steps --file <file> | open | ready\n' +
         '    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n' +
         '    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
         '    | policy [show | init | save --file <file>]\n' +

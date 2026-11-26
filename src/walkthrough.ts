@@ -40,7 +40,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
   /** Set for a pull request: the review goes out with Submit review, else to the agent. */
-  pr?: { number: string; title: string };
+  /** `yours` when the person opened it: its author can only comment, so the page offers no review type. */
+  pr?: { number: string; title: string; yours?: true };
   base: string;
   head: string;
   /** Empty until the session records its steps. */
