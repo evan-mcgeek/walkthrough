@@ -467,8 +467,26 @@ textarea {
 }
 
 .menu-item[role='menuitemcheckbox'] .menu-check {
+  display: flex;
   margin: 0 5px 0 -21px;
-  color: var(--accent);
+  color: var(--muted);
+}
+
+.menu-check .icon-checkbox path {
+  display: none;
+}
+
+.menu-item[aria-checked='true'] .menu-check {
+  color: var(--ink-secondary);
+}
+
+.menu-item[aria-checked='true'] .icon-checkbox rect {
+  fill: currentColor;
+}
+
+.menu-item[aria-checked='true'] .icon-checkbox path {
+  display: inline;
+  stroke: var(--icon-knockout);
 }
 
 .menu hr {
@@ -1148,12 +1166,10 @@ textarea {
 
 .overview-stripe .run-add {
   fill: var(--stripe-add);
-  opacity: 0.55;
 }
 
 .overview-stripe .run-del {
   fill: var(--stripe-del);
-  opacity: 0.6;
 }
 
 .overview-stripe .tick {

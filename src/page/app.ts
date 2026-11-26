@@ -342,10 +342,10 @@ function toggleMenu(): void {
       viewer.theme === one,
     ),
   );
-  const colourBlind = item('Colour-blind diff', 'menuitemcheckbox', () => {
+  const colourBlind = item('Colorblind', 'menuitemcheckbox', () => {
     viewer = chooseViewer(viewer, { colourBlind: !viewer.colourBlind });
   }, viewer.colourBlind);
-  if (viewer.colourBlind) colourBlind.prepend(el('span', { className: 'menu-check' }, icon('met')));
+  colourBlind.prepend(el('span', { className: 'menu-check' }, icon('checkbox')));
   const opened = attrs(
     el(
       'div',
