@@ -62,6 +62,8 @@ The pull request that ships or drops an item updates this file.
 - Comments on a whole file sit first in the band above the diff; the AI can leave one too, for what no single line holds.
 - Code in a comment, an explanation or an answer only when the point is code, as the review policy now says.
 - The line you read stays put when an answer arrives above it, and the new-comment pill no longer narrows the diff.
+- Walky, the mascot: the README banner, and the tab icon by session state (reading, awake, done, ended, asleep).
+- Every control's edge reaches 3:1 on every grey, and the primary button is a calmer mid-tone in dark.
 
 ## Now
 
