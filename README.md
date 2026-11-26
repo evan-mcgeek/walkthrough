@@ -98,6 +98,9 @@ The session drives the `walkthrough` CLI; you rarely type it yourself.
 It writes what it records to files in the walkthrough's inbox and passes them with `--file`.
 `walkthrough listen` waits in the background, so the chat stays free, and only Ask AI and the submitted review wake it ([ADR 0004](docs/adr/0004-no-mcp.md)).
 
+Code on the page takes GitHub's light and dark syntax colours.
+The CLI downloads a language's grammar from jsDelivr the first time a change needs it, checks it against a hash recorded at build and keeps it in its state folder; without the network that code stays plain.
+
 The plugin's hook approves only `walkthrough` commands and the session's writes to its inbox; everything else goes through your usual permissions ([ADR 0006](docs/adr/0006-a-plugin-hook-approves-the-cli.md)).
 
 | Command | What it does |
