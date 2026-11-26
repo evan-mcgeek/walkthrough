@@ -9,7 +9,8 @@ import { plural, state } from './state';
 /** Where moved lines left (old line numbers) and where they arrive (new line numbers), each by its first line. */
 export type Move = { from: { file: string; line: number }; to: { file: string; line: number }; count: number };
 
-type Line = { file: string; line: number; text: string };
+/** `change` numbers each stretch of changed lines with no unchanged line in it, the same for both types. */
+type Line = { file: string; line: number; text: string; change: number };
 
 const MIN_LINES = 3;
 const MIN_ALNUM = 20;
@@ -17,14 +18,19 @@ const MIN_ALNUM = 20;
 /** Each file's lines of one type in runs of consecutive line numbers. */
 function runsOf(files: DiffFile[], type: LineType.DELETE | LineType.INSERT): Line[][] {
   const runs: Line[][] = [];
+  let change = 0;
   for (const file of files) {
     const name = file.isDeleted ? file.oldName : file.newName;
     let run: Line[] = [];
-    for (const one of file.blocks.flatMap(block => block.lines)) {
-      const line = type === LineType.DELETE ? one.oldNumber : one.newNumber;
-      if (one.type !== type || line === undefined) continue;
-      if (run.at(-1)?.line !== line - 1) runs.push((run = []));
-      run.push({ file: name, line, text: one.content.slice(1).trimEnd() });
+    for (const block of file.blocks) {
+      change++;
+      for (const one of block.lines) {
+        if (one.type === LineType.CONTEXT) change++;
+        const line = type === LineType.DELETE ? one.oldNumber : one.newNumber;
+        if (one.type !== type || line === undefined) continue;
+        if (run.at(-1)?.line !== line - 1) runs.push((run = []));
+        run.push({ file: name, line, text: one.content.slice(1).trimEnd(), change });
+      }
     }
   }
   return runs;
@@ -39,12 +45,13 @@ export function findMoves(files: DiffFile[]): Move[] {
   const used = new Set<Line>();
   const moves: Move[] = [];
   // ponytail: tries every added line with the same text, fine for a review's diff; index by run hash if huge diffs crawl.
+  // A line deleted and added in the same stretch of changes was edited in place, not moved.
   for (const gone of runsOf(files, LineType.DELETE))
     for (let at = 0; at < gone.length; ) {
       let best: { run: Line[]; from: number; count: number } | null = null;
       for (const [run, from] of starts.get(gone[at]?.text ?? '') ?? []) {
         let count = 0;
-        for (let line = run[from + count]; line && !used.has(line) && gone[at + count]?.text === line.text; line = run[from + count]) count++;
+        for (let line = run[from + count]; line && !used.has(line) && gone[at + count]?.text === line.text && gone[at + count]?.change !== line.change; line = run[from + count]) count++;
         if (count > (best?.count ?? 0)) best = { run, from, count };
       }
       const left = gone.slice(at, at + (best?.count ?? 0));

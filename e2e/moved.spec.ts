@@ -5,22 +5,25 @@ const PARSE = ['export function parseDue(value?: string): Date | null {', '  if 
 const FIRST = ['export function first(items: string[]) {', '  const [head] = items;', '  return head ?? null;', '}'];
 const REST = Array.from({ length: 10 }, (_, at) => `export const item${String(at + 1)} = ${String(at + 1)};`);
 const file = (...lines: string[]) => `${lines.join('\n')}\n`;
+const TRIMMED = ['export const alpha = 1;', 'export const beta = 2;', 'export const gamma = 3;'];
 
 test.use({
   start: {
     'api.ts': file("import { isDate } from './dates';", ...PARSE, 'export const api = 1;'),
     'dates.ts': file('export const isDate = (value: string) => /^\\d{4}-\\d{2}-\\d{2}$/.test(value);'),
     'list.ts': file(...FIRST, ...REST),
+    'trim.ts': file(...TRIMMED.map(line => `${line}   `)),
   },
   files: {
     'api.ts': file("import { isDate } from './dates';", 'export const api = 1;'),
     'dates.ts': file('export const isDate = (value: string) => /^\\d{4}-\\d{2}-\\d{2}$/.test(value);', ...PARSE),
     'list.ts': file(...REST, ...FIRST),
+    'trim.ts': file(...TRIMMED),
   },
 });
 
 const STEPS = [
-  { title: 'API', explanation: 'Moves parsing out.', files: ['api.ts', 'login.ts', 'app.ts'] },
+  { title: 'API', explanation: 'Moves parsing out.', files: ['api.ts', 'login.ts', 'app.ts', 'trim.ts'] },
   { title: 'Dates', explanation: 'Parses dates.', files: ['dates.ts', 'list.ts'] },
 ];
 
@@ -38,6 +41,11 @@ test('moved code shows once where it arrives, and each end links to the other', 
   const numstat = git(repo.dir, 'diff', '--numstat', 'main...HEAD', '--', 'api.ts');
   expect(numstat.split('\t').slice(0, 2)).toEqual(['0', '4']);
   await expect(api.locator('.file-stats')).toHaveText('+0 −4');
+  // Lines edited in place are no move, even when only their trailing whitespace changed.
+  const trim = page.locator('.file[data-file="trim.ts"]');
+  await expect(trim.locator('.d2h-del .d2h-code-line-ctn')).toHaveText(TRIMMED);
+  await expect(trim.locator('.d2h-ins .d2h-code-line-ctn')).toHaveText(TRIMMED);
+  await expect(trim.locator('tr.moved, tr.moved-label')).toHaveCount(0);
 
   await left.getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Dates' })).toBeVisible();
