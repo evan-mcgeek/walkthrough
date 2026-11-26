@@ -71,6 +71,7 @@ walkthrough ready
 walkthrough comment --file <file>
   Adds the AI's pending comments on lines, or on a whole file without "lines", and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
   the person can edit them. Write the body without the [AI] prefix.
+  A fix may follow the sentence as a \`\`\`suggestion block whose lines replace exactly the comment's lines.
 ${JSON.stringify(comments, null, 2)}
 
 walkthrough threads --file <file>

@@ -4,7 +4,7 @@ import type { Criterion } from '../walkthrough';
 import { attrs, el } from './dom';
 import { sentLine, them, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
-import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, threadStep, unresolved } from './state';
+import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, suggestionCode, threadStep, unresolved } from './state';
 import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
 import { avatar } from './threads';
 
@@ -16,7 +16,13 @@ const CRITERIA: Record<Criterion['status'], [IconName, string]> = {
   'not-checked': ['unchecked', 'Not checked'],
 };
 
-const plainText = (body: string) => markdown(body, 'row-text').textContent.replace(/\s+/g, ' ').trim();
+/** The text on one line, without its suggestion blocks, which show only in the thread. */
+function rowText(body: string): { text: string; suggests: boolean } {
+  const box = markdown(body, 'row-text');
+  const blocks = [...box.querySelectorAll('pre > code.language-suggestion')];
+  for (const block of blocks) block.parentElement?.remove();
+  return { text: box.textContent.replace(/\s+/g, ' ').trim(), suggests: blocks.length > 0 };
+}
 
 /** The AI's resolves not sent yet, or sent with the review the Summary shows as submitted. */
 const resolvedByAi = () => state.view.threads.filter(one => one.resolvedBy === 'ai' && (one.resolveReview === undefined || one.resolveReview === state.view.submitted?.id));
@@ -129,7 +135,7 @@ export class SummaryPane {
 
   private row(thread: ThreadView, comment: CommentView, pending: boolean): HTMLElement {
     const link = this.where(thread);
-    const text = plainText(comment.body);
+    const { text, suggests } = rowText(comment.body);
     const item = el('li', { className: 'going-row' });
     item.dataset['comment'] = comment.id;
     const actions = pending
@@ -146,6 +152,7 @@ export class SummaryPane {
       'span',
       { className: 'row-text', title: comment.by === 'ai' ? `[AI] ${text}` : text },
       ...(thread.step === null && comment.id === thread.id ? [el('span', { className: 'outdated-tag' }, 'Outdated')] : []),
+      ...(suggests && suggestionCode(thread) ? [el('span', { className: 'suggestion-tag' }, 'Suggested change')] : []),
       ...(comment.by === 'ai' ? [el('span', { className: 'ai-tag' }, '[AI]'), ' '] : []),
       text,
     );
@@ -176,7 +183,7 @@ export class SummaryPane {
           'ul',
           { className: 'going-out' },
           ...rows.map(thread => {
-            const text = plainText(thread.comments[0]?.body ?? '');
+            const { text } = rowText(thread.comments[0]?.body ?? '');
             const item = el(
               'li',
               { className: 'going-row resolved-row' },
