@@ -17,6 +17,7 @@ const read = (file: string) => fs.readFileSync(file);
 // The sha256 of every template that ever shipped, current included, so an unchanged copy stays the template; a template change adds its hash.
 const TEMPLATES = new Set([
   '04a602b5efc4cedc0336c7639cc560bc68f235c755eb6bc60d7289d274c0bc0f',
+  '0b61280e9e5da3b47bbc338b5ea8237363c92e96a00952fdb819ed2fda1d7742',
   '15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0',
   '17882fa4836cd26b1cc3772e80b262d559d3f5dd15b6449798961d3222a607c2',
   '26442e1d66028540ef4b778ed9edec79a2bab15ba84c543fa584a4d7d611d6fc',

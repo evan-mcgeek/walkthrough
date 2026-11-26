@@ -72,9 +72,10 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 - Comment only on a confirmed finding that matters: it breaks something, misses an acceptance criterion, or goes against the project's rules.
   Leave out unconfirmed findings and matters of taste.
-- Put the comment on the lines where the problem is, worded for the author.
+- Put the comment on the lines where the problem is, worded for the author; when no single line holds it, such as a missing test, put it on the whole file.
 - One or two sentences, 40 words at most: what is wrong and what it breaks, then the fix when it is clear.
   No evidence and no verdicts in it.
+- When the fix fits in at most 6 lines on the commented lines, add it after the sentence as a suggested change (a ```suggestion block); never on a whole file.
 - Do not repeat what a thread already on the change says.
 - On a new head, resolve each of your comments from an earlier review that the new code fixes, without a reply.
 
@@ -126,7 +127,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 
 ### My review
 
-- When I submit, post one finished review on your code host, not a pending one: my review type, my summary and every comment as a line comment on its lines.
+- When I submit, post one finished review on your code host, not a pending one: my review type, my summary and every comment on its lines, or on its file.
 - Post my replies in their threads, and resolve the threads I resolved and those you resolved.
 - A comment whose lines changed since goes in the review's summary, with its file and line.
 - Then record where the review is; when something did not go out, tell me in the chat what.
