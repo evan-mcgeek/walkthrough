@@ -54,6 +54,7 @@ test('the AI and you comment on a whole file in the band above its diff, oldest 
   await expect(button).toHaveAttribute('aria-pressed', 'true');
   await expect(band.locator('> :first-child textarea')).toBeFocused();
   await expect(band.locator('> :first-child textarea')).toHaveAttribute('placeholder', 'Leave a comment');
+  await expect(band.getByRole('textbox', { name: 'Comment on this file' })).toBeFocused();
   await page.keyboard.type('Name it for what it does.');
   // A second click keeps the draft.
   await button.click();

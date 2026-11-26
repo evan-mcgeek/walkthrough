@@ -370,6 +370,7 @@ export class FilePane {
     const where = { file: this.name, ...(lines && { lines }) };
     const box = composer({
       placeholder: 'Leave a comment',
+      ...(!lines && { label: 'Comment on this file' }),
       primary: 'Add comment',
       onPrimary: async text => {
         const done = await send('comment', { ...where, text });

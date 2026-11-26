@@ -32,6 +32,8 @@ export function commentBody(comment: CommentView, code?: Code): HTMLElement {
 
 type ComposerOptions = {
   placeholder: string;
+  /** The accessible name, when it says more than the placeholder. */
+  label?: string;
   text?: string;
   primary: string;
   onPrimary: (text: string) => Promise<boolean>;
@@ -39,9 +41,9 @@ type ComposerOptions = {
   onCancel: () => void;
 };
 
-export function composer({ placeholder, text = '', primary, onPrimary, onAsk, onCancel }: ComposerOptions): HTMLElement {
+export function composer({ placeholder, label = placeholder, text = '', primary, onPrimary, onAsk, onCancel }: ComposerOptions): HTMLElement {
   const area = el('textarea', { className: 'composer-text', placeholder, value: text, rows: 3 });
-  area.setAttribute('aria-label', placeholder);
+  area.setAttribute('aria-label', label);
   const add = el('button', { type: 'button', className: 'btn primary small', disabled: !text.trim() }, primary);
   const busy = (doing: boolean) => {
     for (const button of box.querySelectorAll('button')) button.disabled = doing;

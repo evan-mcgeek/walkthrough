@@ -32,3 +32,29 @@ test('a comment arriving above or in view never moves the line being read; the p
   await expect(page.getByText('In view.')).toBeVisible();
   await expect(pill).toBeHidden();
 });
+
+test('an answer arriving above never moves the line being read', async ({ page, repo, url }) => {
+  record(repo, [{ title: 'Tasks', explanation: 'Adds tasks.', files: ['tasks.ts', 'login.ts', 'app.ts'] }]);
+  await open(page, url);
+  const listener = repo.background('listen');
+  await page.locator('.file[data-file="tasks.ts"]').getByRole('button', { name: 'Comment on line 100' }).click();
+  await page.getByPlaceholder('Leave a comment').fill('Why a hundred?');
+  await page.getByRole('button', { name: 'Ask AI' }).click();
+  await expect(page.getByText('Answering…')).toBeVisible();
+  const { stdout } = await listener.ended;
+  const { id } = JSON.parse(stdout) as { id: string };
+
+  // Reading line 130, the question well above the top.
+  await page.locator('tr[data-line="130"]').evaluate(row => {
+    const main = document.getElementById('main');
+    if (main) main.scrollTop += row.getBoundingClientRect().top - main.getBoundingClientRect().top - 200;
+  });
+  await expect(page.getByText('Answering…')).not.toBeInViewport();
+  const before = await topOf(page, 'tr[data-line="130"]');
+
+  expect(repo.run('say', '--answer', id, 'Because a hundred tasks fit.\n\nAnd the next hundred wait.').status).toBe(0);
+  await expect(page.locator('.comment-ai').filter({ hasText: 'Because a hundred tasks fit.' })).toBeAttached();
+  await expect(page.getByText('Answering…')).toHaveCount(0);
+  // The pane scrolls by whole pixels, so the answer's fractional height may round.
+  expect(await topOf(page, 'tr[data-line="130"]')).toBeCloseTo(before, 0);
+});
