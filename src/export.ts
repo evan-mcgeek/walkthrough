@@ -7,6 +7,7 @@ import MarkdownIt from 'markdown-it';
 import { parseDiff } from './diff';
 import { type CommentView, walkthroughView } from './review';
 import { PAGE } from './server';
+import { SCREENSHOT_TYPES } from './steps';
 import { nameOf } from './walkthrough';
 
 const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
@@ -31,9 +32,15 @@ export function exportPage(dir: string): string {
           `<li><code>${escape(thread.file)}:${String(thread.lines[1])}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}${markdown.render(said.body)}</li>`,
       ),
     );
+    const shot = step.screenshot;
+    const type = shot && SCREENSHOT_TYPES[shot.name.split('.').pop() as keyof typeof SCREENSHOT_TYPES];
+    const figure =
+      shot && type
+        ? `<figure class="screenshot open"><img class="screenshot-image" src="data:${type};base64,${fs.readFileSync(path.join(dir, shot.name)).toString('base64')}" alt="${escape(shot.alt)}" />${shot.alt ? `<figcaption>${escape(shot.alt)}</figcaption>` : ''}</figure>`
+        : '';
     const diff = diffHtml(parseDiff(step.diff), { outputFormat: 'line-by-line', drawFileList: false, matching: 'lines' });
     return `<section class="export-step"><h2>${String(at + 1)}. ${escape(step.title)}</h2>
-<div class="markdown">${markdown.render(step.explanation)}</div>${diff}${comments.length ? `<ul class="export-comments">${comments.join('')}</ul>` : ''}</section>`;
+<div class="markdown">${markdown.render(step.explanation)}</div>${figure}${diff}${comments.length ? `<ul class="export-comments">${comments.join('')}</ul>` : ''}</section>`;
   });
   const criteria = (view.criteria ?? []).map(one => `<li>${escape(one.text)}: ${STATUS[one.status]}</li>`);
   const style = fs.readFileSync(path.join(PAGE, 'style.css'), 'utf8');

@@ -13,6 +13,7 @@ import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
 import { listPage, listView } from './list';
 import { ask, comment, markViewed, resolve, submit, unresolve, walkthroughVersion, walkthroughView } from './review';
+import { SCREENSHOT_TYPES } from './steps';
 import { readWalkthrough } from './walkthrough';
 import { DEFAULT_VIEWER, mergeViewer, type Viewer } from './viewer';
 import { tooLong } from './words';
@@ -245,6 +246,17 @@ function serveFile(dir: string, list: boolean, what: string, req: http.IncomingM
     serveFileAt(dir, query.get('path') ?? '', query.get('at') === 'base', res).catch((error: unknown) => {
       failRequest(res, error);
     });
+    return;
+  }
+  const screenshot = list ? null : /^screenshot\/([0-9a-f]{64}\.(png|jpg|gif|webp))$/.exec(what);
+  if (screenshot) {
+    const [, name = '', extension = ''] = screenshot;
+    const file = path.join(dir, name);
+    if (fs.existsSync(file))
+      res
+        .writeHead(200, { 'content-type': SCREENSHOT_TYPES[extension as keyof typeof SCREENSHOT_TYPES], 'cache-control': 'private, max-age=31536000, immutable' })
+        .end(fs.readFileSync(file));
+    else res.writeHead(404).end();
     return;
   }
   const data: Record<string, () => unknown> = {
