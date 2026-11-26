@@ -70,7 +70,6 @@ function paneOf(id: string): StepPane {
 
 function go(address: string): void {
   pick(null);
-  onFile = null;
   if (decodeURIComponent(location.hash.slice(1)) !== address) history.pushState(null, '', `#${address}`);
   showDrawer(false);
   moved();
@@ -78,6 +77,7 @@ function go(address: string): void {
 
 /** After moving to another step or the Summary: what was held opens, the old pane leaves, the new one enters, and the page starts at its top. */
 function moved(): void {
+  onFile = null;
   for (const one of arrived) one.classList.remove('arriving');
   arrived = [];
   const old = content.firstElementChild;
@@ -581,10 +581,11 @@ function moveFile(by: 1 | -1): void {
   const order = steps.flatMap((step, index) => shownFiles(step).map(file => ({ step: step.id, index, file })));
   const here = steps.indexOf(at.pane.step);
   const top = fileAtTop();
+  const on = order.findIndex(one => one.file === onFile);
   const next =
-    onFile === null
+    on === -1
       ? (order.find(one => one.file === top) ?? (by > 0 ? order.find(one => one.index > here) : order.findLast(one => one.index < here)))
-      : order[order.findIndex(one => one.file === onFile) + by];
+      : order[on + by];
   if (!next) return;
   if (next.step !== at.pane.step.id) go(stepAddress(next.step));
   onFile = next.file;
@@ -645,8 +646,9 @@ document.addEventListener('keydown', event => {
     header.querySelector<HTMLElement>('.steps-button')?.focus();
     return;
   }
-  if (event.key === 'Escape' && changesSwitch.isOpen) {
+  if (event.key === 'Escape' && (changesSwitch.isOpen || menu)) {
     changesSwitch.close(true);
+    closeMenu(true);
     return;
   }
   const typing = event.target instanceof HTMLElement && event.target.closest('textarea, select, [contenteditable], input:not([type="checkbox"], [type="radio"])');

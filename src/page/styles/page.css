@@ -354,7 +354,7 @@ textarea {
   color: var(--ink-secondary);
 }
 
-.changes-menu {
+.menu.changes-menu {
   top: 32px;
   right: auto;
   left: 0;
@@ -1894,7 +1894,7 @@ tr.flash td {
     margin-left: auto;
   }
 
-  .changes-menu {
+  .menu.changes-menu {
     right: 0;
     min-width: 0;
   }
