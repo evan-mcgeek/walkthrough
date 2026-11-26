@@ -2,12 +2,12 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { type FileStat, fileStats } from './change';
+import { changesBetween, commitOf, type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
 import { anchorOf, type Lines, type Place, placeIn } from './lines';
 import { alive, psStart } from './processes';
-import { readWalkthrough, type Step, type Walkthrough } from './walkthrough';
+import { branchOfDir, readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
 export const REVIEW_TYPES = ['comment', 'approve', 'request-changes'] as const;
 export type ReviewType = (typeof REVIEW_TYPES)[number];
@@ -57,6 +57,8 @@ export type ThreadView = {
 };
 /** `type` only on a pull request: your own change goes to the agent without one. */
 export type Submitted = { id: string; type?: ReviewType; summary: string; comments: number; posted: boolean; address?: string };
+/** What changed since the latest review, made at an earlier head: its commits and each changed file's diff since then. */
+export type Since = { head: string; commits: number; files: Record<string, string> };
 type WithoutThreads<T> = T extends unknown ? Omit<T, 'threads'> : never;
 export type WalkthroughView = WithoutThreads<Walkthrough> & {
   ready: boolean;
@@ -71,6 +73,10 @@ export type WalkthroughView = WithoutThreads<Walkthrough> & {
   changed: string[];
   /** The review the person submitted at this head, while nothing new is pending. */
   submitted: Submitted | null;
+  /** Set once the person reviewed an earlier head that still exists. */
+  since: Since | null;
+  /** A branch whose commit moved on from the head shown. */
+  behind: boolean;
 };
 
 const files = (dir: string) => ({
@@ -217,11 +223,26 @@ function fileMarks(steps: Step[]): Record<string, string> {
 
 /** Changes whenever a file walkthroughView reads does, so the page's poll of an unchanged view is answered without one. */
 export function walkthroughVersion(dir: string): string {
+  const branch = branchOfDir(dir);
   const stats = ['walkthrough.json', 'review.jsonl', 'viewed.json', 'listener.json'].map(name => {
     const stat = fs.statSync(path.join(dir, name), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : '';
   });
-  return fingerprint([...stats, String(listenerGone(dir))].join(':'));
+  return fingerprint([...stats, String(listenerGone(dir)), branch === undefined ? '' : (branchHead(branch) ?? '')].join(':'));
+}
+
+const branchHead = (branch: string) => commitOf(process.cwd(), `refs/heads/${branch}`);
+
+// The page polls far more often than heads move, so each pair of heads is diffed once.
+const between = new Map<string, ReturnType<typeof changesBetween>>();
+
+function sinceOf(walkthrough: Walkthrough, head: string): Since | null {
+  const key = [process.cwd(), head, walkthrough.head].join(':');
+  if (!between.has(key)) between.set(key, changesBetween(process.cwd(), head, walkthrough.head));
+  const found = between.get(key);
+  if (!found) return null;
+  const shown = new Set(walkthrough.steps.flatMap(step => step.files));
+  return { head, commits: found.commits, files: Object.fromEntries(Object.entries(found.files).filter(([file]) => shown.has(file))) };
 }
 
 export function walkthroughView(dir: string): WalkthroughView | null {
@@ -254,6 +275,8 @@ export function walkthroughView(dir: string): WalkthroughView | null {
           ...(address !== undefined && { address }),
         }
       : null,
+    since: ready && last && last.head !== walkthrough.head ? sinceOf(walkthrough, last.head) : null,
+    behind: walkthrough.kind === 'branch' && (branchHead(walkthrough.branch) ?? walkthrough.head) !== walkthrough.head,
   };
 }
 

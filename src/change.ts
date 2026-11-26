@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { parseDiff } from './diff';
 
 export type Source =
   | { kind: 'branch'; branch: string; target?: string }
@@ -59,7 +60,7 @@ export function currentBranch(cwd: string): string {
   return branch;
 }
 
-function commitOf(cwd: string, rev: string): string | null {
+export function commitOf(cwd: string, rev: string): string | null {
   try {
     return git(cwd, 'rev-parse', '--verify', '--quiet', `${rev}^{commit}`).trim();
   } catch {
@@ -158,6 +159,18 @@ export async function diffOf(cwd: string, base: string, head: string, files: Cha
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** The commits from `from` to `to` and each file's diff between them, by its path at `to`; null once `from` is gone. */
+export function changesBetween(cwd: string, from: string, to: string): { commits: number; files: Record<string, string> } | null {
+  if (!commitOf(cwd, from)) return null;
+  const files: Record<string, string> = {};
+  // A diff's own lines start with a space, + or -, so only a file's first line starts with this.
+  for (const one of git(cwd, 'diff', '--no-color', '--no-ext-diff', '-M', from, to).split(/^(?=diff --git )/m)) {
+    const [file] = parseDiff(one);
+    if (file) files[file.isDeleted ? file.oldName : file.newName] = one;
+  }
+  return { commits: Number(git(cwd, 'rev-list', '--count', `${from}..${to}`).trim()), files };
 }
 
 export function fileAt(cwd: string, rev: string, file: string): Buffer | null {
