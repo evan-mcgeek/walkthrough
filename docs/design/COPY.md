@@ -151,6 +151,35 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | That text is N characters long; the most it can be is M. | alert, when a comment or summary is over the limit | |
 | The walkthrough could not do that (N). | alert, when the server refuses with no reason | the server's own reason replaces it when it gives one |
 
+## Back on a new head, moved code, screenshots, keys
+
+New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → Words, or the one given here.
+
+| String | Where | Cap | Note |
+|---|---|---|---|
+| Changes since your last review | header switch label and menu item | GitHub's phrase (5 words) | **GH**; shown only after you reviewed an earlier head; tooltip "Changes since your last review (C)" |
+| All changes | header switch label and menu item | Button, 3 | **GH** ("Show all changes" in GitHub's menu) |
+| N commits · M files | under "Changes since your last review" in the menu | Chip, 4 | "1 commit" when one |
+| M files | under "All changes" in the menu | Chip, 4 | |
+| No changes since your last review. | a step with nothing new, in that view | Empty state, 8 | |
+| The files are as you viewed them. | under it | Empty state, 8 | |
+| Show all changes | button beside it | Button, 3 | **GH**; switches the view |
+| Changed since last view | file header | Tag, 4 | **GH**; already in use; now on every file whose diff changed |
+| The branch has new commits. Run the walkthrough again to see them: | one line under the header, every screen, when your branch moved | Notice, 12 | followed by `/walkthrough` and Copy command; the pull request case is not drawn (decision 15) |
+| Outdated | thread header and Summary row | Tag, 2 | **GH** |
+| AI marked this conversation as resolved. | a thread the AI resolved | Thread line, GitHub's sentence | **GH** ("… marked this conversation as resolved.") |
+| Show resolved / Hide resolved | button on that line | Button, 3 | **GH** |
+| Unresolve conversation | thread foot, when open | Button, 3 | **GH** |
+| Resolved conversations | Summary section heading | Heading, 3 | GitHub's words; lists what the AI resolved since your last review |
+| Resolved | Summary row tag | Tag, 2 | **GH** |
+| Pending | on the AI-resolved line, in its step and on the Summary, until Submit review | Tag, 2 | **GH**; the existing tag; not on your own change |
+| Moved from `<file>` line N | diff row above moved lines | Diff row, 8 | "Moved from line N" in the same file; links to where they left |
+| N lines moved to `<file>` line M | diff row where moved lines left | Diff row, 8 | "1 line moved to …"; same file: "N lines moved to line M"; links to where they arrive |
+| `<alt text>` | caption under the author's screenshot | the author's words | from the pull request; none if it has none |
+| Open the screenshot: `<alt text>` | accessible name of the closed screenshot | Tooltip, 12 | |
+| Close | under the open screenshot | Button, 3 | also Esc or a click on the image |
+| Viewed (V) · Changes since your last review (C) | tooltips of the Viewed checkbox and the changes switch | Tooltip, 12 | the key in brackets, as "Go to the Summary (G S)"; no key caps; J and K show nowhere, as on GitHub |
+
 ## Strings to remove from the existing page
 
 Any string not listed above is removed. Grep the templates for at least: "GitHub" and "Claude Code" in any page string, "Could not reach the walkthrough page.", Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide.
