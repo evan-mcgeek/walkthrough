@@ -56,6 +56,12 @@ export function walkthroughDir(repo: string, source: Source): string {
   return path.join(stateDir(), repo, name);
 }
 
+/** The branch a walkthrough's folder is named after; undefined for a range. */
+export const branchOfDir = (dir: string) => {
+  const name = path.basename(dir);
+  return name.startsWith('branch-') ? name.slice('branch-'.length).replaceAll('~', '/') : undefined;
+};
+
 /** A range's target is a commit when its base named no branch. */
 export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target);
 
