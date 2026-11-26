@@ -89,6 +89,7 @@ async function start(args: string[]): Promise<void> {
     const line = reviewedLine(dir);
     if (line) console.log(line);
   }
+  if (walkthrough.ready === false && walkthrough.reviewedAt) console.log(`Last reviewed at ${short(walkthrough.reviewedAt)}.`);
   if (opened === 'moved' && steps.length > 0) {
     console.log(`The head moved: ${plural(steps.length, 'step')} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];

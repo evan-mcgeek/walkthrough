@@ -168,7 +168,7 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | The files are as you viewed them. | under it | Empty state, 8 | |
 | Show all changes | button beside it | Button, 3 | **GH**; switches the view |
 | Changed since last view | file header | Tag, 4 | **GH**; already in use; now on every file whose diff changed |
-| The branch has new commits. Run the walkthrough again to see them: | one line under the header, every screen, when your branch moved | Notice, 12 | followed by `/walkthrough` and Copy command; the pull request case is not drawn (decision 15) |
+| The branch has new commits. Run the walkthrough again to see them: | one line under the header, every screen, when your branch moved | Notice, 12 | followed by `/walkthrough:update` and Copy command; the pull request case is not drawn (decision 15) |
 | Outdated | thread header and Summary row | Tag, 2 | **GH** |
 | AI marked this conversation as resolved. | a thread the AI resolved | Thread line, GitHub's sentence | **GH** ("… marked this conversation as resolved.") |
 | Show resolved / Hide resolved | button on that line | Button, 3 | **GH** |

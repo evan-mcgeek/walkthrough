@@ -297,7 +297,7 @@ function drawHeader(onSummary: boolean): void {
 /** The line under the header once the branch has commits the walkthrough does not show. */
 function drawBehind(behind: boolean): void {
   if (behind && !behindLine.hasChildNodes())
-    behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox());
+    behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox(true));
   behindLine.hidden = !behind;
 }
 

@@ -42,6 +42,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   lastStep?: number;
   /** False until the session runs `ready`; a walkthrough saved without it is ready. */
   ready?: boolean;
+  /** The head it was last ready at, once the head moved, so the session can review only what came since. */
+  reviewedAt?: string;
   /** Set once the page was opened in the browser. */
   opened?: true;
   criteria?: Criterion[];
@@ -119,7 +121,9 @@ export function openWalkthrough(
       return { walkthrough: relabelled, opened: 'resumed' };
     }
     if (saved) {
-      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
+      const reviewedAt = saved.ready === false ? saved.reviewedAt : saved.head;
+      const moved: Walkthrough = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
+      if (reviewedAt) moved.reviewedAt = reviewedAt;
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
       // Before any steps, the page shows the session preparing them instead.
