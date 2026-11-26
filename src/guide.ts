@@ -51,8 +51,8 @@ walkthrough steps --file <file>
   A file is a path, or {"path": path, "folded": reason} for a generated or copied file, which arrives folded with its one-line reason.
   "look" holds one or two pointers to what to read first, each {"file": path, "start": line, "end": line, "label": 1 to 4 words}.
   "screenshot" puts the author's screenshot of the change under the explanation: {"file": path, "alt": the author's alt text}.
-  Download it into the inbox first; it must be a PNG, JPEG, GIF or WebP image of at most 5 MB. Recording copies it and removes the inbox file,
-  so give a screenshot again, downloaded again, when you record the steps again.
+  Download it into the inbox first; it must be a PNG, JPEG, GIF or WebP image of at most 5 MB. Recording copies it and removes the inbox file.
+  Recorded again, a step that keeps its id keeps its screenshot unless given a new one, or "screenshot": null to remove it.
   A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
 ${JSON.stringify(steps, null, 2)}
 

@@ -8,7 +8,10 @@ import { inInbox } from './paths';
 import { shownLines } from './lines';
 import type { Look, Step, Walkthrough } from './walkthrough';
 
-export type StepInput = Pick<Step, 'title' | 'explanation' | 'files' | 'folded' | 'look'> & { screenshot?: { file: string; alt: string } };
+export type StepInput = Pick<Step, 'title' | 'explanation' | 'files' | 'folded' | 'look'> & {
+  /** A new screenshot, or null to remove the one the step had; left out, the step keeps its own. */
+  screenshot?: { file: string; alt: string } | null;
+};
 
 const MAX_LOOK = 2;
 const LOOK_WORDS = 4;
@@ -78,7 +81,7 @@ export function parseSteps(text: string): StepInput[] {
       files: paths,
       ...(Object.keys(folded).length && { folded }),
       look: look.map((one: unknown, at) => parseLook(one, `${name}, pointer ${String(at + 1)}`)),
-      ...(screenshot !== undefined && { screenshot: parseScreenshot(screenshot, name) }),
+      ...(screenshot !== undefined && { screenshot: screenshot === null ? null : parseScreenshot(screenshot, name) }),
     };
   });
 }
@@ -126,11 +129,18 @@ export async function buildSteps(cwd: string, dir: string, walkthrough: Walkthro
   const ids = stepIds(walkthrough, inputs);
   const steps = await Promise.all(
     inputs.map(async ({ screenshot, ...input }, at): Promise<Step> => {
+      const id = ids[at] ?? '';
       const shot = shots[at];
+      const kept =
+        screenshot && shot && typeof shot !== 'string'
+          ? { name: shot.name, alt: screenshot.alt }
+          : screenshot === undefined
+            ? walkthrough.steps.find(old => old.id === id)?.screenshot
+            : undefined;
       return {
-        id: ids[at] ?? '',
+        id,
         ...input,
-        ...(screenshot && shot && typeof shot !== 'string' && { screenshot: { name: shot.name, alt: screenshot.alt } }),
+        ...(kept && { screenshot: kept }),
         diff: await diffOf(cwd, base, head, input.files.flatMap(one => changed.get(one) ?? [])),
       };
     }),

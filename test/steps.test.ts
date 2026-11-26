@@ -89,6 +89,29 @@ describe("a step's screenshot", () => {
     repo.run('export', '--out', out);
     expect(fs.readFileSync(out, 'utf8')).toContain(`<img class="screenshot-image" src="data:image/png;base64,${png.toString('base64')}" alt="The login form" />`);
   });
+
+  test('recorded again, a step keeps its screenshot unless given a new one or null', async () => {
+    repo = makeRepo();
+    const inbox = inboxOf(repo.run('start'));
+    const shot = (name: string, bytes: Buffer) => {
+      fs.writeFileSync(path.join(inbox, name), bytes);
+      return path.join(inbox, name);
+    };
+    const icon = (size: number) => fs.readFileSync(path.resolve(import.meta.dirname, '..', 'docs', 'design', 'brand', `app-icon-${String(size)}.png`));
+    const named = (bytes: Buffer) => `${crypto.createHash('sha256').update(bytes).digest('hex')}.png`;
+    const [login, app] = loginSteps;
+    const screenshotOf = async () => (await shownAt(repo.url())).steps[0]?.screenshot;
+    repo.record([{ ...login, screenshot: { file: shot('a.png', icon(16)), alt: 'Before' } }, app]);
+
+    repo.record([{ ...login, title: 'Login, renamed' }, app]);
+    expect(await screenshotOf()).toEqual({ name: named(icon(16)), alt: 'Before' });
+
+    repo.record([{ ...login, screenshot: { file: shot('b.png', icon(32)), alt: 'After' } }, app]);
+    expect(await screenshotOf()).toEqual({ name: named(icon(32)), alt: 'After' });
+
+    repo.record([{ ...login, screenshot: null }, app]);
+    expect(await screenshotOf()).toBeUndefined();
+  });
 });
 
 describe('walkthrough guide', () => {

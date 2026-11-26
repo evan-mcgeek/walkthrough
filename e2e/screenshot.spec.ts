@@ -34,6 +34,12 @@ test("the author's screenshot opens in place to the step's width and closes by C
   await expect(page.locator('.screenshot')).not.toHaveClass(/open/);
 
   await button.click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toBeHidden();
+  await expect(page.locator('.screenshot')).toHaveClass(/open/);
+
   await page.getByRole('heading', { level: 1, name: 'Login' }).click();
   await page.keyboard.press('Escape');
   await expect(page.locator('.screenshot')).not.toHaveClass(/open/);
