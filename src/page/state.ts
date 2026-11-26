@@ -2,6 +2,7 @@
 import type { CommentView, ThreadView, WalkthroughView } from '../review';
 import type { Step } from '../walkthrough';
 import { type PageName, post } from './dom';
+import { colourCode } from './highlight';
 import { renderMarkdown } from './markdown';
 
 /** A request that never reached the server asks it again at once, so a server gone shows as soon as polls show it. */
@@ -59,6 +60,7 @@ export function markdown(text: string, className: string): HTMLElement {
   box.className = `markdown ${className}`.trim();
   // Raw HTML in the text shows as text, and markdown-it drops script links, so this is safe to put in the page.
   box.innerHTML = renderMarkdown(text);
+  colourCode(box);
   return box;
 }
 

@@ -6,6 +6,7 @@ import { previewType } from '../preview';
 import type { ThreadView } from '../review';
 import type { Step } from '../walkthrough';
 import { attrs, el } from './dom';
+import { colourCode, colourDiff } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 import { grow, reduced } from './motion';
@@ -432,6 +433,7 @@ export class FilePane {
     }
     box.innerHTML = renderMarkdown(await answer.text(), this.name, added);
     box.classList.add('markdown');
+    colourCode(box);
   }
 }
 
@@ -461,6 +463,12 @@ export function drawFiles(step: Step, { own, quiet }: { own?: Step; quiet?: true
   holder.innerHTML = html(parsed, { outputFormat: 'line-by-line', drawFileList: false, matching: 'lines' });
   const wrappers = [...holder.querySelectorAll('.d2h-file-wrapper')];
   const panes = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector('.d2h-file-diff') ?? null, shown(file)));
+  // What changed since the last review starts from the head reviewed then.
+  const revs = { base: own ? state.view.since?.head : state.view.base, head: state.view.head };
+  parsed.forEach((file, at) => {
+    const table = wrappers[at]?.querySelector('.d2h-file-diff');
+    if (table) colourDiff(table, file, revs);
+  });
   // A step shows its files in the order the session gave them.
   return step.files.flatMap(file => panes.filter(pane => pane.file === file));
 }
