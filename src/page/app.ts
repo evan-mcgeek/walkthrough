@@ -7,6 +7,7 @@ import { commandBox, type Ending, endScreen } from './end';
 import { pick } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
+import { moving, shownMoves } from './moves';
 import { Opening, openingNav } from './opening';
 import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile, threadStep } from './state';
 import { changes, ChangesSwitch, shownFiles, shownSince } from './since';
@@ -59,7 +60,8 @@ function paneOf(id: string): StepPane {
   const step = state.view.steps.find(one => one.id === id);
   if (!step) throw new Error(`no step ${id}`);
   const since = shownSince();
-  const key = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map(file => since.files[file] ?? null)]);
+  const moves = shownMoves().filter(({ from, to }) => step.files.includes(from.file) || step.files.includes(to.file));
+  const key = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map(file => since.files[file] ?? null), moves]);
   const kept = panes.get(`${String(!!since)}:${id}`);
   if (kept?.key === key) return kept.pane;
   const pane = new StepPane(step, main, since);
@@ -567,6 +569,18 @@ changes.look = ({ file, start, end }) => {
   showChanges(false);
   const at = current();
   if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main);
+};
+
+moving.show = (move, to) => {
+  const { file, line } = move[to];
+  const step = stepOfFile(file);
+  const at = current();
+  if (!step || at.kind === 'opening') return;
+  if (at.kind !== 'step' || at.pane.step.id !== step.id) go(stepAddress(step.id));
+  for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
+  const pane = paneOf(step.id).fileNamed(file);
+  if (to === 'from') pane?.lookDeparture(line, main);
+  else pane?.look(line, line + move.count - 1, main);
 };
 
 /** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */

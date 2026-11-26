@@ -1269,6 +1269,47 @@ td.d2h-info .d2h-code-line {
   font-size: 12px;
 }
 
+/* Moved code: plain lines on the surface where they arrive, one label row at each end linking to the other. */
+tr.moved td {
+  background: var(--surface);
+}
+
+tr.moved td.d2h-code-linenumber,
+tr.moved-label td {
+  background: var(--surface-tint);
+}
+
+tr.moved-label td {
+  color: var(--ink-secondary);
+  font: 12px/24px var(--font-ui);
+}
+
+tr.moved-label .line-num1 {
+  min-height: 24px;
+  font-family: var(--font-mono);
+}
+
+.moved-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.moved-link:hover {
+  text-decoration: underline;
+}
+
+.moved-link .icon {
+  width: 13px;
+  height: 13px;
+}
+
 tr.picked td {
   background: var(--line-pick);
 }
