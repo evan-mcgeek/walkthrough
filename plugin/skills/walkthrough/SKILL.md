@@ -45,6 +45,7 @@ Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the 
    Running `walkthrough start` again on the same head resumes the walkthrough as they left it; run `walkthrough open` if they need the page again.
    On a new head (the branch moved, or the same label on a new range) the walkthrough is not ready again, each step keeps the files that still change, and start names the files in no step yet.
    Record the steps again with those files, review what changed as "Reviewing" says, skipping `walkthrough open` while their page is still open, and tell the person in one line what is new.
+   For each of your comments from an earlier review that the new code fixes, found with `walkthrough comments --all`, run `walkthrough resolve <id>`; do not reply to it.
 7. When the person asks you in the chat to stop, run `walkthrough stop`.
 8. When the person asks to share or keep the walkthrough, run `walkthrough export`, with `--out <file>` when they name a place (the person approves that one, since it writes where it names), and tell them the path it prints.
 9. When the person asks which walkthroughs they have open or wants to find one they left, run `walkthrough list`; `walkthrough stop --list` ends that page.
@@ -56,19 +57,12 @@ It has a part of shared rules and a part for each kind of walkthrough; follow th
 Run `walkthrough policy`; its first line names the policy's state and path:
 
 - `yours`: the policy is the person's own; read it with `walkthrough policy show` and go on.
-- `template`: the policy is still the unchanged template; offer the interview.
-- `none`: the person has none; offer the template and the interview.
+- `template`: the policy is still the unchanged template.
+- `none`: the person has none, so the template applies.
 
-Offer in one or two lines: the template's defaults apply until they make the policy theirs, and a short interview does that now.
-When they say later, follow the template, which `walkthrough policy show` prints, for this walkthrough; the offer comes again next time.
-When they say now:
-
-1. With no policy yet, run `walkthrough policy init` to copy the template there.
-2. Read it with `walkthrough policy show`, and go through its sections in order.
-   For each, sum up its defaults in a line and ask one short question about how they actually review that part.
-   Before asking the next question, write the whole policy with that answer applied to a file in the inbox `walkthrough policy` printed, and save it with `walkthrough policy save --file <file>`; "keep" leaves the section as it is.
-   The save uses up the file, so for the next answer write the whole policy again, from the version you last saved, to a new file.
-3. The interview is done when every section is asked or they say enough; go on with `walkthrough start`.
+While it is `none` or `template`, ask one question before the review, with your question tool: the template's defaults apply; set it up now, in a few short questions, or later.
+Now: invoke `/walkthrough:init` with your skill tool and follow its steps 1 to 3, then read the policy with `walkthrough policy show` and go on with this review.
+Later: follow the template, which `walkthrough policy show` prints, for this walkthrough; the question comes again next time.
 Never read or edit the policy file itself; the `walkthrough policy` commands are how you reach it.
 
 ## Steps
@@ -94,7 +88,9 @@ Until you run `walkthrough ready`, the page shows the AI at work and the changed
 2. Once the reviewers have reported, or your own review is done when the policy names none, run `walkthrough open`; the page opens on the AI at work while you record the rest.
    When the person asks to see the page before that, run it at once.
 3. Step by step, in reading order, record your comments on that step's lines with `walkthrough comment --file <file>`, only where the policy says a comment is worth it.
+   A comment about a file as a whole leaves out its lines and sits on the file.
    Write a comment's body without the `[AI]` mark; the page adds it.
+   When the policy asks for the person's voice, read their VOICE.md (the project root, then `~/.claude/VOICE.md`) before writing the comments that go out; with none, write as the policy says.
    Each comment is pending: it goes out with the review unless the person edits or deletes it.
 4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
 5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`.
@@ -115,9 +111,12 @@ Keep listening until the walkthrough stops.
    - A submit: the person finished their review, with its summary, and on a pull request its type.
      Read what goes out with `walkthrough comments`: their comments as they are now, yours with the `[AI] ` mark at the start, their replies and the threads they resolved.
      On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
+     A comment with `"subject": "file"` has no lines: post it as a comment on that file.
+     A resolve line with `"by": "ai"` is one you resolved: resolve that thread on the code host too, finding it by the file, lines (or subject) and body the line gives.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.
      How to post comes from the policy; when something could not go out, tell the person in the chat, and run `walkthrough posted` only once the review is out.
      Then, when the policy asks you to learn from the review, read `walkthrough comments --all`: a comment of yours with "deleted" was deleted, and one with "wrote" was reworded from what you wrote; save a policy change the person agrees to with `walkthrough policy save --file <file>`, writing the whole policy from `walkthrough policy show`.
+     When the comments they reworded differ mostly in tone rather than content, and the policy has no line about their voice and no "Never offer the voice plugin.", suggest `/walkthrough:init`'s voice offer in one line instead of a policy line.
    - Stopped: tell the person in one line and do not listen again.
 3. Start listening again right after handling what woke you, every time, before you end your turn.
 4. Exit code 3 means another `walkthrough listen` took over; do not listen again from this session.

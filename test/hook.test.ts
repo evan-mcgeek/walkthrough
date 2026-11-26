@@ -36,6 +36,7 @@ describe('the plugin hook', () => {
     'walkthrough start --base 2885b85^1 --head 2885b85 --label "Ticket 24"',
     'walkthrough files --base HEAD~2 --head HEAD --label Last',
     `walkthrough steps --file '${inbox}/a~b^c.json'`,
+    'walkthrough resolve c7 --base origin/main --head pr-12 --label "PR 12"',
   ])('approves the CLI on its own: %s', command => {
     expect(bash(command)).toBe('allow');
   });

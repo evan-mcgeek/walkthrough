@@ -19,7 +19,7 @@ body {
 
 body.walkthrough {
   display: grid;
-  grid-template-rows: 44px auto minmax(0, 1fr);
+  grid-template-rows: 44px auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -27,12 +27,16 @@ body.walkthrough > .app-header {
   grid-row: 1;
 }
 
-body.walkthrough > .banner {
+body.walkthrough > .behind {
   grid-row: 2;
 }
 
-body.walkthrough > .frame {
+body.walkthrough > .banner {
   grid-row: 3;
+}
+
+body.walkthrough > .frame {
+  grid-row: 4;
 }
 
 button,
@@ -336,6 +340,83 @@ textarea {
   flex: none;
 }
 
+/* The changes switch: All changes or Changes since your last review, as GitHub's commit picker. */
+
+.changes-switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.changes-button .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-secondary);
+}
+
+.menu.changes-menu {
+  top: 32px;
+  right: auto;
+  left: 0;
+  min-width: 300px;
+}
+
+.changes-menu .menu-item {
+  gap: var(--s2);
+  align-items: flex-start;
+  padding: 6px var(--s2);
+}
+
+.changes-menu .menu-item[aria-checked='true'] {
+  background: var(--surface-tint);
+  font-weight: 400;
+}
+
+.menu-check {
+  flex: none;
+  width: 16px;
+}
+
+.menu-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The branch moved on: one line under the header with the command that catches up. */
+
+.behind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 7px var(--s4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.behind > .icon {
+  color: var(--ink-secondary);
+}
+
+.behind .command {
+  margin: 0;
+  padding: 2px 2px 2px 10px;
+  background: var(--canvas);
+}
+
+.behind .command code {
+  font-size: 12.5px;
+}
+
+.ended > .behind {
+  display: none !important;
+}
+
 /* Menu: Theme and End session, floating under its button. */
 
 .menu {
@@ -379,6 +460,15 @@ textarea {
 .menu-item[aria-checked='true'] {
   background-image: radial-gradient(circle at 13px 50%, var(--accent) 0 3px, transparent 3.5px);
   font-weight: 600;
+}
+
+.menu-item[role='menuitemcheckbox'][aria-checked='true'] {
+  background-image: none;
+}
+
+.menu-item[role='menuitemcheckbox'] .menu-check {
+  margin: 0 5px 0 -21px;
+  color: var(--accent);
 }
 
 .menu hr {
@@ -454,6 +544,26 @@ textarea {
 .step-row[aria-current='page'] .step-number {
   background: var(--ink);
   color: var(--canvas);
+}
+
+.step-row.quiet .step-name {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.step-row.quiet .step-number {
+  opacity: 0.6;
+}
+
+/* The file J and K are on. */
+.file-row.on {
+  background: var(--canvas);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.file.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .step-name {
@@ -649,6 +759,94 @@ textarea {
   outline: none;
 }
 
+/* The author's screenshot: a thumbnail under the explanation that opens in place, never over the page. */
+
+.screenshot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: var(--s4) 0 0;
+}
+
+.screenshot-button {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  cursor: zoom-in;
+}
+
+.screenshot-image {
+  display: block;
+  width: 240px;
+  height: 156px;
+  object-fit: contain;
+}
+
+.screenshot figcaption {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+}
+
+.screenshot-close {
+  margin-left: auto;
+}
+
+.screenshot.open {
+  align-items: stretch;
+  max-width: 960px;
+}
+
+.screenshot.open .screenshot-button {
+  cursor: zoom-out;
+}
+
+.screenshot.open .screenshot-image {
+  width: 100%;
+  height: auto;
+}
+
+/* A step with nothing new since the last review. */
+.nothing-new {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  max-width: 760px;
+  margin-bottom: var(--s4);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.nothing-new > .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-secondary);
+}
+
+.nothing-new > div {
+  flex: 1;
+}
+
+.nothing-new p {
+  margin: 2px 0 0;
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+}
+
+.files.quiet .file-path {
+  color: var(--muted);
+}
+
 /* Files: a header in a bordered box; the body folds by grid rows. */
 
 .files {
@@ -717,11 +915,11 @@ textarea {
 }
 
 .file-stats .added {
-  color: var(--ok);
+  color: var(--diff-add-text);
 }
 
 .file-stats .deleted {
-  color: var(--bad);
+  color: var(--diff-del-text);
 }
 
 .file-comments {
@@ -822,11 +1020,105 @@ textarea {
 }
 
 .file-inner {
-  position: relative;
   min-height: 0;
   overflow: hidden;
-  padding-right: 10px;
   transition: opacity var(--base) linear 80ms;
+}
+
+.diff-area {
+  position: relative;
+  padding-right: 10px;
+}
+
+/* Outdated threads, each with the code it was written on, then comments on the whole file: surface bands above the diff. */
+:is(.outdated-zone, .file-threads) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.outdated-zone > .thread,
+.file-threads .thread {
+  position: static;
+  margin: 0;
+  max-width: 760px;
+}
+
+:is(.outdated-zone, .file-threads) > .thread.arriving {
+  display: none;
+}
+
+.file-threads .thread-cell {
+  padding: 0;
+  border: 0;
+}
+
+.outdated {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.outdated-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 6px var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.outdated-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font: 400 12px/1.4 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.outdated-tag, .resolved-tag) {
+  flex: none;
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font: 600 12px/18px var(--font-ui);
+  vertical-align: 1px;
+}
+
+.resolved-tag {
+  background: var(--surface-tint);
+}
+
+.outdated-code {
+  padding: var(--s1) 0;
+  overflow-x: auto;
+  color: var(--ink-secondary);
+  font: 400 12px/20px var(--font-mono);
+}
+
+.outdated-line {
+  display: flex;
+  white-space: pre;
+}
+
+.outdated-gap {
+  height: var(--s2);
+  margin: var(--s1) 0;
+  background: var(--surface-tint);
+}
+
+.outdated-number {
+  flex: none;
+  width: 40px;
+  padding-right: var(--s3);
+  color: var(--muted);
+  text-align: right;
 }
 
 .file.closed .file-inner {
@@ -950,11 +1242,11 @@ textarea {
 }
 
 .d2h-code-line ins {
-  background: light-dark(#b9e5c6, #1f4a2e);
+  background: var(--diff-add-word);
 }
 
 .d2h-code-line del {
-  background: light-dark(#f4c4bf, #5a2626);
+  background: var(--diff-del-word);
 }
 
 td.d2h-ins {
@@ -981,6 +1273,47 @@ td.d2h-info {
 
 td.d2h-info .d2h-code-line {
   font-size: 12px;
+}
+
+/* Moved code: plain lines on the surface where they arrive, one label row at each end linking to the other. */
+tr.moved td {
+  background: var(--surface);
+}
+
+tr.moved td.d2h-code-linenumber,
+tr.moved-label td {
+  background: var(--surface-tint);
+}
+
+tr.moved-label td {
+  color: var(--ink-secondary);
+  font: 12px/24px var(--font-ui);
+}
+
+tr.moved-label .line-num1 {
+  min-height: 24px;
+  font-family: var(--font-mono);
+}
+
+.moved-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.moved-link:hover {
+  text-decoration: underline;
+}
+
+.moved-link .icon {
+  width: 13px;
+  height: 13px;
 }
 
 tr.picked td {
@@ -1062,8 +1395,62 @@ tr.flash td {
   background: var(--canvas);
 }
 
-.thread.resolved {
+.thread.resolved .thread-comments {
   opacity: 0.75;
+}
+
+/* A thread the AI resolved: one resolved line, the thread opening under it by grid rows. */
+.thread.ai-resolved {
+  background: var(--surface);
+}
+
+.resolved-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--s2) var(--s3);
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.thread.ai-resolved:not(.folded) .resolved-line {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.resolved-line .avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.resolved-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.thread.ai-resolved .comment {
+  opacity: 0.85;
+}
+
+.thread-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--slow) var(--ease-out);
+}
+
+.thread.folded .thread-body {
+  grid-template-rows: 0fr;
+}
+
+.thread-inner {
+  min-height: 0;
+  overflow: hidden;
+  transition: opacity var(--base) linear 80ms;
+}
+
+.thread.folded .thread-inner {
+  opacity: 0;
+  transition-delay: 0s;
 }
 
 .comment {
@@ -1497,6 +1884,14 @@ tr.flash td {
   color: var(--muted);
 }
 
+.resolved-row .row-text {
+  color: var(--ink-secondary);
+}
+
+.resolved-row .pending-tag {
+  margin-right: 6px;
+}
+
 .going-row .row-text {
   display: -webkit-box;
   flex: 1;
@@ -1668,6 +2063,11 @@ tr.flash td {
   font: 650 17px/1.4 var(--font-ui);
 }
 
+.export-step .screenshot-image {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
 .export-step .d2h-file-wrapper {
   margin: var(--s4) 0;
   border: 1px solid var(--rule);
@@ -1688,6 +2088,15 @@ tr.flash td {
 /* Phone: one column; the step list opens over the page from the header; 44px targets. */
 
 @media (max-width: 760px) {
+  .screenshot:not(.open) .screenshot-button {
+    width: 100%;
+  }
+
+  .screenshot:not(.open) .screenshot-image {
+    width: 100%;
+    height: 180px;
+  }
+
   .app-header {
     gap: var(--s2);
     padding: 0 var(--s3);
@@ -1744,6 +2153,44 @@ tr.flash td {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .main > .changes-switch {
+    display: flex;
+    margin-bottom: var(--s4);
+  }
+
+  .main > .changes-switch .changes-button {
+    flex: 1;
+    justify-content: flex-start;
+    min-height: 36px;
+  }
+
+  .changes-button .icon:last-child {
+    margin-left: auto;
+  }
+
+  .menu.changes-menu {
+    right: 0;
+    min-width: 0;
+  }
+
+  .behind {
+    align-items: flex-start;
+    padding: var(--s2) var(--s4);
+  }
+
+  .behind-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .behind .command {
+    width: 100%;
+  }
+
+  .nothing-new {
+    flex-wrap: wrap;
+  }
+
   .step-list {
     position: absolute;
     inset: 0;
@@ -1773,7 +2220,7 @@ tr.flash td {
   .file-header {
     top: calc(-1 * var(--s4));
     display: grid;
-    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto;
+    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto auto;
     row-gap: 0;
     padding: 0 var(--s2) 0 0;
   }
@@ -1800,6 +2247,10 @@ tr.flash td {
 
   .viewed-toggle {
     grid-area: 1 / 6;
+  }
+
+  .file-comment {
+    grid-area: 1 / 7;
   }
 
   .file-header :is(.changed-tag, .folded-reason, .segmented) {
@@ -1866,7 +2317,7 @@ tr.flash td {
     top: 84px;
   }
 
-  .file-inner {
+  .diff-area {
     padding-right: 0;
   }
 
@@ -1889,6 +2340,14 @@ tr.flash td {
 
   .composer-row {
     flex-wrap: wrap;
+  }
+
+  .thread-foot:has(.unresolve) {
+    flex-wrap: wrap;
+  }
+
+  .thread-foot:has(.unresolve) .reply-field {
+    flex-basis: 100%;
   }
 
   .summary-grid {
@@ -1947,7 +2406,9 @@ tr.flash td {
 
   /* A file's content fades, then its body, header edge and corners snap together. */
   .file-body,
-  .file.closed .file-body {
+  .file.closed .file-body,
+  .thread-body,
+  .thread.folded .thread-body {
     transition: grid-template-rows 1ms linear var(--fast);
   }
 

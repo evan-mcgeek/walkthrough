@@ -25,7 +25,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
   "I know it well", "I know most of it", "I know a little", "It's new to me".
 - "I know it well": each step's explanation says only what changed, in one sentence; no background, no terms explained.
 - "I know most of it": a sentence or two per step, with background only for what this change adds to the feature.
-- "I know a little": open the first step's explanation with two or three sentences on what the feature does and why, then explain as the shared rules say.
+- "I know a little": after the first step's sentence on what behaves differently, add two or three sentences on what the feature does and why, then explain as the shared rules say.
 - "It's new to me": as "I know a little", and explain each of the feature's own terms the first time it appears.
 - When I skip, explain as for "I know a little".
 
@@ -44,6 +44,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### Explanations
 
 - An explanation says what changed and why, from the code and the ticket; the author session's own summary of the change is never a source.
+- The first step's explanation opens with one sentence on what the change makes behave differently.
 - Its first paragraph is one or two sentences, 30 words at most, and stands on its own.
   Anything more goes in a second paragraph, behind More, in at most three sentences.
 - Give the why, and the alternative the change rejected when the code or the ticket shows one.
@@ -75,6 +76,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - One or two sentences, 40 words at most: what is wrong and what it breaks, then the fix when it is clear.
   No evidence and no verdicts in it.
 - Do not repeat what a thread already on the change says.
+- On a new head, resolve each of your comments from an earlier review that the new code fixes, without a reply.
 
 ### Acceptance criteria
 
@@ -115,6 +117,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - I name the change by its number or link on your code host.
 - Fetch its head from your code host into a local ref, without checking it out, and walk from its base to that ref with a label naming it, such as "PR 123", and its number and title.
 - Read the change's description and discussion as well as its ticket.
+- When its description shows a screenshot of the change, put it on the step it shows; leave out one that fits no step.
 
 ### Threads already on the change
 
@@ -124,7 +127,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### My review
 
 - When I submit, post one finished review on your code host, not a pending one: my review type, my summary and every comment as a line comment on its lines.
-- Post my replies in their threads, and resolve the threads I resolved.
+- Post my replies in their threads, and resolve the threads I resolved and those you resolved.
 - A comment whose lines changed since goes in the review's summary, with its file and line.
 - Then record where the review is; when something did not go out, tell me in the chat what.
 - The author's branch and the change's description stay as they are.

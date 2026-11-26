@@ -4,7 +4,7 @@ import type { Criterion } from '../walkthrough';
 import { attrs, el } from './dom';
 import { sentLine, them, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
-import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, unresolved } from './state';
+import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, threadStep, unresolved } from './state';
 import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
 import { avatar } from './threads';
 
@@ -15,6 +15,11 @@ const CRITERIA: Record<Criterion['status'], [IconName, string]> = {
   'not-met': ['not-met', 'Not met'],
   'not-checked': ['unchecked', 'Not checked'],
 };
+
+const plainText = (body: string) => markdown(body, 'row-text').textContent.replace(/\s+/g, ' ').trim();
+
+/** The AI's resolves not sent yet, or sent with the review the Summary shows as submitted. */
+const resolvedByAi = () => state.view.threads.filter(one => one.resolvedBy === 'ai' && (one.resolveReview === undefined || one.resolveReview === state.view.submitted?.id));
 
 /** What the Summary links to: a thread, which it can open for editing, or a file. */
 export type Reveal = { thread?: string; edit?: string; file?: string };
@@ -40,7 +45,7 @@ export class SummaryPane {
 
   update(): void {
     const { view } = state;
-    const key = JSON.stringify([pendingComments(), view.submitted, view.criteria, unresolved().length, notViewed().length, view.pr, this.sending]);
+    const key = JSON.stringify([pendingComments(), resolvedByAi(), view.submitted, view.criteria, unresolved().length, notViewed().length, view.pr, this.sending]);
     if (key === this.drawn) return;
     this.drawn = key;
     const focused = document.activeElement;
@@ -59,7 +64,7 @@ export class SummaryPane {
       ...(rows.length || submitted ? [] : [el('p', { className: 'empty' }, 'No comments. Add one on a line.')]),
       ...(submitted ? [] : this.counts()),
     );
-    const left = el('div', { className: 'summary-lists' }, going, ...this.criteria());
+    const left = el('div', { className: 'summary-lists' }, going, ...this.resolved(), ...this.criteria());
     const right = el('div', { className: 'review-side' }, submitted ? this.done() : this.reviewBox());
     this.box.replaceChildren(el('h1', { className: 'step-title', tabIndex: -1 }, 'Summary'), el('div', { className: 'summary-grid' }, left, right));
     if (submitted && this.shownSent === false) this.arrive(right);
@@ -114,13 +119,17 @@ export class SummaryPane {
     });
   }
 
+  /** The thread's file and lines, or the file alone for a comment on the whole file; a link to it while it shows in a step. */
+  private where(thread: ThreadView): HTMLElement {
+    const where = thread.lines ? `${baseName(thread.file)}:${linesLabel(thread.lines)}` : baseName(thread.file);
+    return threadStep(thread) === undefined
+      ? el('span', { className: 'where', title: thread.file }, where)
+      : el('a', { className: 'where', href: '#', title: thread.file, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where);
+  }
+
   private row(thread: ThreadView, comment: CommentView, pending: boolean): HTMLElement {
-    const where = `${baseName(thread.file)}:${linesLabel(thread.lines)}`;
-    const link =
-      thread.step === null
-        ? el('span', { className: 'where', title: thread.file }, where)
-        : el('a', { className: 'where', href: '#', title: thread.file, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where);
-    const text = markdown(comment.body, 'row-text').textContent.replace(/\s+/g, ' ').trim();
+    const link = this.where(thread);
+    const text = plainText(comment.body);
     const item = el('li', { className: 'going-row' });
     item.dataset['comment'] = comment.id;
     const actions = pending
@@ -133,7 +142,13 @@ export class SummaryPane {
           ),
         ]
       : [];
-    const body = el('span', { className: 'row-text', title: comment.by === 'ai' ? `[AI] ${text}` : text }, ...(comment.by === 'ai' ? [el('span', { className: 'ai-tag' }, '[AI]'), ' '] : []), text);
+    const body = el(
+      'span',
+      { className: 'row-text', title: comment.by === 'ai' ? `[AI] ${text}` : text },
+      ...(thread.step === null && comment.id === thread.id ? [el('span', { className: 'outdated-tag' }, 'Outdated')] : []),
+      ...(comment.by === 'ai' ? [el('span', { className: 'ai-tag' }, '[AI]'), ' '] : []),
+      text,
+    );
     item.append(avatar(comment), link, body, ...actions);
     return item;
   }
@@ -146,6 +161,41 @@ export class SummaryPane {
       ...(files.length ? [el('a', { href: '#', onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ file: files[0] ?? '' }); } }, icon('eye'), `${String(files.length)} ${files.length === 1 ? 'file' : 'files'} not viewed`)] : []),
     ];
     return links.length ? [el('p', { className: 'counts' }, ...links)] : [];
+  }
+
+  /** The conversations the AI resolved that go out with the review, or went out with the one submitted. */
+  private resolved(): HTMLElement[] {
+    const rows = resolvedByAi();
+    if (!rows.length) return [];
+    return [
+      el(
+        'section',
+        { className: 'summary-section' },
+        el('h2', { className: 'section-head' }, 'Resolved conversations', el('span', { className: 'counter' }, String(rows.length))),
+        el(
+          'ul',
+          { className: 'going-out' },
+          ...rows.map(thread => {
+            const text = plainText(thread.comments[0]?.body ?? '');
+            const item = el(
+              'li',
+              { className: 'going-row resolved-row' },
+              avatar({ by: 'ai' }),
+              this.where(thread),
+              el(
+                'span',
+                { className: 'row-text', title: text },
+                el('span', { className: 'resolved-tag' }, 'Resolved'),
+                ...(thread.resolvePending ? [el('span', { className: 'pending-tag' }, 'Pending')] : []),
+                text,
+              ),
+            );
+            item.dataset['thread'] = thread.id;
+            return item;
+          }),
+        ),
+      ),
+    ];
   }
 
   private criteria(): HTMLElement[] {

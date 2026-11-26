@@ -28,6 +28,8 @@ colors:
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
   diff-del-gutter: "#f6d6d3"
+  diff-add-word: "#b9e5c6"
+  diff-del-word: "#f4c4bf"
   stripe-add: "#3c9a5f"
   stripe-del: "#c8473b"
   line-pick: "#eef0fd"
@@ -58,6 +60,8 @@ colors:
   diff-add-gutter-dark: "#193423"
   diff-del-dark: "#33191a"
   diff-del-gutter-dark: "#3f1f20"
+  diff-add-word-dark: "#1f4a2e"
+  diff-del-word-dark: "#5a2626"
   stripe-add-dark: "#4fbf7a"
   stripe-del-dark: "#ef7e6f"
   line-pick-dark: "#1d2242"
@@ -289,7 +293,20 @@ Status colour survives only where GitHub has the same meaning or the AI's criter
 ### Diff
 - **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell. Preview-mode insertions use the addition wash full-bleed.
 - **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at 55% and 60% opacity.
+- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line.
+- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad` unless the colour-blind diff is on.
 - **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask or comment about; gutter number turns accent text, semibold.
+
+#### Colour-blind diff
+The menu's "Colour-blind diff" sets `data-colour-blind` on the root, which swaps only the diff tokens from green and red to blue and orange, with any theme.
+The values are GitHub's Protanopia and Deuteranopia ones (Primer `light_colorblind` and `dark_colorblind`); GitHub's translucent dark values are laid on the dark canvas, so each token stays one solid colour.
+
+| Token | Light | Dark |
+|---|---|---|
+| `diff-add` / `diff-add-gutter` / `diff-add-word` | #ddf4ff / #b6e3ff / #b6e3ff | #1a293e / #294361 / #26508a |
+| `diff-del` / `diff-del-gutter` / `diff-del-word` | #fff1e5 / #ffd8b5 / #ffd8b5 | #33251f / #513220 / #764223 |
+| `diff-add-text` / `stripe-add` | #0969da | #58a6ff |
+| `diff-del-text` / `stripe-del` | #bc4c00 | #f0883e |
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
@@ -376,13 +393,13 @@ Small, tight radii. 4px on every control (buttons, inputs, icon buttons, inline 
 - **Review type:** three native radios, Comment, Approve, Request changes, accent-coloured, no descriptions.
 
 ### Header
-44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; while the AI is still reviewing, the checking spinner and "AI reviewing" in 12.5px secondary ink (it fades out when the AI finishes); then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", the spinner without its word, Finish (not on the Summary), menu.
+44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", Finish (not on the Summary), menu. "AI reviewing" with the spinner belongs to the Opening's header only (HANDOFF decision 10).
 
 ### Step list
-248px on the surface tone where GitHub has its file tree. Each step is a row: a 18px numbered circle (ink-filled for the current step), the title cut with an ellipsis, and the checking spinner while the AI has not finished it. Under each step, its files in 12px mono with a Viewed tick (a muted ring, or a check in secondary ink when viewed; a viewed file's name goes muted) and a comment count with a bubble icon. The Summary is the last row, behind a rule, with the count of pending comments. Nothing else: no states, sub-lines or badges.
+248px on the surface tone where GitHub has its file tree. Each step is a row: a 18px numbered circle (ink-filled for the current step), and the title cut with an ellipsis. Under each step, its files in 12px mono with a Viewed tick (a muted ring, or a check in secondary ink when viewed; a viewed file's name goes muted) and a comment count with a bubble icon. The Summary is the last row, behind a rule, with the count of pending comments (comments only, not resolved conversations). Nothing else: no states, sub-lines or badges.
 
 ### Step
-The title (20px; no step-number line above it: the step list shows where you are), "Look at:" with one or two links, one or two sentences of explanation at 15px/1.6 with More, then the files. At the foot, previous and next step as secondary buttons named by the steps' titles. While the AI has not finished the step, one muted line under the explanation: the spinner and "The AI is still reviewing this step."
+The title (20px; no step-number line above it: the step list shows where you are), "Look at:" with one or two links, one or two sentences of explanation at 15px/1.6 with More, then the files. At the foot, previous and next step as secondary buttons named by the steps' titles.
 
 ### Look at
 "Look at:" in 600 ink, then each pointer as a 24px link pill: a 1px accent-line border, 5px corners, a small arrow, the file name in mono and the line range in accent text, and two to four words naming the spot in secondary ink. Clicking opens the file if it is folded, scrolls the lines into view with 120px of context above, and flashes the range in the line-pick tone (fading over 1.4s).
@@ -407,8 +424,8 @@ GitHub's "Finish your review" made visible, two columns 32px apart up to 1120px:
 - **Finish your review** (sticky box, 340px): the summary textarea, the three review-type radios, and Submit review. The final submit happens here, in the app (founder decision; this overrides VISION.md's "submit there"). On your own change: the textarea and Send to agent, with no review type (HANDOFF decision 11). With no comments, Send to agent is disabled, with one muted line under it: "Add a comment to send it." The Going out list then reads "No comments. Add one on a line."
 - **After submitting:** the box becomes a green-wash note: a check, "Review submitted", one line ("Request changes, with 5 comments, on #212."), View review (the secondary button's box, accent text and an external-link icon) and End session as a quiet text button (no fill, secondary ink; surface tint on hover); on your own change, "Sent to the agent", "5 comments. The agent is fixing them; follow along there." and the same quiet End session. The Going out heading becomes "Sent" and loses its Edit and Delete.
 
-### Opening (before the first step)
-Until the AI's first step exists, the main pane holds, top-left in the step column: the desk scene (344 by 192, 280 wide at 390), the title "Preparing the walkthrough", one sentence on what is happening and how long it usually takes, then the changed files as GitHub lists them (a bordered box: "N changed files +A −D", one mono path per row with its +/−). The header shows "N files changed" instead of the viewed count, "AI preparing steps" with the spinner, and no Finish review. The step list says "Steps appear here as the AI writes them." above three static placeholder rows (`rule`-tone bars, no shimmer), and Summary with 0. If it fails: the error icon, "The AI couldn't prepare the walkthrough", one sentence, Try again (primary), then "If it fails again, start it over in your agent:" and the command box with Copy command (the same component as "Pick it up again"), and the same file list; no spinner, no scene.
+### Opening (until the review is ready)
+Until the review is ready (HANDOFF decisions 9 and 10), the main pane holds, top-left in the step column: the desk scene (344 by 192, 280 wide at 390), the title "Preparing the walkthrough", "The AI is finishing its review, usually within a minute.", then the changed files as GitHub lists them (a bordered box: "N changed files +A −D", one mono path per row with its +/−). The header shows "N files changed" instead of the viewed count, "AI reviewing" with the spinner, and no Finish review. The step list says "Steps appear here when the AI is done." above three static placeholder rows (`rule`-tone bars, no shimmer), and Summary with 0. When the review is ready, the whole walkthrough appears at once. If the session stops first: the error icon, "The AI couldn't prepare the walkthrough", "It stopped before the review was done. Nothing was posted.", then "Start it over in your agent:" and the command box with Copy command (the same component as "Pick it up again"), and the same file list; no Try again, no spinner, no scene.
 
 **The desk scene.** The AI's own avatar (the ink rounded square) with a body, at a desk, reading code bars in the diff colours on a monitor; inline SVG, coloured only by tokens, so it follows the theme (the robot is ink in light, near-white in dark). One 24s story: reads → spots a red line ("Wait, what?!") → leans in ("Hmm…") → types; an `AI` badge lands on the line → reads on → green lines: three nods, a check, "Nice." → the screen fades and the story starts again. Speech bubbles are 11.5px sans 600 in a bordered bubble above the head.
 
@@ -416,6 +433,31 @@ Until the AI's first step exists, the main pane holds, top-left in the step colu
 One centred column, 560px wide, under a header holding only the mark and the label: the robot scene (344 by 192; 280 at 390), the title, one outcome box, "Pick it up again", and a muted "You can close this tab." The outcome box is 8px corners with an 18px icon: green wash and a check for what went out, surface tone and an info icon for nothing sent or a lost session. "Pick it up again" sits behind a rule: 14px heading, one line, the command in a surface box (mono 13px, 6px corners) with a small secondary Copy command, then the line about new commits.
 - **Session ended:** the robot from the opening, screen off, turned to you, waving once (happy eyes and a smile when something went out; dot eyes and a small smile when nothing did).
 - **The session isn't running:** the same robot asleep, head tipped, eyes shut, two muted "z" drifting; Try again (primary) in the box.
+
+### Changes since your last review (decisions 13, 14)
+- **The switch** (new component: GitHub's commit picker; nothing else on the page changes what the diffs show): a small secondary button in the header after the change's label, with a branch icon, the current choice and a chevron; it opens a menu (the existing Menu) with "All changes" and "Changes since your last review", each with a muted count line and a check on the current one. It shows only when you reviewed an earlier head, and it opens on "Changes since your last review". C opens it. At 390 it is the first row of the main pane, full width.
+- **In that view:** the step list keeps only files changed since your review; a step with none stays in the list with its title and number muted. Its page shows a surface-tone box (8px corners): a check, "No changes since your last review.", "The files are as you viewed them." and Show all changes, then its files folded and Viewed. Diffs show only what changed since your review. A new step has no label. Viewed is cleared on every file whose diff changed, with "Changed since last view"; the files-viewed count stays over all files.
+
+### Behind the branch (decision 15)
+One line under the header (new component: the page had no place for a fact about the whole walkthrough), full width, on every screen: surface tone, a bottom rule, an info icon in secondary ink, the sentence, and the command box with Copy command (the farewell's component, smaller). At 390 it wraps to two lines and the command box takes the full width. No motion; it is there or not.
+
+### Outdated and resolved (decisions 12, 16, 17)
+- **Outdated** (new component: the thread needs the code it was written on once that code is gone): the thread moves to the top of its file, in a surface-tone band above the diff. Its box starts with the path in mono and an "Outdated" tag (outlined pill, secondary ink, 12px), then the lines it was written on, in mono with their old numbers, then the comments and the reply foot. Pending ones keep Pending, Edit and Delete.
+- **Resolved** (GitHub's collapsed resolved look): the thread box on the surface tone with one line: the AI's avatar at 20px, "AI marked this conversation as resolved.", the amber "Pending" tag until Submit review sends the resolve (none on your own change), and Show resolved. Open: the thread below that line, slightly faded, and the foot adds Unresolve conversation.
+- **Summary:** an outdated pending comment keeps its row and link (now to its thread at the top of the file) with "Outdated" before the text. "Resolved conversations (N)" follows the counts: one row each, avatar, link, a "Resolved" tag on surface tint, "Pending" until Submit review, the comment in secondary ink.
+
+### Moved code (decision 18)
+Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from …" as an accent link with a chevron, then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
+
+### Copied code
+The same label row above lines copied from elsewhere at the head, "Copied from …" as an accent link with a chevron, or in secondary ink without one when the change does not show where they come from.
+The copied lines keep their + and the added tone: they are new code.
+
+### The author's screenshot (decision 19)
+A figure (new component: nothing in a step showed an image) under the explanation and above the files: the image 240 × 156 with a 1px rule and 6px corners, the author's alt text under it in 12.5px secondary ink. A click (or Enter) opens it in place to the width of the step, up to 960px, with Close at the right of the caption; a click on the image, Close or Esc closes it. Several screenshots sit in a row, 8px apart. At 390 it is the full column width, 180 tall closed. Opening and closing animate height (320ms ease-out, 200ms ease-in); reduced motion snaps.
+
+### Keys (decision 20)
+J and K move to the next and previous file across steps in reading order; C opens the changes switch; V toggles Viewed on the file you are on; Esc closes a composer, a menu or the open screenshot. The file you are on carries the 2px accent focus ring, and its row in the step list the same ring. A key shows only in the tooltip of the control it presses, in brackets, as on Finish review ("Go to the Summary (G S)"): "Viewed (V)", "Changes since your last review (C)". No key caps, no list, no ? sheet.
 
 ### Menu
 The header's … opens a small menu: Theme (System, Light, Dark) and End session. Nothing else.
@@ -427,16 +469,16 @@ The same page in one column: the step list opens from the header's steps button;
 Kept: Diff / Preview, before and after side by side on a transparency checker.
 
 ### Motion
-One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (header, step list, criteria being checked, and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the first step exists and pauses while the tab is hidden or the scene is offscreen; the asleep robot's "z" drift (4.8s, opacity and 3px) on the lost-session screen.
+One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (the Opening's header, criteria being checked, and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the review is ready and pauses while the tab is hidden or the scene is offscreen; the asleep robot's "z" drift (4.8s, opacity and 3px) on the lost-session screen.
 - **Steps:** sequential pane swap: the old step leaves to −12px over 100ms, the new one enters from +12px over 200ms after 100ms.
 - **Files:** fold by grid rows (open 320ms; close 200ms after an 80ms content fade), chevron turning 90° in 120ms; Viewed folds the file, the tree's ring turns into a check (200ms, scale from .6), and the count ticks while the header bar grows (320ms).
 - **Look at:** the main pane scrolls smoothly to the range, then the lines flash in the line-pick tone and fade over 1.4s.
 - **A comment growing in place:** a composer or a new comment opens by grid rows (320ms) with its content fading in after 80ms; the AI's reply replaces its "Answering…" row, fading and rising 4px (320ms).
 - **New-comment pill:** fades and drops 6px into place (200ms).
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
-- **AI reviewing:** the indicator and the step list's rings fade out (200ms) when the AI finishes.
-- **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the first step arrives, the opening block fades out (120ms ease-in) and the step enters with the usual pane swap.
+- **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the review is ready, the opening block fades out (120ms ease-in) and the whole walkthrough enters at once: the first step with the usual pane swap, the step list and header counts fading in (200ms).
 - **After the session:** the robot waves once (1.6s, after 400ms; ease-in-out swing, no overshoot) and then stays still.
+- **Back on a new head:** steps switch with the usual pane swap; Show resolved opens by grid rows (320ms) like a comment growing; the screenshot opens in place by height. Nothing else moves: the switch, the behind line and the Outdated band appear without motion.
 - **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles; the farewell robot does not wave and the "z" stand still.
 
 
@@ -455,6 +497,9 @@ The page's own words have caps; the session's words have shapes, written into th
 | Empty state | 8 words |
 | Tooltip | 12 words |
 | Chip | 4 words |
+| Switch label or menu item | 3 words, or GitHub's own phrase |
+| Diff row label | 8 words |
+| Thread line | GitHub's sentence |
 
 Rules: one place per thing (elsewhere at most a count that leads to it); list rows hold one line, except Summary comment rows, which wrap to two; anything cut keeps its whole text in a tooltip; say what happens, not the state machine ("Changed since last view", not "Stale"); no word a shape already says; GitHub's word wherever GitHub has one.
 

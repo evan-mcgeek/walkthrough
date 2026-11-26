@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, test } from 'vitest';
-import { ONE_STEP, makeRepo, postTo, type Repo, until, viewAt } from './helpers';
+import { git, makeRepo, ONE_STEP, postTo, type Repo, until, viewAt } from './helpers';
 
 let repo: Repo;
 afterEach(async () => {
@@ -173,6 +173,28 @@ describe('the review', () => {
     fs.writeFileSync(listener, JSON.stringify({ state: 'listening', pid: process.pid }));
     ago(20);
     expect((await viewAt(page)).sessionGone).toBe(false);
+  });
+
+  test('a comment on the whole file stays on it while the file is in the change, prints with "subject": "file", and is refused for a file not in the change', async () => {
+    const page = started('--pr', '212');
+    expect(repo.record([{ file: 'login.ts', body: 'Name it for what it does.' }], 'comment').status).toBe(0);
+    expect((await postTo(page, '/comment', { file: 'app.ts', text: 'Whole file.' })).status).toBe(200);
+    expect(repo.record([{ file: 'other.ts', body: 'x' }], 'comment').stderr).toContain('no step changes other.ts');
+    expect((await postTo(page, '/comment', { file: 'other.ts', text: 'x' })).status).toBe(400);
+    expect((await postTo(page, '/ask', { file: 'app.ts', text: 'Why this file?' })).status).toBe(200);
+    expect(lines((await repo.background('listen').ended).stdout)).toEqual([
+      { kind: 'ask', id: expect.any(String) as unknown, text: 'Why this file?', file: 'app.ts', subject: 'file', thread: [] },
+    ]);
+
+    fs.writeFileSync(path.join(repo.dir, 'app.ts'), 'export const app = 3;\n');
+    git(repo.dir, 'commit', '-am', 'More');
+    repo.run('start');
+    const { threads } = await viewAt(page);
+    expect(threads.filter(one => !one.lines).map(one => [one.file, one.step])).toEqual([['login.ts', '1'], ['app.ts', '1'], ['app.ts', '1']]);
+    expect(lines(repo.run('comments').stdout)).toEqual([
+      { kind: 'comment', id: expect.any(String) as unknown, by: 'ai', file: 'login.ts', subject: 'file', body: '[AI] Name it for what it does.' },
+      { kind: 'comment', id: expect.any(String) as unknown, by: 'you', file: 'app.ts', subject: 'file', body: 'Whole file.' },
+    ]);
   });
 
   test('records the criteria, and refuses what does not fit', async () => {

@@ -9,11 +9,12 @@ import { attrs, el } from './dom';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 import { grow, reduced } from './motion';
-import { commentCount, plural, send, state, threadBy, threadsIn } from './state';
+import { drawMoves } from './moves';
+import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
 
-/** Lines picked for a new comment; one composer at a time on the page. */
-export let picked: { step: string; file: string; start: number; end: number } | null = null;
+/** Lines picked for a new comment, or a file with none for a comment on the whole file; one composer at a time on the page. */
+export let picked: { step: string; file: string; start?: number; end?: number } | null = null;
 
 export function pick(next: typeof picked): void {
   picked = next;
@@ -44,9 +45,13 @@ export class FilePane {
   private readonly rows = new Map<number, HTMLTableRowElement>();
   /** Runs of added and removed lines, by their first and last row. */
   private readonly runs: { type: 'add' | 'del'; from: HTMLTableRowElement; to: HTMLTableRowElement }[] = [];
-  private readonly threads = new Map<string, { row: HTMLTableRowElement; box: ThreadBox }>();
+  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone or the file's own. */
+  private readonly threads = new Map<string, { row: HTMLElement; box: ThreadBox }>();
+  private readonly outdatedZone = el('div', { className: 'outdated-zone', hidden: true });
+  /** Comments on the whole file and their composer, under the outdated ones. */
+  private readonly fileZone = el('div', { className: 'file-threads', hidden: true });
   private readonly stripe = document.createElementNS(SVG, 'svg');
-  private composerRow: HTMLTableRowElement | null = null;
+  private composerRow: HTMLElement | null = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
   private drawn = false;
   private readonly name: string;
@@ -59,18 +64,20 @@ export class FilePane {
     private readonly step: Step,
     parsed: DiffFile,
     diff: Element | null,
+    private readonly shown: Shown = {},
   ) {
     this.name = parsed.isDeleted ? parsed.oldName : parsed.newName;
     this.changedLines = parsed.addedLines + parsed.deletedLines;
     this.box.dataset['file'] = this.name;
     this.diffBox = el('div', { className: 'diff-scroll' }, ...(diff ? [diff] : []));
-    const inner = el('div', { className: 'file-inner' }, this.diffBox, this.stripe);
+    const area = el('div', { className: 'diff-area' }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
-    if (this.preview) inner.append(this.preview);
-    this.body.append(inner);
+    if (this.preview) area.append(this.preview);
+    this.body.append(el('div', { className: 'file-inner' }, this.outdatedZone, this.fileZone, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
+    if (diff) drawMoves(diff, this.name, step.copies);
     this.prepareRows();
     this.drawHeader(parsed);
   }
@@ -81,31 +88,45 @@ export class FilePane {
 
   closed(): boolean {
     const { view } = state;
-    return folds.get(this.name) ?? (view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
+    return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
 
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them. */
-  look(start: number, end: number, scroller: HTMLElement): void {
+  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
+  look(start: number, end: number, scroller: HTMLElement): boolean {
+    if (!this.rows.has(start)) return false;
+    return this.flash(
+      [...this.rows].flatMap(([line, row]) => (line >= start && line <= end ? [row] : [])),
+      scroller,
+    );
+  }
+
+  /** The same for the row that says lines moved away from `line`. */
+  lookDeparture(line: number, scroller: HTMLElement): boolean {
+    const row = this.diffBox.querySelector<HTMLTableRowElement>(`tr[data-moved-from="${String(line)}"]`);
+    return this.flash(row ? [row] : [], scroller);
+  }
+
+  private flash(rows: HTMLTableRowElement[], scroller: HTMLElement): boolean {
+    const [first] = rows;
+    if (!first) return false;
     if (this.closed()) {
       folds.set(this.name, false);
       this.update(() => false);
     }
     if (this.previewing) void this.showPreview(false);
-    const first = this.rows.get(start);
-    if (!first) return;
     const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
     scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
-    for (const [line, row] of this.rows)
-      if (line >= start && line <= end) {
-        // Restarted in this task, so a second click flashes again.
-        for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-        row.classList.remove('flash');
-        row.getBoundingClientRect();
-        row.classList.add('flash');
-      }
+    for (const row of rows) {
+      // Restarted in this task, so a second click flashes again.
+      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
+      row.classList.remove('flash');
+      row.getBoundingClientRect();
+      row.classList.add('flash');
+    }
+    return true;
   }
 
-  thread(id: string): { row: HTMLTableRowElement; box: ThreadBox } | undefined {
+  thread(id: string): { row: HTMLElement; box: ThreadBox } | undefined {
     return this.threads.get(id);
   }
 
@@ -175,7 +196,14 @@ export class FilePane {
       ...(reason ? [el('span', { className: 'folded-reason', title: reason }, reason)] : []),
       el('span', { className: 'spacer' }),
       ...(this.preview ? [this.previewToggle()] : []),
-      el('label', { className: 'viewed-toggle' }, viewed, 'Viewed'),
+      el('label', { className: 'viewed-toggle', title: 'Viewed (V)' }, viewed, 'Viewed'),
+      attrs(
+        el('button', { type: 'button', className: 'icon-button file-comment', title: 'Comment on this file', onclick: () => {
+          this.open();
+          pick({ step: this.step.id, file: this.name });
+        } }, icon('message')),
+        { 'aria-label': 'Comment on this file' },
+      ),
     );
   }
 
@@ -188,7 +216,9 @@ export class FilePane {
       if (number && line) {
         this.rows.set(line, row);
         row.dataset['line'] = String(line);
-        number.tabIndex = this.rows.size === 1 ? 0 : -1;
+      }
+      if (number && line && (this.shown.commentable?.has(line) ?? true)) {
+        number.tabIndex = this.diffBox.querySelector('.line-num2[role="button"]') ? -1 : 0;
         attrs(number, { role: 'button', 'aria-label': `Comment on line ${String(line)}` });
       }
       const type = types[at];
@@ -211,9 +241,8 @@ export class FilePane {
         this.choose(line, event.shiftKey);
       } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
-        const lines = [...this.rows.keys()];
-        const next = lines[lines.indexOf(line) + (event.key === 'ArrowDown' ? 1 : -1)];
-        const target = next === undefined ? null : this.rows.get(next)?.querySelector<HTMLElement>('.line-num2');
+        const numbers = [...this.diffBox.querySelectorAll<HTMLElement>('.line-num2[role="button"]')];
+        const target = numbers[numbers.indexOf(number) + (event.key === 'ArrowDown' ? 1 : -1)];
         if (target) {
           number.tabIndex = -1;
           target.tabIndex = 0;
@@ -225,7 +254,7 @@ export class FilePane {
 
   private choose(line: number, extend: boolean): void {
     const same = picked?.step === this.step.id && picked.file === this.name;
-    if (extend && same && picked) pick({ ...picked, start: Math.min(picked.start, line), end: Math.max(picked.start, line) });
+    if (extend && same && picked?.start !== undefined) pick({ ...picked, start: Math.min(picked.start, line), end: Math.max(picked.start, line) });
     else pick({ step: this.step.id, file: this.name, start: line, end: line });
   }
 
@@ -242,27 +271,31 @@ export class FilePane {
     this.stripe.replaceChildren(
       ...this.runs.map(({ type, from, to }) => mark(`run-${type}`, from.offsetTop, to.offsetTop + to.offsetHeight - from.offsetTop)),
       ...threadsIn(this.step.id, this.name).flatMap(thread => {
-        const row = this.rows.get(thread.lines[1]);
+        const row = thread.lines && this.rows.get(thread.lines[1]);
         return row ? [mark(`tick ${threadBy(thread)}`, row.offsetTop, 3)] : [];
       }),
     );
   }
 
-  /** Puts each thread under its last line and, at the lines picked, the composer; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, at the top of the file once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
   private drawThreads(shows: Shows, closed: boolean): HTMLElement[] {
     const here = threadsIn(this.step.id, this.name);
+    const outdated = outdatedIn(this.step.id, this.name);
     const arrived: HTMLElement[] = [];
-    const ids = new Set(here.map(one => one.id));
+    const ids = new Set([...here, ...outdated].map(one => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id)) {
+      if (!ids.has(id) || (row.parentElement === this.outdatedZone) !== outdated.some(one => one.id === id) || (row.parentElement === this.fileZone) !== here.some(one => one.id === id && !one.lines)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll('.gutter-mark')) old.remove();
-    for (const thread of here) {
-      const anchor = this.rows.get(thread.lines[1]);
-      if (!anchor) continue;
-      const held = !closed && shows(anchor);
+    this.outdatedZone.hidden = !outdated.length;
+    if (here.some(one => !one.lines)) this.fileZone.hidden = false;
+    for (const thread of [...outdated, ...here]) {
+      const anchor = thread.step !== null && thread.lines ? this.rows.get(thread.lines[1]) : undefined;
+      const holder = anchor ?? (thread.step === null ? this.outdatedZone : thread.lines ? undefined : this.fileZone);
+      if (!holder) continue;
+      const held = !closed && shows(holder);
       const kept = this.threads.get(thread.id);
       if (kept) {
         const fresh = kept.box.update(thread);
@@ -271,9 +304,11 @@ export class FilePane {
         continue;
       }
       const box = new ThreadBox(thread);
-      const row = threadRow(box.box);
+      const row = anchor ? threadRow(box.box) : box.box;
       row.dataset['thread'] = thread.id;
-      this.placeAfter(anchor, row);
+      if (anchor) this.placeAfter(anchor, row);
+      else if (holder === this.fileZone && this.composerRow?.parentElement === holder) this.composerRow.before(row);
+      else holder.append(row);
       this.threads.set(thread.id, { row, box });
       if (held) arrived.push(hold(row));
       else if (this.drawn) for (const one of box.box.querySelectorAll('.comment')) one.classList.add('arrive');
@@ -281,18 +316,19 @@ export class FilePane {
     this.drawn = true;
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
+    this.fileZone.hidden = !this.fileZone.childElementCount;
     this.drawStripe();
     return arrived;
   }
 
-  private placeAfter(anchor: HTMLTableRowElement, row: HTMLTableRowElement): void {
+  private placeAfter(anchor: HTMLTableRowElement, row: HTMLElement): void {
     let last: Element = anchor;
     while (last.nextElementSibling?.classList.contains('thread-row')) last = last.nextElementSibling;
     last.after(row);
   }
 
   private markThread(thread: ThreadView): void {
-    const row = this.rows.get(thread.lines[1]);
+    const row = thread.lines && this.rows.get(thread.lines[1]);
     // Inside the line number, so the mark sits just before it and never on the old number.
     const cell = row?.querySelector('.line-num2');
     if (!row || !cell) return;
@@ -303,26 +339,27 @@ export class FilePane {
 
   private drawComposer(): void {
     const mine = picked?.step === this.step.id && picked.file === this.name ? picked : null;
-    for (const [line, row] of this.rows) row.classList.toggle('picked', !!mine && line >= mine.start && line <= mine.end);
-    const key = mine && `${String(mine.start)}-${String(mine.end)}`;
+    const lines: [number, number] | null = mine?.start !== undefined && mine.end !== undefined ? [mine.start, mine.end] : null;
+    for (const [line, row] of this.rows) row.classList.toggle('picked', !!lines && line >= lines[0] && line <= lines[1]);
+    const key = mine && (lines ? lines.join('-') : 'file');
     if (this.composerRow && this.composerRow.dataset['lines'] !== key) {
       this.composerRow.remove();
       this.composerRow = null;
     }
     if (!mine || this.composerRow) return;
-    const anchor = this.rows.get(mine.end);
-    if (!anchor) return;
-    const lines: [number, number] = [mine.start, mine.end];
+    const anchor = lines && this.rows.get(lines[1]);
+    if (lines && !anchor) return;
+    const where = { file: this.name, ...(lines && { lines }) };
     const box = composer({
       placeholder: 'Leave a comment',
       primary: 'Add comment',
       onPrimary: async text => {
-        const done = await send('comment', { file: this.name, lines, text });
+        const done = await send('comment', { ...where, text });
         if (done) pick(null);
         return done;
       },
       onAsk: async text => {
-        const done = await send('ask', { file: this.name, lines, text });
+        const done = await send('ask', { ...where, text });
         if (done) pick(null);
         return done;
       },
@@ -330,10 +367,12 @@ export class FilePane {
         pick(null);
       },
     });
-    this.composerRow = threadRow(el('div', { className: 'thread' }, box));
+    const thread = el('div', { className: 'thread' }, box);
+    this.composerRow = anchor ? threadRow(thread) : el('div', {}, el('div', { className: 'thread-cell' }, thread));
     this.composerRow.classList.add('composer-line');
     this.composerRow.dataset['lines'] = key ?? '';
-    this.placeAfter(anchor, this.composerRow);
+    if (anchor) this.placeAfter(anchor, this.composerRow);
+    else this.fileZone.append(this.composerRow);
     const cell = this.composerRow.querySelector<HTMLElement>('.thread-cell');
     if (cell) grow(cell);
   }
@@ -405,14 +444,23 @@ function hold(element: HTMLElement): HTMLElement {
   return element;
 }
 
-/** The step's files, drawn once per diff. */
-export function drawFiles(step: Step): FilePane[] {
+/** A file as a view other than All changes shows it: quiet when nothing in it changed since, folded; else only the lines in the step's own diff take comments. */
+type Shown = { quiet?: true; commentable?: Set<number> };
+
+/** The step's files, drawn once per diff; `own` is the step's own diff when `step` holds what changed since the last review. */
+export function drawFiles(step: Step, { own, quiet }: { own?: Step; quiet?: true } = {}): FilePane[] {
   const parsed = parseDiff(step.diff);
+  const ownFiles = own && parseDiff(own.diff);
+  const shown = (file: DiffFile): Shown => {
+    if (quiet) return { quiet };
+    const mine = ownFiles?.find(one => one.newName === file.newName);
+    return ownFiles ? { commentable: new Set(mine?.blocks.flatMap(block => block.lines.flatMap(line => (line.newNumber ? [line.newNumber] : [])))) } : {};
+  };
   const holder = el('div');
   // diff2html escapes the code it draws, so its markup is safe to put in the page.
   holder.innerHTML = html(parsed, { outputFormat: 'line-by-line', drawFileList: false, matching: 'lines' });
   const wrappers = [...holder.querySelectorAll('.d2h-file-wrapper')];
-  const panes = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector('.d2h-file-diff') ?? null));
+  const panes = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector('.d2h-file-diff') ?? null, shown(file)));
   // A step shows its files in the order the session gave them.
   return step.files.flatMap(file => panes.filter(pane => pane.file === file));
 }

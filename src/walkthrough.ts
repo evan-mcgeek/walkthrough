@@ -1,7 +1,8 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
 import type { Change, Source } from './change';
-import type { Lines } from './lines';
+import type { Copy } from './copies';
+import type { Code, Lines } from './lines';
 import { locked, readJson, readSavedJson, writeJson } from './json-files';
 import { stateDir } from './paths';
 
@@ -15,13 +16,17 @@ export type Step = {
   /** The one-line reason a generated or copied file arrives folded, by its path. */
   folded?: Record<string, string>;
   look: Look[];
+  /** The author's screenshot of the change, kept in the walkthrough's folder by `name`, with the author's alt text. */
+  screenshot?: { name: string; alt: string };
   diff: string;
+  /** Runs of added lines that also stand elsewhere at the head, found when the steps are recorded. */
+  copies?: Copy[];
 };
 export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;
 export type Criterion = { text: string; status: (typeof CRITERION_STATUSES)[number] };
 export type Said = { author: string; at: string; body: string };
 /** A colleague's thread already on the change, by the id the session gave it. */
-export type Thread = Said & { id: string; file: string; lines: Lines; resolved?: true; replies: Said[]; linesHash?: string };
+export type Thread = Said & { id: string; file: string; lines?: Lines; resolved?: true; replies: Said[]; linesHash?: string; code?: Code };
 export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range'; label: string }) & {
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
@@ -55,6 +60,12 @@ export function walkthroughDir(repo: string, source: Source): string {
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
   return path.join(stateDir(), repo, name);
 }
+
+/** The branch a walkthrough's folder is named after; undefined for a range. */
+export const branchOfDir = (dir: string) => {
+  const name = path.basename(dir);
+  return name.startsWith('branch-') ? name.slice('branch-'.length).replaceAll('~', '/') : undefined;
+};
 
 /** A range's target is a commit when its base named no branch. */
 export const targetName = (target: string) => (/^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target);

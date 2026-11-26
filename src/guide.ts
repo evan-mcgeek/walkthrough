@@ -7,7 +7,10 @@ const steps = [
     look: [{ file: 'src/api/tasks.ts', start: 26, end: 29, label: 'parseDueDate' }],
   },
 ];
-const comments = [{ file: 'src/api/tasks.ts', lines: [29, 29], body: 'A typo in the date becomes null and clears it. Return 400 with the field name.' }];
+const comments = [
+  { file: 'src/api/tasks.ts', lines: [29, 29], body: 'A typo in the date becomes null and clears it. Return 400 with the field name.' },
+  { file: 'src/api/tasks.ts', body: 'Most of this file is the date parsing; a module of its own would keep the handlers short.' },
+];
 const threads = [
   {
     id: '1042',
@@ -40,7 +43,8 @@ export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head
 Recording from files
   steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
   Write each file with your file tool into the inbox start printed, then pass its path; the command removes it once read.
-  Lines are numbered as in the file at the head, and must be in the step's diff. Text is Markdown, shown without raw HTML or images.
+  Lines are numbered as in the file at the head, and must be in the step's diff; leave "lines" out of a comment or thread on the whole file.
+  Text is Markdown, shown without raw HTML or images.
 
 walkthrough files
   Prints every changed file, one path per line.
@@ -50,6 +54,9 @@ walkthrough steps --file <file>
   Every changed file must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A file is a path, or {"path": path, "folded": reason} for a generated or copied file, which arrives folded with its one-line reason.
   "look" holds one or two pointers to what to read first, each {"file": path, "start": line, "end": line, "label": 1 to 4 words}.
+  "screenshot" puts the author's screenshot of the change under the explanation: {"file": path, "alt": the author's alt text}.
+  Download it into the inbox first; it must be a PNG, JPEG, GIF or WebP image of at most 5 MB. Recording copies it and removes the inbox file.
+  Recorded again, a step that keeps its id keeps its screenshot unless given a new one, or "screenshot": null to remove it.
   A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
 ${JSON.stringify(steps, null, 2)}
 
@@ -62,12 +69,12 @@ walkthrough ready
   Comments recorded after this land on the page while the person reads.
 
 walkthrough comment --file <file>
-  Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
+  Adds the AI's pending comments on lines, or on a whole file without "lines", and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
   the person can edit them. Write the body without the [AI] prefix.
 ${JSON.stringify(comments, null, 2)}
 
 walkthrough threads --file <file>
-  Records colleagues' existing threads on lines, replacing those recorded before. "id" is yours, such as the code host's thread id;
+  Records colleagues' existing threads on lines or on a whole file, replacing those recorded before. "id" is yours, such as the code host's thread id;
   replies and resolves the person adds come back with it. "resolved" may be given as true.
 ${JSON.stringify(threads, null, 2)}
 
@@ -78,7 +85,8 @@ ${JSON.stringify(criteria, null, 2)}
 walkthrough listen
   Waits for the person, then prints one JSON line per thing they sent and exits. Only these wake it:
     {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
-      Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
+      Ask AI, on picked lines, on a whole file ("subject": "file" in place of "lines") or in a thread; "thread" is what the thread said before.
+      Answer with say --answer.
     {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
       Submit review or Send to agent; "type" only on a pull request, as your own change has none.
       Read what goes out with walkthrough comments, act on it, then run walkthrough posted.
@@ -95,10 +103,19 @@ walkthrough comments [--all]
   With --all, every comment and reply you and the person made, pending or sent, and every thread resolved,
   then each comment of yours the person deleted, with "deleted": true; one of yours they reworded carries "wrote", what you wrote.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
-      a new thread; "outdated" only when its lines changed since
+      a new thread; "outdated" only when its lines changed since or its file left the change.
+      On a whole file, "subject": "file" in place of "lines", here and in the lines below.
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
     {"kind": "resolve", "thread": id}   the person resolved a colleague's thread
+    {"kind": "resolve", "thread": id, "by": "ai", "file": path, "lines": [first, last], "body": string}
+      you resolved the thread of your comment with walkthrough resolve; find it on the code host by its file, lines and body.
+      On the person's own change these never go out, so only --all lists them.
   An AI comment's body starts with [AI].
+
+walkthrough resolve <comment id>
+  On a new head, resolves the thread of one of your comments that went out with an earlier review once the new code fixes it; reply nothing.
+  The id is the comment's, from walkthrough comments --all. It refuses a comment that is not yours, was deleted, is still pending or is already resolved.
+  The resolve goes out with the next review, as the person's do; the person can take it back on the page until then.
 
 walkthrough posted [--address <url>]
   Records that the submitted review went out, and where; the page then links View review to the address.
