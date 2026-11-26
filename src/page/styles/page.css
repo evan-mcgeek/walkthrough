@@ -19,7 +19,7 @@ body {
 
 body.walkthrough {
   display: grid;
-  grid-template-rows: 44px auto minmax(0, 1fr);
+  grid-template-rows: 44px auto auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -27,12 +27,16 @@ body.walkthrough > .app-header {
   grid-row: 1;
 }
 
-body.walkthrough > .banner {
+body.walkthrough > .behind {
   grid-row: 2;
 }
 
-body.walkthrough > .frame {
+body.walkthrough > .banner {
   grid-row: 3;
+}
+
+body.walkthrough > .frame {
+  grid-row: 4;
 }
 
 button,
@@ -336,6 +340,83 @@ textarea {
   flex: none;
 }
 
+/* The changes switch: All changes or Changes since your last review, as GitHub's commit picker. */
+
+.changes-switch {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.changes-button .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-secondary);
+}
+
+.menu.changes-menu {
+  top: 32px;
+  right: auto;
+  left: 0;
+  min-width: 300px;
+}
+
+.changes-menu .menu-item {
+  gap: var(--s2);
+  align-items: flex-start;
+  padding: 6px var(--s2);
+}
+
+.changes-menu .menu-item[aria-checked='true'] {
+  background: var(--surface-tint);
+  font-weight: 400;
+}
+
+.menu-check {
+  flex: none;
+  width: 16px;
+}
+
+.menu-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The branch moved on: one line under the header with the command that catches up. */
+
+.behind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 7px var(--s4);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.behind > .icon {
+  color: var(--ink-secondary);
+}
+
+.behind .command {
+  margin: 0;
+  padding: 2px 2px 2px 10px;
+  background: var(--canvas);
+}
+
+.behind .command code {
+  font-size: 12.5px;
+}
+
+.ended > .behind {
+  display: none !important;
+}
+
 /* Menu: Theme and End session, floating under its button. */
 
 .menu {
@@ -454,6 +535,26 @@ textarea {
 .step-row[aria-current='page'] .step-number {
   background: var(--ink);
   color: var(--canvas);
+}
+
+.step-row.quiet .step-name {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.step-row.quiet .step-number {
+  opacity: 0.6;
+}
+
+/* The file J and K are on. */
+.file-row.on {
+  background: var(--canvas);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.file.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .step-name {
@@ -647,6 +748,40 @@ textarea {
 
 .explanation:focus {
   outline: none;
+}
+
+/* A step with nothing new since the last review. */
+.nothing-new {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  max-width: 760px;
+  margin-bottom: var(--s4);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.nothing-new > .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-secondary);
+}
+
+.nothing-new > div {
+  flex: 1;
+}
+
+.nothing-new p {
+  margin: 2px 0 0;
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+}
+
+.files.quiet .file-path {
+  color: var(--muted);
 }
 
 /* Files: a header in a bordered box; the body folds by grid rows. */
@@ -1892,6 +2027,44 @@ tr.flash td {
 
   .frame {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .main > .changes-switch {
+    display: flex;
+    margin-bottom: var(--s4);
+  }
+
+  .main > .changes-switch .changes-button {
+    flex: 1;
+    justify-content: flex-start;
+    min-height: 36px;
+  }
+
+  .changes-button .icon:last-child {
+    margin-left: auto;
+  }
+
+  .menu.changes-menu {
+    right: 0;
+    min-width: 0;
+  }
+
+  .behind {
+    align-items: flex-start;
+    padding: var(--s2) var(--s4);
+  }
+
+  .behind-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .behind .command {
+    width: 100%;
+  }
+
+  .nothing-new {
+    flex-wrap: wrap;
   }
 
   .step-list {

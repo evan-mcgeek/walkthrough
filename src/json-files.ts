@@ -35,11 +35,14 @@ export function writeJson(file: string, value: unknown): void {
   fs.renameSync(beside, file);
 }
 
-/** Runs `work` while no other process does so for `file`: one read-change-write at a time; never taken again inside `work`. */
-export async function locked<T>(file: string, work: () => T | Promise<T>): Promise<T> {
+/**
+ * Runs `work` while no other process does so for `file`: one read-change-write at a time; never taken again inside `work`.
+ * `stale` is how long a lock whose holder died blocks the next one; only quick work may use proper-lockfile's least, 2000ms.
+ */
+export async function locked<T>(file: string, work: () => T | Promise<T>, stale = 10_000): Promise<T> {
   fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
   // The lock is refreshed while held, so only a lock whose holder died goes stale.
-  const release = await lock(file, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
+  const release = await lock(file, { realpath: false, stale, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
   try {
     return await work();
   } finally {

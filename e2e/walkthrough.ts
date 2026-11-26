@@ -43,7 +43,8 @@ export function record(repo: Repo, input: unknown, command = 'steps'): void {
 
 export async function open(page: Page, url: string, address = ''): Promise<void> {
   await page.goto(url + address);
-  await expect(page.locator('.app-header .mark')).toBeAttached();
+  // The header is there before the view arrives; the page has drawn it once it names what it shows.
+  await expect(page.locator('body[data-view]')).toBeAttached();
 }
 
 /** Where `locator` sits in the page, to tell whether anything moved it. */

@@ -2,12 +2,12 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { type FileStat, fileStats } from './change';
+import { changesBetween, commitOf, type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
 import { anchorOf, type Code, type Lines, type Place, placeIn, stepOfFile } from './lines';
 import { alive, psStart } from './processes';
-import { readWalkthrough, type Step, type Walkthrough } from './walkthrough';
+import { branchOfDir, readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
 export const REVIEW_TYPES = ['comment', 'approve', 'request-changes'] as const;
 export type ReviewType = (typeof REVIEW_TYPES)[number];
@@ -70,6 +70,8 @@ export type ThreadView = {
 };
 /** `type` only on a pull request: your own change goes to the agent without one. */
 export type Submitted = { id: string; type?: ReviewType; summary: string; comments: number; posted: boolean; address?: string };
+/** What changed since the latest review, made at an earlier head: its commits and each changed file's diff since then. */
+export type Since = { head: string; commits: number; files: Record<string, string> };
 type WithoutThreads<T> = T extends unknown ? Omit<T, 'threads'> : never;
 export type WalkthroughView = WithoutThreads<Walkthrough> & {
   ready: boolean;
@@ -84,6 +86,10 @@ export type WalkthroughView = WithoutThreads<Walkthrough> & {
   changed: string[];
   /** The review the person submitted at this head, while nothing new is pending. */
   submitted: Submitted | null;
+  /** Set once the person reviewed an earlier head that still exists. */
+  since: Since | null;
+  /** A branch whose commit moved on from the head shown. */
+  behind: boolean;
 };
 
 const files = (dir: string) => ({
@@ -93,7 +99,8 @@ const files = (dir: string) => ({
   viewed: path.join(dir, 'viewed.json'),
 });
 // One lock for the log, the inbox and the listener: an event and a listener taking events never interleave.
-const hold = <T>(dir: string, work: () => T) => locked(path.join(dir, 'review'), work);
+// Its work is a few small writes, so a listen killed while holding it blocks the next for 2s, not 10s.
+const hold = <T>(dir: string, work: () => T) => locked(path.join(dir, 'review'), work, 2000);
 
 function readLines<T>(file: string): T[] {
   let text = '';
@@ -257,11 +264,30 @@ function fileMarks(steps: Step[]): Record<string, string> {
 
 /** Changes whenever a file walkthroughView reads does, so the page's poll of an unchanged view is answered without one. */
 export function walkthroughVersion(dir: string): string {
+  const branch = branchOfDir(dir);
   const stats = ['walkthrough.json', 'review.jsonl', 'viewed.json', 'listener.json'].map(name => {
     const stat = fs.statSync(path.join(dir, name), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : '';
   });
-  return fingerprint([...stats, String(listenerGone(dir))].join(':'));
+  return fingerprint([...stats, String(listenerGone(dir)), branch === undefined ? '' : (branchHead(branch) ?? '')].join(':'));
+}
+
+const branchHead = (branch: string) => commitOf(process.cwd(), `refs/heads/${branch}`);
+
+// The page polls far more often than heads move, so each pair of heads is diffed once.
+const between = new Map<string, ReturnType<typeof changesBetween>>();
+
+function sinceOf(walkthrough: Walkthrough, head: string): Since | null {
+  const key = [process.cwd(), head, walkthrough.head].join(':');
+  if (!between.has(key)) {
+    // A server serves one walkthrough, so only its latest pair of heads is worth keeping.
+    between.clear();
+    between.set(key, changesBetween(process.cwd(), head, walkthrough.head));
+  }
+  const found = between.get(key);
+  if (!found) return null;
+  const shown = new Set(walkthrough.steps.flatMap(step => step.files));
+  return { head, commits: found.commits, files: Object.fromEntries(Object.entries(found.files).filter(([file]) => shown.has(file))) };
 }
 
 export function walkthroughView(dir: string): WalkthroughView | null {
@@ -294,6 +320,8 @@ export function walkthroughView(dir: string): WalkthroughView | null {
           ...(address !== undefined && { address }),
         }
       : null,
+    since: ready && last && last.head !== walkthrough.head ? sinceOf(walkthrough, last.head) : null,
+    behind: walkthrough.kind === 'branch' && (branchHead(walkthrough.branch) ?? walkthrough.head) !== walkthrough.head,
   };
 }
 
@@ -483,8 +511,10 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<E
     const now = readJson<Listener | null>(listener, null);
     return now?.state === 'listening' && now.pid === process.pid;
   };
+  // Outside the lock: a listen killed while holding it leaves it held until it goes stale.
+  const started = psStart(process.pid);
   await hold(dir, () => {
-    writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
+    writeJson(listener, { state: 'listening', pid: process.pid, started } satisfies Listener);
   });
   const release = () =>
     hold(dir, () => {
