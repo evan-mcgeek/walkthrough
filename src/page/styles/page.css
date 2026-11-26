@@ -569,8 +569,8 @@ textarea {
   font-weight: 500;
 }
 
-.step-row.quiet .step-number {
-  opacity: 0.6;
+.step-row.quiet:not([aria-current='page']) .step-number {
+  color: var(--muted);
 }
 
 /* The file J and K are on. */
