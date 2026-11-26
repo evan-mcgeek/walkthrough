@@ -25,7 +25,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
   "I know it well", "I know most of it", "I know a little", "It's new to me".
 - "I know it well": each step's explanation says only what changed, in one sentence; no background, no terms explained.
 - "I know most of it": a sentence or two per step, with background only for what this change adds to the feature.
-- "I know a little": open the first step's explanation with two or three sentences on what the feature does and why, then explain as the shared rules say.
+- "I know a little": after the first step's sentence on what behaves differently, add two or three sentences on what the feature does and why, then explain as the shared rules say.
 - "It's new to me": as "I know a little", and explain each of the feature's own terms the first time it appears.
 - When I skip, explain as for "I know a little".
 
