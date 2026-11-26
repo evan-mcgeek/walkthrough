@@ -7,7 +7,7 @@ colors:
   surface-tint: "#eef0f3"
   rule: "#dde1e6"
   rule-soft: "#e9ecef"
-  control-edge: "#d0d5dc"
+  control-edge: "#8390a3"
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
@@ -39,7 +39,7 @@ colors:
   surface-tint-dark: "#232830"
   rule-dark: "#2c323b"
   rule-soft-dark: "#252a32"
-  control-edge-dark: "#3a414b"
+  control-edge-dark: "#5e6a7a"
   ink-dark: "#e5e8ec"
   ink-secondary-dark: "#c3c8cf"
   muted-dark: "#9aa2ac"
@@ -294,7 +294,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 - One accent, Ultramarine, for the primary action, focus, links, "Look at" links and your own avatar; never status.
 - Colour for meaning only where GitHub has it: diff additions and deletions, the amber Pending tag, and the criteria marks (green met, amber partly, red not met, grey not checked).
 - Reading prose at 15px/1.6 within 72ch; comments at 14px/1.55.
-- A walked-W mark in the accent signs the header and favicon.
+- A walked-W mark in the accent signs the header and the app icon; the tab icon is Walky's head, by session state (`brand/mascot/README.md`).
 - System UI sans for everything human; JetBrains Mono for code, paths and line numbers.
 - Flat at rest; files and threads are bordered boxes because you act on them; one floating shadow for menus and the new-comment pill.
 - One 4px spacing scale (4, 8, 12, 16, 24, 32px).
@@ -302,7 +302,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 
 ## Brand
 
-**The mark** is a W walked in four round-capped strokes (2.3 stroke on a 16px grid, round joins); the last stroke sits at 40% opacity, the part of the walk still to go. In the page it is drawn in the current accent on the canvas, so it follows the person's Appearance choice. For the favicon and app icon it is knocked out of an Ultramarine rounded square (22% corner radius) with the strokes in the on-accent colour; the favicon switches to the dark-theme Ultramarine under a dark colour scheme. Master files: `project/brand/mark.svg`, `project/brand/favicon.svg`, and `app-icon-16/32/180/512.png` rendered from the favicon SVG with provenance embedded.
+**The mark** is a W walked in four round-capped strokes (2.3 stroke on a 16px grid, round joins); the last stroke sits at 40% opacity, the part of the walk still to go. In the page it is drawn in the current accent on the canvas, so it follows the person's Appearance choice. For the app icon it is knocked out of an Ultramarine rounded square (22% corner radius) with the strokes in the on-accent colour; `favicon.svg` switches to the dark-theme Ultramarine under a dark colour scheme. The tab icon is Walky's head instead: `favicon-reading.svg` during the Opening, `favicon-awake.svg` while the walkthrough is open, `favicon-done.svg` once the review is submitted or sent and on the farewell, `favicon-asleep.svg` when the session is not running. Master files: `project/brand/mark.svg`, `project/brand/favicon.svg`, and `app-icon-16/32/180/512.png` rendered from the favicon SVG with provenance embedded.
 
 **The lockup** is the mark plus "Walkthrough" in the UI sans at 700. In the header: 16px mark, 8px gap, -0.01em tracking, ink text. The display lockup (brand sheet): 34px mark, 14px gap, 34px text, -0.02em. The export page uses a quiet lockup: 14px mark, 13px text in muted ink, the mark still in the accent.
 
@@ -406,7 +406,7 @@ Contrast of each token on each background, ours, with GitHub's in brackets where
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
 - **Surface** (`surface`): the step list, file headers, secondary buttons, the code pane, the overview stripe, and the AI's comment rows.
 - **Surface Tint** (`surface-tint`): hover fill and every pressed or chosen neutral state (a checked Viewed pill), counters, step numbers, inline code.
-- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control.
+- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control, 3:1 against canvas and surface (light #8390a3 at 3.2 / 3.0, dark #5e6a7a at 3.2 / 3.0; built in 0.1.5 at #d0d5dc and #3a414b, 1.4 to 1.7:1).
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text and all reading prose; secondary labels, the PR number, a viewed file's tick, quotes and table values; the single secondary grey per theme, for metadata, counts, placeholders, line numbers, hunk headers, a criterion not checked, and resting icons.
 - **Files viewed bar** (`rule` track, `ink-secondary` fill): the 72px bar in the header.
 - **Overview stripe marks:** additions and deletions in the stripe colours; a comment by the AI or a colleague in muted, yours in the accent. Hidden at 390.
@@ -597,11 +597,11 @@ The page's own words have caps; the session's words have shapes, written into th
 |---|---|
 | Button | 3 words |
 | Badge | 4 words (prefer an icon and a count) |
-| Tag | 2 words |
+| Tag | 2 words, or GitHub's own phrase ("Changed since last view") |
 | Hint | 8 words, only for a consequence a label hides |
 | Notice or banner | 12 words |
 | Empty state | 8 words |
-| Tooltip | 12 words |
+| Tooltip | 12 words; text the author or the code host wrote (an image's alt text, a path, a date) is shown as it is |
 | Chip | 4 words |
 | Switch label or menu item | 3 words, or GitHub's own phrase |
 | Diff row label | 8 words |

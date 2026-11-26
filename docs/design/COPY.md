@@ -196,6 +196,35 @@ New and changed strings from decisions 22 to 25 (features built in 0.1.5). Cap a
 | Moved from `<file>` lines N–M | diff row above moved lines | Diff row, 8 | was "line N"; full row under "Back on a new head" above |
 | `<file name>` | Summary row link for a file comment, no line | the file name | tooltip: "`<path>`: go to the comment" |
 
+## Accessible names, tooltips and the walkthroughs list
+
+Strings the built page already shows, added here so the list is complete. Cap as above.
+
+| String | Where | Cap | Note |
+|---|---|---|---|
+| Menu | the header's … button and its menu, accessible name | Button, 3 | |
+| Changes | the changes switch's menu, accessible name | Button, 3 | |
+| Finish | the header's Finish review at 390 | Button, 3 | **GH** |
+| binary | file header in place of +N −N, for a binary file | Tag, 2 | **GH** |
+| Preview of `<path>` | an image file's preview, region name | Tooltip, 12 | |
+| Show `<path>` as | the Diff / Preview switch, group name | Tooltip, 12 | |
+| `<path>`, before · `<path>`, after | an image preview's alt text | Tooltip, 12 | |
+| Before · W×H · After · W×H | under each side of an image preview | Tag, 4 | the image's size in pixels |
+| Leave a comment | the summary box's placeholder | Hint, 8 | **GH** |
+| Summary | the summary box, accessible name | Button, 3 | |
+| `<file>` `<lines>` | a Look at pointer's tooltip | Tooltip, 12 | |
+| Summary | the last step's next link | Button, 3 | |
+| `<date and time>` | a comment time's tooltip | as the reader's locale writes it | **GH** |
+| Walkthrough | the tab title before the page names the change | Heading, 3 | |
+| Walkthroughs | the list page's title and tab | Heading, 3 | |
+| Walkthrough · Viewed · Review · Last activity | the list's column headers | Heading, 3 | |
+| Stop | the list page's header button | Button, 3 | stops the list's server |
+| No walkthroughs. Run /walkthrough. | the list, when empty | Empty state, 8 | |
+| List stopped. You can close this tab. | the list's banner after Stop | Notice, 12 | |
+| N / M files viewed | the list's Viewed column | Chip, 4 | **GH** |
+| `<time ago>` | the list's Last activity column | as the reader's locale writes it | |
+| The list could not do that (N). | alert on the list page, when its server refuses with no reason | Notice, 12 | as "The walkthrough could not do that (N)." |
+
 ## Strings to remove from the existing page
 
 Any string not listed above is removed. Grep the templates for at least: "GitHub" and "Claude Code" in any page string, "Could not reach the walkthrough page.", Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide, Colour-blind diff, and "Copied from … line" with a single line where a range is copied.

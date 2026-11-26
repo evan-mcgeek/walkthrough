@@ -164,12 +164,12 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 - End session shows the farewell before the server stops, with no confirm; losing the server shows "The session isn't running" after two failed polls. Copy command copies the exact command.
 - Back on a new head after a review, the page opens on "Changes since your last review"; switching to All changes and back keeps your place and Viewed marks.
 - A step with nothing new says so and still lists its files; a file whose diff changed has lost Viewed and says "Changed since last view".
-- When the branch moves, the behind line shows on every screen within one poll; nothing else changes until the walkthrough runs again.
+- When the branch moves, the behind line shows on every screen of an open walkthrough (the Opening, steps and the Summary, not the farewell or the lost session) within one poll; nothing else changes until the walkthrough runs again.
 - An outdated thread never sits on a line that no longer holds its code; the AI's resolved comments go out with the next Submit review.
 - Moved lines appear once, with both ends linked; J, K, C and V work and appear in no list.
 - Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
 - Every coloured token is 4.5:1 or more on its background in light, dark and Colorblind; the page carries no inline style for colours; a file taking its colours moves nothing, and the line you read stays put.
-- With Colorblind on, no green or red is left anywhere on the page, in light and dark; every stripe mark is 3:1 against the stripe.
+- With Colorblind on, no green or red is left in the diff, the counts, the stripe or the status colours, in light and dark (syntax colours keep their hues, decision 26); every stripe mark is 3:1 against the stripe.
 - A copy's last line is visible without reading line numbers; a copy never looks like a move.
 - Comment on this file opens its composer at the top of the file; file threads sit above outdated ones; a file comment's Summary row has no line and goes to the thread.
 - A fenced code block is coloured by its language and plain without one; a line over 1,000 characters and a file in an unknown language stay plain, with no label.
