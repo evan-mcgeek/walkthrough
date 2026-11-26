@@ -95,6 +95,7 @@ Until you run `walkthrough ready`, the page shows the AI at work and the changed
 2. Once the reviewers have reported, or your own review is done when the policy names none, run `walkthrough open`; the page opens on the AI at work while you record the rest.
    When the person asks to see the page before that, run it at once.
 3. Step by step, in reading order, record your comments on that step's lines with `walkthrough comment --file <file>`, only where the policy says a comment is worth it.
+   A comment about a file as a whole leaves out its lines and sits on the file.
    Write a comment's body without the `[AI]` mark; the page adds it.
    Each comment is pending: it goes out with the review unless the person edits or deletes it.
 4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
@@ -116,7 +117,8 @@ Keep listening until the walkthrough stops.
    - A submit: the person finished their review, with its summary, and on a pull request its type.
      Read what goes out with `walkthrough comments`: their comments as they are now, yours with the `[AI] ` mark at the start, their replies and the threads they resolved.
      On a pull request, post it as one finished review on the code host, as the policy's part for this walkthrough says: the chosen type, the summary, every comment, the replies in their threads, and the resolved threads resolved; then run `walkthrough posted --address <the review's address>`.
-     A resolve line with `"by": "ai"` is one you resolved: resolve that thread on the code host too, finding it by the file, lines and body the line gives.
+     A comment with `"subject": "file"` has no lines: post it as a comment on that file.
+     A resolve line with `"by": "ai"` is one you resolved: resolve that thread on the code host too, finding it by the file, lines (or subject) and body the line gives.
      On the person's own change, hand the comments to the agent as the policy's part for this walkthrough says, as a fix list in the chat, then run `walkthrough posted`.
      How to post comes from the policy; when something could not go out, tell the person in the chat, and run `walkthrough posted` only once the review is out.
      Then, when the policy asks you to learn from the review, read `walkthrough comments --all`: a comment of yours with "deleted" was deleted, and one with "wrote" was reworded from what you wrote; save a policy change the person agrees to with `walkthrough policy save --file <file>`, writing the whole policy from `walkthrough policy show`.

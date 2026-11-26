@@ -13,8 +13,8 @@ import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
 
-/** Lines picked for a new comment; one composer at a time on the page. */
-export let picked: { step: string; file: string; start: number; end: number } | null = null;
+/** Lines picked for a new comment, or a file with none for a comment on the whole file; one composer at a time on the page. */
+export let picked: { step: string; file: string; start?: number; end?: number } | null = null;
 
 export function pick(next: typeof picked): void {
   picked = next;
@@ -45,11 +45,13 @@ export class FilePane {
   private readonly rows = new Map<number, HTMLTableRowElement>();
   /** Runs of added and removed lines, by their first and last row. */
   private readonly runs: { type: 'add' | 'del'; from: HTMLTableRowElement; to: HTMLTableRowElement }[] = [];
-  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone. */
+  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone or the file's own. */
   private readonly threads = new Map<string, { row: HTMLElement; box: ThreadBox }>();
   private readonly outdatedZone = el('div', { className: 'outdated-zone', hidden: true });
+  /** Comments on the whole file and their composer, under the outdated ones. */
+  private readonly fileZone = el('div', { className: 'file-threads', hidden: true });
   private readonly stripe = document.createElementNS(SVG, 'svg');
-  private composerRow: HTMLTableRowElement | null = null;
+  private composerRow: HTMLElement | null = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
   private drawn = false;
   private readonly name: string;
@@ -71,7 +73,7 @@ export class FilePane {
     const area = el('div', { className: 'diff-area' }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
     if (this.preview) area.append(this.preview);
-    this.body.append(el('div', { className: 'file-inner' }, this.outdatedZone, area));
+    this.body.append(el('div', { className: 'file-inner' }, this.outdatedZone, this.fileZone, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
@@ -195,6 +197,13 @@ export class FilePane {
       el('span', { className: 'spacer' }),
       ...(this.preview ? [this.previewToggle()] : []),
       el('label', { className: 'viewed-toggle', title: 'Viewed (V)' }, viewed, 'Viewed'),
+      attrs(
+        el('button', { type: 'button', className: 'icon-button file-comment', title: 'Comment on this file', onclick: () => {
+          this.open();
+          pick({ step: this.step.id, file: this.name });
+        } }, icon('message')),
+        { 'aria-label': 'Comment on this file' },
+      ),
     );
   }
 
@@ -245,7 +254,7 @@ export class FilePane {
 
   private choose(line: number, extend: boolean): void {
     const same = picked?.step === this.step.id && picked.file === this.name;
-    if (extend && same && picked) pick({ ...picked, start: Math.min(picked.start, line), end: Math.max(picked.start, line) });
+    if (extend && same && picked?.start !== undefined) pick({ ...picked, start: Math.min(picked.start, line), end: Math.max(picked.start, line) });
     else pick({ step: this.step.id, file: this.name, start: line, end: line });
   }
 
@@ -262,29 +271,31 @@ export class FilePane {
     this.stripe.replaceChildren(
       ...this.runs.map(({ type, from, to }) => mark(`run-${type}`, from.offsetTop, to.offsetTop + to.offsetHeight - from.offsetTop)),
       ...threadsIn(this.step.id, this.name).flatMap(thread => {
-        const row = this.rows.get(thread.lines[1]);
+        const row = thread.lines && this.rows.get(thread.lines[1]);
         return row ? [mark(`tick ${threadBy(thread)}`, row.offsetTop, 3)] : [];
       }),
     );
   }
 
-  /** Puts each thread under its last line, or at the top of the file once outdated, and at the lines picked, the composer; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, at the top of the file once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
   private drawThreads(shows: Shows, closed: boolean): HTMLElement[] {
     const here = threadsIn(this.step.id, this.name);
     const outdated = outdatedIn(this.step.id, this.name);
     const arrived: HTMLElement[] = [];
     const ids = new Set([...here, ...outdated].map(one => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id) || (row.parentElement === this.outdatedZone) !== outdated.some(one => one.id === id)) {
+      if (!ids.has(id) || (row.parentElement === this.outdatedZone) !== outdated.some(one => one.id === id) || (row.parentElement === this.fileZone) !== here.some(one => one.id === id && !one.lines)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll('.gutter-mark')) old.remove();
     this.outdatedZone.hidden = !outdated.length;
+    if (here.some(one => !one.lines)) this.fileZone.hidden = false;
     for (const thread of [...outdated, ...here]) {
-      const anchor = thread.step === null ? null : this.rows.get(thread.lines[1]);
-      if (thread.step !== null && !anchor) continue;
-      const held = !closed && shows(anchor ?? this.outdatedZone);
+      const anchor = thread.step !== null && thread.lines ? this.rows.get(thread.lines[1]) : undefined;
+      const holder = anchor ?? (thread.step === null ? this.outdatedZone : thread.lines ? undefined : this.fileZone);
+      if (!holder) continue;
+      const held = !closed && shows(holder);
       const kept = this.threads.get(thread.id);
       if (kept) {
         const fresh = kept.box.update(thread);
@@ -296,7 +307,8 @@ export class FilePane {
       const row = anchor ? threadRow(box.box) : box.box;
       row.dataset['thread'] = thread.id;
       if (anchor) this.placeAfter(anchor, row);
-      else this.outdatedZone.append(row);
+      else if (holder === this.fileZone && this.composerRow?.parentElement === holder) this.composerRow.before(row);
+      else holder.append(row);
       this.threads.set(thread.id, { row, box });
       if (held) arrived.push(hold(row));
       else if (this.drawn) for (const one of box.box.querySelectorAll('.comment')) one.classList.add('arrive');
@@ -304,6 +316,7 @@ export class FilePane {
     this.drawn = true;
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
+    this.fileZone.hidden = !this.fileZone.childElementCount;
     this.drawStripe();
     return arrived;
   }
@@ -315,7 +328,7 @@ export class FilePane {
   }
 
   private markThread(thread: ThreadView): void {
-    const row = this.rows.get(thread.lines[1]);
+    const row = thread.lines && this.rows.get(thread.lines[1]);
     // Inside the line number, so the mark sits just before it and never on the old number.
     const cell = row?.querySelector('.line-num2');
     if (!row || !cell) return;
@@ -326,26 +339,27 @@ export class FilePane {
 
   private drawComposer(): void {
     const mine = picked?.step === this.step.id && picked.file === this.name ? picked : null;
-    for (const [line, row] of this.rows) row.classList.toggle('picked', !!mine && line >= mine.start && line <= mine.end);
-    const key = mine && `${String(mine.start)}-${String(mine.end)}`;
+    const lines: [number, number] | null = mine?.start !== undefined && mine.end !== undefined ? [mine.start, mine.end] : null;
+    for (const [line, row] of this.rows) row.classList.toggle('picked', !!lines && line >= lines[0] && line <= lines[1]);
+    const key = mine && (lines ? lines.join('-') : 'file');
     if (this.composerRow && this.composerRow.dataset['lines'] !== key) {
       this.composerRow.remove();
       this.composerRow = null;
     }
     if (!mine || this.composerRow) return;
-    const anchor = this.rows.get(mine.end);
-    if (!anchor) return;
-    const lines: [number, number] = [mine.start, mine.end];
+    const anchor = lines && this.rows.get(lines[1]);
+    if (lines && !anchor) return;
+    const where = { file: this.name, ...(lines && { lines }) };
     const box = composer({
       placeholder: 'Leave a comment',
       primary: 'Add comment',
       onPrimary: async text => {
-        const done = await send('comment', { file: this.name, lines, text });
+        const done = await send('comment', { ...where, text });
         if (done) pick(null);
         return done;
       },
       onAsk: async text => {
-        const done = await send('ask', { file: this.name, lines, text });
+        const done = await send('ask', { ...where, text });
         if (done) pick(null);
         return done;
       },
@@ -353,10 +367,12 @@ export class FilePane {
         pick(null);
       },
     });
-    this.composerRow = threadRow(el('div', { className: 'thread' }, box));
+    const thread = el('div', { className: 'thread' }, box);
+    this.composerRow = anchor ? threadRow(thread) : el('div', {}, el('div', { className: 'thread-cell' }, thread));
     this.composerRow.classList.add('composer-line');
     this.composerRow.dataset['lines'] = key ?? '';
-    this.placeAfter(anchor, this.composerRow);
+    if (anchor) this.placeAfter(anchor, this.composerRow);
+    else this.fileZone.append(this.composerRow);
     const cell = this.composerRow.querySelector<HTMLElement>('.thread-cell');
     if (cell) grow(cell);
   }

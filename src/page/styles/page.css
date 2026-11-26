@@ -1021,8 +1021,8 @@ textarea {
   padding-right: 10px;
 }
 
-/* Outdated threads: a surface band above the diff, each with the code it was written on. */
-.outdated-zone {
+/* Outdated threads, each with the code it was written on, then comments on the whole file: surface bands above the diff. */
+:is(.outdated-zone, .file-threads) {
   display: flex;
   flex-direction: column;
   gap: var(--s3);
@@ -1031,14 +1031,20 @@ textarea {
   background: var(--surface);
 }
 
-.outdated-zone > .thread {
+.outdated-zone > .thread,
+.file-threads .thread {
   position: static;
   margin: 0;
   max-width: 760px;
 }
 
-.outdated-zone > .thread.arriving {
+:is(.outdated-zone, .file-threads) > .thread.arriving {
   display: none;
+}
+
+.file-threads .thread-cell {
+  padding: 0;
+  border: 0;
 }
 
 .outdated {
@@ -2205,7 +2211,7 @@ tr.flash td {
   .file-header {
     top: calc(-1 * var(--s4));
     display: grid;
-    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto;
+    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto auto;
     row-gap: 0;
     padding: 0 var(--s2) 0 0;
   }
@@ -2232,6 +2238,10 @@ tr.flash td {
 
   .viewed-toggle {
     grid-area: 1 / 6;
+  }
+
+  .file-comment {
+    grid-area: 1 / 7;
   }
 
   .file-header :is(.changed-tag, .folded-reason, .segmented) {
