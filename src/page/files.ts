@@ -46,11 +46,10 @@ export class FilePane {
   private readonly rows = new Map<number, HTMLTableRowElement>();
   /** Runs of added and removed lines, by their first and last row. */
   private readonly runs: { type: 'add' | 'del'; from: HTMLTableRowElement; to: HTMLTableRowElement }[] = [];
-  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone or the file's own. */
+  /** Each thread with what holds it: a row under its line, or its own box in the band above the diff. */
   private readonly threads = new Map<string, { row: HTMLElement; box: ThreadBox }>();
-  private readonly outdatedZone = el('div', { className: 'outdated-zone', hidden: true });
-  /** Comments on the whole file and their composer, under the outdated ones. */
-  private readonly fileZone = el('div', { className: 'file-threads', hidden: true });
+  /** Above the diff: the composer for the whole file, its threads oldest first, then outdated threads. */
+  private readonly band = el('div', { className: 'file-threads', hidden: true });
   private readonly stripe = document.createElementNS(SVG, 'svg');
   private composerRow: HTMLElement | null = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
@@ -74,7 +73,7 @@ export class FilePane {
     const area = el('div', { className: 'diff-area' }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
     if (this.preview) area.append(this.preview);
-    this.body.append(el('div', { className: 'file-inner' }, this.outdatedZone, this.fileZone, area));
+    this.body.append(el('div', { className: 'file-inner' }, this.band, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
@@ -202,10 +201,13 @@ export class FilePane {
       el('label', { className: 'viewed-toggle', title: 'Viewed (V)' }, viewed, 'Viewed'),
       attrs(
         el('button', { type: 'button', className: 'icon-button file-comment', title: 'Comment on this file', onclick: () => {
-          this.open();
-          pick({ step: this.step.id, file: this.name });
+          if (this.fileComposing()) pick(null);
+          else {
+            this.open();
+            pick({ step: this.step.id, file: this.name });
+          }
         } }, icon('message')),
-        { 'aria-label': 'Comment on this file' },
+        { 'aria-label': 'Comment on this file', 'aria-pressed': 'false' },
       ),
     );
   }
@@ -280,23 +282,23 @@ export class FilePane {
     );
   }
 
-  /** Puts each thread under its last line, at the top of the file once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, in the band above the diff once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
   private drawThreads(shows: Shows, closed: boolean): HTMLElement[] {
     const here = threadsIn(this.step.id, this.name);
-    const outdated = outdatedIn(this.step.id, this.name);
+    const onFile = here.filter(one => !one.lines).sort((one, other) => Date.parse(one.comments[0]?.at ?? '') - Date.parse(other.comments[0]?.at ?? ''));
+    const banded = [...onFile, ...outdatedIn(this.step.id, this.name)];
     const arrived: HTMLElement[] = [];
-    const ids = new Set([...here, ...outdated].map(one => one.id));
+    const ids = new Set([...here, ...banded].map(one => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id) || (row.parentElement === this.outdatedZone) !== outdated.some(one => one.id === id) || (row.parentElement === this.fileZone) !== here.some(one => one.id === id && !one.lines)) {
+      if (!ids.has(id) || (row.parentElement === this.band) !== banded.some(one => one.id === id)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll('.gutter-mark')) old.remove();
-    this.outdatedZone.hidden = !outdated.length;
-    if (here.some(one => !one.lines)) this.fileZone.hidden = false;
-    for (const thread of [...outdated, ...here]) {
+    if (banded.length) this.band.hidden = false;
+    for (const thread of [...banded, ...here.filter(one => one.lines)]) {
       const anchor = thread.step !== null && thread.lines ? this.rows.get(thread.lines[1]) : undefined;
-      const holder = anchor ?? (thread.step === null ? this.outdatedZone : thread.lines ? undefined : this.fileZone);
+      const holder = anchor ?? (banded.includes(thread) ? this.band : undefined);
       if (!holder) continue;
       const held = !closed && shows(holder);
       const kept = this.threads.get(thread.id);
@@ -310,18 +312,27 @@ export class FilePane {
       const row = anchor ? threadRow(box.box) : box.box;
       row.dataset['thread'] = thread.id;
       if (anchor) this.placeAfter(anchor, row);
-      else if (holder === this.fileZone && this.composerRow?.parentElement === holder) this.composerRow.before(row);
       else holder.append(row);
       this.threads.set(thread.id, { row, box });
       if (held) arrived.push(hold(row));
       else if (this.drawn) for (const one of box.box.querySelectorAll('.comment')) one.classList.add('arrive');
     }
     this.drawn = true;
+    banded.forEach((thread, at) => {
+      const row = this.threads.get(thread.id)?.row;
+      const now = this.band.children[at + (this.composerRow?.parentElement === this.band ? 1 : 0)];
+      if (row && row !== now) this.band.insertBefore(row, now ?? null);
+    });
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
-    this.fileZone.hidden = !this.fileZone.childElementCount;
+    this.header.querySelector('.file-comment')?.setAttribute('aria-pressed', String(this.fileComposing()));
+    this.band.hidden = !this.band.childElementCount;
     this.drawStripe();
     return arrived;
+  }
+
+  private fileComposing(): boolean {
+    return picked?.step === this.step.id && picked.file === this.name && picked.start === undefined;
   }
 
   private placeAfter(anchor: HTMLTableRowElement, row: HTMLElement): void {
@@ -375,7 +386,7 @@ export class FilePane {
     this.composerRow.classList.add('composer-line');
     this.composerRow.dataset['lines'] = key ?? '';
     if (anchor) this.placeAfter(anchor, this.composerRow);
-    else this.fileZone.append(this.composerRow);
+    else this.band.prepend(this.composerRow);
     const cell = this.composerRow.querySelector<HTMLElement>('.thread-cell');
     if (cell) grow(cell);
   }

@@ -4,18 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { html as diffHtml } from 'diff2html';
 import type { DiffFile } from 'diff2html/lib-esm/types';
-import MarkdownIt from 'markdown-it';
 import { colourHtml, joinLines, ruleFor, type Run } from './colours';
 import { parseDiff } from './diff';
 import { tokensAt, tokensFor } from './highlight';
+import { renderComment, renderMarkdown } from './page/markdown';
 import { type CommentView, walkthroughView } from './review';
 import { PAGE } from './server';
 import { SCREENSHOT_TYPES } from './steps';
 import { nameOf } from './walkthrough';
 
 const hash = (text: string) => `'sha256-${crypto.createHash('sha256').update(text).digest('base64')}'`;
-// Raw HTML in what the session or a person wrote shows as text.
-const markdown = new MarkdownIt({ html: false, linkify: true }).disable('image');
 const escape = (text: string) =>
   text.replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char] ?? char);
 
@@ -80,7 +78,7 @@ export async function exportPage(dir: string): Promise<string> {
     const comments = threads.flatMap(thread =>
       thread.comments.map(
         said =>
-          `<li><code>${escape(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ''}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}${markdown.render(said.body)}</li>`,
+          `<li><code>${escape(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ''}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}<div class="markdown">${renderComment(said.body, thread.code ?? [])}</div></li>`,
       ),
     );
     const shot = step.screenshot;
@@ -91,7 +89,7 @@ export async function exportPage(dir: string): Promise<string> {
         : '';
     const diff = diffs[at] ?? '';
     return `<section class="export-step"><h2>${String(at + 1)}. ${escape(step.title)}</h2>
-<div class="markdown">${markdown.render(step.explanation)}</div>${figure}${diff}${comments.length ? `<ul class="export-comments">${comments.join('')}</ul>` : ''}</section>`;
+<div class="markdown">${renderMarkdown(step.explanation)}</div>${figure}${diff}${comments.length ? `<ul class="export-comments">${comments.join('')}</ul>` : ''}</section>`;
   });
   const body = await colourBlocks(steps.join('\n'), keys);
   const criteria = (view.criteria ?? []).map(one => `<li>${escape(one.text)}: ${STATUS[one.status]}</li>`);
