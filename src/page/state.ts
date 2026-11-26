@@ -39,7 +39,11 @@ export const pendingComments = () =>
 export const sentComments = (review: string) =>
   state.view.threads.flatMap(thread => thread.comments.filter(one => one.review === review).map(comment => ({ thread, comment })));
 export const threadsIn = (step: string, file: string) => state.view.threads.filter(one => one.step === step && one.file === file);
-export const commentCount = (step: string, file: string) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
+/** Threads whose lines changed, shown at the top of their file in the step that now changes it. */
+export const outdatedIn = (step: string, file: string) => state.view.threads.filter(one => one.step === null && one.fileStep === step && one.file === file);
+export const commentCount = (step: string, file: string) => [...threadsIn(step, file), ...outdatedIn(step, file)].reduce((sum, one) => sum + one.comments.length, 0);
+/** The step a thread shows in, at its lines or at the top of its file; none once its file left the change. */
+export const threadStep = (thread: ThreadView) => thread.step ?? thread.fileStep;
 export const unresolved = () => state.view.threads.filter(one => one.colleague && !one.resolved && one.step !== null);
 export const notViewed = () => allFiles().filter(file => !state.view.viewed.includes(file));
 

@@ -822,11 +822,93 @@ textarea {
 }
 
 .file-inner {
-  position: relative;
   min-height: 0;
   overflow: hidden;
-  padding-right: 10px;
   transition: opacity var(--base) linear 80ms;
+}
+
+.diff-area {
+  position: relative;
+  padding-right: 10px;
+}
+
+/* Outdated threads: a surface band above the diff, each with the code it was written on. */
+.outdated-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.outdated-zone > .thread {
+  position: static;
+  margin: 0;
+  max-width: 760px;
+}
+
+.outdated-zone > .thread.arriving {
+  display: none;
+}
+
+.outdated {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.outdated-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 6px var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+}
+
+.outdated-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font: 400 12px/1.4 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.outdated-tag, .resolved-tag) {
+  flex: none;
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  color: var(--ink-secondary);
+  font: 600 12px/18px var(--font-ui);
+  vertical-align: 1px;
+}
+
+.resolved-tag {
+  background: var(--surface-tint);
+}
+
+.outdated-code {
+  padding: var(--s1) 0;
+  overflow-x: auto;
+  color: var(--ink-secondary);
+  font: 400 12px/20px var(--font-mono);
+}
+
+.outdated-line {
+  display: flex;
+  white-space: pre;
+}
+
+.outdated-number {
+  flex: none;
+  width: 40px;
+  padding-right: var(--s3);
+  color: var(--muted);
+  text-align: right;
 }
 
 .file.closed .file-inner {
@@ -1062,8 +1144,62 @@ tr.flash td {
   background: var(--canvas);
 }
 
-.thread.resolved {
+.thread.resolved .thread-comments {
   opacity: 0.75;
+}
+
+/* A thread the AI resolved: GitHub's one resolved line, the thread opening under it by grid rows. */
+.thread.ai-resolved {
+  background: var(--surface);
+}
+
+.resolved-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--s2) var(--s3);
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.thread.ai-resolved:not(.folded) .resolved-line {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.resolved-line .avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.resolved-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.thread.ai-resolved .comment {
+  opacity: 0.85;
+}
+
+.thread-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--slow) var(--ease-out);
+}
+
+.thread.folded .thread-body {
+  grid-template-rows: 0fr;
+}
+
+.thread-inner {
+  min-height: 0;
+  overflow: hidden;
+  transition: opacity var(--base) linear 80ms;
+}
+
+.thread.folded .thread-inner {
+  opacity: 0;
+  transition-delay: 0s;
 }
 
 .comment {
@@ -1497,6 +1633,14 @@ tr.flash td {
   color: var(--muted);
 }
 
+.resolved-row .row-text {
+  color: var(--ink-secondary);
+}
+
+.resolved-row .pending-tag {
+  margin-right: 6px;
+}
+
 .going-row .row-text {
   display: -webkit-box;
   flex: 1;
@@ -1866,7 +2010,7 @@ tr.flash td {
     top: 84px;
   }
 
-  .file-inner {
+  .diff-area {
     padding-right: 0;
   }
 
@@ -1947,7 +2091,9 @@ tr.flash td {
 
   /* A file's content fades, then its body, header edge and corners snap together. */
   .file-body,
-  .file.closed .file-body {
+  .file.closed .file-body,
+  .thread-body,
+  .thread.folded .thread-body {
     transition: grid-template-rows 1ms linear var(--fast);
   }
 

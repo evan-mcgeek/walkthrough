@@ -88,11 +88,27 @@ function iconButton(name: 'edit' | 'trash', label: string, onclick: () => void):
   return attrs(el('button', { type: 'button', className: 'icon-button', title: label, onclick }, icon(name)), { 'aria-label': label });
 }
 
-/** A thread under its line; it keeps its own state, such as an open reply, across the page's redraws. */
+/** A thread under its line, or at the top of its file once outdated; it keeps its own state, such as an open reply, across the page's redraws. */
 export class ThreadBox {
   readonly box = el('div', { className: 'thread' });
   private readonly list = el('div', { className: 'thread-comments' });
   private readonly foot = el('div', { className: 'thread-foot' });
+  private readonly outdated = el('div', { className: 'outdated', hidden: true });
+  private readonly body = el('div', { className: 'thread-body' }, el('div', { className: 'thread-inner' }, this.outdated, this.list, this.foot));
+  private readonly resolvedPending = el('span', { className: 'pending-tag' }, 'Pending');
+  private readonly showButton = attrs(el('button', { type: 'button', className: 'btn small ghost' }), { 'aria-expanded': 'false' });
+  /** GitHub's collapsed line for a thread the AI resolved. */
+  private readonly resolvedLine = el(
+    'div',
+    { className: 'resolved-line', hidden: true },
+    avatar({ by: 'ai' }),
+    el('span', { className: 'resolved-text' }, el('strong', {}, 'AI'), ' marked this conversation as resolved.'),
+    this.resolvedPending,
+    el('span', { className: 'spacer' }),
+    this.showButton,
+  );
+  private showResolved = false;
+  private drawnFoot = '';
   private readonly shown = new Map<string, { element: HTMLElement; key: string }>();
   private answering: HTMLElement | null = null;
   private editing: string | null = null;
@@ -102,14 +118,47 @@ export class ThreadBox {
   constructor(thread: ThreadView) {
     this.thread = thread;
     this.box.dataset['thread'] = thread.id;
-    this.box.append(this.list, this.foot);
+    this.box.append(this.resolvedLine, this.body);
+    this.showButton.onclick = () => {
+      this.show(!this.showResolved);
+    };
     this.update(thread);
+  }
+
+  /** Opens or closes a thread the AI resolved; any other thread is always open. */
+  show(open = true): void {
+    this.showResolved = open;
+    const folded = this.thread.resolvedBy === 'ai' && !open;
+    this.box.classList.toggle('folded', folded);
+    this.body.inert = folded;
+    this.showButton.textContent = open ? 'Hide resolved' : 'Show resolved';
+    this.showButton.setAttribute('aria-expanded', String(open));
+  }
+
+  private drawOutdated(): void {
+    const { thread } = this;
+    this.outdated.hidden = thread.step !== null;
+    if (thread.step !== null || this.outdated.hasChildNodes()) return;
+    // ponytail: numbered from the first line, so a range that spans two hunks numbers the second wrong; store numbers with the code if that matters.
+    const code = (thread.code ?? []).map((text, at) =>
+      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(thread.lines[0] + at)), el('span', {}, text)),
+    );
+    this.outdated.append(
+      el('div', { className: 'outdated-head' }, el('span', { className: 'outdated-path', title: thread.file }, thread.file), el('span', { className: 'outdated-tag' }, 'Outdated')),
+      ...(code.length ? [el('div', { className: 'outdated-code' }, ...code)] : []),
+    );
   }
 
   /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
   update(thread: ThreadView): HTMLElement[] {
     this.thread = thread;
-    this.box.classList.toggle('resolved', !!thread.resolved);
+    const byAi = thread.resolvedBy === 'ai';
+    this.box.classList.toggle('resolved', !!thread.resolved && !byAi);
+    this.box.classList.toggle('ai-resolved', byAi);
+    this.resolvedLine.hidden = !byAi;
+    this.resolvedPending.hidden = !thread.resolvePending;
+    this.show(this.showResolved);
+    this.drawOutdated();
     const arrived: HTMLElement[] = [];
     const ids = new Set(thread.comments.map(one => one.id));
     for (const [id, { element }] of this.shown)
@@ -207,12 +256,6 @@ export class ThreadBox {
 
   private drawFoot(): void {
     const { thread } = this;
-    if (thread.resolved) {
-      this.foot.replaceChildren();
-      this.foot.hidden = true;
-      return;
-    }
-    this.foot.hidden = false;
     if (this.replying) {
       if (this.foot.querySelector('.composer')) return;
       const box = composer({
@@ -231,18 +274,25 @@ export class ThreadBox {
       box.querySelector('textarea')?.focus();
       return;
     }
-    if (this.foot.querySelector('.reply-field')) return;
+    const key = JSON.stringify([thread.colleague && !thread.resolved, thread.unresolvable]);
+    if (this.foot.querySelector('.reply-field') && key === this.drawnFoot) return;
+    this.drawnFoot = key;
     this.foot.classList.remove('composing');
     const open = () => {
       this.replying = true;
       this.drawFoot();
+    };
+    // Resolve and Unresolve swap in place, so the focus moves to whichever now shows.
+    const flip = async (route: 'resolve' | 'unresolve') => {
+      if (await send(route, { thread: thread.id })) this.foot.querySelector<HTMLElement>('.resolve, .unresolve, .reply-field')?.focus();
     };
     // A button that looks like a reply field and opens the composer in its place.
     const field = el('button', { type: 'button', className: 'reply-field', onclick: open }, 'Reply…');
     this.foot.replaceChildren(
       field,
       askButton(open),
-      ...(thread.colleague ? [el('button', { type: 'button', className: 'btn small resolve', onclick: () => void send('resolve', { thread: thread.id }) }, 'Resolve')] : []),
+      ...(thread.colleague && !thread.resolved ? [el('button', { type: 'button', className: 'btn small resolve', onclick: () => void flip('resolve') }, 'Resolve')] : []),
+      ...(thread.unresolvable ? [el('button', { type: 'button', className: 'btn small unresolve', onclick: () => void flip('unresolve') }, 'Unresolve conversation')] : []),
     );
   }
 

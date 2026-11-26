@@ -8,7 +8,7 @@ import { pick } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
 import { Opening, openingNav } from './opening';
-import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile } from './state';
+import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile, threadStep } from './state';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
 
@@ -123,13 +123,14 @@ function leave(old: HTMLElement, scrolled: number): void {
 
 function reveal({ thread: id, edit, file }: Reveal): void {
   const thread = state.view.threads.find(one => one.id === id);
-  const stepId = thread ? thread.step : file === undefined ? undefined : stepOfFile(file)?.id;
-  if (stepId === undefined || stepId === null) return;
+  const stepId = thread ? threadStep(thread) : file === undefined ? undefined : stepOfFile(file)?.id;
+  if (stepId === undefined) return;
   go(stepAddress(stepId));
   const pane = paneOf(stepId).fileNamed(thread?.file ?? file ?? '');
   if (!pane) return;
   pane.open();
   const shown = thread && pane.thread(thread.id);
+  shown?.box.show();
   const target = shown ? shown.row : pane.box;
   main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
   // A pane still leaving would scroll along with the one landing here.
