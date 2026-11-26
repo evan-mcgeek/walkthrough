@@ -40,13 +40,27 @@
   --diff-add: light-dark(#e8f6ec, #14281c);
   --diff-add-gutter: light-dark(#d3eedc, #193423);
   --diff-del: light-dark(#fcebea, #33191a);
-  --diff-del-gutter: light-dark(#f6d6d3, #3f1f20);
+  --diff-del-gutter: light-dark(#f7d9d6, #3f1f20);
   --stripe-add: light-dark(#3c9a5f, #4fbf7a);
   --stripe-del: light-dark(#c8473b, #ef7e6f);
   --diff-add-word: light-dark(#b9e5c6, #1f4a2e);
   --diff-del-word: light-dark(#f4c4bf, #5a2626);
   --diff-add-text: var(--ok);
   --diff-del-text: var(--bad);
+
+  /* Colorblind: GitHub's Protanopia and Deuteranopia palette, blue for added and orange for removed */
+  --cb-add: light-dark(#ddf4ff, #112a45);
+  --cb-add-gutter: light-dark(#ccecff, #14345a);
+  --cb-del: light-dark(#fff1e5, #2e1f16);
+  --cb-del-gutter: light-dark(#ffe2c8, #42261a);
+  --cb-add-word: light-dark(#b6e3ff, #26508a);
+  --cb-del-word: light-dark(#ffd8b5, #764223);
+  --cb-stripe-add: light-dark(#0969da, #4493f8);
+  --cb-stripe-del: light-dark(#bc4c00, #db6d28);
+  --cb-ok: light-dark(#0969da, #58a6ff);
+  --cb-ok-bg: light-dark(#ddf4ff, #14263b);
+  --cb-bad: light-dark(#bc4c00, #f0883e);
+  --cb-bad-bg: light-dark(#fff1e5, #2e1f16);
 
   --shadow-float:
     0 1px 2px light-dark(rgb(20 24 30 / 6%), rgb(0 0 0 / 40%)), 0 8px 24px light-dark(rgb(20 24 30 / 10%), rgb(0 0 0 / 35%));
@@ -91,18 +105,20 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-/* Colour-blind diff: GitHub's Protanopia and Deuteranopia diff colours, blue for added and orange for removed; dark ones laid on the canvas. */
+/* Colorblind swaps every green and red pair; amber stays. */
 :root[data-colour-blind] {
-  --diff-add: light-dark(#ddf4ff, #1a293e);
-  --diff-add-gutter: light-dark(#b6e3ff, #294361);
-  --diff-add-word: light-dark(#b6e3ff, #26508a);
-  --diff-del: light-dark(#fff1e5, #33251f);
-  --diff-del-gutter: light-dark(#ffd8b5, #513220);
-  --diff-del-word: light-dark(#ffd8b5, #764223);
-  --diff-add-text: light-dark(#0969da, #58a6ff);
-  --diff-del-text: light-dark(#bc4c00, #f0883e);
-  --stripe-add: light-dark(#0969da, #58a6ff);
-  --stripe-del: light-dark(#bc4c00, #f0883e);
+  --diff-add: var(--cb-add);
+  --diff-add-gutter: var(--cb-add-gutter);
+  --diff-del: var(--cb-del);
+  --diff-del-gutter: var(--cb-del-gutter);
+  --diff-add-word: var(--cb-add-word);
+  --diff-del-word: var(--cb-del-word);
+  --stripe-add: var(--cb-stripe-add);
+  --stripe-del: var(--cb-stripe-del);
+  --ok: var(--cb-ok);
+  --ok-bg: var(--cb-ok-bg);
+  --bad: var(--cb-bad);
+  --bad-bg: var(--cb-bad-bg);
 }
 
 :root[data-theme='light'] {
