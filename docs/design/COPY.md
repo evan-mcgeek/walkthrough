@@ -175,6 +175,7 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | Pending | on the AI-resolved line, in its step and on the Summary, until Submit review | Tag, 2 | **GH**; the existing tag; not on your own change |
 | Moved from `<file>` line N | diff row above moved lines | Diff row, 8 | "Moved from line N" in the same file; links to where they left |
 | N lines moved to `<file>` line M | diff row where moved lines left | Diff row, 8 | "1 line moved to …"; same file: "N lines moved to line M"; links to where they arrive |
+| Copied from `<file>` line N | diff row above copied lines | Diff row, 8 | "Copied from line N" in the same file; links to where they come from when the change shows those lines, else plain text |
 | `<alt text>` | caption under the author's screenshot | the author's words | from the pull request; none if it has none |
 | Open the screenshot: `<alt text>` | accessible name of the closed screenshot | Tooltip, 12 | |
 | Open the screenshot | accessible name of the closed screenshot when it has no alt text | Tooltip, 12 | |

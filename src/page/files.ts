@@ -75,7 +75,7 @@ export class FilePane {
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
-    if (diff) drawMoves(diff, this.name);
+    if (diff) drawMoves(diff, this.name, step.copies);
     this.prepareRows();
     this.drawHeader(parsed);
   }

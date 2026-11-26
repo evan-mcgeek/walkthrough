@@ -432,6 +432,10 @@ One line under the header (new component: the page had no place for a fact about
 ### Moved code (decision 18)
 Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from …" as an accent link with a chevron, then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
 
+### Copied code
+The same label row above lines copied from elsewhere at the head, "Copied from …" as an accent link with a chevron, or in secondary ink without one when the change does not show where they come from.
+The copied lines keep their + and the added tone: they are new code.
+
 ### The author's screenshot (decision 19)
 A figure (new component: nothing in a step showed an image) under the explanation and above the files: the image 240 × 156 with a 1px rule and 6px corners, the author's alt text under it in 12.5px secondary ink. A click (or Enter) opens it in place to the width of the step, up to 960px, with Close at the right of the caption; a click on the image, Close or Esc closes it. Several screenshots sit in a row, 8px apart. At 390 it is the full column width, 180 tall closed. Opening and closing animate height (320ms ease-out, 200ms ease-in); reduced motion snaps.
 
