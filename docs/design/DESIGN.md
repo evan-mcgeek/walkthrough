@@ -28,6 +28,8 @@ colors:
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
   diff-del-gutter: "#f6d6d3"
+  diff-add-word: "#b9e5c6"
+  diff-del-word: "#f4c4bf"
   stripe-add: "#3c9a5f"
   stripe-del: "#c8473b"
   line-pick: "#eef0fd"
@@ -58,6 +60,8 @@ colors:
   diff-add-gutter-dark: "#193423"
   diff-del-dark: "#33191a"
   diff-del-gutter-dark: "#3f1f20"
+  diff-add-word-dark: "#1f4a2e"
+  diff-del-word-dark: "#5a2626"
   stripe-add-dark: "#4fbf7a"
   stripe-del-dark: "#ef7e6f"
   line-pick-dark: "#1d2242"
@@ -289,7 +293,20 @@ Status colour survives only where GitHub has the same meaning or the AI's criter
 ### Diff
 - **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell. Preview-mode insertions use the addition wash full-bleed.
 - **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at 55% and 60% opacity.
+- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line.
+- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad` unless the colour-blind diff is on.
 - **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask or comment about; gutter number turns accent text, semibold.
+
+#### Colour-blind diff
+The menu's "Colour-blind diff" sets `data-colour-blind` on the root, which swaps only the diff tokens from green and red to blue and orange, with any theme.
+The values are GitHub's Protanopia and Deuteranopia ones (Primer `light_colorblind` and `dark_colorblind`); GitHub's translucent dark values are laid on the dark canvas, so each token stays one solid colour.
+
+| Token | Light | Dark |
+|---|---|---|
+| `diff-add` / `diff-add-gutter` / `diff-add-word` | #ddf4ff / #b6e3ff / #b6e3ff | #1a293e / #294361 / #26508a |
+| `diff-del` / `diff-del-gutter` / `diff-del-word` | #fff1e5 / #ffd8b5 / #ffd8b5 | #33251f / #513220 / #764223 |
+| `diff-add-text` / `stripe-add` | #0969da | #58a6ff |
+| `diff-del-text` / `stripe-del` | #bc4c00 | #f0883e |
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.

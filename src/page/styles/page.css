@@ -462,6 +462,15 @@ textarea {
   font-weight: 600;
 }
 
+.menu-item[role='menuitemcheckbox'][aria-checked='true'] {
+  background-image: none;
+}
+
+.menu-item[role='menuitemcheckbox'] .menu-check {
+  margin: 0 5px 0 -21px;
+  color: var(--accent);
+}
+
 .menu hr {
   margin: var(--s1) 0;
   border: 0;
@@ -906,11 +915,11 @@ textarea {
 }
 
 .file-stats .added {
-  color: var(--ok);
+  color: var(--diff-add-text);
 }
 
 .file-stats .deleted {
-  color: var(--bad);
+  color: var(--diff-del-text);
 }
 
 .file-comments {
@@ -1233,11 +1242,11 @@ textarea {
 }
 
 .d2h-code-line ins {
-  background: light-dark(#b9e5c6, #1f4a2e);
+  background: var(--diff-add-word);
 }
 
 .d2h-code-line del {
-  background: light-dark(#f4c4bf, #5a2626);
+  background: var(--diff-del-word);
 }
 
 td.d2h-ins {
