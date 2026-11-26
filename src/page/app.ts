@@ -579,7 +579,7 @@ function moveFile(by: 1 | -1): void {
   if (at.kind !== 'step') return;
   const { steps } = state.view;
   const order = steps.flatMap((step, index) => shownFiles(step).map(file => ({ step: step.id, index, file })));
-  const here = steps.indexOf(at.pane.step);
+  const here = steps.findIndex(step => step.id === at.pane.step.id);
   const top = fileAtTop();
   const on = order.findIndex(one => one.file === onFile);
   const next =
