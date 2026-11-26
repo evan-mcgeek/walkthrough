@@ -1,5 +1,5 @@
 ---
-description: Set up Walkthrough before a first review, in a few short questions: the person's review policy, the code host's sign-in and the voice of the comments that go out. Use when the person runs /walkthrough:init or asks to set up Walkthrough or their review policy.
+description: Set up Walkthrough before a first review, in a few short questions, with the person's review policy, the code host's sign-in and the voice of the comments that go out. Use when the person runs /walkthrough:init or asks to set up Walkthrough or their review policy.
 allowed-tools: Bash(walkthrough *)
 ---
 
