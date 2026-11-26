@@ -91,6 +91,7 @@ export class FilePane {
 
   /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
   look(start: number, end: number, scroller: HTMLElement): boolean {
+    if (!this.rows.has(start)) return false;
     return this.flash(
       [...this.rows].flatMap(([line, row]) => (line >= start && line <= end ? [row] : [])),
       scroller,
