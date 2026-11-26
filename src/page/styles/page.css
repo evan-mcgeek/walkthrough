@@ -1206,30 +1206,6 @@ td.d2h-info .d2h-code-line {
   font-size: 12px;
 }
 
-tr.picked td {
-  background: var(--line-pick);
-}
-
-tr.picked td.d2h-code-linenumber {
-  background: var(--line-pick-gutter);
-}
-
-tr.picked .line-num2 {
-  color: var(--accent-text);
-  font-weight: 600;
-}
-
-tr.flash td {
-  animation: flash 1400ms var(--ease-out);
-}
-
-@keyframes flash {
-  0%,
-  30% {
-    background: var(--line-pick-gutter);
-  }
-}
-
 /* Moved code: plain lines on the surface where they arrive, one label row at each end linking to the other. */
 tr.moved td {
   background: var(--surface);
@@ -1269,6 +1245,30 @@ tr.moved-label .line-num1 {
 .moved-link .icon {
   width: 13px;
   height: 13px;
+}
+
+tr.picked td {
+  background: var(--line-pick);
+}
+
+tr.picked td.d2h-code-linenumber {
+  background: var(--line-pick-gutter);
+}
+
+tr.picked .line-num2 {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+tr.flash td {
+  animation: flash 1400ms var(--ease-out);
+}
+
+@keyframes flash {
+  0%,
+  30% {
+    background: var(--line-pick-gutter);
+  }
 }
 
 .gutter-mark {

@@ -51,7 +51,9 @@ test('moved code shows once where it arrives, and each end links to the other', 
   await expect(dates.locator('.d2h-ins')).toHaveCount(0);
   // The arriving lines are the head's lines, so they take comments and threads.
   await expect(dates.locator('tr.moved[data-line="3"] + tr.thread-row')).toContainText('Null or throw?');
-  await expect(dates.locator('tr.moved[data-line="4"] .line-num2')).toHaveAttribute('role', 'button');
+  await dates.getByRole('button', { name: 'Comment on line 4' }).click();
+  await expect(dates.locator('tr.moved[data-line="4"] + tr.composer-line textarea')).toBeFocused();
+  await page.keyboard.press('Escape');
 
   await dates.locator('tr.moved-label').getByRole('button').click();
   await expect(page.getByRole('heading', { level: 1, name: 'API' })).toBeVisible();
