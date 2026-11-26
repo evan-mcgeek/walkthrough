@@ -11,9 +11,11 @@ colors:
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
-  ultramarine: "#2433b8"
-  ultramarine-hover: "#1b2896"
-  ultramarine-text: "#2433b8"
+  ultramarine: "#2d3a9e"
+  ultramarine-hover: "#252f85"
+  ultramarine-text: "#2d3a9e"
+  ultramarine-fill: "#2d3a9e"
+  ultramarine-fill-hover: "#252f85"
   ultramarine-wash: "#eceefc"
   ultramarine-line: "#d3d7f7"
   on-ultramarine: "#ffffff"
@@ -48,7 +50,9 @@ colors:
   ultramarine-text-dark: "#a9b1ff"
   ultramarine-wash-dark: "#1e2346"
   ultramarine-line-dark: "#333b70"
-  on-ultramarine-dark: "#0b0f2e"
+  on-ultramarine-dark: "#ffffff"
+  ultramarine-fill-dark: "#4f5bd5"
+  ultramarine-fill-hover-dark: "#5b67e0"
   icon-knockout-dark: "#15181d"
   amber-dark: "#e3b260"
   ok-dark: "#5fd38d"
@@ -172,15 +176,15 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.control}"
     padding: "0 12px"
     height: "30px"
   button-primary-hover:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-primary-active:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -262,7 +266,7 @@ components:
     rounded: "{rounded.xl}"
     padding: "12px 16px"
   add-comment:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.sm}"
     size: "20px"
@@ -316,10 +320,10 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu. Colorblind (decision 22) swaps the green and red pair for blue and orange in either theme; see Colorblind below.
 
 ### Primary (the accent)
-- **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the gutter "+" for a new comment, and the mark. It never carries status: not in the files-viewed bar, not in the step list.
-- **Ultramarine Hover** (`ultramarine-hover`): the primary button's hover and active fill. A disabled primary stays plain Ultramarine on hover.
+- **Ultramarine** (light `ultramarine` #2d3a9e, dark `ultramarine-dark` #8c97ff): the default accent and the brand colour, as a line or a mark: focus rings (2px, 2px offset), the text caret, the checked radio ring, your stripe mark, and the mark. It never carries status: not in the files-viewed bar, not in the step list. Decision 34 softened light from #2433b8 (chroma 0.21, the most this hue holds at its depth) to #2d3a9e (0.16, same hue); white on it is 9.5:1.
+- **Ultramarine Fill / Fill Hover** (`ultramarine-fill`, `ultramarine-fill-hover`; decision 34): the three filled things: the primary button (with an inset 1px bottom shade; hover and active take Fill Hover; a disabled primary stays on Fill), your avatar, and the gutter "+" that starts a comment, all with `on-ultramarine` (white) on top. Light: the same as Ultramarine and its hover (#2d3a9e, #252f85). Dark: #4f5bd5 and #5b67e0, a mid-tone so the primary button is no longer the brightest thing on a dark page; white on them is 5.5:1 and 4.7:1. New because dark needs a darker fill for white text while rings and marks need the bright tone. `ultramarine-hover` stays as the light fill hover, for anything already reading it.
 - **Ultramarine Text** (`ultramarine-text`): the accent at text contrast, for links, step-number links, the "Look at" links, the selected-line gutter number, the reviewer's own gutter marker and "Your comment" label.
-- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, your avatar, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
+- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
 
 ### Status
 Status colour survives only where GitHub has the same meaning or the AI's criteria check needs it. Each still carries an icon and a word.
