@@ -1096,7 +1096,7 @@ textarea {
   white-space: nowrap;
 }
 
-:is(.outdated-tag, .resolved-tag) {
+:is(.outdated-tag, .resolved-tag, .suggestion-tag) {
   flex: none;
   display: inline-block;
   margin-right: 6px;
@@ -1541,6 +1541,80 @@ tr.flash td {
 .ai-tag {
   color: var(--ink-secondary);
   font: 600 12px var(--font-mono);
+}
+
+.markdown .suggestion {
+  margin: 0 0 var(--s3);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.suggestion-head {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font: 500 12.5px/1 var(--font-ui);
+}
+
+.suggestion-scroll {
+  overflow-x: auto;
+}
+
+.suggestion .suggestion-code {
+  min-width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font: var(--text-code);
+  font-variant-ligatures: none;
+}
+
+.suggestion .suggestion-code td {
+  padding: 0;
+  border: 0;
+  vertical-align: top;
+}
+
+.suggestion td.suggestion-number {
+  width: 46px;
+  min-width: 46px;
+  padding: 0 var(--s2);
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.suggestion td.suggestion-line {
+  width: 100%;
+  padding: 0 var(--s4) 0 var(--s2);
+  white-space: pre;
+}
+
+.suggestion-sign {
+  display: inline-block;
+  width: 14px;
+  user-select: none;
+}
+
+.suggestion-del td {
+  background: var(--diff-del);
+}
+
+.suggestion-del .suggestion-number {
+  background: var(--diff-del-gutter);
+}
+
+.suggestion-add td {
+  background: var(--diff-add);
+}
+
+.suggestion-add .suggestion-number {
+  background: var(--diff-add-gutter);
 }
 
 .avatar {

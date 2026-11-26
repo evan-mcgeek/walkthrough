@@ -5,7 +5,7 @@ import path from 'node:path';
 import { changesBetween, commitOf, type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
-import { anchorOf, type Code, type Lines, type Place, placeIn, stepOfFile } from './lines';
+import { anchorOf, type Code, codeAt, type Lines, type Place, placeIn, stepOfFile } from './lines';
 import { alive, psStart } from './processes';
 import { branchOfDir, readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
@@ -64,8 +64,9 @@ export type ThreadView = {
   resolveReview?: string;
   /** Unresolve conversation takes the resolve back: it has not gone out, or it is the AI's on your own change. */
   unresolvable?: true;
-  /** Once outdated: the lines' text when the thread was placed, and the step that now changes its file, if any. */
+  /** The lines' text: as placed, or at the head for a place stored without it; once outdated, as placed only. */
   code?: Code;
+  /** Once outdated: the step that now changes its file, if any. */
   fileStep?: string;
   comments: CommentView[];
 };
@@ -222,11 +223,12 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
   const placed = (place: Place): Pick<ThreadView, 'file' | 'lines' | 'step' | 'code' | 'fileStep'> => {
     const step = anchorOf(walkthrough, place);
     const fileStep = step === null ? stepOfFile(walkthrough, place.file) : undefined;
+    const code = 'lines' in place ? (place.code ?? (step === null ? undefined : codeAt(walkthrough, place.file, place.lines))) : undefined;
     return {
       file: place.file,
       ...('lines' in place && { lines: place.lines }),
       step,
-      ...(step === null && 'lines' in place && place.code && { code: place.code }),
+      ...(code?.length && { code }),
       ...(fileStep !== undefined && { fileStep }),
     };
   };

@@ -1,8 +1,9 @@
 // One comment component for everyone, threads of them, and the composer they are written in.
+import type { Code } from '../lines';
 import type { CommentView, ThreadView } from '../review';
 import { attrs, el } from './dom';
 import { icon } from './icons';
-import { ago, goesOut, markdown, send } from './state';
+import { ago, goesOut, markdown, send, suggestionCode } from './state';
 
 const initials = (handle: string) =>
   handle
@@ -21,9 +22,9 @@ export function avatar(comment: Pick<CommentView, 'by' | 'author'>): HTMLElement
   return attrs(el('span', { className: `avatar avatar-${comment.by}` }, text), { 'aria-hidden': 'true' });
 }
 
-/** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it. */
-export function commentBody(comment: CommentView): HTMLElement {
-  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text');
+/** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it, a suggestion on `code` as a suggested change. */
+export function commentBody(comment: CommentView, code?: Code): HTMLElement {
+  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text', code);
   if (goesOut(comment)) (body.querySelector('p') ?? body).prepend(el('span', { className: 'ai-tag' }, '[AI]'), ' ');
   return body;
 }
@@ -174,7 +175,7 @@ export class ThreadBox {
       }
     let before: Element | null = null;
     for (const comment of thread.comments) {
-      const key = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id]);
+      const key = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id, suggestionCode(thread)]);
       const was = this.shown.get(comment.id);
       let element = was?.element;
       if (!was || (was.key !== key && this.editing !== comment.id) || (this.editing === comment.id && !was.element.querySelector('textarea'))) {
@@ -255,7 +256,7 @@ export class ThreadBox {
               this.update(this.thread);
             },
           })
-        : commentBody(comment);
+        : commentBody(comment, suggestionCode(this.thread));
     row.append(avatar(comment), el('div', { className: 'comment-main' }, head, body));
     return row;
   }
