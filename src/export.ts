@@ -27,7 +27,7 @@ export function exportPage(dir: string): string {
     const comments = threads.flatMap(thread =>
       thread.comments.map(
         said =>
-          `<li><code>${escape(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ''}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}${renderComment(said.body, thread.code ?? [])}</li>`,
+          `<li><code>${escape(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ''}</code> <strong>${escape(who(said))}</strong>${said.by === 'ai' && (said.pending || said.review) ? ' <code>[AI]</code>' : ''}<div class="markdown">${renderComment(said.body, thread.code ?? [])}</div></li>`,
       ),
     );
     const shot = step.screenshot;
