@@ -31,6 +31,7 @@ The build spec for the Walkthrough review page. It replaces every earlier brief,
 | 22 to 25 | Colorblind (with the stripe check), Copied code, Comments on a whole file | no |
 | 26 to 30 | Syntax colours on every background (with the contrast grid), Code in comments, explanations and answers, A file taking its colours, What stays plain | no |
 | 31 to 33 | `mascot.html` (Favicons) for 31 and 32; every board uses the new control edge (33) | no |
+| 34 | every board and the prototype use the new accent and fill | yes |
 
 Boards drawn before decision 26 show plain code; decision 26 colours them too. Decisions 22 to 25 and 27 change features already built in 0.1.5; each says what is built, what is kept and what changes.
 
@@ -75,7 +76,8 @@ These override `VISION.md` where they differ.
 31. **The tab's favicons are readable at 16px.** *Built:* closed eyes (asleep) and happy arcs (done) were 2.2-unit strokes on the 32 grid, about 1px at 16px. *Changed:* every eye is at least 2px at 16px: asleep's closed eyes are filled bars (6.5 × 4), done's arcs are 3 units thick and further apart. Files: `brand/mascot/favicon-*.svg`.
 32. **A session that ended with nothing sent has its own favicon, "ended".** *Built:* the tab showed "done" for any ended session, because "awake" would claim a session is still running. *Changed:* "done" (happy arcs) only when something went out; "ended" (two round dot eyes, the farewell's "nothing sent" face) when nothing did. The tab: Opening → reading; running → awake; session isn't running (or the Opening failed) → asleep; ended after Submit review or Send to agent → done; ended with nothing sent → ended. File: `brand/mascot/favicon-ended.svg`.
 33. **Control edges clear 3:1 on every grey.** *Built:* control borders at #8390a3 / #5e6a7a, 3:1 on canvas and surface but 2.8 and 2.7:1 on the surface tint used for hover and pressed. *Changed:* `control-edge` is GitHub's emphasis border, light #818b98, dark #6e7681: 3.0 to 3.5:1 (light) and 3.2 to 3.9:1 (dark) on canvas, surface, surface tint and picked lines. One value for every control, so none needs a second border token wherever it sits.
-34. **The accent, toned down.** *Built:* light Ultramarine #2433b8, hover #1b2896; in dark the primary button and your avatar filled with the bright text accent #8c97ff and #0b0f2e on it, the brightest thing on the screen. *Changed:* light Ultramarine and its text #2d3a9e, hover #252f85; a fill pair for the filled things only (the primary button at rest, hover, active and the disabled hover, your avatar, the gutter "+"): light Ultramarine and its hover, dark #4f5bd5 and #5b67e0, with white on them (white 9.5:1 light, 5.5:1 and 4.7:1 dark). Everything else keeps Ultramarine and Ultramarine Text as before, the dark #8c97ff and #a9b1ff included: focus rings, the caret, links, Look at, picked-line numbers, the mark and your stripe mark.
+
+34. **The accent, toned down.** *Built:* Ultramarine #2433b8 in light (as saturated as the hue gets at that depth) and, in dark, the primary button filled with the bright #8c97ff and dark text, the brightest thing on the page. *Changed:* light Ultramarine and its text tone become #2d3a9e (hover #252f85). Dark keeps #8c97ff and #a9b1ff for rings, the caret, links and marks, but the three filled things (the primary button, your avatar and the gutter "+") take new fill tokens, #4f5bd5 with hover #5b67e0 and white text (5.5:1 and 4.7:1). In light the fill tokens equal Ultramarine. The mark, favicon and app icons follow (`brand/`).
 
 ## Constraints that do not move
 
@@ -176,6 +178,7 @@ Port it from `prototype.html`; specs in `DESIGN.md` → Motion. Loops: the dashe
 - Moved lines appear once, with both ends linked; J, K, C and V work and appear in no list.
 - Light and dark at 1440 and 390 match the boards; focus is visible everywhere; 200% zoom does not clip the header; reduced motion keeps opacity and colour only.
 - Every coloured token is 4.5:1 or more on its background in light, dark and Colorblind; the page carries no inline style for colours; a file taking its colours moves nothing, and the line you read stays put.
+- In dark, the primary button is a mid-tone fill with white text; no filled accent uses #8c97ff; light Ultramarine is #2d3a9e everywhere, the mark and icons included.
 - Every control edge is 3:1 or more against canvas, surface, surface tint and picked lines, at rest, on hover and pressed; each favicon's eyes are at least 2px at 16px, and the tab never shows awake or done after a session that sent nothing.
 - With Colorblind on, no green or red is left in the diff, the counts, the stripe or the status colours, in light and dark (syntax colours keep their hues, decision 26); every stripe mark is 3:1 against the stripe.
 - A copy's last line is visible without reading line numbers; a copy never looks like a move.
