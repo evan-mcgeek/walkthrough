@@ -1,6 +1,9 @@
-<p align="center"><img src="docs/images/icon.png" alt="" width="96"></p>
-
-# Walkthrough
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/design/brand/banner/banner-dark.svg">
+    <img alt="Walkthrough" src="docs/design/brand/banner/banner-light.svg" width="100%">
+  </picture>
+</p>
 
 A pull request review page on your laptop, made better by AI.
 It's a Claude Code plugin.
