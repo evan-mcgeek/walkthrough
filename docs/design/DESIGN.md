@@ -27,7 +27,7 @@ colors:
   diff-add: "#e8f6ec"
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
-  diff-del-gutter: "#f6d6d3"
+  diff-del-gutter: "#f7d9d6"
   diff-add-word: "#b9e5c6"
   diff-del-word: "#f4c4bf"
   stripe-add: "#3c9a5f"
@@ -66,6 +66,30 @@ colors:
   stripe-del-dark: "#ef7e6f"
   line-pick-dark: "#1d2242"
   line-pick-gutter-dark: "#2a3263"
+  cb-add: "#ddf4ff"
+  cb-add-gutter: "#ccecff"
+  cb-del: "#fff1e5"
+  cb-del-gutter: "#ffe2c8"
+  cb-add-word: "#b6e3ff"
+  cb-del-word: "#ffd8b5"
+  cb-stripe-add: "#0969da"
+  cb-stripe-del: "#bc4c00"
+  cb-ok: "#0969da"
+  cb-ok-wash: "#ddf4ff"
+  cb-bad: "#bc4c00"
+  cb-bad-wash: "#fff1e5"
+  cb-add-dark: "#112a45"
+  cb-add-gutter-dark: "#14345a"
+  cb-del-dark: "#2e1f16"
+  cb-del-gutter-dark: "#42261a"
+  cb-add-word-dark: "#26508a"
+  cb-del-word-dark: "#764223"
+  cb-stripe-add-dark: "#4493f8"
+  cb-stripe-del-dark: "#db6d28"
+  cb-ok-dark: "#58a6ff"
+  cb-ok-wash-dark: "#14263b"
+  cb-bad-dark: "#f0883e"
+  cb-bad-wash-dark: "#2e1f16"
 typography:
   headline:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
@@ -271,7 +295,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 
 ## Colors
 
-A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu.
+A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu. Colorblind (decision 22) swaps the green and red pair for blue and orange in either theme; see Colorblind below.
 
 ### Primary (the accent)
 - **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the gutter "+" for a new comment, and the mark. It never carries status: not in the files-viewed bar, not in the step list.
@@ -291,22 +315,25 @@ Status colour survives only where GitHub has the same meaning or the AI's criter
 
 
 ### Diff
-- **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell. Preview-mode insertions use the addition wash full-bleed.
-- **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at 55% and 60% opacity.
+- **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell (line numbers in muted reach 4.5:1 on every gutter, which is why `diff-del-gutter` moved from #f6d6d3 to #f7d9d6). Preview-mode insertions use the addition wash full-bleed.
+- **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at full colour (decision 23; the built 55% and 60% gave 1.8:1 and 2.4:1 in light, under the 3:1 a mark needs).
 - **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line.
-- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad` unless the colour-blind diff is on.
+- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad`, so Colorblind swaps them too.
 - **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask or comment about; gutter number turns accent text, semibold.
 
-#### Colour-blind diff
-The menu's "Colour-blind diff" sets `data-colour-blind` on the root, which swaps only the diff tokens from green and red to blue and orange, with any theme.
-The values are GitHub's Protanopia and Deuteranopia ones (Primer `light_colorblind` and `dark_colorblind`); GitHub's translucent dark values are laid on the dark canvas, so each token stays one solid colour.
+### Colorblind (decision 22)
+GitHub's Protanopia and Deuteranopia palette. With Colorblind on, these replace their pair in either theme; every other token stays, amber included.
 
-| Token | Light | Dark |
-|---|---|---|
-| `diff-add` / `diff-add-gutter` / `diff-add-word` | #ddf4ff / #b6e3ff / #b6e3ff | #1a293e / #294361 / #26508a |
-| `diff-del` / `diff-del-gutter` / `diff-del-word` | #fff1e5 / #ffd8b5 / #ffd8b5 | #33251f / #513220 / #764223 |
-| `diff-add-text` / `stripe-add` | #0969da | #58a6ff |
-| `diff-del-text` / `stripe-del` | #bc4c00 | #f0883e |
+| Token | Light | Dark | Replaces |
+|---|---|---|---|
+| `cb-add` / `cb-add-gutter` | #ddf4ff / #ccecff | #112a45 / #14345a | `diff-add` / `diff-add-gutter` |
+| `cb-del` / `cb-del-gutter` | #fff1e5 / #ffe2c8 | #2e1f16 / #42261a | `diff-del` / `diff-del-gutter` |
+| `cb-add-word` / `cb-del-word` | #b6e3ff / #ffd8b5 | #26508a / #764223 | `diff-add-word` / `diff-del-word` |
+| `cb-stripe-add` / `cb-stripe-del` | #0969da / #bc4c00 | #4493f8 / #db6d28 | `stripe-add` / `stripe-del` |
+| `cb-ok` / `cb-ok-wash` | #0969da / #ddf4ff | #58a6ff / #14263b | `ok` / `ok-wash` |
+| `cb-bad` / `cb-bad-wash` | #bc4c00 / #fff1e5 | #f0883e / #2e1f16 | `bad` / `bad-wash` |
+
+GitHub's light gutters (#b6e3ff, #ffd8b5) and its dark ones put muted line numbers at 4.47:1 and 3.93:1, so the gutters are lighter (light) or deeper (dark) than GitHub's; the changed words keep GitHub's values, as built in 0.1.5. Checked: code text on every wash 11:1 or more; muted line numbers on the gutters 4.8:1 (light) and 4.9:1 (dark); `cb-ok` and `cb-bad` as text 4.6:1 or more on canvas, surface and their washes; stripe marks 4.7:1 or more on the stripe. Blue and orange marks have near-equal lightness: they part by hue, which is what these readers see.
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
@@ -405,7 +432,7 @@ The title (20px; no step-number line above it: the step list shows where you are
 "Look at:" in 600 ink, then each pointer as a 24px link pill: a 1px accent-line border, 5px corners, a small arrow, the file name in mono and the line range in accent text, and two to four words naming the spot in secondary ink. Clicking opens the file if it is folded, scrolls the lines into view with 120px of context above, and flashes the range in the line-pick tone (fading over 1.4s).
 
 ### Files
-GitHub's file header in a bordered box (1px rule, 7px corners): a 40px sticky header on the surface tone with the collapse chevron, the mono path, +N in green and −N in red, a comment count, and Viewed at the right. Viewed folds the file and mutes its path. A generated or copied file arrives folded with one muted line after its counts saying why ("Generated from the schema"). Files in a step are 16px apart.
+GitHub's file header in a bordered box (1px rule, 7px corners): a 40px sticky header on the surface tone with the collapse chevron, the mono path, +N in green and −N in red, a comment count, then at the right Viewed and GitHub's "Comment on this file" icon button (the comment icon, 16px, a 28px target; 44px at 390). At 390 the header takes two rows: chevron and path, then the counts, Viewed and the button. Viewed folds the file and mutes its path. A generated or copied file arrives folded with one muted line after its counts saying why ("Generated from the schema"). Files in a step are 16px apart.
 
 ### Diff and gutter
 diff2html line-by-line, restyled through classes, as before: 46px number columns, 12.5/21px mono, addition and deletion washes, picked lines in the line-pick tone, hunk headers muted. A line number is a button: click (and Shift-click for a range) opens a composer under the line. A line with a thread shows a 13px bubble in its gutter: ink for an AI comment, accent person for yours, muted for a colleague's. The overview stripe stays (hidden at 390): additions and deletions, AI and colleague comments in muted, yours in the accent.
@@ -416,6 +443,7 @@ One component. A thread is a bordered box (1px rule, 8px corners, up to 760px) u
 - **Ask AI:** posts your question in the thread ("Ask AI: …", no Pending tag: questions to the AI stay on the page and never go out) and the AI answers as a reply in the same thread; while it writes, a row with its avatar, the checking spinner and "Answering…" holds the place.
 - **New comments while you read:** a comment that lands above or inside the view is added folded (0 height) and announced by a pill at the top right of the step, "1 new comment above", with an up arrow; clicking scrolls to it and opens it. Nothing you are reading moves.
 
+- **Suggested change** (decision 21; GitHub's block, so nothing new to learn): after the comment's text, a bordered box (1px rule, 6px corners) with a 28px header row on the surface tone reading "Suggested change" in 12.5px secondary ink, then the commented lines as deletions and the suggestion as additions in the diff tokens, 12.5/21px mono with line numbers. No Apply or Commit button and no batch control. Editing a pending comment edits the suggestion as text in the same textarea, fenced as GitHub writes it. On the Summary the row puts a "Suggested change" tag before the text, as "Outdated" does (outlined pill).
 ### Summary
 GitHub's "Finish your review" made visible, two columns 32px apart up to 1120px:
 - **Going out (N):** every pending comment, yours and the AI's, one row each: avatar, its file name and line (`tasks.ts:29`, full path in the tooltip) as a mono accent link, the text in up to two lines, Edit and Delete. At 390 the link sits on its own line above the text.
@@ -447,11 +475,13 @@ One line under the header (new component: the page had no place for a fact about
 - **Summary:** an outdated pending comment keeps its row and link (now to its thread at the top of the file) with "Outdated" before the text. "Resolved conversations (N)" follows the counts: one row each, avatar, link, a "Resolved" tag on surface tint, "Pending" until Submit review, the comment in secondary ink.
 
 ### Moved code (decision 18)
-Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from …" as an accent link with a chevron, then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
+Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from `<file>` lines N–M" as an accent link with a chevron (the file name only at 390, the whole label as tooltip; decision 24), then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
 
-### Copied code
-The same label row above lines copied from elsewhere at the head, "Copied from …" as an accent link with a chevron, or in secondary ink without one when the change does not show where they come from.
-The copied lines keep their + and the added tone: they are new code.
+### Copied code (decision 24)
+A copy is new code, so its lines stay additions (+, the addition wash); that is how it differs from a move. Above them a label row in the hunk-header tone, like "Moved from": "Copied from `<file>` lines N–M" as an accent link with a chevron, to the source (in the same file "Copied from lines N–M"), or in secondary ink without a link when the change does not show the source, as built. A 2px muted rule (new: the label alone cannot show where a copy ends when more additions follow) runs down the left edge of the code cells from the label row to the last copied line and turns right for 10px under it. The source gets no row: it did not change. At 390 the label shows the file name only and carries the whole label as its tooltip; "Moved from" does the same. The overview stripe marks copied lines as additions.
+
+### Comments on a whole file (decision 25)
+"Comment on this file" opens a composer (the existing one: "Leave a comment", Ask AI, Cancel, Add comment; no suggested change) at the top of the file, inside the band that also holds outdated threads (surface tone, 12px gap, 12/14px padding), with the button in its pressed state (surface tint) while it is open. File threads sit first in that band, oldest first, then outdated threads. A file thread is the ordinary thread: the AI's with [AI] and Pending, yours with Pending, a colleague's with Reply and Resolve. On the Summary the row's link is the file name with no line, its tooltip the full path. The file's comment count, in its header and the step list, counts file threads too.
 
 ### The author's screenshot (decision 19)
 A figure (new component: nothing in a step showed an image) under the explanation and above the files: the image 240 × 156 with a 1px rule and 6px corners, the author's alt text under it in 12.5px secondary ink. A click (or Enter) opens it in place to the width of the step, up to 960px, with Close at the right of the caption; a click on the image, Close or Esc closes it. Several screenshots sit in a row, 8px apart. At 390 it is the full column width, 180 tall closed. Opening and closing animate height (320ms ease-out, 200ms ease-in); reduced motion snaps.
@@ -460,7 +490,7 @@ A figure (new component: nothing in a step showed an image) under the explanatio
 J and K move to the next and previous file across steps in reading order; C opens the changes switch; V toggles Viewed on the file you are on; Esc closes a composer, a menu or the open screenshot. The file you are on carries the 2px accent focus ring, and its row in the step list the same ring. A key shows only in the tooltip of the control it presses, in brackets, as on Finish review ("Go to the Summary (G S)"): "Viewed (V)", "Changes since your last review (C)". No key caps, no list, no ? sheet.
 
 ### Menu
-The header's … opens a small menu: Theme (System, Light, Dark) and End session. Nothing else.
+The header's … opens a small menu (8px corners, 4px padding, 200px): a muted "Theme" label; System, Light and Dark as radio items with a check on the chosen one; Colorblind as a checkbox item in the same group (decision 22), its box in the check column; a rule; End session. Nothing else. At 390 the same menu under the … button.
 
 ### Phone (390)
 The same page in one column: the step list opens from the header's steps button; steps read top to bottom; threads are full width; previous and next sit at the foot; the Summary stacks the review box under the lists.
@@ -478,6 +508,7 @@ One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezie
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
 - **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the review is ready, the opening block fades out (120ms ease-in) and the whole walkthrough enters at once: the first step with the usual pane swap, the step list and header counts fading in (200ms).
 - **After the session:** the robot waves once (1.6s, after 400ms; ease-in-out swing, no overshoot) and then stays still.
+- **Colorblind, copied code, file comments:** nothing new moves. Turning Colorblind on recolours at once, no transition. A file composer opens by grid rows like any composer.
 - **Back on a new head:** steps switch with the usual pane swap; Show resolved opens by grid rows (320ms) like a comment growing; the screenshot opens in place by height. Nothing else moves: the switch, the behind line and the Outdated band appear without motion.
 - **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles; the farewell robot does not wave and the "z" stand still.
 
@@ -510,6 +541,7 @@ Rules: one place per thing (elsewhere at most a count that leads to it); list ro
 | AI comment | 1 to 2 sentences, 30 words: what is wrong and what to do; no evidence, plans or verifier verdicts (they stay in the chat) | "A typo in the date becomes null and clears it, instead of a 400." | "Verifier: WEAKENED to a taste call. parseDueDate returns null when…" (12 lines) |
 | Criterion | The ticket's own sentence, 12 words max; status one of Met, Partly met, Not met, Not checked | "Invalid dates rejected with a clear error" · "Not met: bad dates become null" | The evidence paragraph as the criterion text |
 | Answer to an ask | 2 sentences, the first answers directly | "No: 30 February rolls over to 2 March. isNaN won't catch it." | "Great question! Let's look at how Date parsing works…" |
+| Suggested change | only when the fix fits in a few lines on the commented lines; at most 6 lines; the comment's sentence still says why | "[AI] Return 400 here." then the suggestion block | A block that rewrites the whole function, or a suggestion with no sentence |
 | Draft comment | 2 sentences, 40 words, starts with [AI] | "[AI] Return 400 for an invalid dueDate, with the field name." | A paragraph restating the finding and the policy |
 
 
