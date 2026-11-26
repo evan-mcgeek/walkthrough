@@ -128,7 +128,12 @@ function leave(old: HTMLElement, scrolled: number): void {
   );
 }
 
-function reveal({ thread: id, edit, file }: Reveal): void {
+function reveal({ thread: id, edit, file, lines }: Reveal): void {
+  if (file !== undefined && lines) {
+    const look = { file, start: lines[0], end: lines[1], label: '' };
+    if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+    return;
+  }
   const thread = state.view.threads.find(one => one.id === id);
   const stepId = thread ? threadStep(thread) : file === undefined ? undefined : stepOfFile(file)?.id;
   if (stepId === undefined) return;
@@ -180,9 +185,9 @@ function drawPill(): void {
 }
 
 pill.onclick = () => {
-  // The highest on the page, whatever order they arrived in.
-  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove('arriving');
+  // The highest on the page, whatever order they arrived in; a folded one has no place until it shows.
+  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
   drawPill();

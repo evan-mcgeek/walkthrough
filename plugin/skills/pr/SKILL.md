@@ -101,7 +101,7 @@ Until you run `walkthrough ready`, the page shows the AI at work and the changed
    When the policy asks for the person's voice, read their VOICE.md (the project root, then `~/.claude/VOICE.md`) before writing the comments that go out; with none, write as the policy says.
    Each comment is pending: it goes out with the review unless the person edits or deletes it.
 4. When the policy has you read the threads already on the change, record them with `walkthrough threads --file <file>`.
-5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`.
+5. Record the acceptance criteria as you checked them with `walkthrough criteria --file <file>`, after your comments: one partly or not met links the comment that closes its gap, as the policy says.
 6. Run `walkthrough ready` once every comment, thread and criterion is recorded; it opens the page too if it was never opened.
    A comment you record after that lands on the page while the person reads.
 

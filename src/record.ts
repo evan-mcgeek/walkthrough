@@ -1,7 +1,8 @@
 // What the session records besides its steps: its own comments, colleagues' threads and the acceptance criteria; this checks shape only.
 import { fieldsOf, filled, parseList } from './input';
-import { type Place, placeIn } from './lines';
+import { isLines, type Place, placeIn } from './lines';
 import { withoutPrefix } from './review';
+import { lookShown } from './steps';
 import { type Criterion, CRITERION_STATUSES, type Said, type Thread, type Walkthrough } from './walkthrough';
 
 const placed = (walkthrough: Walkthrough, where: Record<string, unknown>, name: string): Place => {
@@ -52,11 +53,27 @@ export function parseThreads(text: string, walkthrough: Walkthrough): Thread[] {
   });
 }
 
-export function parseCriteria(text: string): Criterion[] {
-  return parseList(text, 'the criteria', ({ text: criterion, status }, number) => {
+/** Each criterion carries what its status shows: a gap its AI comment and what is missing, met its lines in a step's diff, not checked its reason. */
+export function parseCriteria(text: string, walkthrough: Walkthrough, aiComments: Set<string>): Criterion[] {
+  return parseList(text, 'the criteria', ({ text: criterion, status, comment, missing, file, lines, reason }, number) => {
     const name = `criterion ${String(number)}`;
     if (!filled(criterion)) throw new Error(`${name} needs a text`);
     if (!CRITERION_STATUSES.includes(status as Criterion['status'])) throw new Error(`${name}: status must be one of ${CRITERION_STATUSES.join(', ')}`);
-    return { text: criterion.trim(), status: status as Criterion['status'] };
+    const checked = { text: criterion.trim(), status: status as Criterion['status'] };
+    if (status === 'partly' || status === 'not-met') {
+      if (!filled(comment) || !aiComments.has(comment.trim()))
+        throw new Error(`${name} is ${status}: comment must be the id of your comment that closes the gap, as walkthrough comment printed it`);
+      if (!filled(missing)) throw new Error(`${name} is ${status}: it needs missing, what is missing`);
+      return { ...checked, comment: comment.trim(), missing: missing.trim() };
+    }
+    if (status === 'met') {
+      if (!filled(file) || !isLines(lines)) throw new Error(`${name} is met: it needs the file and lines that meet it`);
+      const step = walkthrough.steps.find(one => one.files.includes(file));
+      if (!step || !lookShown(step, { file, start: lines[0], end: lines[1] }))
+        throw new Error(`${name}: lines ${String(lines[0])}-${String(lines[1])} of ${file} are not in a step's diff`);
+      return { ...checked, file, lines };
+    }
+    if (!filled(reason)) throw new Error(`${name} is not-checked: it needs a reason`);
+    return { ...checked, reason: reason.trim() };
   });
 }

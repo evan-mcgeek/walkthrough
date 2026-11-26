@@ -197,12 +197,27 @@ describe('the review', () => {
     ]);
   });
 
-  test('records the criteria, and refuses what does not fit', async () => {
+  test('records each criterion with what its status shows, and refuses what does not fit', async () => {
     const page = started();
+    const id = /: ([0-9a-f]{8})\./.exec(repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Check the user.' }], 'comment').stdout)?.[1] ?? '';
+    const criteria = [
+      { text: 'Only users log in', status: 'partly', comment: id, missing: 'Anyone gets in.' },
+      { text: 'Works offline', status: 'not-checked', reason: 'Needs the running app.' },
+      { text: 'Exports login', status: 'met', file: 'login.ts', lines: [1, 1] },
+    ];
+    const refused = (criterion: Record<string, unknown>) => repo.record([criterion], 'criteria').stderr;
 
-    expect(repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria').stdout).toBe('Recorded 1 criterion.\n');
-    expect(repo.record([{ text: 'Logs in', status: 'done' }], 'criteria').stderr).toContain('status must be one of met, partly, not-met, not-checked');
+    expect(repo.record(criteria, 'criteria').stdout).toBe('Recorded 3 criteria.\n');
+    expect(refused({ text: 'Logs in', status: 'done' })).toContain('status must be one of met, partly, not-met, not-checked');
+    expect(refused({ text: 'Logs in', status: 'not-met', missing: 'Anyone gets in.' })).toContain(
+      'criterion 1 is not-met: comment must be the id of your comment that closes the gap',
+    );
+    expect(refused({ text: 'Logs in', status: 'partly', comment: 'f00dcafe', missing: 'Anyone gets in.' })).toContain('comment must be the id');
+    expect(refused({ text: 'Logs in', status: 'partly', comment: id })).toContain('criterion 1 is partly: it needs missing');
+    expect(refused({ text: 'Logs in', status: 'met', file: 'login.ts' })).toContain('criterion 1 is met: it needs the file and lines');
+    expect(refused({ text: 'Logs in', status: 'met', file: 'login.ts', lines: [5, 5] })).toContain("lines 5-5 of login.ts are not in a step's diff");
+    expect(refused({ text: 'Logs in', status: 'not-checked' })).toContain('criterion 1 is not-checked: it needs a reason');
     expect(repo.record([{ file: 'login.ts', lines: [5, 5], body: 'x' }], 'comment').stderr).toContain('lines 5-5 of login.ts are not in its diff');
-    expect(await viewAt(page)).toMatchObject({ criteria: [{ text: 'Logs in', status: 'partly' }] });
+    expect(await viewAt(page)).toMatchObject({ criteria });
   });
 });

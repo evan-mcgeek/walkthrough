@@ -39,7 +39,7 @@ describe('recording from a file', () => {
 
     expect(recordFrom('comment', [{ file: 'login.ts', lines: [1, 1], body: 'Open to all.' }]).stdout).toContain('Recorded 1 comment');
     expect(recordFrom('threads', []).stdout).toBe('Recorded 0 threads.\n');
-    expect(recordFrom('criteria', [{ text: 'Logs in', status: 'met' }]).stdout).toBe('Recorded 1 criterion.\n');
+    expect(recordFrom('criteria', [{ text: 'Logs in', status: 'not-checked', reason: 'Needs the running app.' }]).stdout).toBe('Recorded 1 criterion.\n');
     await postTo(repo.url(), '/ask', { file: 'login.ts', lines: [1, 1], text: 'Why?' });
     const ask = JSON.parse((await repo.background('listen').ended).stdout) as { id: string };
     const text = 'It\'s "quoted", with `code` and $HOME,\n\non two lines.';
