@@ -279,7 +279,11 @@ const between = new Map<string, ReturnType<typeof changesBetween>>();
 
 function sinceOf(walkthrough: Walkthrough, head: string): Since | null {
   const key = [process.cwd(), head, walkthrough.head].join(':');
-  if (!between.has(key)) between.set(key, changesBetween(process.cwd(), head, walkthrough.head));
+  if (!between.has(key)) {
+    // A server serves one walkthrough, so only its latest pair of heads is worth keeping.
+    between.clear();
+    between.set(key, changesBetween(process.cwd(), head, walkthrough.head));
+  }
   const found = between.get(key);
   if (!found) return null;
   const shown = new Set(walkthrough.steps.flatMap(step => step.files));
