@@ -100,11 +100,11 @@
 }
 
 .changed-stat .added {
-  color: var(--ok);
+  color: var(--diff-add-text);
 }
 
 .changed-stat .deleted {
-  color: var(--bad);
+  color: var(--diff-del-text);
 }
 
 /* The step list while the AI works: one line, then three quiet rows where the steps will be. */
@@ -250,12 +250,12 @@
 }
 
 .desk6 .sl.sa {
-  fill: var(--ok);
+  fill: var(--diff-add-text);
   opacity: 0.6;
 }
 
 .desk6 .sl.sd {
-  fill: var(--bad);
+  fill: var(--diff-del-text);
   opacity: 0.6;
 }
 

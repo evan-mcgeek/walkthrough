@@ -39,6 +39,7 @@ claude --plugin-dir /path/to/walkthrough/plugin
 ## Use
 
 ```text
+/walkthrough:init     set up your review policy, once
 /walkthrough          your current branch
 /walkthrough:pr 123   a pull request, by number or link
 ```
@@ -84,7 +85,8 @@ Ask the session to export a walkthrough and you get one read-only HTML file, or 
 How it reviews comes from two places:
 
 1. **Your review policy**, `~/.config/walkthrough/REVIEW.md`, outside every project.
-   It starts as a copy of [the template](plugin/skills/walkthrough/REVIEW.md), and on the first run the session offers a short interview to make it yours.
+   It starts as a copy of [the template](plugin/skills/walkthrough/REVIEW.md), and `/walkthrough:init` makes it yours in a few short questions; the first review offers that too.
+   `/walkthrough:init` also checks you are signed in to your code host, and offers to write the AI's comments in your voice.
    It covers how much to explain, how to split the steps, which reviewers run, when to comment and where the review goes.
 2. **The project's instructions for agents**: `CLAUDE.md`, `AGENTS.md` and the files they point to.
 

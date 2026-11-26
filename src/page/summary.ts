@@ -119,9 +119,9 @@ export class SummaryPane {
     });
   }
 
-  /** The thread's file and lines, a link to it while it shows in a step. */
+  /** The thread's file and lines, or the file alone for a comment on the whole file; a link to it while it shows in a step. */
   private where(thread: ThreadView): HTMLElement {
-    const where = `${baseName(thread.file)}:${linesLabel(thread.lines)}`;
+    const where = thread.lines ? `${baseName(thread.file)}:${linesLabel(thread.lines)}` : baseName(thread.file);
     return threadStep(thread) === undefined
       ? el('span', { className: 'where', title: thread.file }, where)
       : el('a', { className: 'where', href: '#', title: thread.file, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where);

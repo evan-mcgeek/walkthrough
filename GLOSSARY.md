@@ -42,7 +42,8 @@ _Avoid_: Being checked, loading screen
 ### Comments and threads
 
 **Comment**:
-Words on lines of the change, from the person, the agent or a colleague, all shown the same way.
+Words on lines of the change, or on a whole file, from the person, the agent or a colleague, all shown the same way.
+A comment on a whole file sits above the file's diff and stays there while the file is in the change.
 The person's and the agent's new comments are pending until the review is submitted; the agent's carry `[AI]`.
 _Avoid_: Note, finding, draft
 

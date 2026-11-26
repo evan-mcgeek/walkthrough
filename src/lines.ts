@@ -8,8 +8,8 @@ import type { Step, Walkthrough } from './walkthrough';
 export type Lines = [number, number];
 /** The lines of a place the diff shows, each as its number and text. */
 export type Code = [number, string][];
-/** `linesHash` fingerprints the lines as they were when placed, so a place whose lines change is detached; `code` is those lines then. */
-export type Place = { file: string; lines: Lines; linesHash: string; code?: Code };
+/** A file's lines, or with no lines the whole file; `linesHash` fingerprints the lines as they were when placed, so a place whose lines change is detached; `code` is those lines then. */
+export type Place = { file: string } | { file: string; lines: Lines; linesHash: string; code?: Code };
 
 export const isLines = (value: unknown): value is Lines =>
   Array.isArray(value) &&
@@ -43,17 +43,23 @@ const stepOf = ({ steps }: Walkthrough, file: string) => steps.find(one => one.f
 export const stepOfFile = (walkthrough: Walkthrough, file: string) => stepOf(walkthrough, file)?.id;
 
 /** The step a place shows in, or null once its file left the change or its lines changed. */
-export function anchorOf(walkthrough: Walkthrough, { file, lines, linesHash }: Place): string | null {
-  const found = stepOf(walkthrough, file);
+export function anchorOf(walkthrough: Walkthrough, place: Place): string | null {
+  const found = stepOf(walkthrough, place.file);
+  if (!('lines' in place)) return found?.id ?? null;
+  const { file, lines, linesHash } = place;
   const shown = found && shownLines(found, file);
   if (!found || !shown?.has(lines[0]) || !shown.has(lines[1])) return null;
   return hashOf(shown, lines) === linesHash ? found.id : null;
 }
 
 export function placeIn(walkthrough: Walkthrough | null, { file, lines }: Record<string, unknown>): Place {
-  if (!filled(file)) throw new Error('lines need a file');
-  if (!isLines(lines)) throw new Error('a file needs lines, as [first, last]');
+  if (!filled(file)) throw new Error('a comment needs a file');
   const found = walkthrough && stepOf(walkthrough, file);
+  if (lines === undefined) {
+    if (!found) throw new Error(`no step changes ${file}`);
+    return { file };
+  }
+  if (!isLines(lines)) throw new Error('lines must be [first, last], or left out for the whole file');
   const shown = found && shownLines(found, file);
   if (!shown) throw new Error(`no step changes ${file}`);
   const [first, last] = lines;

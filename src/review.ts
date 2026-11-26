@@ -50,7 +50,8 @@ export type CommentView = {
 export type ThreadView = {
   id: string;
   file: string;
-  lines: Lines;
+  /** None on a comment on the whole file. */
+  lines?: Lines;
   /** The step it shows in, null once its lines changed or left the change. */
   step: string | null;
   colleague?: true;
@@ -223,16 +224,16 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
     const fileStep = step === null ? stepOfFile(walkthrough, place.file) : undefined;
     return {
       file: place.file,
-      lines: place.lines,
+      ...('lines' in place && { lines: place.lines }),
       step,
-      ...(step === null && place.code && { code: place.code }),
+      ...(step === null && 'lines' in place && place.code && { code: place.code }),
       ...(fileStep !== undefined && { fileStep }),
     };
   };
   const threads: ThreadView[] = [
     ...(walkthrough.threads ?? []).map(({ id, file, lines, linesHash = '', code, resolved: was, author, at, body, replies }): ThreadView => ({
       id,
-      ...placed({ file, lines, linesHash, ...(code && { code }) }),
+      ...placed(lines ? { file, lines, linesHash, ...(code && { code }) } : { file }),
       colleague: true,
       ...resolvedIn(id, was),
       comments: [
@@ -434,6 +435,8 @@ export async function markPosted(dir: string, address?: string): Promise<void> {
 }
 
 const AI_PREFIX = '[AI] ';
+/** Where a comment sits, as `comments` and `listen` print it: its lines, or `"subject": "file"` for the whole file. */
+const whereOf = ({ file, lines }: { file: string; lines?: Lines }) => (lines ? { file, lines } : { file, subject: 'file' });
 
 /** What goes out: the latest submitted review not yet posted, or else what is pending, as one line each; with `all`, every one ever made. */
 export function reviewComments(dir: string, all = false): Record<string, unknown>[] {
@@ -450,16 +453,16 @@ export function reviewComments(dir: string, all = false): Record<string, unknown
         const body = one.by === 'ai' ? AI_PREFIX + one.body : one.body;
         const by = one.by === 'colleague' ? one.author : one.by;
         return one.id === thread.id
-          ? { kind: 'comment', id: one.id, by, file: thread.file, lines: thread.lines, body, ...reworded(one), ...(thread.step === null && { outdated: true }) }
+          ? { kind: 'comment', id: one.id, by, ...whereOf(thread), body, ...reworded(one), ...(thread.step === null && { outdated: true }) }
           : { kind: 'reply', id: one.id, by, thread: thread.id, body, ...reworded(one) };
       }),
     ),
-    ...(all ? dropped : []).map(({ view, wrote: text, place }) => ({ kind: 'comment', id: view.id, by: 'ai', file: place.file, lines: place.lines, body: AI_PREFIX + text, deleted: true })),
+    ...(all ? dropped : []).map(({ view, wrote: text, place }) => ({ kind: 'comment', id: view.id, by: 'ai', ...whereOf(place), body: AI_PREFIX + text, deleted: true })),
     ...[...resolved]
       .filter(([, one]) => all || (one.review === review && (walkthrough.pr || one.by === 'you')))
       .map(([id, one]) => {
         const thread = one.by === 'ai' ? threads.find(found => found.id === id) : undefined;
-        return thread ? { kind: 'resolve', thread: id, by: 'ai', file: thread.file, lines: thread.lines, body: AI_PREFIX + (thread.comments[0]?.body ?? '') } : { kind: 'resolve', thread: id };
+        return thread ? { kind: 'resolve', thread: id, by: 'ai', ...whereOf(thread), body: AI_PREFIX + (thread.comments[0]?.body ?? '') } : { kind: 'resolve', thread: id };
       }),
   ];
 }
@@ -499,7 +502,7 @@ export function handedAsk(dir: string, event: Event & { kind: 'ask' }): Record<s
     kind: 'ask',
     id: event.id,
     text: event.text,
-    ...(thread && { file: thread.file, lines: thread.lines }),
+    ...(thread && whereOf(thread)),
     thread: before.map(said => ({ by: said.by === 'colleague' ? said.author : said.by, body: said.body })),
   };
 }
