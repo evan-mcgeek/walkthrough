@@ -259,7 +259,8 @@ function drawHeader(onSummary: boolean): void {
   const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   if (document.title !== title) document.title = title;
   const asleep = ending?.kind === 'lost' || view.sessionGone;
-  const favicon = `favicon-${asleep ? 'asleep' : ending || view.submitted ? 'done' : view.ready ? 'awake' : 'reading'}.svg`;
+  const ended = ending?.kind === 'ended' ? (view.submitted ? 'done' : 'ended') : null;
+  const favicon = `favicon-${asleep ? 'asleep' : (ended ?? (view.ready ? 'awake' : 'reading'))}.svg`;
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon && icon.getAttribute('href') !== favicon) icon.setAttribute('href', favicon);
   const files = allFiles().length;

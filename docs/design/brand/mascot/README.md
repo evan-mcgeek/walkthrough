@@ -29,7 +29,8 @@ The scenes and `mascot-wave.svg` carry their own CSS motion; under reduced motio
 | `favicon-awake.svg` | Favicon: awake | A session is running |
 | `favicon-reading.svg` | Favicon: reading | The Opening (review not ready) |
 | `favicon-asleep.svg` | Favicon: asleep | The session isn't running |
-| `favicon-done.svg` | Favicon: done | Review submitted or sent |
+| `favicon-done.svg` | Favicon: done | Session ended, something went out (review submitted or sent) |
+| `favicon-ended.svg` | Favicon: ended | Session ended, nothing went out |
 | `scene-reading.svg` | Scene: reading (24s story) | The Opening |
 | `scene-farewell.svg` | Scene: farewell | Session ended, something went out |
 | `scene-farewell-nothing-sent.svg` | Scene: farewell, nothing sent | Session ended, nothing went out |
@@ -39,6 +40,7 @@ The scenes and `mascot-wave.svg` carry their own CSS motion; under reduced motio
 
 - Head 72 × 60, corners 17; antenna 11 with a 3.6 ball; eye pills 9 × 13, 20 apart.
 - 48px and up: full head with antenna. 32px and below: the favicon head, no antenna, eyes drawn larger. Never below 16.
+- Favicon eyes are at least 2px at 16px: pills 5 × 8, closed eyes as filled bars 6.5 × 4, arcs 3 thick, dots 5.5 across (on the 32 grid).
 - Colours: ink (`--tx`) for the body, canvas (`--bg`) for the face. Desk and monitor in secondary ink and rules; diff green and red only on its screen.
 
 ## Rules

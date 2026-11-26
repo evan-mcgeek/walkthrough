@@ -25,7 +25,10 @@ test.describe('a pull request', () => {
     await expect(page.locator('.criterion-word')).toHaveText('Not met');
 
     await page.getByPlaceholder('Leave a comment').fill('One thing before this merges.');
+    // Every control's edge is the control edge, 3:1 on every grey (decision 33).
+    await expect(page.getByRole('radio', { name: 'Request changes' })).toHaveCSS('border-top-color', 'rgb(129, 139, 152)');
     await page.getByRole('radio', { name: 'Request changes' }).check();
+    await expect(page.getByRole('radio', { name: 'Request changes' })).toBeChecked();
     await page.getByRole('button', { name: 'Submit review' }).click();
 
     await expect(page.getByText('Review submitted')).toBeVisible();
