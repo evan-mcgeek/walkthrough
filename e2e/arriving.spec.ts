@@ -11,12 +11,16 @@ test('a comment arriving above or in view never moves the line being read; the p
     if (main) main.scrollTop += row.getBoundingClientRect().top - main.getBoundingClientRect().top - 200;
   });
   const before = await topOf(page, 'tr[data-line="120"]');
+  const width = () => page.locator('tr[data-line="120"]').evaluate(row => row.getBoundingClientRect().width);
+  const wide = await width();
 
   record(repo, [{ file: 'tasks.ts', lines: [100, 100], body: 'Above you.' }, { file: 'tasks.ts', lines: [125, 125], body: 'In view.' }], 'comment');
 
   const pill = page.getByRole('button', { name: '2 new comments above' });
   await expect(pill).toBeVisible();
   expect(await topOf(page, 'tr[data-line="120"]')).toBe(before);
+  // The pill floats over the diff; it never narrows it.
+  expect(await width()).toBe(wide);
   await expect(page.getByText('Above you.')).toBeHidden();
 
   record(repo, [{ file: 'tasks.ts', lines: [190, 190], body: 'Far below.' }], 'comment');

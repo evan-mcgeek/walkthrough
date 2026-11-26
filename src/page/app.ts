@@ -19,7 +19,8 @@ const nav = region('nav');
 const main = region('main');
 const pill = attrs(el('button', { type: 'button', className: 'new-pill', hidden: true }), { 'aria-live': 'polite' });
 const content = el('div', { className: 'content' });
-main.append(pill, content);
+// The pill floats over the diff in a dock with no height, so showing it never narrows or moves the page.
+main.append(el('div', { className: 'pill-dock' }, pill), content);
 // Threads stay in view while a wide diff scrolls sideways, so they need the width the pane shows.
 new ResizeObserver(() => {
   main.style.setProperty('--pane', `${String(content.clientWidth)}px`);
@@ -177,7 +178,8 @@ function drawPill(): void {
 }
 
 pill.onclick = () => {
-  const [first] = arrived;
+  // The highest on the page, whatever order they arrived in.
+  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove('arriving');
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];

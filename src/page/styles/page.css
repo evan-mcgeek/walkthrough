@@ -1738,13 +1738,19 @@ tr.flash td {
   margin-top: var(--s2);
 }
 
-.new-pill {
+.pill-dock {
   position: sticky;
   /* Under a file header stuck at the top of the pane. */
   top: 28px;
   z-index: 5;
-  float: right;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+}
+
+.new-pill {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
   margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0 0;
@@ -2427,7 +2433,7 @@ tr.flash td {
     display: none;
   }
 
-  .new-pill {
+  .pill-dock {
     top: 84px;
   }
 
