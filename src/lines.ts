@@ -39,6 +39,13 @@ const hashOf = (shown: Map<number, string>, lines: Lines) =>
 
 const stepOf = ({ steps }: Walkthrough, file: string) => steps.find(one => one.files.includes(file));
 
+/** The lines as the diff of the step that changes the file shows them at the head. */
+export function codeAt(walkthrough: Walkthrough, file: string, lines: Lines): Code {
+  const found = stepOf(walkthrough, file);
+  const shown = found && shownLines(found, file);
+  return shown ? codeOf(shown, lines) : [];
+}
+
 /** The step that changes the file now, if any. */
 export const stepOfFile = (walkthrough: Walkthrough, file: string) => stepOf(walkthrough, file)?.id;
 

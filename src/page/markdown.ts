@@ -1,4 +1,5 @@
 import MarkdownIt from 'markdown-it';
+import type { Code } from '../lines';
 import { imagePath } from '../preview';
 
 function renderer() {
@@ -50,7 +51,25 @@ withImages.core.ruler.push('mark_added', state => {
 });
 // What the session writes shows no pictures, which could pass for part of the page.
 const withoutImages = renderer().disable('image');
+// A suggestion block on a comment's lines shows as a suggested change: those lines removed, the block's lines added.
+const fence = withoutImages.renderer.rules['fence'];
+withoutImages.renderer.rules['fence'] = (tokens, at, options, env, self) => {
+  const token = tokens[at];
+  const code = (env as { code?: Code } | undefined)?.code;
+  if (!token || !code?.length || token.info.trim() !== 'suggestion') return fence ? fence(tokens, at, options, env, self) : '';
+  const { escapeHtml } = withoutImages.utils;
+  const row = (kind: 'del' | 'add', before: string, after: string, text: string) =>
+    `<tr class="suggestion-${kind}"><td class="suggestion-number">${before}</td><td class="suggestion-number">${after}</td><td class="suggestion-line"><span class="suggestion-sign">${kind === 'del' ? '-' : '+'}</span>${escapeHtml(text)}</td></tr>`;
+  const first = code[0]?.[0] ?? 1;
+  const added = token.content ? token.content.replace(/\n$/, '').split('\n') : [];
+  return `<div class="suggestion"><div class="suggestion-head">Suggested change</div><div class="suggestion-scroll"><table class="suggestion-code">${[
+    ...code.map(([number, text]) => row('del', String(number), '', text)),
+    ...added.map((text, offset) => row('add', '', String(first + offset), text)),
+  ].join('')}</table></div></div>\n`;
+};
 
 /** `file` is the changed Markdown file being previewed, whose images are part of what is reviewed; `added` its head lines the change adds. */
 export const renderMarkdown = (text: string, file?: string, added?: Set<number>) =>
   file === undefined ? withoutImages.render(text) : withImages.render(text, { file, added });
+/** A comment, whose suggestion block shows as a suggested change on `code`, the lines it is on. */
+export const renderComment = (text: string, code: Code) => withoutImages.render(text, { code });

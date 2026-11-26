@@ -62,3 +62,24 @@ test('you comment on a whole file above its diff, ask the AI in that thread, and
   await page.locator('.going-row').getByRole('link', { name: 'login.ts', exact: true }).click();
   await expect(thread).toBeInViewport();
 });
+
+test('the AI’s suggestion shows as a suggested change on its lines, tagged on the Summary, and Edit shows its fence', async ({ page, repo, url }) => {
+  record(repo, ONE_STEP);
+  const body = 'Check the password.\n\n```suggestion\nexport const login = (password: string) =>\n  password === secret;\n```';
+  record(repo, [{ file: 'login.ts', lines: [1, 1], body }], 'comment');
+  await open(page, url);
+
+  const ai = page.locator('.comment-ai');
+  const block = ai.locator('.suggestion');
+  await expect(block.locator('.suggestion-head')).toHaveText('Suggested change');
+  await expect(block.locator('.suggestion-del')).toHaveText(['1-export const login = () => true;']);
+  await expect(block.locator('.suggestion-add')).toHaveText(['1+export const login = (password: string) =>', '2+  password === secret;']);
+  await expect(block.getByRole('button')).toHaveCount(0);
+
+  await ai.getByRole('button', { name: 'Edit' }).click();
+  await expect(ai.locator('textarea')).toHaveValue(body);
+  await ai.getByRole('button', { name: 'Cancel' }).click();
+
+  await page.getByRole('link', { name: 'Finish review' }).click();
+  await expect(page.locator('.going-row .row-text')).toHaveText('Suggested change[AI] Check the password.');
+});

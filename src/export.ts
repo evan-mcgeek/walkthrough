@@ -61,7 +61,7 @@ async function stepDiff(diff: string, base: string, head: string, keys: Set<stri
 /** Code blocks whose fence names a language, coloured. */
 async function colourBlocks(html: string, keys: Set<string>): Promise<string> {
   const blocks = /<pre><code class="language-([^"\s]+)">([\s\S]*?)<\/code><\/pre>/g;
-  const tokens = await Promise.all([...html.matchAll(blocks)].map(([, language = '', code = '']) => tokensFor(unescape(language), unescape(code))));
+  const tokens = await Promise.all([...html.matchAll(blocks)].map(([, language = '', code = '']) => tokensFor(unescape(code), { language: unescape(language) })));
   let at = 0;
   return html.replace(blocks, (block, language: string, code: string) => {
     const lines = tokens[at++];

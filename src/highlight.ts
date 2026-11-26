@@ -160,8 +160,9 @@ export function tokensAt(cwd: string, rev: string, file: string): Promise<Run[][
   return found;
 }
 
-/** A code block's lines as runs, for the language its fence names. */
-export const tokensFor = (language: string, code: string) => tokenise(code, grammarNamed(language));
+/** A code block's lines as runs, for the language its fence names or, for lines a suggestion adds, the file it is on. */
+export const tokensFor = (code: string, { language, file }: { language?: string; file?: string }) =>
+  tokenise(code, language !== undefined ? grammarNamed(language) : file !== undefined ? grammarOf(file) : null);
 
 const warmed = new Set<string>();
 

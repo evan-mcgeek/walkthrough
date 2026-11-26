@@ -6,7 +6,7 @@ import { previewType } from '../preview';
 import type { ThreadView } from '../review';
 import type { Step } from '../walkthrough';
 import { attrs, el } from './dom';
-import { colourCode, colourDiff } from './highlight';
+import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 import { grow, reduced } from './motion';
@@ -162,7 +162,9 @@ export class FilePane {
     }
     const changed = this.header.querySelector<HTMLElement>('.changed-tag');
     if (changed) changed.hidden = !view.changed.includes(this.name);
-    return this.drawThreads(shows, closed);
+    const arrived = this.drawThreads(shows, closed);
+    colourSuggestions(this.box, this.name, view.head);
+    return arrived;
   }
 
   private drawHeader(parsed: DiffFile): void {

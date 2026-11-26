@@ -144,8 +144,10 @@ export function serve(dir: string, list = false): void {
         '/resolve': async fields => answered(dir, await resolve(dir, fields)),
         '/unresolve': async fields => answered(dir, await unresolve(dir, fields)),
         '/submit': async fields => answered(dir, await submit(dir, fields)),
-        '/code': async ({ language, code }) =>
-          typeof language === 'string' && typeof code === 'string' ? { status: 200, body: (await tokensFor(language, code)) ?? PLAIN } : { status: 400 },
+        '/code': async ({ language, file, code }) =>
+          typeof code === 'string' && (typeof language === 'string' || typeof file === 'string')
+            ? { status: 200, body: (await tokensFor(code, typeof language === 'string' ? { language } : { file: String(file) })) ?? PLAIN }
+            : { status: 400 },
         '/stop': stop,
       };
   let seen = Date.now();
