@@ -59,6 +59,8 @@ test('an outdated comment sits at the top of its file, under the file’s own co
   const thread = file.locator('.file-threads .thread').filter({ hasText: 'Bump it once.' });
   await expect(thread.locator('.outdated-head')).toHaveText('app.tsOutdated');
   await expect(thread.locator('.outdated-line')).toHaveText('1export const app = 2;');
+  // Coloured as its file.
+  await expect(thread.locator('.outdated-line .sx-k').first()).toContainText('export');
   await expect(thread.locator('.comment-you')).toContainText('Bump it once.');
   await expect(thread.getByRole('button', { name: 'Edit' })).toBeVisible();
   await expect(file.locator('.thread-row')).toHaveCount(0);

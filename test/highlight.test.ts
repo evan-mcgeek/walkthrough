@@ -23,10 +23,10 @@ test('a file takes the grammar its name maps to, downloaded once into the cache;
   repo = makeRepo({ feature: FILES });
   repo.run('start');
 
-  // `const` in github-light and github-dark red.
-  expect(keys(await tokens('login.ts'))).toContain('d73a49-f97583');
-  // A Markdown heading is blue, which GCC Machine Description, Linguist's other `.md`, would not make it.
-  expect(keys(await tokens('README.md'))).toContain('005cc5-79b8ff');
+  // `const` is a keyword.
+  expect(keys(await tokens('login.ts'))).toContain('k');
+  // A Markdown heading is a constant, which GCC Machine Description, Linguist's other `.md`, would not make it.
+  expect(keys(await tokens('README.md'))).toContain('n');
   expect(await tokens('bin/shop')).toBe('plain');
   expect(fs.readFileSync(cached('typescript'))).toEqual(fs.readFileSync(path.join(process.env['WALKTHROUGH_GRAMMARS'] ?? '', 'typescript.json')));
 });
@@ -48,4 +48,22 @@ test('WALKTHROUGH_GRAMMARS is where grammars come from; a grammar it lacks leave
 
   expect(await tokens('login.ts')).toBe('plain');
   expect(fs.existsSync(cached('typescript'))).toBe(false);
+});
+
+test('the server answers while a large file is being coloured', async () => {
+  const large = Array.from({ length: 10_000 }, (_, at) => `export const value${String(at)} = compute(${String(at)}, 'text', /x+/g); // ${String(at)}`).join('\n');
+  repo = makeRepo({ feature: { 'large.ts': `${large}\n` } });
+  repo.run('start');
+  // The grammar is loaded, so what follows is the colouring itself.
+  expect(keys(await tokens('login.ts'))).toContain('k');
+
+  let coloured = false;
+  const colouring = tokens('large.ts').then(lines => {
+    coloured = true;
+    return lines;
+  });
+  const answer = await fetch(`${repo.url()}data/walkthrough.json`);
+  expect(answer.ok).toBe(true);
+  expect(coloured).toBe(false);
+  expect(keys(await colouring)).toContain('k');
 });

@@ -2,6 +2,7 @@
 import type { Code } from '../lines';
 import type { CommentView, ThreadView } from '../review';
 import { attrs, el } from './dom';
+import { colourLines } from './highlight';
 import { icon } from './icons';
 import { ago, goesOut, markdown, send, suggestionCode } from './state';
 
@@ -141,10 +142,12 @@ export class ThreadBox {
     this.outdated.hidden = thread.step !== null;
     if (thread.step !== null || this.outdated.hasChildNodes()) return;
     // A gap row stands where the numbers jump, between two hunks.
-    const code = (thread.code ?? []).flatMap(([number, text], at, all) => [
+    const texts = (thread.code ?? []).map(([, text]) => el('span', {}, text));
+    const code = (thread.code ?? []).flatMap(([number], at, all) => [
       ...(at > 0 && number !== (all[at - 1]?.[0] ?? 0) + 1 ? [attrs(el('div', { className: 'outdated-gap' }), { 'aria-hidden': 'true' })] : []),
-      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(number)), el('span', {}, text)),
+      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(number)), texts[at] ?? ''),
     ]);
+    colourLines(texts, thread.file);
     this.outdated.append(
       el('div', { className: 'outdated-head' }, el('span', { className: 'outdated-path', title: thread.file }, thread.file), el('span', { className: 'outdated-tag' }, 'Outdated')),
       ...(code.length ? [el('div', { className: 'outdated-code' }, ...code)] : []),

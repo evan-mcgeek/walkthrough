@@ -243,7 +243,8 @@ function serveFile(dir: string, list: boolean, what: string, req: http.IncomingM
   const query = new URL(req.url ?? '', 'http://127.0.0.1').searchParams;
   if (!list && what === 'data/walkthrough.json') {
     const walkthrough = readWalkthrough(dir);
-    if (walkthrough) warm(process.cwd(), walkthrough.base, walkthrough.head);
+    // During the Opening the first step's files come first, so the walkthrough arrives coloured.
+    if (walkthrough) warm(process.cwd(), walkthrough.base, walkthrough.head, walkthrough.steps.flatMap(step => step.files));
     // Taken before the view is built, so a change meanwhile only makes the next poll fetch it again.
     const tag = `"${walkthroughVersion(dir)}"`;
     if (req.headers['if-none-match'] === tag) res.writeHead(304, { etag: tag, 'cache-control': 'no-store' }).end();

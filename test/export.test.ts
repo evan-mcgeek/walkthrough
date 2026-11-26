@@ -28,11 +28,13 @@ describe('walkthrough export', () => {
     expect(html).toContain('Everyone gets in.');
     expect(html).toContain('Logs in: Partly met');
     expect(html).toContain('<div class="suggestion-head">Suggested change</div>');
-    expect(html).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
-    expect(html.replace(/<\/?span[^>]*>/g, '')).toContain('login = () =&gt; true;');
-    // Its code is coloured, with each colour's rule in the file's one stylesheet.
-    expect(html).toContain('<span class="hl-d73a49-f97583">const</span>');
-    expect(html).toContain('.hl-d73a49-f97583{color:light-dark(#d73a49,#f97583)}');
+    const text = html.replace(/<\/?span[^>]*>/g, '');
+    expect(text).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
+    expect(text).toContain('login = () =&gt; true;');
+    // Its code, the suggested change's lines too, takes the syntax classes, whose tokens are in the file's one stylesheet.
+    expect(html).toContain('<span class="sx-k">const</span>');
+    expect(html).toMatch(/<tr class="suggestion-del">.*?<span class="sx-k">export<\/span>.*?<tr class="suggestion-add">.*?<span class="sx-k">export<\/span>/);
+    expect(html).toContain('--syntax-keyword: light-dark(#b0282a, #f98795)');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b/i);
     // The self-hosted code font travels inside the file.
