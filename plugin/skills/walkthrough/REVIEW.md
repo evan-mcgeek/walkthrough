@@ -76,6 +76,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - One or two sentences, 40 words at most: what is wrong and what it breaks, then the fix when it is clear.
   No evidence and no verdicts in it.
 - When the fix fits in at most 6 lines on the commented lines, add it after the sentence as a suggested change (a ```suggestion block); never on a whole file.
+- Show code in a comment, an explanation or an answer only when the point is code: a fenced block of at most 6 lines that names its language, after the sentence that says why.
 - Do not repeat what a thread already on the change says.
 - On a new head, resolve each of your comments from an earlier review that the new code fixes, without a reply.
 
