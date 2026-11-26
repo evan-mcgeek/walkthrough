@@ -1,3 +1,6 @@
+// src/viewer.ts
+var DEFAULT_VIEWER = { theme: "system", colourBlind: false };
+
 // src/words.ts
 var MAX_TEXT = 4e3;
 function tooLong(fields) {
@@ -49,6 +52,13 @@ var ICONS = {
   edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
   trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
   "chevron-right": [line("M6 4l4 4-4 4")],
+  "chevron-down": [line("M4 6l4 4 4-4")],
+  branch: [
+    ["circle", { cx: 4.5, cy: 3.8, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    ["circle", { cx: 4.5, cy: 12.2, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    ["circle", { cx: 11.5, cy: 5.5, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    line("M4.5 5.5v5M11.5 7.2c0 2.4-2 3.4-5.4 3.8", 1.4)
+  ],
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
   up: [line("M4 10l4-4 4 4")],
@@ -140,20 +150,22 @@ async function post(page, route, body) {
 }
 
 // src/page/appearance.ts
-function showTheme(theme) {
-  document.documentElement.dataset["theme"] = theme;
+function showViewer({ theme, colourBlind }) {
+  const root = document.documentElement;
+  root.dataset["theme"] = theme;
+  root.toggleAttribute("data-colour-blind", colourBlind);
 }
 async function loadViewer() {
   try {
     const answer = await fetch("data/viewer.json");
     if (answer.ok) {
-      const { theme } = await answer.json();
-      showTheme(theme);
-      return theme;
+      const viewer = await answer.json();
+      showViewer(viewer);
+      return viewer;
     }
   } catch {
   }
-  return "system";
+  return { ...DEFAULT_VIEWER };
 }
 
 // src/page/list.ts

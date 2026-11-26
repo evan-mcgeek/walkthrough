@@ -65,54 +65,54 @@ var require_polyfills = __commonJS({
     }
     var chdir;
     module.exports = patch;
-    function patch(fs12) {
+    function patch(fs13) {
       if (constants.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
-        patchLchmod(fs12);
+        patchLchmod(fs13);
       }
-      if (!fs12.lutimes) {
-        patchLutimes(fs12);
+      if (!fs13.lutimes) {
+        patchLutimes(fs13);
       }
-      fs12.chown = chownFix(fs12.chown);
-      fs12.fchown = chownFix(fs12.fchown);
-      fs12.lchown = chownFix(fs12.lchown);
-      fs12.chmod = chmodFix(fs12.chmod);
-      fs12.fchmod = chmodFix(fs12.fchmod);
-      fs12.lchmod = chmodFix(fs12.lchmod);
-      fs12.chownSync = chownFixSync(fs12.chownSync);
-      fs12.fchownSync = chownFixSync(fs12.fchownSync);
-      fs12.lchownSync = chownFixSync(fs12.lchownSync);
-      fs12.chmodSync = chmodFixSync(fs12.chmodSync);
-      fs12.fchmodSync = chmodFixSync(fs12.fchmodSync);
-      fs12.lchmodSync = chmodFixSync(fs12.lchmodSync);
-      fs12.stat = statFix(fs12.stat);
-      fs12.fstat = statFix(fs12.fstat);
-      fs12.lstat = statFix(fs12.lstat);
-      fs12.statSync = statFixSync(fs12.statSync);
-      fs12.fstatSync = statFixSync(fs12.fstatSync);
-      fs12.lstatSync = statFixSync(fs12.lstatSync);
-      if (fs12.chmod && !fs12.lchmod) {
-        fs12.lchmod = function(path12, mode, cb) {
+      fs13.chown = chownFix(fs13.chown);
+      fs13.fchown = chownFix(fs13.fchown);
+      fs13.lchown = chownFix(fs13.lchown);
+      fs13.chmod = chmodFix(fs13.chmod);
+      fs13.fchmod = chmodFix(fs13.fchmod);
+      fs13.lchmod = chmodFix(fs13.lchmod);
+      fs13.chownSync = chownFixSync(fs13.chownSync);
+      fs13.fchownSync = chownFixSync(fs13.fchownSync);
+      fs13.lchownSync = chownFixSync(fs13.lchownSync);
+      fs13.chmodSync = chmodFixSync(fs13.chmodSync);
+      fs13.fchmodSync = chmodFixSync(fs13.fchmodSync);
+      fs13.lchmodSync = chmodFixSync(fs13.lchmodSync);
+      fs13.stat = statFix(fs13.stat);
+      fs13.fstat = statFix(fs13.fstat);
+      fs13.lstat = statFix(fs13.lstat);
+      fs13.statSync = statFixSync(fs13.statSync);
+      fs13.fstatSync = statFixSync(fs13.fstatSync);
+      fs13.lstatSync = statFixSync(fs13.lstatSync);
+      if (fs13.chmod && !fs13.lchmod) {
+        fs13.lchmod = function(path13, mode, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs12.lchmodSync = function() {
+        fs13.lchmodSync = function() {
         };
       }
-      if (fs12.chown && !fs12.lchown) {
-        fs12.lchown = function(path12, uid, gid, cb) {
+      if (fs13.chown && !fs13.lchown) {
+        fs13.lchown = function(path13, uid, gid, cb) {
           if (cb) process.nextTick(cb);
         };
-        fs12.lchownSync = function() {
+        fs13.lchownSync = function() {
         };
       }
       if (platform === "win32") {
-        fs12.rename = typeof fs12.rename !== "function" ? fs12.rename : (function(fs$rename) {
+        fs13.rename = typeof fs13.rename !== "function" ? fs13.rename : (function(fs$rename) {
           function rename(from, to, cb) {
             var start2 = Date.now();
             var backoff = 0;
             fs$rename(from, to, function CB(er) {
               if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start2 < 6e4) {
                 setTimeout(function() {
-                  fs12.stat(to, function(stater, st) {
+                  fs13.stat(to, function(stater, st) {
                     if (stater && stater.code === "ENOENT")
                       fs$rename(from, to, CB);
                     else
@@ -128,9 +128,9 @@ var require_polyfills = __commonJS({
           }
           if (Object.setPrototypeOf) Object.setPrototypeOf(rename, fs$rename);
           return rename;
-        })(fs12.rename);
+        })(fs13.rename);
       }
-      fs12.read = typeof fs12.read !== "function" ? fs12.read : (function(fs$read) {
+      fs13.read = typeof fs13.read !== "function" ? fs13.read : (function(fs$read) {
         function read2(fd, buffer, offset, length, position, callback_) {
           var callback;
           if (callback_ && typeof callback_ === "function") {
@@ -138,22 +138,22 @@ var require_polyfills = __commonJS({
             callback = function(er, _, __) {
               if (er && er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
-                return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
+                return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
               }
               callback_.apply(this, arguments);
             };
           }
-          return fs$read.call(fs12, fd, buffer, offset, length, position, callback);
+          return fs$read.call(fs13, fd, buffer, offset, length, position, callback);
         }
         if (Object.setPrototypeOf) Object.setPrototypeOf(read2, fs$read);
         return read2;
-      })(fs12.read);
-      fs12.readSync = typeof fs12.readSync !== "function" ? fs12.readSync : /* @__PURE__ */ (function(fs$readSync) {
+      })(fs13.read);
+      fs13.readSync = typeof fs13.readSync !== "function" ? fs13.readSync : /* @__PURE__ */ (function(fs$readSync) {
         return function(fd, buffer, offset, length, position) {
           var eagCounter = 0;
           while (true) {
             try {
-              return fs$readSync.call(fs12, fd, buffer, offset, length, position);
+              return fs$readSync.call(fs13, fd, buffer, offset, length, position);
             } catch (er) {
               if (er.code === "EAGAIN" && eagCounter < 10) {
                 eagCounter++;
@@ -163,11 +163,11 @@ var require_polyfills = __commonJS({
             }
           }
         };
-      })(fs12.readSync);
-      function patchLchmod(fs13) {
-        fs13.lchmod = function(path12, mode, callback) {
-          fs13.open(
-            path12,
+      })(fs13.readSync);
+      function patchLchmod(fs14) {
+        fs14.lchmod = function(path13, mode, callback) {
+          fs14.open(
+            path13,
             constants.O_WRONLY | constants.O_SYMLINK,
             mode,
             function(err, fd) {
@@ -175,80 +175,80 @@ var require_polyfills = __commonJS({
                 if (callback) callback(err);
                 return;
               }
-              fs13.fchmod(fd, mode, function(err2) {
-                fs13.close(fd, function(err22) {
+              fs14.fchmod(fd, mode, function(err2) {
+                fs14.close(fd, function(err22) {
                   if (callback) callback(err2 || err22);
                 });
               });
             }
           );
         };
-        fs13.lchmodSync = function(path12, mode) {
-          var fd = fs13.openSync(path12, constants.O_WRONLY | constants.O_SYMLINK, mode);
+        fs14.lchmodSync = function(path13, mode) {
+          var fd = fs14.openSync(path13, constants.O_WRONLY | constants.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
-            ret = fs13.fchmodSync(fd, mode);
+            ret = fs14.fchmodSync(fd, mode);
             threw = false;
           } finally {
             if (threw) {
               try {
-                fs13.closeSync(fd);
+                fs14.closeSync(fd);
               } catch (er) {
               }
             } else {
-              fs13.closeSync(fd);
+              fs14.closeSync(fd);
             }
           }
           return ret;
         };
       }
-      function patchLutimes(fs13) {
-        if (constants.hasOwnProperty("O_SYMLINK") && fs13.futimes) {
-          fs13.lutimes = function(path12, at, mt, cb) {
-            fs13.open(path12, constants.O_SYMLINK, function(er, fd) {
+      function patchLutimes(fs14) {
+        if (constants.hasOwnProperty("O_SYMLINK") && fs14.futimes) {
+          fs14.lutimes = function(path13, at, mt, cb) {
+            fs14.open(path13, constants.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
               }
-              fs13.futimes(fd, at, mt, function(er2) {
-                fs13.close(fd, function(er22) {
+              fs14.futimes(fd, at, mt, function(er2) {
+                fs14.close(fd, function(er22) {
                   if (cb) cb(er2 || er22);
                 });
               });
             });
           };
-          fs13.lutimesSync = function(path12, at, mt) {
-            var fd = fs13.openSync(path12, constants.O_SYMLINK);
+          fs14.lutimesSync = function(path13, at, mt) {
+            var fd = fs14.openSync(path13, constants.O_SYMLINK);
             var ret;
             var threw = true;
             try {
-              ret = fs13.futimesSync(fd, at, mt);
+              ret = fs14.futimesSync(fd, at, mt);
               threw = false;
             } finally {
               if (threw) {
                 try {
-                  fs13.closeSync(fd);
+                  fs14.closeSync(fd);
                 } catch (er) {
                 }
               } else {
-                fs13.closeSync(fd);
+                fs14.closeSync(fd);
               }
             }
             return ret;
           };
-        } else if (fs13.futimes) {
-          fs13.lutimes = function(_a, _b, _c, cb) {
+        } else if (fs14.futimes) {
+          fs14.lutimes = function(_a, _b, _c, cb) {
             if (cb) process.nextTick(cb);
           };
-          fs13.lutimesSync = function() {
+          fs14.lutimesSync = function() {
           };
         }
       }
       function chmodFix(orig) {
         if (!orig) return orig;
         return function(target, mode, cb) {
-          return orig.call(fs12, target, mode, function(er) {
+          return orig.call(fs13, target, mode, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -258,7 +258,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, mode) {
           try {
-            return orig.call(fs12, target, mode);
+            return orig.call(fs13, target, mode);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -267,7 +267,7 @@ var require_polyfills = __commonJS({
       function chownFix(orig) {
         if (!orig) return orig;
         return function(target, uid, gid, cb) {
-          return orig.call(fs12, target, uid, gid, function(er) {
+          return orig.call(fs13, target, uid, gid, function(er) {
             if (chownErOk(er)) er = null;
             if (cb) cb.apply(this, arguments);
           });
@@ -277,7 +277,7 @@ var require_polyfills = __commonJS({
         if (!orig) return orig;
         return function(target, uid, gid) {
           try {
-            return orig.call(fs12, target, uid, gid);
+            return orig.call(fs13, target, uid, gid);
           } catch (er) {
             if (!chownErOk(er)) throw er;
           }
@@ -297,13 +297,13 @@ var require_polyfills = __commonJS({
             }
             if (cb) cb.apply(this, arguments);
           }
-          return options ? orig.call(fs12, target, options, callback) : orig.call(fs12, target, callback);
+          return options ? orig.call(fs13, target, options, callback) : orig.call(fs13, target, callback);
         };
       }
       function statFixSync(orig) {
         if (!orig) return orig;
         return function(target, options) {
-          var stats = options ? orig.call(fs12, target, options) : orig.call(fs12, target);
+          var stats = options ? orig.call(fs13, target, options) : orig.call(fs13, target);
           if (stats) {
             if (stats.uid < 0) stats.uid += 4294967296;
             if (stats.gid < 0) stats.gid += 4294967296;
@@ -332,16 +332,16 @@ var require_legacy_streams = __commonJS({
   "node_modules/graceful-fs/legacy-streams.js"(exports, module) {
     var Stream = __require("stream").Stream;
     module.exports = legacy;
-    function legacy(fs12) {
+    function legacy(fs13) {
       return {
         ReadStream,
         WriteStream
       };
-      function ReadStream(path12, options) {
-        if (!(this instanceof ReadStream)) return new ReadStream(path12, options);
+      function ReadStream(path13, options) {
+        if (!(this instanceof ReadStream)) return new ReadStream(path13, options);
         Stream.call(this);
         var self = this;
-        this.path = path12;
+        this.path = path13;
         this.fd = null;
         this.readable = true;
         this.paused = false;
@@ -375,7 +375,7 @@ var require_legacy_streams = __commonJS({
           });
           return;
         }
-        fs12.open(this.path, this.flags, this.mode, function(err, fd) {
+        fs13.open(this.path, this.flags, this.mode, function(err, fd) {
           if (err) {
             self.emit("error", err);
             self.readable = false;
@@ -386,10 +386,10 @@ var require_legacy_streams = __commonJS({
           self._read();
         });
       }
-      function WriteStream(path12, options) {
-        if (!(this instanceof WriteStream)) return new WriteStream(path12, options);
+      function WriteStream(path13, options) {
+        if (!(this instanceof WriteStream)) return new WriteStream(path13, options);
         Stream.call(this);
-        this.path = path12;
+        this.path = path13;
         this.fd = null;
         this.writable = true;
         this.flags = "w";
@@ -414,7 +414,7 @@ var require_legacy_streams = __commonJS({
         this.busy = false;
         this._queue = [];
         if (this.fd === null) {
-          this._open = fs12.open;
+          this._open = fs13.open;
           this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
           this.flush();
         }
@@ -449,7 +449,7 @@ var require_clone = __commonJS({
 // node_modules/graceful-fs/graceful-fs.js
 var require_graceful_fs = __commonJS({
   "node_modules/graceful-fs/graceful-fs.js"(exports, module) {
-    var fs12 = __require("fs");
+    var fs13 = __require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
     var clone = require_clone();
@@ -481,12 +481,12 @@ var require_graceful_fs = __commonJS({
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
       };
-    if (!fs12[gracefulQueue]) {
+    if (!fs13[gracefulQueue]) {
       queue = global[gracefulQueue] || [];
-      publishQueue(fs12, queue);
-      fs12.close = (function(fs$close) {
+      publishQueue(fs13, queue);
+      fs13.close = (function(fs$close) {
         function close(fd, cb) {
-          return fs$close.call(fs12, fd, function(err) {
+          return fs$close.call(fs13, fd, function(err) {
             if (!err) {
               resetQueue();
             }
@@ -498,48 +498,48 @@ var require_graceful_fs = __commonJS({
           value: fs$close
         });
         return close;
-      })(fs12.close);
-      fs12.closeSync = (function(fs$closeSync) {
+      })(fs13.close);
+      fs13.closeSync = (function(fs$closeSync) {
         function closeSync(fd) {
-          fs$closeSync.apply(fs12, arguments);
+          fs$closeSync.apply(fs13, arguments);
           resetQueue();
         }
         Object.defineProperty(closeSync, previousSymbol, {
           value: fs$closeSync
         });
         return closeSync;
-      })(fs12.closeSync);
+      })(fs13.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug(fs12[gracefulQueue]);
-          __require("assert").equal(fs12[gracefulQueue].length, 0);
+          debug(fs13[gracefulQueue]);
+          __require("assert").equal(fs13[gracefulQueue].length, 0);
         });
       }
     }
     var queue;
     if (!global[gracefulQueue]) {
-      publishQueue(global, fs12[gracefulQueue]);
+      publishQueue(global, fs13[gracefulQueue]);
     }
-    module.exports = patch(clone(fs12));
-    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs12.__patched) {
-      module.exports = patch(fs12);
-      fs12.__patched = true;
+    module.exports = patch(clone(fs13));
+    if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs13.__patched) {
+      module.exports = patch(fs13);
+      fs13.__patched = true;
     }
-    function patch(fs13) {
-      polyfills(fs13);
-      fs13.gracefulify = patch;
-      fs13.createReadStream = createReadStream;
-      fs13.createWriteStream = createWriteStream;
-      var fs$readFile = fs13.readFile;
-      fs13.readFile = readFile;
-      function readFile(path12, options, cb) {
+    function patch(fs14) {
+      polyfills(fs14);
+      fs14.gracefulify = patch;
+      fs14.createReadStream = createReadStream;
+      fs14.createWriteStream = createWriteStream;
+      var fs$readFile = fs14.readFile;
+      fs14.readFile = readFile;
+      function readFile(path13, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$readFile(path12, options, cb);
-        function go$readFile(path13, options2, cb2, startTime) {
-          return fs$readFile(path13, options2, function(err) {
+        return go$readFile(path13, options, cb);
+        function go$readFile(path14, options2, cb2, startTime) {
+          return fs$readFile(path14, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$readFile, [path13, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$readFile, [path14, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -547,16 +547,16 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$writeFile = fs13.writeFile;
-      fs13.writeFile = writeFile;
-      function writeFile(path12, data, options, cb) {
+      var fs$writeFile = fs14.writeFile;
+      fs14.writeFile = writeFile;
+      function writeFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$writeFile(path12, data, options, cb);
-        function go$writeFile(path13, data2, options2, cb2, startTime) {
-          return fs$writeFile(path13, data2, options2, function(err) {
+        return go$writeFile(path13, data, options, cb);
+        function go$writeFile(path14, data2, options2, cb2, startTime) {
+          return fs$writeFile(path14, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$writeFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$writeFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -564,17 +564,17 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$appendFile = fs13.appendFile;
+      var fs$appendFile = fs14.appendFile;
       if (fs$appendFile)
-        fs13.appendFile = appendFile;
-      function appendFile(path12, data, options, cb) {
+        fs14.appendFile = appendFile;
+      function appendFile(path13, data, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        return go$appendFile(path12, data, options, cb);
-        function go$appendFile(path13, data2, options2, cb2, startTime) {
-          return fs$appendFile(path13, data2, options2, function(err) {
+        return go$appendFile(path13, data, options, cb);
+        function go$appendFile(path14, data2, options2, cb2, startTime) {
+          return fs$appendFile(path14, data2, options2, function(err) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$appendFile, [path13, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$appendFile, [path14, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -582,9 +582,9 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$copyFile = fs13.copyFile;
+      var fs$copyFile = fs14.copyFile;
       if (fs$copyFile)
-        fs13.copyFile = copyFile;
+        fs14.copyFile = copyFile;
       function copyFile(src, dest, flags, cb) {
         if (typeof flags === "function") {
           cb = flags;
@@ -602,34 +602,34 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      var fs$readdir = fs13.readdir;
-      fs13.readdir = readdir;
+      var fs$readdir = fs14.readdir;
+      fs14.readdir = readdir;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir(path12, options, cb) {
+      function readdir(path13, options, cb) {
         if (typeof options === "function")
           cb = options, options = null;
-        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path13, options2, cb2, startTime) {
-          return fs$readdir(path13, fs$readdirCallback(
-            path13,
+        var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path14, options2, cb2, startTime) {
+          return fs$readdir(path14, fs$readdirCallback(
+            path14,
             options2,
             cb2,
             startTime
           ));
-        } : function go$readdir2(path13, options2, cb2, startTime) {
-          return fs$readdir(path13, options2, fs$readdirCallback(
-            path13,
+        } : function go$readdir2(path14, options2, cb2, startTime) {
+          return fs$readdir(path14, options2, fs$readdirCallback(
+            path14,
             options2,
             cb2,
             startTime
           ));
         };
-        return go$readdir(path12, options, cb);
-        function fs$readdirCallback(path13, options2, cb2, startTime) {
+        return go$readdir(path13, options, cb);
+        function fs$readdirCallback(path14, options2, cb2, startTime) {
           return function(err, files3) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
               enqueue([
                 go$readdir,
-                [path13, options2, cb2],
+                [path14, options2, cb2],
                 err,
                 startTime || Date.now(),
                 Date.now()
@@ -644,21 +644,21 @@ var require_graceful_fs = __commonJS({
         }
       }
       if (process.version.substr(0, 4) === "v0.8") {
-        var legStreams = legacy(fs13);
+        var legStreams = legacy(fs14);
         ReadStream = legStreams.ReadStream;
         WriteStream = legStreams.WriteStream;
       }
-      var fs$ReadStream = fs13.ReadStream;
+      var fs$ReadStream = fs14.ReadStream;
       if (fs$ReadStream) {
         ReadStream.prototype = Object.create(fs$ReadStream.prototype);
         ReadStream.prototype.open = ReadStream$open;
       }
-      var fs$WriteStream = fs13.WriteStream;
+      var fs$WriteStream = fs14.WriteStream;
       if (fs$WriteStream) {
         WriteStream.prototype = Object.create(fs$WriteStream.prototype);
         WriteStream.prototype.open = WriteStream$open;
       }
-      Object.defineProperty(fs13, "ReadStream", {
+      Object.defineProperty(fs14, "ReadStream", {
         get: function() {
           return ReadStream;
         },
@@ -668,7 +668,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      Object.defineProperty(fs13, "WriteStream", {
+      Object.defineProperty(fs14, "WriteStream", {
         get: function() {
           return WriteStream;
         },
@@ -679,7 +679,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileReadStream = ReadStream;
-      Object.defineProperty(fs13, "FileReadStream", {
+      Object.defineProperty(fs14, "FileReadStream", {
         get: function() {
           return FileReadStream;
         },
@@ -690,7 +690,7 @@ var require_graceful_fs = __commonJS({
         configurable: true
       });
       var FileWriteStream = WriteStream;
-      Object.defineProperty(fs13, "FileWriteStream", {
+      Object.defineProperty(fs14, "FileWriteStream", {
         get: function() {
           return FileWriteStream;
         },
@@ -700,7 +700,7 @@ var require_graceful_fs = __commonJS({
         enumerable: true,
         configurable: true
       });
-      function ReadStream(path12, options) {
+      function ReadStream(path13, options) {
         if (this instanceof ReadStream)
           return fs$ReadStream.apply(this, arguments), this;
         else
@@ -720,7 +720,7 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function WriteStream(path12, options) {
+      function WriteStream(path13, options) {
         if (this instanceof WriteStream)
           return fs$WriteStream.apply(this, arguments), this;
         else
@@ -738,22 +738,22 @@ var require_graceful_fs = __commonJS({
           }
         });
       }
-      function createReadStream(path12, options) {
-        return new fs13.ReadStream(path12, options);
+      function createReadStream(path13, options) {
+        return new fs14.ReadStream(path13, options);
       }
-      function createWriteStream(path12, options) {
-        return new fs13.WriteStream(path12, options);
+      function createWriteStream(path13, options) {
+        return new fs14.WriteStream(path13, options);
       }
-      var fs$open = fs13.open;
-      fs13.open = open2;
-      function open2(path12, flags, mode, cb) {
+      var fs$open = fs14.open;
+      fs14.open = open2;
+      function open2(path13, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
-        return go$open(path12, flags, mode, cb);
-        function go$open(path13, flags2, mode2, cb2, startTime) {
-          return fs$open(path13, flags2, mode2, function(err, fd) {
+        return go$open(path13, flags, mode, cb);
+        function go$open(path14, flags2, mode2, cb2, startTime) {
+          return fs$open(path14, flags2, mode2, function(err, fd) {
             if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
-              enqueue([go$open, [path13, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+              enqueue([go$open, [path14, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
             else {
               if (typeof cb2 === "function")
                 cb2.apply(this, arguments);
@@ -761,20 +761,20 @@ var require_graceful_fs = __commonJS({
           });
         }
       }
-      return fs13;
+      return fs14;
     }
     function enqueue(elem) {
       debug("ENQUEUE", elem[0].name, elem[1]);
-      fs12[gracefulQueue].push(elem);
+      fs13[gracefulQueue].push(elem);
       retry();
     }
     var retryTimer;
     function resetQueue() {
       var now = Date.now();
-      for (var i = 0; i < fs12[gracefulQueue].length; ++i) {
-        if (fs12[gracefulQueue][i].length > 2) {
-          fs12[gracefulQueue][i][3] = now;
-          fs12[gracefulQueue][i][4] = now;
+      for (var i = 0; i < fs13[gracefulQueue].length; ++i) {
+        if (fs13[gracefulQueue][i].length > 2) {
+          fs13[gracefulQueue][i][3] = now;
+          fs13[gracefulQueue][i][4] = now;
         }
       }
       retry();
@@ -782,9 +782,9 @@ var require_graceful_fs = __commonJS({
     function retry() {
       clearTimeout(retryTimer);
       retryTimer = void 0;
-      if (fs12[gracefulQueue].length === 0)
+      if (fs13[gracefulQueue].length === 0)
         return;
-      var elem = fs12[gracefulQueue].shift();
+      var elem = fs13[gracefulQueue].shift();
       var fn = elem[0];
       var args = elem[1];
       var err = elem[2];
@@ -806,7 +806,7 @@ var require_graceful_fs = __commonJS({
           debug("RETRY", fn.name, args);
           fn.apply(null, args.concat([startTime]));
         } else {
-          fs12[gracefulQueue].push(elem);
+          fs13[gracefulQueue].push(elem);
         }
       }
       if (retryTimer === void 0) {
@@ -1241,10 +1241,10 @@ var require_mtime_precision = __commonJS({
   "node_modules/proper-lockfile/lib/mtime-precision.js"(exports, module) {
     "use strict";
     var cacheSymbol = /* @__PURE__ */ Symbol();
-    function probe(file2, fs12, callback) {
-      const cachedPrecision = fs12[cacheSymbol];
+    function probe(file2, fs13, callback) {
+      const cachedPrecision = fs13[cacheSymbol];
       if (cachedPrecision) {
-        return fs12.stat(file2, (err, stat) => {
+        return fs13.stat(file2, (err, stat) => {
           if (err) {
             return callback(err);
           }
@@ -1252,16 +1252,16 @@ var require_mtime_precision = __commonJS({
         });
       }
       const mtime = new Date(Math.ceil(Date.now() / 1e3) * 1e3 + 5);
-      fs12.utimes(file2, mtime, mtime, (err) => {
+      fs13.utimes(file2, mtime, mtime, (err) => {
         if (err) {
           return callback(err);
         }
-        fs12.stat(file2, (err2, stat) => {
+        fs13.stat(file2, (err2, stat) => {
           if (err2) {
             return callback(err2);
           }
           const precision = stat.mtime.getTime() % 1e3 === 0 ? "s" : "ms";
-          Object.defineProperty(fs12, cacheSymbol, { value: precision });
+          Object.defineProperty(fs13, cacheSymbol, { value: precision });
           callback(null, stat.mtime, precision);
         });
       });
@@ -1282,8 +1282,8 @@ var require_mtime_precision = __commonJS({
 var require_lockfile = __commonJS({
   "node_modules/proper-lockfile/lib/lockfile.js"(exports, module) {
     "use strict";
-    var path12 = __require("path");
-    var fs12 = require_graceful_fs();
+    var path13 = __require("path");
+    var fs13 = require_graceful_fs();
     var retry = require_retry2();
     var onExit = require_signal_exit();
     var mtimePrecision = require_mtime_precision();
@@ -1293,7 +1293,7 @@ var require_lockfile = __commonJS({
     }
     function resolveCanonicalPath(file2, options, callback) {
       if (!options.realpath) {
-        return callback(null, path12.resolve(file2));
+        return callback(null, path13.resolve(file2));
       }
       options.fs.realpath(file2, callback);
     }
@@ -1414,7 +1414,7 @@ var require_lockfile = __commonJS({
         update: null,
         realpath: true,
         retries: 0,
-        fs: fs12,
+        fs: fs13,
         onCompromised: (err) => {
           throw err;
         },
@@ -1458,7 +1458,7 @@ var require_lockfile = __commonJS({
     }
     function unlock(file2, options, callback) {
       options = {
-        fs: fs12,
+        fs: fs13,
         realpath: true,
         ...options
       };
@@ -1480,7 +1480,7 @@ var require_lockfile = __commonJS({
       options = {
         stale: 1e4,
         realpath: true,
-        fs: fs12,
+        fs: fs13,
         ...options
       };
       options.stale = Math.max(options.stale || 0, 2e3);
@@ -1519,16 +1519,16 @@ var require_lockfile = __commonJS({
 var require_adapter = __commonJS({
   "node_modules/proper-lockfile/lib/adapter.js"(exports, module) {
     "use strict";
-    var fs12 = require_graceful_fs();
-    function createSyncFs(fs13) {
+    var fs13 = require_graceful_fs();
+    function createSyncFs(fs14) {
       const methods2 = ["mkdir", "realpath", "stat", "rmdir", "utimes"];
-      const newFs = { ...fs13 };
+      const newFs = { ...fs14 };
       methods2.forEach((method) => {
         newFs[method] = (...args) => {
           const callback = args.pop();
           let ret;
           try {
-            ret = fs13[`${method}Sync`](...args);
+            ret = fs14[`${method}Sync`](...args);
           } catch (err) {
             return callback(err);
           }
@@ -1566,7 +1566,7 @@ var require_adapter = __commonJS({
     }
     function toSyncOptions(options) {
       options = { ...options };
-      options.fs = createSyncFs(options.fs || fs12);
+      options.fs = createSyncFs(options.fs || fs13);
       if (typeof options.retries === "number" && options.retries > 0 || options.retries && typeof options.retries.retries === "number" && options.retries.retries > 0) {
         throw Object.assign(new Error("Cannot use retries with the sync api"), { code: "ESYNC" });
       }
@@ -1920,8 +1920,8 @@ var require_utils = __commonJS({
     function escapeForRegExp2(str) {
       return str.replace(regex2, "\\$&");
     }
-    function unifyPath(path12) {
-      return path12 ? path12.replace(/\\/g, "/") : path12;
+    function unifyPath(path13) {
+      return path13 ? path13.replace(/\\/g, "/") : path13;
     }
     function hashCode(text2) {
       let i, chr, len;
@@ -2357,16 +2357,16 @@ var require_base = __commonJS({
             }
           }
         };
-        Diff2.prototype.addToPath = function(path12, added, removed, oldPosInc, options) {
-          var last = path12.lastComponent;
+        Diff2.prototype.addToPath = function(path13, added, removed, oldPosInc, options) {
+          var last = path13.lastComponent;
           if (last && !options.oneChangePerToken && last.added === added && last.removed === removed) {
             return {
-              oldPos: path12.oldPos + oldPosInc,
+              oldPos: path13.oldPos + oldPosInc,
               lastComponent: { count: last.count + 1, added, removed, previousComponent: last.previousComponent }
             };
           } else {
             return {
-              oldPos: path12.oldPos + oldPosInc,
+              oldPos: path13.oldPos + oldPosInc,
               lastComponent: { count: 1, added, removed, previousComponent: last }
             };
           }
@@ -6187,8 +6187,8 @@ var require_diff2html = __commonJS({
 
 // src/cli.ts
 import { spawnSync as spawnSync4 } from "node:child_process";
-import fs11 from "node:fs";
-import path11 from "node:path";
+import fs12 from "node:fs";
+import path12 from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 
 // src/change.ts
@@ -6198,6 +6198,358 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+
+// node_modules/diff2html/lib-esm/types.js
+var LineType;
+(function(LineType2) {
+  LineType2["INSERT"] = "insert";
+  LineType2["DELETE"] = "delete";
+  LineType2["CONTEXT"] = "context";
+})(LineType || (LineType = {}));
+var ColorSchemeType;
+(function(ColorSchemeType2) {
+  ColorSchemeType2["AUTO"] = "auto";
+  ColorSchemeType2["DARK"] = "dark";
+  ColorSchemeType2["LIGHT"] = "light";
+})(ColorSchemeType || (ColorSchemeType = {}));
+
+// node_modules/diff2html/lib-esm/utils.js
+var specials = [
+  "-",
+  "[",
+  "]",
+  "/",
+  "{",
+  "}",
+  "(",
+  ")",
+  "*",
+  "+",
+  "?",
+  ".",
+  "\\",
+  "^",
+  "$",
+  "|"
+];
+var regex = RegExp("[" + specials.join("\\") + "]", "g");
+function escapeForRegExp(str) {
+  return str.replace(regex, "\\$&");
+}
+
+// node_modules/diff2html/lib-esm/diff-parser.js
+function getExtension(filename, language) {
+  const filenameParts = filename.split(".");
+  return filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : language;
+}
+function startsWithAny(str, prefixes) {
+  return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
+}
+var baseDiffFilenamePrefixes = ["a/", "b/", "i/", "w/", "c/", "o/"];
+function getFilename(line, linePrefix, extraPrefix) {
+  const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes, extraPrefix] : baseDiffFilenamePrefixes;
+  const FilenameRegExp = linePrefix ? new RegExp(`^${escapeForRegExp(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
+  const [, filename = ""] = FilenameRegExp.exec(line) || [];
+  const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
+  const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
+  return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
+}
+function getSrcFilename(line, srcPrefix) {
+  return getFilename(line, "---", srcPrefix);
+}
+function getDstFilename(line, dstPrefix) {
+  return getFilename(line, "+++", dstPrefix);
+}
+function parse(diffInput, config2 = {}) {
+  const files3 = [];
+  let currentFile = null;
+  let currentBlock = null;
+  let oldLine = null;
+  let oldLine2 = null;
+  let newLine = null;
+  let possibleOldName = null;
+  let possibleNewName = null;
+  const oldFileNameHeader = "--- ";
+  const newFileNameHeader = "+++ ";
+  const hunkHeaderPrefix = "@@";
+  const oldMode = /^old mode (\d{6})/;
+  const newMode = /^new mode (\d{6})/;
+  const deletedFileMode = /^deleted file mode (\d{6})/;
+  const newFileMode = /^new file mode (\d{6})/;
+  const copyFrom = /^copy from "?(.+)"?/;
+  const copyTo = /^copy to "?(.+)"?/;
+  const renameFrom = /^rename from "?(.+)"?/;
+  const renameTo = /^rename to "?(.+)"?/;
+  const similarityIndex = /^similarity index (\d+)%/;
+  const dissimilarityIndex = /^dissimilarity index (\d+)%/;
+  const index = /^index ([\da-z]+)\.\.([\da-z]+)\s*(\d{6})?/;
+  const binaryFiles = /^Binary files (.*) and (.*) differ/;
+  const binaryDiff = /^GIT binary patch/;
+  const combinedIndex = /^index ([\da-z]+),([\da-z]+)\.\.([\da-z]+)/;
+  const combinedMode = /^mode (\d{6}),(\d{6})\.\.(\d{6})/;
+  const combinedNewFile = /^new file mode (\d{6})/;
+  const combinedDeletedFile = /^deleted file mode (\d{6}),(\d{6})/;
+  const diffLines = diffInput.replace(/\\ No newline at end of file/g, "").replace(/\r\n?/g, "\n").split("\n");
+  function saveBlock() {
+    if (currentBlock !== null && currentFile !== null) {
+      currentFile.blocks.push(currentBlock);
+      currentBlock = null;
+    }
+  }
+  function saveFile() {
+    if (currentFile !== null) {
+      if (!currentFile.oldName && possibleOldName !== null) {
+        currentFile.oldName = possibleOldName;
+      }
+      if (!currentFile.newName && possibleNewName !== null) {
+        currentFile.newName = possibleNewName;
+      }
+      if (currentFile.newName) {
+        files3.push(currentFile);
+        currentFile = null;
+      }
+    }
+    possibleOldName = null;
+    possibleNewName = null;
+  }
+  function startFile() {
+    saveBlock();
+    saveFile();
+    currentFile = {
+      blocks: [],
+      deletedLines: 0,
+      addedLines: 0
+    };
+  }
+  function startBlock(line) {
+    saveBlock();
+    let values;
+    if (currentFile !== null) {
+      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line)) {
+        currentFile.isCombined = false;
+        oldLine = parseInt(values[1], 10);
+        newLine = parseInt(values[2], 10);
+      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line)) {
+        currentFile.isCombined = true;
+        oldLine = parseInt(values[1], 10);
+        oldLine2 = parseInt(values[2], 10);
+        newLine = parseInt(values[3], 10);
+      } else {
+        if (line.startsWith(hunkHeaderPrefix)) {
+          console.error("Failed to parse lines, starting in 0!");
+        }
+        oldLine = 0;
+        newLine = 0;
+        currentFile.isCombined = false;
+      }
+    }
+    currentBlock = {
+      lines: [],
+      oldStartLine: oldLine,
+      oldStartLine2: oldLine2,
+      newStartLine: newLine,
+      header: line
+    };
+  }
+  function createLine(line) {
+    if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
+      return;
+    const currentLine = {
+      content: line
+    };
+    const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
+    const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
+    if (startsWithAny(line, addedPrefixes)) {
+      currentFile.addedLines++;
+      currentLine.type = LineType.INSERT;
+      currentLine.oldNumber = void 0;
+      currentLine.newNumber = newLine++;
+    } else if (startsWithAny(line, deletedPrefixes)) {
+      currentFile.deletedLines++;
+      currentLine.type = LineType.DELETE;
+      currentLine.oldNumber = oldLine++;
+      currentLine.newNumber = void 0;
+    } else {
+      currentLine.type = LineType.CONTEXT;
+      currentLine.oldNumber = oldLine++;
+      currentLine.newNumber = newLine++;
+    }
+    currentBlock.lines.push(currentLine);
+  }
+  function existHunkHeader(line, lineIdx) {
+    let idx = lineIdx;
+    while (idx < diffLines.length - 3) {
+      if (line.startsWith("diff")) {
+        return false;
+      }
+      if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
+        return true;
+      }
+      idx++;
+    }
+    return false;
+  }
+  diffLines.forEach((line, lineIndex) => {
+    if (!line || line.startsWith("*")) {
+      return;
+    }
+    let values;
+    const prevLine = diffLines[lineIndex - 1];
+    const nxtLine = diffLines[lineIndex + 1];
+    const afterNxtLine = diffLines[lineIndex + 2];
+    if (line.startsWith("diff --git") || line.startsWith("diff --combined")) {
+      startFile();
+      const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
+      if (values = gitDiffStart.exec(line)) {
+        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
+        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
+      }
+      if (currentFile === null) {
+        throw new Error("Where is my file !!!");
+      }
+      currentFile.isGitDiff = true;
+      return;
+    }
+    if (line.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
+      startFile();
+      const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
+      if (values = unixDiffBinaryStart.exec(line)) {
+        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
+        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
+      }
+      if (currentFile === null) {
+        throw new Error("Where is my file !!!");
+      }
+      currentFile.isBinary = true;
+      return;
+    }
+    if (!currentFile || !currentFile.isGitDiff && currentFile && line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
+      startFile();
+    }
+    if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
+      return;
+    }
+    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line.length > config2.diffMaxLineLength)) {
+      currentFile.isTooBig = true;
+      currentFile.addedLines = 0;
+      currentFile.deletedLines = 0;
+      currentFile.blocks = [];
+      currentBlock = null;
+      const message = typeof config2.diffTooBigMessage === "function" ? config2.diffTooBigMessage(files3.length) : "Diff too big to be displayed";
+      startBlock(message);
+      return;
+    }
+    if (line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
+      if (currentFile && !currentFile.oldName && line.startsWith("--- ") && (values = getSrcFilename(line, config2.srcPrefix))) {
+        currentFile.oldName = values;
+        currentFile.language = getExtension(currentFile.oldName, currentFile.language);
+        return;
+      }
+      if (currentFile && !currentFile.newName && line.startsWith("+++ ") && (values = getDstFilename(line, config2.dstPrefix))) {
+        currentFile.newName = values;
+        currentFile.language = getExtension(currentFile.newName, currentFile.language);
+        return;
+      }
+    }
+    if (currentFile && (line.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
+      startBlock(line);
+      return;
+    }
+    if (currentBlock && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
+      createLine(line);
+      return;
+    }
+    const doesNotExistHunkHeader = !existHunkHeader(line, lineIndex);
+    if (currentFile === null) {
+      throw new Error("Where is my file !!!");
+    }
+    if (values = oldMode.exec(line)) {
+      currentFile.oldMode = values[1];
+    } else if (values = newMode.exec(line)) {
+      currentFile.newMode = values[1];
+    } else if (values = deletedFileMode.exec(line)) {
+      currentFile.deletedFileMode = values[1];
+      currentFile.isDeleted = true;
+    } else if (values = newFileMode.exec(line)) {
+      currentFile.newFileMode = values[1];
+      currentFile.isNew = true;
+    } else if (values = copyFrom.exec(line)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.oldName = values[1];
+      }
+      currentFile.isCopy = true;
+    } else if (values = copyTo.exec(line)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.newName = values[1];
+      }
+      currentFile.isCopy = true;
+    } else if (values = renameFrom.exec(line)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.oldName = values[1];
+      }
+      currentFile.isRename = true;
+    } else if (values = renameTo.exec(line)) {
+      if (doesNotExistHunkHeader) {
+        currentFile.newName = values[1];
+      }
+      currentFile.isRename = true;
+    } else if (values = binaryFiles.exec(line)) {
+      currentFile.isBinary = true;
+      currentFile.oldName = getFilename(values[1], void 0, config2.srcPrefix);
+      currentFile.newName = getFilename(values[2], void 0, config2.dstPrefix);
+      startBlock("Binary file");
+    } else if (binaryDiff.test(line)) {
+      currentFile.isBinary = true;
+      startBlock(line);
+    } else if (values = similarityIndex.exec(line)) {
+      currentFile.unchangedPercentage = parseInt(values[1], 10);
+    } else if (values = dissimilarityIndex.exec(line)) {
+      currentFile.changedPercentage = parseInt(values[1], 10);
+    } else if (values = index.exec(line)) {
+      currentFile.checksumBefore = values[1];
+      currentFile.checksumAfter = values[2];
+      if (values[3])
+        currentFile.mode = values[3];
+    } else if (values = combinedIndex.exec(line)) {
+      currentFile.checksumBefore = [values[2], values[3]];
+      currentFile.checksumAfter = values[1];
+    } else if (values = combinedMode.exec(line)) {
+      currentFile.oldMode = [values[2], values[3]];
+      currentFile.newMode = values[1];
+    } else if (values = combinedNewFile.exec(line)) {
+      currentFile.newFileMode = values[1];
+      currentFile.isNew = true;
+    } else if (values = combinedDeletedFile.exec(line)) {
+      currentFile.deletedFileMode = values[1];
+      currentFile.isDeleted = true;
+    }
+  });
+  saveBlock();
+  saveFile();
+  return files3;
+}
+
+// src/diff.ts
+var encoder = new TextEncoder();
+var ESCAPED = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
+function pathOf(name2) {
+  const padless = name2.replace(/\t$/, "");
+  if (!padless.includes("\\")) return padless;
+  const bytes = [];
+  for (let at = 0; at < padless.length; at++) {
+    const char = padless.charAt(at);
+    if (char === '"') continue;
+    if (char !== "\\") bytes.push(...encoder.encode(char));
+    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
+      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
+      at += 3;
+    } else bytes.push(ESCAPED[padless.charAt(++at)] ?? 92);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
+}
+var parseDiff = (diff) => parse(diff).map((file2) => ({ ...file2, oldName: pathOf(file2.oldName), newName: pathOf(file2.newName) }));
+
+// src/change.ts
 function git(cwd, ...args) {
   return gitWith(cwd, void 0, ...args);
 }
@@ -6279,8 +6631,8 @@ function fileStats(cwd, base, head) {
   const stats = [];
   for (let at = 0; at < fields.length - 1; ) {
     const [added = "", deleted = "", name2 = ""] = (fields[at++] ?? "").split("	");
-    const path12 = name2 || (at += 2, fields[at - 1] ?? "");
-    stats.push(added === "-" ? { path: path12 } : { path: path12, additions: Number(added), deletions: Number(deleted) });
+    const path13 = name2 || (at += 2, fields[at - 1] ?? "");
+    stats.push(added === "-" ? { path: path13 } : { path: path13, additions: Number(added), deletions: Number(deleted) });
   }
   return stats;
 }
@@ -6307,6 +6659,15 @@ async function diffOf(cwd, base, head, files3) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 }
+function changesBetween(cwd, from, to) {
+  if (!commitOf(cwd, from)) return null;
+  const files3 = {};
+  for (const one of git(cwd, "diff", "--no-color", "--no-ext-diff", "-M", from, to).split(/^(?=diff --git )/m)) {
+    const [file2] = parseDiff(one);
+    if (file2) files3[file2.isDeleted ? file2.oldName : file2.newName] = one;
+  }
+  return { commits: Number(git(cwd, "rev-list", "--count", `${from}..${to}`).trim()), files: files3 };
+}
 function fileAt(cwd, rev, file2) {
   const result = spawnSync("git", ["cat-file", "blob", `${rev}:${file2}`], { cwd, maxBuffer: 256 * 1024 * 1024 });
   return result.status === 0 ? result.stdout : null;
@@ -6322,8 +6683,8 @@ function defaultTarget(cwd) {
 
 // src/prune.ts
 import { spawnSync as spawnSync3 } from "node:child_process";
-import fs8 from "node:fs";
-import path8 from "node:path";
+import fs9 from "node:fs";
+import path9 from "node:path";
 
 // src/json-files.ts
 var import_proper_lockfile = __toESM(require_proper_lockfile(), 1);
@@ -6357,9 +6718,9 @@ function writeJson(file2, value) {
   }
   fs2.renameSync(beside, file2);
 }
-async function locked(file2, work) {
+async function locked(file2, work, stale = 1e4) {
   fs2.mkdirSync(path2.dirname(file2), { recursive: true, mode: 448 });
-  const release = await (0, import_proper_lockfile.lock)(file2, { realpath: false, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
+  const release = await (0, import_proper_lockfile.lock)(file2, { realpath: false, stale, retries: { forever: true, minTimeout: 10, maxTimeout: 100 } });
   try {
     return await work();
   } finally {
@@ -6406,11 +6767,11 @@ function inInbox(file2) {
 }
 
 // src/server.ts
-import { spawn } from "node:child_process";
-import crypto4 from "node:crypto";
-import fs7 from "node:fs";
+import { spawn as spawn2 } from "node:child_process";
+import crypto5 from "node:crypto";
+import fs8 from "node:fs";
 import http from "node:http";
-import path7 from "node:path";
+import path8 from "node:path";
 import { fileURLToPath } from "node:url";
 
 // node_modules/image-size/dist/esm/types/utils.js
@@ -6514,8 +6875,8 @@ var ICO = {
     const imageCount = readUInt16LE(input, 4);
     if (reserved !== 0 || imageCount === 0)
       return false;
-    const imageType = readUInt16LE(input, 2);
-    return imageType === TYPE_ICON;
+    const imageType2 = readUInt16LE(input, 2);
+    return imageType2 === TYPE_ICON;
   },
   calculate(input) {
     const nbImages = readUInt16LE(input, 4);
@@ -6545,8 +6906,8 @@ var CUR = {
     const imageCount = readUInt16LE(input, 4);
     if (reserved !== 0 || imageCount === 0)
       return false;
-    const imageType = readUInt16LE(input, 2);
-    return imageType === TYPE_CURSOR;
+    const imageType2 = readUInt16LE(input, 2);
+    return imageType2 === TYPE_CURSOR;
   },
   calculate: (input) => ICO.calculate(input)
 };
@@ -11293,10 +11654,10 @@ function newline(state, silent) {
   state.pos = pos;
   return true;
 }
-var ESCAPED = [];
-for (let i = 0; i < 256; i++) ESCAPED.push(0);
+var ESCAPED2 = [];
+for (let i = 0; i < 256; i++) ESCAPED2.push(0);
 "\\!\"#$%&'()*+,./:;<=>?@[]^_`{|}~-".split("").forEach(function(ch) {
-  ESCAPED[ch.charCodeAt(0)] = 1;
+  ESCAPED2[ch.charCodeAt(0)] = 1;
 });
 function escape(state, silent) {
   let pos = state.pos;
@@ -11337,7 +11698,7 @@ function escape(state, silent) {
   const origStr = "\\" + escapedStr;
   if (!silent) {
     const token = state.push("text_special", "", 0);
-    if (ch1 < 256 && ESCAPED[ch1] !== 0) token.content = escapedStr;
+    if (ch1 < 256 && ESCAPED2[ch1] !== 0) token.content = escapedStr;
     else token.content = origStr;
     token.markup = origStr;
     token.info = "escape";
@@ -12518,356 +12879,6 @@ import crypto3 from "node:crypto";
 import fs5 from "node:fs";
 import path5 from "node:path";
 
-// node_modules/diff2html/lib-esm/types.js
-var LineType;
-(function(LineType2) {
-  LineType2["INSERT"] = "insert";
-  LineType2["DELETE"] = "delete";
-  LineType2["CONTEXT"] = "context";
-})(LineType || (LineType = {}));
-var ColorSchemeType;
-(function(ColorSchemeType2) {
-  ColorSchemeType2["AUTO"] = "auto";
-  ColorSchemeType2["DARK"] = "dark";
-  ColorSchemeType2["LIGHT"] = "light";
-})(ColorSchemeType || (ColorSchemeType = {}));
-
-// node_modules/diff2html/lib-esm/utils.js
-var specials = [
-  "-",
-  "[",
-  "]",
-  "/",
-  "{",
-  "}",
-  "(",
-  ")",
-  "*",
-  "+",
-  "?",
-  ".",
-  "\\",
-  "^",
-  "$",
-  "|"
-];
-var regex = RegExp("[" + specials.join("\\") + "]", "g");
-function escapeForRegExp(str) {
-  return str.replace(regex, "\\$&");
-}
-
-// node_modules/diff2html/lib-esm/diff-parser.js
-function getExtension(filename, language) {
-  const filenameParts = filename.split(".");
-  return filenameParts.length > 1 ? filenameParts[filenameParts.length - 1] : language;
-}
-function startsWithAny(str, prefixes) {
-  return prefixes.reduce((startsWith, prefix) => startsWith || str.startsWith(prefix), false);
-}
-var baseDiffFilenamePrefixes = ["a/", "b/", "i/", "w/", "c/", "o/"];
-function getFilename(line, linePrefix, extraPrefix) {
-  const prefixes = extraPrefix !== void 0 ? [...baseDiffFilenamePrefixes, extraPrefix] : baseDiffFilenamePrefixes;
-  const FilenameRegExp = linePrefix ? new RegExp(`^${escapeForRegExp(linePrefix)} "?(.+?)"?$`) : new RegExp('^"?(.+?)"?$');
-  const [, filename = ""] = FilenameRegExp.exec(line) || [];
-  const matchingPrefix = prefixes.find((p) => filename.indexOf(p) === 0);
-  const fnameWithoutPrefix = matchingPrefix ? filename.slice(matchingPrefix.length) : filename;
-  return fnameWithoutPrefix.replace(/\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)? [+-]\d{4}.*$/, "");
-}
-function getSrcFilename(line, srcPrefix) {
-  return getFilename(line, "---", srcPrefix);
-}
-function getDstFilename(line, dstPrefix) {
-  return getFilename(line, "+++", dstPrefix);
-}
-function parse(diffInput, config2 = {}) {
-  const files3 = [];
-  let currentFile = null;
-  let currentBlock = null;
-  let oldLine = null;
-  let oldLine2 = null;
-  let newLine = null;
-  let possibleOldName = null;
-  let possibleNewName = null;
-  const oldFileNameHeader = "--- ";
-  const newFileNameHeader = "+++ ";
-  const hunkHeaderPrefix = "@@";
-  const oldMode = /^old mode (\d{6})/;
-  const newMode = /^new mode (\d{6})/;
-  const deletedFileMode = /^deleted file mode (\d{6})/;
-  const newFileMode = /^new file mode (\d{6})/;
-  const copyFrom = /^copy from "?(.+)"?/;
-  const copyTo = /^copy to "?(.+)"?/;
-  const renameFrom = /^rename from "?(.+)"?/;
-  const renameTo = /^rename to "?(.+)"?/;
-  const similarityIndex = /^similarity index (\d+)%/;
-  const dissimilarityIndex = /^dissimilarity index (\d+)%/;
-  const index = /^index ([\da-z]+)\.\.([\da-z]+)\s*(\d{6})?/;
-  const binaryFiles = /^Binary files (.*) and (.*) differ/;
-  const binaryDiff = /^GIT binary patch/;
-  const combinedIndex = /^index ([\da-z]+),([\da-z]+)\.\.([\da-z]+)/;
-  const combinedMode = /^mode (\d{6}),(\d{6})\.\.(\d{6})/;
-  const combinedNewFile = /^new file mode (\d{6})/;
-  const combinedDeletedFile = /^deleted file mode (\d{6}),(\d{6})/;
-  const diffLines = diffInput.replace(/\\ No newline at end of file/g, "").replace(/\r\n?/g, "\n").split("\n");
-  function saveBlock() {
-    if (currentBlock !== null && currentFile !== null) {
-      currentFile.blocks.push(currentBlock);
-      currentBlock = null;
-    }
-  }
-  function saveFile() {
-    if (currentFile !== null) {
-      if (!currentFile.oldName && possibleOldName !== null) {
-        currentFile.oldName = possibleOldName;
-      }
-      if (!currentFile.newName && possibleNewName !== null) {
-        currentFile.newName = possibleNewName;
-      }
-      if (currentFile.newName) {
-        files3.push(currentFile);
-        currentFile = null;
-      }
-    }
-    possibleOldName = null;
-    possibleNewName = null;
-  }
-  function startFile() {
-    saveBlock();
-    saveFile();
-    currentFile = {
-      blocks: [],
-      deletedLines: 0,
-      addedLines: 0
-    };
-  }
-  function startBlock(line) {
-    saveBlock();
-    let values;
-    if (currentFile !== null) {
-      if (values = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@.*/.exec(line)) {
-        currentFile.isCombined = false;
-        oldLine = parseInt(values[1], 10);
-        newLine = parseInt(values[2], 10);
-      } else if (values = /^@@@ -(\d+)(?:,\d+)? -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@@.*/.exec(line)) {
-        currentFile.isCombined = true;
-        oldLine = parseInt(values[1], 10);
-        oldLine2 = parseInt(values[2], 10);
-        newLine = parseInt(values[3], 10);
-      } else {
-        if (line.startsWith(hunkHeaderPrefix)) {
-          console.error("Failed to parse lines, starting in 0!");
-        }
-        oldLine = 0;
-        newLine = 0;
-        currentFile.isCombined = false;
-      }
-    }
-    currentBlock = {
-      lines: [],
-      oldStartLine: oldLine,
-      oldStartLine2: oldLine2,
-      newStartLine: newLine,
-      header: line
-    };
-  }
-  function createLine(line) {
-    if (currentFile === null || currentBlock === null || oldLine === null || newLine === null)
-      return;
-    const currentLine = {
-      content: line
-    };
-    const addedPrefixes = currentFile.isCombined ? ["+ ", " +", "++"] : ["+"];
-    const deletedPrefixes = currentFile.isCombined ? ["- ", " -", "--"] : ["-"];
-    if (startsWithAny(line, addedPrefixes)) {
-      currentFile.addedLines++;
-      currentLine.type = LineType.INSERT;
-      currentLine.oldNumber = void 0;
-      currentLine.newNumber = newLine++;
-    } else if (startsWithAny(line, deletedPrefixes)) {
-      currentFile.deletedLines++;
-      currentLine.type = LineType.DELETE;
-      currentLine.oldNumber = oldLine++;
-      currentLine.newNumber = void 0;
-    } else {
-      currentLine.type = LineType.CONTEXT;
-      currentLine.oldNumber = oldLine++;
-      currentLine.newNumber = newLine++;
-    }
-    currentBlock.lines.push(currentLine);
-  }
-  function existHunkHeader(line, lineIdx) {
-    let idx = lineIdx;
-    while (idx < diffLines.length - 3) {
-      if (line.startsWith("diff")) {
-        return false;
-      }
-      if (diffLines[idx].startsWith(oldFileNameHeader) && diffLines[idx + 1].startsWith(newFileNameHeader) && diffLines[idx + 2].startsWith(hunkHeaderPrefix)) {
-        return true;
-      }
-      idx++;
-    }
-    return false;
-  }
-  diffLines.forEach((line, lineIndex) => {
-    if (!line || line.startsWith("*")) {
-      return;
-    }
-    let values;
-    const prevLine = diffLines[lineIndex - 1];
-    const nxtLine = diffLines[lineIndex + 1];
-    const afterNxtLine = diffLines[lineIndex + 2];
-    if (line.startsWith("diff --git") || line.startsWith("diff --combined")) {
-      startFile();
-      const gitDiffStart = /^diff --git "?([a-ciow]\/.+)"? "?([a-ciow]\/.+)"?/;
-      if (values = gitDiffStart.exec(line)) {
-        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
-        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
-      }
-      if (currentFile === null) {
-        throw new Error("Where is my file !!!");
-      }
-      currentFile.isGitDiff = true;
-      return;
-    }
-    if (line.startsWith("Binary files") && !(currentFile === null || currentFile === void 0 ? void 0 : currentFile.isGitDiff)) {
-      startFile();
-      const unixDiffBinaryStart = /^Binary files "?([a-ciow]\/.+)"? and "?([a-ciow]\/.+)"? differ/;
-      if (values = unixDiffBinaryStart.exec(line)) {
-        possibleOldName = getFilename(values[1], void 0, config2.dstPrefix);
-        possibleNewName = getFilename(values[2], void 0, config2.srcPrefix);
-      }
-      if (currentFile === null) {
-        throw new Error("Where is my file !!!");
-      }
-      currentFile.isBinary = true;
-      return;
-    }
-    if (!currentFile || !currentFile.isGitDiff && currentFile && line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) && afterNxtLine.startsWith(hunkHeaderPrefix)) {
-      startFile();
-    }
-    if (currentFile === null || currentFile === void 0 ? void 0 : currentFile.isTooBig) {
-      return;
-    }
-    if (currentFile && (typeof config2.diffMaxChanges === "number" && currentFile.addedLines + currentFile.deletedLines > config2.diffMaxChanges || typeof config2.diffMaxLineLength === "number" && line.length > config2.diffMaxLineLength)) {
-      currentFile.isTooBig = true;
-      currentFile.addedLines = 0;
-      currentFile.deletedLines = 0;
-      currentFile.blocks = [];
-      currentBlock = null;
-      const message = typeof config2.diffTooBigMessage === "function" ? config2.diffTooBigMessage(files3.length) : "Diff too big to be displayed";
-      startBlock(message);
-      return;
-    }
-    if (line.startsWith(oldFileNameHeader) && nxtLine.startsWith(newFileNameHeader) || line.startsWith(newFileNameHeader) && prevLine.startsWith(oldFileNameHeader)) {
-      if (currentFile && !currentFile.oldName && line.startsWith("--- ") && (values = getSrcFilename(line, config2.srcPrefix))) {
-        currentFile.oldName = values;
-        currentFile.language = getExtension(currentFile.oldName, currentFile.language);
-        return;
-      }
-      if (currentFile && !currentFile.newName && line.startsWith("+++ ") && (values = getDstFilename(line, config2.dstPrefix))) {
-        currentFile.newName = values;
-        currentFile.language = getExtension(currentFile.newName, currentFile.language);
-        return;
-      }
-    }
-    if (currentFile && (line.startsWith(hunkHeaderPrefix) || currentFile.isGitDiff && currentFile.oldName && currentFile.newName && !currentBlock)) {
-      startBlock(line);
-      return;
-    }
-    if (currentBlock && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
-      createLine(line);
-      return;
-    }
-    const doesNotExistHunkHeader = !existHunkHeader(line, lineIndex);
-    if (currentFile === null) {
-      throw new Error("Where is my file !!!");
-    }
-    if (values = oldMode.exec(line)) {
-      currentFile.oldMode = values[1];
-    } else if (values = newMode.exec(line)) {
-      currentFile.newMode = values[1];
-    } else if (values = deletedFileMode.exec(line)) {
-      currentFile.deletedFileMode = values[1];
-      currentFile.isDeleted = true;
-    } else if (values = newFileMode.exec(line)) {
-      currentFile.newFileMode = values[1];
-      currentFile.isNew = true;
-    } else if (values = copyFrom.exec(line)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.oldName = values[1];
-      }
-      currentFile.isCopy = true;
-    } else if (values = copyTo.exec(line)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.newName = values[1];
-      }
-      currentFile.isCopy = true;
-    } else if (values = renameFrom.exec(line)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.oldName = values[1];
-      }
-      currentFile.isRename = true;
-    } else if (values = renameTo.exec(line)) {
-      if (doesNotExistHunkHeader) {
-        currentFile.newName = values[1];
-      }
-      currentFile.isRename = true;
-    } else if (values = binaryFiles.exec(line)) {
-      currentFile.isBinary = true;
-      currentFile.oldName = getFilename(values[1], void 0, config2.srcPrefix);
-      currentFile.newName = getFilename(values[2], void 0, config2.dstPrefix);
-      startBlock("Binary file");
-    } else if (binaryDiff.test(line)) {
-      currentFile.isBinary = true;
-      startBlock(line);
-    } else if (values = similarityIndex.exec(line)) {
-      currentFile.unchangedPercentage = parseInt(values[1], 10);
-    } else if (values = dissimilarityIndex.exec(line)) {
-      currentFile.changedPercentage = parseInt(values[1], 10);
-    } else if (values = index.exec(line)) {
-      currentFile.checksumBefore = values[1];
-      currentFile.checksumAfter = values[2];
-      if (values[3])
-        currentFile.mode = values[3];
-    } else if (values = combinedIndex.exec(line)) {
-      currentFile.checksumBefore = [values[2], values[3]];
-      currentFile.checksumAfter = values[1];
-    } else if (values = combinedMode.exec(line)) {
-      currentFile.oldMode = [values[2], values[3]];
-      currentFile.newMode = values[1];
-    } else if (values = combinedNewFile.exec(line)) {
-      currentFile.newFileMode = values[1];
-      currentFile.isNew = true;
-    } else if (values = combinedDeletedFile.exec(line)) {
-      currentFile.deletedFileMode = values[1];
-      currentFile.isDeleted = true;
-    }
-  });
-  saveBlock();
-  saveFile();
-  return files3;
-}
-
-// src/diff.ts
-var encoder = new TextEncoder();
-var ESCAPED2 = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, "\\": 92 };
-function pathOf(name2) {
-  const padless = name2.replace(/\t$/, "");
-  if (!padless.includes("\\")) return padless;
-  const bytes = [];
-  for (let at = 0; at < padless.length; at++) {
-    const char = padless.charAt(at);
-    if (char === '"') continue;
-    if (char !== "\\") bytes.push(...encoder.encode(char));
-    else if (/^[0-7]{3}$/.test(padless.slice(at + 1, at + 4))) {
-      bytes.push(parseInt(padless.slice(at + 1, at + 4), 8));
-      at += 3;
-    } else bytes.push(ESCAPED2[padless.charAt(++at)] ?? 92);
-  }
-  return new TextDecoder().decode(new Uint8Array(bytes));
-}
-var parseDiff = (diff) => parse(diff).map((file2) => ({ ...file2, oldName: pathOf(file2.oldName), newName: pathOf(file2.newName) }));
-
 // src/lines.ts
 import crypto2 from "node:crypto";
 
@@ -12906,23 +12917,31 @@ function shownLines(step, file2) {
   const lines = shown.blocks.flatMap((block2) => block2.lines);
   return new Map(lines.flatMap((line) => line.newNumber === void 0 ? [] : [[line.newNumber, line.content.slice(1)]]));
 }
-var hashOf = (shown, [first, last]) => crypto2.createHash("sha256").update(JSON.stringify([...shown].filter(([number]) => number >= first && number <= last).map(([, line]) => line))).digest("hex").slice(0, 16);
+var codeOf = (shown, [first, last]) => [...shown].filter(([number]) => number >= first && number <= last);
+var hashOf = (shown, lines) => crypto2.createHash("sha256").update(JSON.stringify(codeOf(shown, lines).map(([, line]) => line))).digest("hex").slice(0, 16);
 var stepOf = ({ steps: steps3 }, file2) => steps3.find((one) => one.files.includes(file2));
-function anchorOf(walkthrough, { file: file2, lines, linesHash }) {
-  const found = stepOf(walkthrough, file2);
+var stepOfFile = (walkthrough, file2) => stepOf(walkthrough, file2)?.id;
+function anchorOf(walkthrough, place) {
+  const found = stepOf(walkthrough, place.file);
+  if (!("lines" in place)) return found?.id ?? null;
+  const { file: file2, lines, linesHash } = place;
   const shown = found && shownLines(found, file2);
   if (!found || !shown?.has(lines[0]) || !shown.has(lines[1])) return null;
   return hashOf(shown, lines) === linesHash ? found.id : null;
 }
 function placeIn(walkthrough, { file: file2, lines }) {
-  if (!filled(file2)) throw new Error("lines need a file");
-  if (!isLines(lines)) throw new Error("a file needs lines, as [first, last]");
+  if (!filled(file2)) throw new Error("a comment needs a file");
   const found = walkthrough && stepOf(walkthrough, file2);
+  if (lines === void 0) {
+    if (!found) throw new Error(`no step changes ${file2}`);
+    return { file: file2 };
+  }
+  if (!isLines(lines)) throw new Error("lines must be [first, last], or left out for the whole file");
   const shown = found && shownLines(found, file2);
   if (!shown) throw new Error(`no step changes ${file2}`);
   const [first, last] = lines;
   if (!shown.has(first) || !shown.has(last)) throw new Error(`lines ${String(first)}-${String(last)} of ${file2} are not in its diff`);
-  return { file: file2, lines: [first, last], linesHash: hashOf(shown, [first, last]) };
+  return { file: file2, lines: [first, last], linesHash: hashOf(shown, [first, last]), code: codeOf(shown, [first, last]) };
 }
 
 // src/walkthrough.ts
@@ -12935,6 +12954,10 @@ function walkthroughDir(repo, source) {
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
   return path4.join(stateDir(), repo, name2);
 }
+var branchOfDir = (dir) => {
+  const name2 = path4.basename(dir);
+  return name2.startsWith("branch-") ? name2.slice("branch-".length).replaceAll("~", "/") : void 0;
+};
 var targetName = (target) => /^[0-9a-f]{40,64}$/.test(target) ? target.slice(0, 7) : target;
 var nameOf = (named) => named.kind === "branch" ? named.branch : named.label;
 var EARLIER_FIELDS = ["kindLabel", "commentHint", "checking", "checklist", "lastChecklistItem", "actions", "hints", "reviewing"];
@@ -13020,7 +13043,7 @@ var files = (dir) => ({
   listener: path5.join(dir, "listener.json"),
   viewed: path5.join(dir, "viewed.json")
 });
-var hold = (dir, work) => locked(path5.join(dir, "review"), work);
+var hold = (dir, work) => locked(path5.join(dir, "review"), work, 2e3);
 function readLines(file2) {
   let text2 = "";
   try {
@@ -13058,6 +13081,7 @@ function replay(walkthrough, log) {
   const comments3 = /* @__PURE__ */ new Map();
   const roots = /* @__PURE__ */ new Map();
   const resolved = /* @__PURE__ */ new Map();
+  const takesBack = (one) => one.review === void 0 || !walkthrough.pr && one.by === "ai";
   const submits = [];
   const posted2 = /* @__PURE__ */ new Map();
   for (const event of log) {
@@ -13089,8 +13113,13 @@ function replay(walkthrough, log) {
         break;
       }
       case "resolve":
-        if (!resolved.has(event.thread)) resolved.set(event.thread, void 0);
+        if (!resolved.has(event.thread)) resolved.set(event.thread, { by: event.by ?? "you" });
         break;
+      case "unresolve": {
+        const one = resolved.get(event.thread);
+        if (one && takesBack(one)) resolved.delete(event.thread);
+        break;
+      }
       case "submit":
         submits.push(event);
         for (const { view, deleted } of comments3.values())
@@ -13098,7 +13127,7 @@ function replay(walkthrough, log) {
             delete view.pending;
             view.review = event.id;
           }
-        for (const [thread, review] of resolved) if (review === void 0) resolved.set(thread, event.id);
+        for (const one of resolved.values()) one.review ??= event.id;
         break;
       case "posted":
         posted2.set(event.submit, event.address);
@@ -13109,21 +13138,41 @@ function replay(walkthrough, log) {
   const live = [...comments3.values()].filter((one) => !one.deleted && !gone.has(one.thread));
   const kept = live.map((one) => one.view);
   const ownIn = (thread) => live.filter((one) => one.thread === thread).map((one) => one.view);
+  const resolvedIn = (id, was) => {
+    const one = resolved.get(id);
+    if (!one) return was ? { resolved: true } : {};
+    return {
+      resolved: true,
+      resolvedBy: one.by,
+      ...walkthrough.pr && one.review === void 0 && { resolvePending: true },
+      ...one.review !== void 0 && { resolveReview: one.review },
+      ...takesBack(one) && { unresolvable: true }
+    };
+  };
+  const placed2 = (place) => {
+    const step = anchorOf(walkthrough, place);
+    const fileStep = step === null ? stepOfFile(walkthrough, place.file) : void 0;
+    return {
+      file: place.file,
+      ..."lines" in place && { lines: place.lines },
+      step,
+      ...step === null && "lines" in place && place.code && { code: place.code },
+      ...fileStep !== void 0 && { fileStep }
+    };
+  };
   const threads3 = [
-    ...(walkthrough.threads ?? []).map(({ id, file: file2, lines, linesHash = "", resolved: was, author, at, body, replies }) => ({
+    ...(walkthrough.threads ?? []).map(({ id, file: file2, lines, linesHash = "", code: code2, resolved: was, author, at, body, replies }) => ({
       id,
-      file: file2,
-      lines,
-      step: anchorOf(walkthrough, { file: file2, lines, linesHash }),
+      ...placed2(lines ? { file: file2, lines, linesHash, ...code2 && { code: code2 } } : { file: file2 }),
       colleague: true,
-      ...(was || resolved.has(id)) && { resolved: true },
+      ...resolvedIn(id, was),
       comments: [
         { id, by: "colleague", author, at, body },
         ...replies.map((reply, number) => ({ id: `${id}.${String(number + 1)}`, by: "colleague", ...reply })),
         ...ownIn(id)
       ]
     })),
-    ...[...roots].filter(([id]) => !gone.has(id)).map(([id, place]) => ({ id, file: place.file, lines: place.lines, step: anchorOf(walkthrough, place), comments: ownIn(id) }))
+    ...[...roots].filter(([id]) => !gone.has(id)).map(([id, place]) => ({ id, ...placed2(place), ...resolvedIn(id), comments: ownIn(id) }))
   ];
   const wrote = new Map([...comments3].map(([id, one]) => [id, one.wrote]));
   const dropped = [...comments3.values()].filter((one) => one.deleted && one.view.by === "ai" && roots.has(one.view.id)).map((one) => ({ ...one, place: roots.get(one.view.id) }));
@@ -13140,11 +13189,25 @@ function fileMarks(steps3) {
   );
 }
 function walkthroughVersion(dir) {
+  const branch = branchOfDir(dir);
   const stats = ["walkthrough.json", "review.jsonl", "viewed.json", "listener.json"].map((name2) => {
     const stat = fs5.statSync(path5.join(dir, name2), { throwIfNoEntry: false });
     return stat ? `${String(stat.ino)}-${String(stat.size)}-${String(stat.mtimeMs)}` : "";
   });
-  return fingerprint([...stats, String(listenerGone(dir))].join(":"));
+  return fingerprint([...stats, String(listenerGone(dir)), branch === void 0 ? "" : branchHead(branch) ?? ""].join(":"));
+}
+var branchHead = (branch) => commitOf(process.cwd(), `refs/heads/${branch}`);
+var between = /* @__PURE__ */ new Map();
+function sinceOf(walkthrough, head) {
+  const key2 = [process.cwd(), head, walkthrough.head].join(":");
+  if (!between.has(key2)) {
+    between.clear();
+    between.set(key2, changesBetween(process.cwd(), head, walkthrough.head));
+  }
+  const found = between.get(key2);
+  if (!found) return null;
+  const shown = new Set(walkthrough.steps.flatMap((step) => step.files));
+  return { head, commits: found.commits, files: Object.fromEntries(Object.entries(found.files).filter(([file2]) => shown.has(file2))) };
 }
 function walkthroughView(dir) {
   const walkthrough = readWalkthrough(dir);
@@ -13153,7 +13216,7 @@ function walkthroughView(dir) {
   const marks = readJson(files(dir).viewed, []);
   const current3 = fileMarks(walkthrough.steps);
   const last = submits.at(-1);
-  const showsSubmitted = last && last.head === walkthrough.head && !kept.some((one) => one.pending);
+  const showsSubmitted = last && last.head === walkthrough.head && !kept.some((one) => one.pending) && !threads3.some((one) => one.resolvePending);
   const address = last && posted2.get(last.id);
   const ready2 = walkthrough.ready !== false && walkthrough.steps.length > 0;
   return {
@@ -13173,7 +13236,9 @@ function walkthroughView(dir) {
       comments: kept.filter((one) => one.review === last.id).length,
       posted: posted2.has(last.id),
       ...address !== void 0 && { address }
-    } : null
+    } : null,
+    since: ready2 && last && last.head !== walkthrough.head ? sinceOf(walkthrough, last.head) : null,
+    behind: walkthrough.kind === "branch" && (branchHead(walkthrough.branch) ?? walkthrough.head) !== walkthrough.head
   };
 }
 async function comment(dir, { comment: id, text: text2, delete: deleting, thread, ...where }) {
@@ -13189,7 +13254,7 @@ async function comment(dir, { comment: id, text: text2, delete: deleting, thread
   }
   if (!said2) return false;
   if (thread !== void 0) {
-    if (!threads3.some((one) => one.id === thread && !one.resolved)) return false;
+    if (!threads3.some((one) => one.id === thread)) return false;
     return !!await record(dir, { kind: "comment", by: "you", text: said2, thread });
   }
   const place = placeOrNull(walkthrough, where);
@@ -13213,10 +13278,27 @@ async function ask(dir, { text: text2, thread, ...where }) {
   const place = placeOrNull(walkthrough, where);
   return !!place && !!await record(dir, { kind: "ask", text: said2, place });
 }
-async function resolve(dir, { thread }) {
+var threadOf = (dir, id) => {
   const walkthrough = readWalkthrough(dir);
-  const found = walkthrough && replay(walkthrough, logOf(dir)).threads.find((one) => one.id === thread);
-  return !!found?.colleague && !found.resolved && !!await record(dir, { kind: "resolve", thread: found.id });
+  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find((one) => one.id === id) : void 0;
+};
+async function resolve(dir, { thread }) {
+  const found = threadOf(dir, thread);
+  return !!found?.colleague && !found.resolved && !!await record(dir, { kind: "resolve", thread: found.id, by: "you" });
+}
+async function unresolve(dir, { thread }) {
+  const found = threadOf(dir, thread);
+  return !!found?.unresolvable && !!await record(dir, { kind: "unresolve", thread: found.id });
+}
+async function aiResolve(dir, id) {
+  const found = threadOf(dir, id);
+  const first = found?.comments[0];
+  if (logOf(dir).some((event) => event.kind === "delete" && event.comment === id)) throw new Error(`the comment ${id} was deleted`);
+  if (!found || !first) throw new Error(`no thread starts with the comment ${id}; pass the id of your comment that started it`);
+  if (first.by !== "ai") throw new Error(`the comment ${id} is not yours`);
+  if (first.pending) throw new Error(`the comment ${id} is still pending: it has not gone out with a review`);
+  if (found.resolved) throw new Error(`the thread of the comment ${id} is already resolved`);
+  await record(dir, { kind: "resolve", thread: id, by: "ai" });
 }
 async function submit(dir, { type, summary }) {
   const view = walkthroughView(dir);
@@ -13250,6 +13332,7 @@ async function markPosted(dir, address) {
   await record(dir, { kind: "posted", submit: last.id, ...address !== void 0 && { address } });
 }
 var AI_PREFIX = "[AI] ";
+var whereOf = ({ file: file2, lines }) => lines ? { file: file2, lines } : { file: file2, subject: "file" };
 function reviewComments(dir, all = false) {
   const walkthrough = readWalkthrough(dir);
   if (!walkthrough) return [];
@@ -13263,11 +13346,14 @@ function reviewComments(dir, all = false) {
       (thread) => thread.comments.filter(inReview).map((one) => {
         const body = one.by === "ai" ? AI_PREFIX + one.body : one.body;
         const by = one.by === "colleague" ? one.author : one.by;
-        return one.id === thread.id ? { kind: "comment", id: one.id, by, file: thread.file, lines: thread.lines, body, ...reworded(one), ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body, ...reworded(one) };
+        return one.id === thread.id ? { kind: "comment", id: one.id, by, ...whereOf(thread), body, ...reworded(one), ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body, ...reworded(one) };
       })
     ),
-    ...(all ? dropped : []).map(({ view, wrote: text2, place }) => ({ kind: "comment", id: view.id, by: "ai", file: place.file, lines: place.lines, body: AI_PREFIX + text2, deleted: true })),
-    ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: "resolve", thread }))
+    ...(all ? dropped : []).map(({ view, wrote: text2, place }) => ({ kind: "comment", id: view.id, by: "ai", ...whereOf(place), body: AI_PREFIX + text2, deleted: true })),
+    ...[...resolved].filter(([, one]) => all || one.review === review && (walkthrough.pr || one.by === "you")).map(([id, one]) => {
+      const thread = one.by === "ai" ? threads3.find((found) => found.id === id) : void 0;
+      return thread ? { kind: "resolve", thread: id, by: "ai", ...whereOf(thread), body: AI_PREFIX + (thread.comments[0]?.body ?? "") } : { kind: "resolve", thread: id };
+    })
   ];
 }
 var withoutPrefix = (body) => body.startsWith(AI_PREFIX) ? body.slice(AI_PREFIX.length).trim() : body.trim();
@@ -13292,7 +13378,7 @@ function handedAsk(dir, event) {
     kind: "ask",
     id: event.id,
     text: event.text,
-    ...thread && { file: thread.file, lines: thread.lines },
+    ...thread && whereOf(thread),
     thread: before.map((said2) => ({ by: said2.by === "colleague" ? said2.author : said2.by, body: said2.body }))
   };
 }
@@ -13302,8 +13388,9 @@ async function listen(dir, pageRunning) {
     const now = readJson(listener, null);
     return now?.state === "listening" && now.pid === process.pid;
   };
+  const started = psStart(process.pid);
   await hold(dir, () => {
-    writeJson(listener, { state: "listening", pid: process.pid, started: psStart(process.pid) });
+    writeJson(listener, { state: "listening", pid: process.pid, started });
   });
   const release = () => hold(dir, () => {
     if (mine()) writeJson(listener, { state: "stopped" });
@@ -13357,12 +13444,323 @@ var listPage = (repoDir2) => ({
   walkthroughs: listView(repoDir2)
 });
 
+// src/steps.ts
+import crypto4 from "node:crypto";
+import fs7 from "node:fs";
+import path7 from "node:path";
+
+// src/copies.ts
+import { spawn } from "node:child_process";
+
+// src/moves.ts
+var MIN_LINES = 3;
+var MIN_ALNUM = 20;
+function runsOf(files3, type) {
+  const runs = [];
+  let change = 0;
+  for (const file2 of files3) {
+    const name2 = file2.isDeleted ? file2.oldName : file2.newName;
+    let run = [];
+    for (const block2 of file2.blocks) {
+      change++;
+      for (const one of block2.lines) {
+        if (one.type === LineType.CONTEXT) change++;
+        const line = type === LineType.DELETE ? one.oldNumber : one.newNumber;
+        if (one.type !== type || line === void 0) continue;
+        if (run.at(-1)?.line !== line - 1) runs.push(run = []);
+        run.push({ file: name2, line, text: one.content.slice(1).trimEnd(), change });
+      }
+    }
+  }
+  return runs;
+}
+var enough = (lines) => lines.length >= MIN_LINES && lines.reduce((sum, { text: text2 }) => sum + (text2.match(/[\p{L}\p{N}]/gu)?.length ?? 0), 0) >= MIN_ALNUM;
+function findMoves(files3) {
+  const added = runsOf(files3, LineType.INSERT);
+  const starts = /* @__PURE__ */ new Map();
+  for (const run of added) run.forEach(({ text: text2 }, at) => starts.set(text2, [...starts.get(text2) ?? [], [run, at]]));
+  const used = /* @__PURE__ */ new Set();
+  const moves = [];
+  for (const gone of runsOf(files3, LineType.DELETE))
+    for (let at = 0; at < gone.length; ) {
+      let best = null;
+      for (const [run, from] of starts.get(gone[at]?.text ?? "") ?? []) {
+        let count = 0;
+        for (let line = run[from + count]; line && !used.has(line) && gone[at + count]?.text === line.text && gone[at + count]?.change !== line.change; line = run[from + count]) count++;
+        if (count > (best?.count ?? 0)) best = { run, from, count };
+      }
+      const left = gone.slice(at, at + (best?.count ?? 0));
+      const [first] = left;
+      const arrived = best?.run[best.from];
+      if (!best || !first || !arrived || !enough(left)) {
+        at++;
+        continue;
+      }
+      for (const line of best.run.slice(best.from, best.from + best.count)) used.add(line);
+      moves.push({ from: { file: first.file, line: first.line }, to: { file: arrived.file, line: arrived.line }, count: best.count });
+      at += best.count;
+    }
+  return moves;
+}
+
+// src/copies.ts
+var MAX_ADDED = 5e3;
+function gitOut(cwd, args, input) {
+  return new Promise((resolve2) => {
+    const child = spawn("git", args, { cwd, stdio: ["pipe", "pipe", "ignore"] });
+    const chunks = [];
+    child.stdout.on("data", (chunk) => chunks.push(chunk));
+    child.on("error", () => {
+      resolve2(Buffer.alloc(0));
+    });
+    child.on("close", (code2) => {
+      resolve2(code2 === 0 ? Buffer.concat(chunks) : Buffer.alloc(0));
+    });
+    child.stdin.end(input);
+  });
+}
+var keyOf = (file2, line) => `${file2}
+${String(line)}`;
+var MAX_HITS = 20;
+var hasWord = (text2) => /[\p{L}\p{N}]/u.test(text2);
+async function grep(cwd, head, patterns) {
+  const out = await gitOut(cwd, ["grep", "-F", "--line-number", "-z", "-I", "--full-name", "--no-color", "-f", "-", head, "--", ":(top)"], `${patterns.join("\n")}
+`);
+  return out.toString("utf8").split("\n").flatMap((record2) => {
+    const [file2 = "", line = "", ...text2] = record2.split("\0");
+    return file2.startsWith(`${head}:`) ? [{ file: file2.slice(head.length + 1), line: Number(line), text: text2.join("\0").trimEnd() }] : [];
+  });
+}
+async function linesAt(cwd, head, files3) {
+  const out = await gitOut(cwd, ["cat-file", "--batch"], files3.map((file2) => `${head}:${file2}
+`).join(""));
+  const read2 = /* @__PURE__ */ new Map();
+  let at = 0;
+  for (const file2 of files3) {
+    const end = out.indexOf(10, at);
+    if (end < 0) break;
+    const size = Number(/ blob (\d+)$/.exec(out.subarray(at, end).toString())?.[1] ?? -1);
+    if (size < 0) {
+      at = end + 1;
+      continue;
+    }
+    read2.set(file2, out.subarray(end + 1, end + 1 + size).toString("utf8").split("\n"));
+    at = end + 1 + size + 1;
+  }
+  return read2;
+}
+async function findCopies(cwd, head, diff, steps3) {
+  const files3 = parseDiff(diff);
+  const moved = new Set(findMoves(files3).flatMap(({ to, count }) => Array.from({ length: count }, (_, at) => keyOf(to.file, to.line + at))));
+  const added = runsOf(files3, LineType.INSERT).flatMap((run) => {
+    const pieces = [];
+    let piece = [];
+    for (const line of run)
+      if (moved.has(keyOf(line.file, line.line))) piece = [];
+      else {
+        if (!piece.length) pieces.push(piece);
+        piece.push(line);
+      }
+    return pieces;
+  });
+  if (added.reduce((sum, run) => sum + run.length, 0) > MAX_ADDED) return [];
+  const runOf = new Map(added.flatMap((run, at) => run.map((line) => [keyOf(line.file, line.line), at])));
+  const deleted = new Set(runsOf(files3, LineType.DELETE).flatMap((run) => run.map((line) => `${String(line.change)}
+${line.text}`)));
+  const runs = added.map((lines, at) => ({ lines, at })).filter(({ lines }) => enough(lines) && !lines.some((line) => deleted.has(`${String(line.change)}
+${line.text}`)));
+  if (!runs.length) return [];
+  const hits = /* @__PURE__ */ new Map();
+  const starts = new Set(runs.flatMap(({ lines }) => lines.filter((line) => hasWord(line.text)).map((line) => line.text)));
+  for (const hit of await grep(cwd, head, [...starts])) if (starts.has(hit.text)) hits.set(hit.text, [...hits.get(hit.text) ?? [], hit]);
+  for (const [text2, found] of hits) if (found.length > MAX_HITS) hits.delete(text2);
+  const read2 = await linesAt(cwd, head, [...new Set([...hits.values()].flat().map((hit) => hit.file))].filter((file2) => !file2.includes("\n")));
+  const copies = [];
+  for (const { lines, at: index } of runs)
+    for (let at = 0; at < lines.length; ) {
+      const first = lines[at];
+      const later = (file3, line2) => (runOf.get(keyOf(file3, line2)) ?? -1) >= index;
+      const isAdded = (file3, line2, count2) => Array.from({ length: count2 }, (_, offset) => runOf.has(keyOf(file3, line2 + offset))).includes(true);
+      const score = (file3, line2, count2) => count2 * 4 - (isAdded(file3, line2, count2) ? 2 : 0) - (file3 === first?.file ? 0 : 1);
+      let best = null;
+      for (const { file: file3, line: line2 } of hits.get(first?.text ?? "") ?? []) {
+        let count2 = 0;
+        while (lines[at + count2] && !later(file3, line2 + count2) && read2.get(file3)?.[line2 - 1 + count2]?.trimEnd() === lines[at + count2]?.text) count2++;
+        if (count2 && score(file3, line2, count2) > (best?.score ?? 0)) best = { file: file3, line: line2, count: count2, score: score(file3, line2, count2) };
+      }
+      const part = lines.slice(at, at + (best?.count ?? 0));
+      if (!best || !first || !enough(part)) {
+        at++;
+        continue;
+      }
+      const { file: file2, line, count } = best;
+      const step = steps3.find((one) => one.files.includes(file2));
+      const shown = step && shownLines(step, file2);
+      const inDiff = !!shown && part.every((_, offset) => shown.has(line + offset));
+      copies.push({ from: { file: file2, line }, to: { file: first.file, line: first.line }, count, inDiff });
+      at += count;
+    }
+  return copies;
+}
+async function withCopies(cwd, head, steps3) {
+  const copies = await findCopies(cwd, head, steps3.map((step) => step.diff).join(""), steps3);
+  return steps3.map((step) => {
+    const mine = copies.filter((copy) => step.files.includes(copy.to.file));
+    const kept = { ...step };
+    delete kept.copies;
+    return mine.length ? { ...kept, copies: mine } : kept;
+  });
+}
+
+// src/steps.ts
+var MAX_LOOK = 2;
+var LOOK_WORDS = 4;
+var wordCount = (text2) => text2.trim().split(/\s+/).length;
+function parseLook(given, name2) {
+  const { file: file2, start: start2, end, label } = fieldsOf(given);
+  if (!filled(file2)) throw new Error(`${name2} needs a file`);
+  if (!Number.isInteger(start2) || !Number.isInteger(end) || start2 < 1 || start2 > end)
+    throw new Error(`${name2} needs a start and an end line, the start first`);
+  if (!filled(label) || wordCount(label) > LOOK_WORDS) throw new Error(`${name2} needs a label of 1 to ${String(LOOK_WORDS)} words`);
+  return { file: file2, start: start2, end, label: label.trim() };
+}
+var SCREENSHOT_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
+var MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
+var imageType = (bytes) => {
+  const starts = (text2, at = 0) => bytes.subarray(at, at + text2.length).equals(Buffer.from(text2, "latin1"));
+  if (starts("\x89PNG\r\n\n")) return "png";
+  if (starts("\xFF\xD8\xFF")) return "jpg";
+  if (starts("GIF87a") || starts("GIF89a")) return "gif";
+  return starts("RIFF") && starts("WEBP", 8) ? "webp" : null;
+};
+function readScreenshot(file2, name2) {
+  let bytes;
+  try {
+    if (fs7.statSync(file2).size > MAX_SCREENSHOT_BYTES) return `${name2}: its screenshot ${file2} is over 5 MB`;
+    bytes = fs7.readFileSync(file2);
+  } catch {
+    return `${name2}: its screenshot ${file2} cannot be read`;
+  }
+  const type = imageType(bytes);
+  if (!type) return `${name2}: its screenshot ${file2} is not a PNG, JPEG, GIF or WebP image`;
+  return { file: file2, bytes, name: `${crypto4.createHash("sha256").update(bytes).digest("hex")}.${type}` };
+}
+function parseScreenshot(given, name2) {
+  const { file: file2, alt = "" } = fieldsOf(given);
+  if (!filled(file2) || typeof alt !== "string") throw new Error(`${name2}: a screenshot is {"file": path, "alt": text}`);
+  return { file: file2, alt: alt.trim() };
+}
+function parseSteps(text2) {
+  return parseList(text2, "the steps", (step, number) => {
+    const name2 = `step ${String(number)}`;
+    const { title, explanation, files: files3, look = [], screenshot } = step;
+    if (!filled(title)) throw new Error(`${name2} needs a title`);
+    if (!filled(explanation)) throw new Error(`${name2} needs an explanation`);
+    if (!Array.isArray(files3) || !files3.length) throw new Error(`${name2}: files must be a list of at least one file`);
+    const folded = {};
+    const paths = files3.map((file2) => {
+      if (filled(file2)) return file2;
+      const { path: path13, folded: reason } = fieldsOf(file2);
+      if (!filled(path13) || !filled(reason)) throw new Error(`${name2}: each file is a path, or a path with the reason it is folded`);
+      folded[path13] = reason.trim();
+      return path13;
+    });
+    if (!Array.isArray(look) || look.length > MAX_LOOK) throw new Error(`${name2}: look must be a list of at most ${String(MAX_LOOK)} pointers`);
+    return {
+      title,
+      explanation,
+      files: paths,
+      ...Object.keys(folded).length && { folded },
+      look: look.map((one, at) => parseLook(one, `${name2}, pointer ${String(at + 1)}`)),
+      ...screenshot !== void 0 && { screenshot: screenshot === null ? null : parseScreenshot(screenshot, name2) }
+    };
+  });
+}
+function stepIds({ steps: steps3, lastStep = 0 }, inputs) {
+  let next = Math.max(lastStep, ...steps3.map((step) => Number(step.id)));
+  const pairs = inputs.flatMap((input, at) => {
+    const files3 = new Set(input.files);
+    return steps3.map((step, old) => ({ at, old, id: step.id, shared: step.files.filter((one) => files3.has(one)).length }));
+  });
+  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
+  const ids = inputs.map(() => void 0);
+  const taken = /* @__PURE__ */ new Set();
+  for (const { at, id, shared } of pairs)
+    if (shared > 0 && ids[at] === void 0 && !taken.has(id)) {
+      ids[at] = id;
+      taken.add(id);
+    }
+  return ids.map((id) => id ?? String(++next));
+}
+var lookShown = (step, { file: file2, start: start2, end }) => {
+  const shown = step.files.includes(file2) ? shownLines(step, file2) : null;
+  return !!shown?.has(start2) && shown.has(end);
+};
+async function buildSteps(cwd, dir, walkthrough, inputs) {
+  const { base, head } = walkthrough;
+  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
+  const problems = [];
+  const placed2 = /* @__PURE__ */ new Set();
+  for (const one of inputs.flatMap((input) => input.files)) {
+    if (!changed.has(one)) problems.push(`${one} is not changed in this walkthrough`);
+    else if (placed2.has(one)) problems.push(`${one} is in more than one step`);
+    placed2.add(one);
+  }
+  const left = [...changed.keys()].filter((one) => !placed2.has(one));
+  if (left.length > 0) problems.push(`no step has ${left.join(", ")}`);
+  const shots = inputs.map((input, at) => input.screenshot ? readScreenshot(input.screenshot.file, `step ${String(at + 1)}`) : null);
+  problems.push(...shots.filter((shot) => typeof shot === "string"));
+  if (problems.length > 0) throw new Error(`the steps were not recorded:
+  ${[...new Set(problems)].join("\n  ")}`);
+  const ids = stepIds(walkthrough, inputs);
+  const steps3 = await Promise.all(
+    inputs.map(async ({ screenshot, ...input }, at) => {
+      const id = ids[at] ?? "";
+      const shot = shots[at];
+      const kept = screenshot && shot && typeof shot !== "string" ? { name: shot.name, alt: screenshot.alt } : screenshot === void 0 ? walkthrough.steps.find((old) => old.id === id)?.screenshot : void 0;
+      return {
+        id,
+        ...input,
+        ...kept && { screenshot: kept },
+        diff: await diffOf(cwd, base, head, input.files.flatMap((one) => changed.get(one) ?? []))
+      };
+    })
+  );
+  const astray = steps3.flatMap(
+    (step, at) => step.look.filter((one) => !lookShown(step, one)).map((one) => `step ${String(at + 1)} points to lines ${String(one.start)}-${String(one.end)} of ${one.file}, which are not in its diff`)
+  );
+  if (astray.length) throw new Error(`the steps were not recorded:
+  ${astray.join("\n  ")}`);
+  for (const shot of shots)
+    if (shot && typeof shot !== "string") {
+      fs7.writeFileSync(path7.join(dir, shot.name), shot.bytes, { mode: 384 });
+      if (inInbox(shot.file)) fs7.rmSync(shot.file);
+    }
+  return withCopies(cwd, head, steps3);
+}
+async function carrySteps(cwd, { base, head, steps: steps3 }) {
+  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
+  const carried = await Promise.all(
+    steps3.map(async (step) => {
+      const files3 = step.files.filter((one) => changed.has(one));
+      if (!files3.length) return null;
+      const moved = { ...step, files: files3, diff: await diffOf(cwd, base, head, files3.flatMap((one) => changed.get(one) ?? [])) };
+      return { ...moved, look: moved.look.filter((one) => lookShown(moved, one)) };
+    })
+  );
+  const kept = await withCopies(cwd, head, carried.filter((step) => step !== null));
+  const placed2 = new Set(kept.flatMap((step) => step.files));
+  return { steps: kept, unplaced: [...changed.keys()].filter((file2) => !placed2.has(file2)) };
+}
+
 // src/viewer.ts
 var THEMES = ["system", "light", "dark"];
-var DEFAULT_VIEWER = { theme: "system" };
+var DEFAULT_VIEWER = { theme: "system", colourBlind: false };
 function mergeViewer(base, change) {
-  const theme = typeof change === "object" && change !== null ? change["theme"] : void 0;
-  return THEMES.includes(theme) ? { theme } : { ...base };
+  const given = typeof change === "object" && change !== null ? change : {};
+  const theme = THEMES.find((one) => one === given["theme"]) ?? base.theme;
+  const colourBlind = typeof given["colourBlind"] === "boolean" ? given["colourBlind"] : base.colourBlind;
+  return { theme, colourBlind };
 }
 
 // src/words.ts
@@ -13376,7 +13774,7 @@ function tooLong(fields) {
 // src/server.ts
 var MAX_BODY_BYTES = 256 * 1024;
 var IDLE_MS = 30 * 60 * 1e3;
-var PAGE = path7.join(import.meta.dirname, "page");
+var PAGE = path8.join(import.meta.dirname, "page");
 var SHARED_FILES = {
   "style.css": { file: "style.css", type: "text/css; charset=utf-8" },
   "favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
@@ -13401,24 +13799,24 @@ var SECURITY_HEADERS = {
   "x-frame-options": "DENY",
   "cross-origin-resource-policy": "same-origin"
 };
-var viewerFile = () => path7.join(stateDir(), "viewer.json");
+var viewerFile = () => path8.join(stateDir(), "viewer.json");
 var readViewer = (file2 = viewerFile()) => mergeViewer(DEFAULT_VIEWER, readJson(file2, {}));
 function saveViewer(change, file2 = viewerFile()) {
   const saved = mergeViewer(readViewer(file2), change);
   writeJson(file2, saved);
   return saved;
 }
-var recordFile = (dir) => path7.join(dir, "server.json");
+var recordFile = (dir) => path8.join(dir, "server.json");
 var readRecord = (dir) => readJson(recordFile(dir), null);
 function pageToken(dir) {
-  const file2 = path7.join(dir, "token");
+  const file2 = path8.join(dir, "token");
   try {
-    const kept = fs7.readFileSync(file2, "utf8").trim();
+    const kept = fs8.readFileSync(file2, "utf8").trim();
     if (/^[0-9a-f]{48}$/.test(kept)) return kept;
   } catch {
   }
-  const token = crypto4.randomBytes(24).toString("hex");
-  fs7.writeFileSync(file2, `${token}
+  const token = crypto5.randomBytes(24).toString("hex");
+  fs8.writeFileSync(file2, `${token}
 `, { mode: 384 });
   return token;
 }
@@ -13430,36 +13828,36 @@ var sleep = (ms) => new Promise((resolve2) => {
   setTimeout(resolve2, ms);
 });
 function ensureServer(dir, list3 = false) {
-  fs7.mkdirSync(dir, { recursive: true, mode: 448 });
+  fs8.mkdirSync(dir, { recursive: true, mode: 448 });
   return locked(recordFile(dir), async () => {
     const running = readRecord(dir);
     if (running && alive(running)) return running.url;
-    const log = fs7.openSync(path7.join(dir, "server.log"), "a", 384);
-    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
+    const log = fs8.openSync(path8.join(dir, "server.log"), "a", 384);
+    const child = spawn2(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
       // Not the folder start ran in, which may be a worktree removed while the page is open.
       cwd: commonDir(process.cwd()),
       detached: true,
       stdio: ["ignore", log, log]
     });
     child.unref();
-    fs7.closeSync(log);
+    fs8.closeSync(log);
     for (const end = Date.now() + 1e4; Date.now() < end; await sleep(50)) {
       const record2 = readRecord(dir);
       if (record2 && record2.pid === child.pid) return record2.url;
     }
-    throw new Error(`the page server did not start; see ${path7.join(dir, "server.log")}`);
+    throw new Error(`the page server did not start; see ${path8.join(dir, "server.log")}`);
   });
 }
 async function stopServer(dir) {
   const record2 = readRecord(dir);
   if (!record2 || !alive(record2)) {
-    fs7.rmSync(recordFile(dir), { force: true });
+    fs8.rmSync(recordFile(dir), { force: true });
     return false;
   }
   process.kill(record2.pid, "SIGTERM");
   for (const end = Date.now() + 8e3; Date.now() < end && alive(record2); ) await sleep(50);
   if (alive(record2)) process.kill(record2.pid, "SIGKILL");
-  fs7.rmSync(recordFile(dir), { force: true });
+  fs8.rmSync(recordFile(dir), { force: true });
   return true;
 }
 function serve(dir, list3 = false) {
@@ -13474,6 +13872,7 @@ function serve(dir, list3 = false) {
     "/comment": async (fields) => answered(dir, await comment(dir, fields)),
     "/ask": async (fields) => answered(dir, await ask(dir, fields)),
     "/resolve": async (fields) => answered(dir, await resolve(dir, fields)),
+    "/unresolve": async (fields) => answered(dir, await unresolve(dir, fields)),
     "/submit": async (fields) => answered(dir, await submit(dir, fields)),
     "/stop": stop
   };
@@ -13487,7 +13886,7 @@ function serve(dir, list3 = false) {
     }
   });
   const shutDown = () => {
-    if (readRecord(dir)?.pid === process.pid) fs7.rmSync(recordFile(dir), { force: true });
+    if (readRecord(dir)?.pid === process.pid) fs8.rmSync(recordFile(dir), { force: true });
     process.exit(0);
   };
   process.on("SIGTERM", shutDown);
@@ -13510,7 +13909,7 @@ function serve(dir, list3 = false) {
 var answered = (dir, done) => done ? { status: 200, body: walkthroughView(dir) } : { status: 400 };
 async function open(repoDir2, id) {
   const listed = listView(repoDir2).find((one) => one.id === id);
-  return listed ? { status: 200, body: { url: await ensureServer(path7.join(repoDir2, listed.id)) } } : { status: 400 };
+  return listed ? { status: 200, body: { url: await ensureServer(path8.join(repoDir2, listed.id)) } } : { status: 400 };
 }
 var logged = (error) => {
   console.error(`walkthrough server: ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
@@ -13556,6 +13955,15 @@ function serveFile(dir, list3, what, req, res) {
     });
     return;
   }
+  const screenshot = list3 ? null : /^screenshot\/([0-9a-f]{64}\.(png|jpg|gif|webp))$/.exec(what);
+  if (screenshot) {
+    const [, name2 = "", extension = ""] = screenshot;
+    const file2 = path8.join(dir, name2);
+    if (fs8.existsSync(file2))
+      res.writeHead(200, { "content-type": SCREENSHOT_TYPES[extension], "cache-control": "private, max-age=31536000, immutable" }).end(fs8.readFileSync(file2));
+    else res.writeHead(404).end();
+    return;
+  }
   const data = {
     "data/viewer.json": () => readViewer(),
     ...list3 && { "data/list.json": () => listPage(dir) }
@@ -13572,7 +13980,7 @@ function serveFile(dir, list3, what, req, res) {
     return;
   }
   res.writeHead(200, { "content-type": known.type, "cache-control": "no-store" });
-  fs7.createReadStream(path7.join(PAGE, known.file)).pipe(res);
+  fs8.createReadStream(path8.join(PAGE, known.file)).pipe(res);
 }
 function readBody(req, res, onBody) {
   let size = 0;
@@ -13617,7 +14025,7 @@ function gate(req, res, { dir, list: list3, token, port, routes }) {
   }
   const given = Buffer.from(url.searchParams.get("token") ?? "");
   const expected = Buffer.from(token);
-  const authorized = given.length === expected.length && crypto4.timingSafeEqual(given, expected);
+  const authorized = given.length === expected.length && crypto5.timingSafeEqual(given, expected);
   const route = Object.hasOwn(routes, url.pathname) ? routes[url.pathname] : void 0;
   if (req.method !== "POST" || !authorized || !route) {
     refuse(404);
@@ -13655,15 +14063,15 @@ function over(cwd, walkthrough) {
 }
 async function remove(dir, name2, why) {
   await stopServer(dir);
-  fs8.rmSync(dir, { recursive: true, force: true });
+  fs9.rmSync(dir, { recursive: true, force: true });
   return `Removed the walkthrough of ${name2}: ${why}.`;
 }
 async function prune(cwd) {
-  const repoDir2 = path8.join(stateDir(), currentRepo(cwd));
+  const repoDir2 = path9.join(stateDir(), currentRepo(cwd));
   const removed = [];
-  if (!fs8.existsSync(repoDir2)) return removed;
-  for (const entry of fs8.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
-    const dir = path8.join(repoDir2, entry.name);
+  if (!fs9.existsSync(repoDir2)) return removed;
+  for (const entry of fs9.readdirSync(repoDir2, { withFileTypes: true, encoding: "utf8" })) {
+    const dir = path9.join(repoDir2, entry.name);
     const walkthrough = entry.isDirectory() ? readWalkthrough(dir) : null;
     const why = walkthrough && over(cwd, walkthrough);
     if (walkthrough && why) removed.push(await remove(dir, nameOf(walkthrough), why));
@@ -13676,7 +14084,7 @@ async function pruneOne(dir, name2) {
 }
 var DAY_MS = 24 * 60 * 60 * 1e3;
 async function pruneDaily(cwd) {
-  const marker = path8.join(stateDir(), currentRepo(cwd), "last-prune.json");
+  const marker = path9.join(stateDir(), currentRepo(cwd), "last-prune.json");
   const due = await locked(marker, () => {
     const { at = "" } = readJson(marker, {});
     if (Date.now() - Date.parse(at) < DAY_MS) return false;
@@ -13688,10 +14096,10 @@ async function pruneDaily(cwd) {
 
 // src/export.ts
 var import_diff2html = __toESM(require_diff2html(), 1);
-import crypto5 from "node:crypto";
-import fs9 from "node:fs";
-import path9 from "node:path";
-var hash = (text2) => `'sha256-${crypto5.createHash("sha256").update(text2).digest("base64")}'`;
+import crypto6 from "node:crypto";
+import fs10 from "node:fs";
+import path10 from "node:path";
+var hash = (text2) => `'sha256-${crypto6.createHash("sha256").update(text2).digest("base64")}'`;
 var markdown = new MarkdownItCallable({ html: false, linkify: true }).disable("image");
 var escape2 = (text2) => text2.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
 var STATUS = { met: "Met", partly: "Partly met", "not-met": "Not met", "not-checked": "Not checked" };
@@ -13704,15 +14112,18 @@ function exportPage(dir) {
     const threads3 = view.threads.filter((thread) => thread.step === step.id);
     const comments3 = threads3.flatMap(
       (thread) => thread.comments.map(
-        (said2) => `<li><code>${escape2(thread.file)}:${String(thread.lines[1])}</code> <strong>${escape2(who(said2))}</strong>${said2.by === "ai" && (said2.pending || said2.review) ? " <code>[AI]</code>" : ""}${markdown.render(said2.body)}</li>`
+        (said2) => `<li><code>${escape2(thread.file)}${thread.lines ? `:${String(thread.lines[1])}` : ""}</code> <strong>${escape2(who(said2))}</strong>${said2.by === "ai" && (said2.pending || said2.review) ? " <code>[AI]</code>" : ""}${markdown.render(said2.body)}</li>`
       )
     );
+    const shot = step.screenshot;
+    const type = shot && SCREENSHOT_TYPES[shot.name.split(".").pop()];
+    const figure = shot && type ? `<figure class="screenshot open"><img class="screenshot-image" src="data:${type};base64,${fs10.readFileSync(path10.join(dir, shot.name)).toString("base64")}" alt="${escape2(shot.alt)}" />${shot.alt ? `<figcaption>${escape2(shot.alt)}</figcaption>` : ""}</figure>` : "";
     const diff = (0, import_diff2html.html)(parseDiff(step.diff), { outputFormat: "line-by-line", drawFileList: false, matching: "lines" });
     return `<section class="export-step"><h2>${String(at + 1)}. ${escape2(step.title)}</h2>
-<div class="markdown">${markdown.render(step.explanation)}</div>${diff}${comments3.length ? `<ul class="export-comments">${comments3.join("")}</ul>` : ""}</section>`;
+<div class="markdown">${markdown.render(step.explanation)}</div>${figure}${diff}${comments3.length ? `<ul class="export-comments">${comments3.join("")}</ul>` : ""}</section>`;
   });
   const criteria3 = (view.criteria ?? []).map((one) => `<li>${escape2(one.text)}: ${STATUS[one.status]}</li>`);
-  const style = fs9.readFileSync(path9.join(PAGE, "style.css"), "utf8");
+  const style = fs10.readFileSync(path10.join(PAGE, "style.css"), "utf8");
   const policy = `default-src 'none'; style-src ${hash(style)}; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`;
   return `<!doctype html>
 <html lang="en">
@@ -13743,7 +14154,10 @@ var steps = [
     look: [{ file: "src/api/tasks.ts", start: 26, end: 29, label: "parseDueDate" }]
   }
 ];
-var comments = [{ file: "src/api/tasks.ts", lines: [29, 29], body: "A typo in the date becomes null and clears it. Return 400 with the field name." }];
+var comments = [
+  { file: "src/api/tasks.ts", lines: [29, 29], body: "A typo in the date becomes null and clears it. Return 400 with the field name." },
+  { file: "src/api/tasks.ts", body: "Most of this file is the date parsing; a module of its own would keep the handlers short." }
+];
 var threads = [
   {
     id: "1042",
@@ -13775,7 +14189,8 @@ var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --
 Recording from files
   steps, comment, threads, criteria and policy save read the file --file names, or standard input without it; say takes its text on the command line or from --file.
   Write each file with your file tool into the inbox start printed, then pass its path; the command removes it once read.
-  Lines are numbered as in the file at the head, and must be in the step's diff. Text is Markdown, shown without raw HTML or images.
+  Lines are numbered as in the file at the head, and must be in the step's diff; leave "lines" out of a comment or thread on the whole file.
+  Text is Markdown, shown without raw HTML or images.
 
 walkthrough files
   Prints every changed file, one path per line.
@@ -13785,6 +14200,9 @@ walkthrough steps --file <file>
   Every changed file must be in exactly one step; otherwise nothing is recorded and every problem is named.
   A file is a path, or {"path": path, "folded": reason} for a generated or copied file, which arrives folded with its one-line reason.
   "look" holds one or two pointers to what to read first, each {"file": path, "start": line, "end": line, "label": 1 to 4 words}.
+  "screenshot" puts the author's screenshot of the change under the explanation: {"file": path, "alt": the author's alt text}.
+  Download it into the inbox first; it must be a PNG, JPEG, GIF or WebP image of at most 5 MB. Recording copies it and removes the inbox file.
+  Recorded again, a step that keeps its id keeps its screenshot unless given a new one, or "screenshot": null to remove it.
   A step keeps its id while it keeps most of its files, so the person's Viewed marks and comments follow it.
 ${JSON.stringify(steps, null, 2)}
 
@@ -13797,12 +14215,12 @@ walkthrough ready
   Comments recorded after this land on the page while the person reads.
 
 walkthrough comment --file <file>
-  Adds the AI's pending comments on lines and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
+  Adds the AI's pending comments on lines, or on a whole file without "lines", and prints their ids. They show as [AI] and go out with the review unless the person deletes them;
   the person can edit them. Write the body without the [AI] prefix.
 ${JSON.stringify(comments, null, 2)}
 
 walkthrough threads --file <file>
-  Records colleagues' existing threads on lines, replacing those recorded before. "id" is yours, such as the code host's thread id;
+  Records colleagues' existing threads on lines or on a whole file, replacing those recorded before. "id" is yours, such as the code host's thread id;
   replies and resolves the person adds come back with it. "resolved" may be given as true.
 ${JSON.stringify(threads, null, 2)}
 
@@ -13813,7 +14231,8 @@ ${JSON.stringify(criteria, null, 2)}
 walkthrough listen
   Waits for the person, then prints one JSON line per thing they sent and exits. Only these wake it:
     {"kind": "ask", "id": string, "text": string, "file": path, "lines": [first, last], "thread": [{"by": "you" | "ai" | handle, "body": string}, ...]}
-      Ask AI, on picked lines or in a thread; "thread" is what the thread said before. Answer with say --answer.
+      Ask AI, on picked lines, on a whole file ("subject": "file" in place of "lines") or in a thread; "thread" is what the thread said before.
+      Answer with say --answer.
     {"kind": "submit", "id": string, "type": "comment" | "approve" | "request-changes", "summary": string}
       Submit review or Send to agent; "type" only on a pull request, as your own change has none.
       Read what goes out with walkthrough comments, act on it, then run walkthrough posted.
@@ -13830,10 +14249,19 @@ walkthrough comments [--all]
   With --all, every comment and reply you and the person made, pending or sent, and every thread resolved,
   then each comment of yours the person deleted, with "deleted": true; one of yours they reworded carries "wrote", what you wrote.
     {"kind": "comment", "id": string, "by": "you" | "ai", "file": path, "lines": [first, last], "body": string, "outdated": true}
-      a new thread; "outdated" only when its lines changed since
+      a new thread; "outdated" only when its lines changed since or its file left the change.
+      On a whole file, "subject": "file" in place of "lines", here and in the lines below.
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
     {"kind": "resolve", "thread": id}   the person resolved a colleague's thread
+    {"kind": "resolve", "thread": id, "by": "ai", "file": path, "lines": [first, last], "body": string}
+      you resolved the thread of your comment with walkthrough resolve; find it on the code host by its file, lines and body.
+      On the person's own change these never go out, so only --all lists them.
   An AI comment's body starts with [AI].
+
+walkthrough resolve <comment id>
+  On a new head, resolves the thread of one of your comments that went out with an earlier review once the new code fixes it; reply nothing.
+  The id is the comment's, from walkthrough comments --all. It refuses a comment that is not yours, was deleted, is still pending or is already resolved.
+  The resolve goes out with the next review, as the person's do; the person can take it back on the page until then.
 
 walkthrough posted [--address <url>]
   Records that the submitted review went out, and where; the page then links View review to the address.
@@ -13850,14 +14278,14 @@ walkthrough stop | list | stop --list | prune [<branch> | <id>]
 `;
 
 // src/policy.ts
-import crypto6 from "node:crypto";
-import fs10 from "node:fs";
+import crypto7 from "node:crypto";
+import fs11 from "node:fs";
 import os3 from "node:os";
-import path10 from "node:path";
+import path11 from "node:path";
 import { parseArgs } from "node:util";
-var TEMPLATE = path10.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
-var policyPath = () => path10.join(process.env["XDG_CONFIG_HOME"] || path10.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
-var read = (file2) => fs10.readFileSync(file2);
+var TEMPLATE = path11.join(import.meta.dirname, "..", "skills", "walkthrough", "REVIEW.md");
+var policyPath = () => path11.join(process.env["XDG_CONFIG_HOME"] || path11.join(os3.homedir(), ".config"), "walkthrough", "REVIEW.md");
+var read = (file2) => fs11.readFileSync(file2);
 var TEMPLATES = /* @__PURE__ */ new Set([
   "04a602b5efc4cedc0336c7639cc560bc68f235c755eb6bc60d7289d274c0bc0f",
   "15dd307ab303cbcc4a36c384360e1f1e3f889492a484151f7776697cb1c7abf0",
@@ -13866,6 +14294,7 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "2c3d45728f9fda9bb67b6d5bd546ce51d300a0de0d4e4fb820b31cfc7229d87e",
   "340047c4632fcd0e7f0b6ed4257a858080b2a791c96d155fc1e0ba5f0d5caa65",
   "407a443dbc1b85beedb76b2c9d910b508486f37bbb04c9d77804d35ec4d516e0",
+  "4163ce63abffe0900e52c72a09ce9145acc5a9902141b6b84aeb323dc787756e",
   "44b36f903158e8452655817542e95335695b8abac7d437d9aa4be5aacec50ffb",
   "45ae6552e2e54e8b7f2382e1479a5a7fd868b1767b6ddcf490b9388c87110907",
   "6cd73d656df167adb620983b8a3984e2b03cf002c72f7a6b72147db3dcc22ac9",
@@ -13883,10 +14312,10 @@ var TEMPLATES = /* @__PURE__ */ new Set([
   "fa351c4cb56f4fe0ad000357808efc82b9fcba626735b816258cc285d508487d"
 ]);
 function stateOf(policy) {
-  if (!fs10.existsSync(policy)) return "none";
+  if (!fs11.existsSync(policy)) return "none";
   const bytes = read(policy);
   if (bytes.equals(read(TEMPLATE))) return "template";
-  return TEMPLATES.has(crypto6.createHash("sha256").update(bytes).digest("hex")) ? "earlier" : "yours";
+  return TEMPLATES.has(crypto7.createHash("sha256").update(bytes).digest("hex")) ? "earlier" : "yours";
 }
 function status() {
   const policy = policyPath();
@@ -13901,8 +14330,8 @@ function status() {
 }
 function save(text2, what) {
   const policy = policyPath();
-  fs10.mkdirSync(path10.dirname(policy), { recursive: true });
-  fs10.writeFileSync(policy, text2);
+  fs11.mkdirSync(path11.dirname(policy), { recursive: true });
+  fs11.writeFileSync(policy, text2);
   console.log(`${what} ${policy}.`);
 }
 function policyCommand(args) {
@@ -13912,114 +14341,13 @@ function policyCommand(args) {
   if (action === void 0) status();
   else if (action === "show") process.stdout.write(read(stateOf(policyPath()) === "yours" ? policyPath() : TEMPLATE));
   else if (action === "init") {
-    if (fs10.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
+    if (fs11.existsSync(policyPath())) throw new Error(`there is a review policy at ${policyPath()} already`);
     save(read(TEMPLATE), "Copied the template to");
   } else if (action === "save") {
     const text2 = readInput(values.file);
     if (!text2.trim()) throw new Error("the review policy is empty; nothing was saved");
     save(text2, "Saved the review policy at");
   } else throw new Error("usage: walkthrough policy [show | init | save --file <file>]");
-}
-
-// src/steps.ts
-var MAX_LOOK = 2;
-var LOOK_WORDS = 4;
-var wordCount = (text2) => text2.trim().split(/\s+/).length;
-function parseLook(given, name2) {
-  const { file: file2, start: start2, end, label } = fieldsOf(given);
-  if (!filled(file2)) throw new Error(`${name2} needs a file`);
-  if (!Number.isInteger(start2) || !Number.isInteger(end) || start2 < 1 || start2 > end)
-    throw new Error(`${name2} needs a start and an end line, the start first`);
-  if (!filled(label) || wordCount(label) > LOOK_WORDS) throw new Error(`${name2} needs a label of 1 to ${String(LOOK_WORDS)} words`);
-  return { file: file2, start: start2, end, label: label.trim() };
-}
-function parseSteps(text2) {
-  return parseList(text2, "the steps", (step, number) => {
-    const name2 = `step ${String(number)}`;
-    const { title, explanation, files: files3, look = [] } = step;
-    if (!filled(title)) throw new Error(`${name2} needs a title`);
-    if (!filled(explanation)) throw new Error(`${name2} needs an explanation`);
-    if (!Array.isArray(files3) || !files3.length) throw new Error(`${name2}: files must be a list of at least one file`);
-    const folded = {};
-    const paths = files3.map((file2) => {
-      if (filled(file2)) return file2;
-      const { path: path12, folded: reason } = fieldsOf(file2);
-      if (!filled(path12) || !filled(reason)) throw new Error(`${name2}: each file is a path, or a path with the reason it is folded`);
-      folded[path12] = reason.trim();
-      return path12;
-    });
-    if (!Array.isArray(look) || look.length > MAX_LOOK) throw new Error(`${name2}: look must be a list of at most ${String(MAX_LOOK)} pointers`);
-    return {
-      title,
-      explanation,
-      files: paths,
-      ...Object.keys(folded).length && { folded },
-      look: look.map((one, at) => parseLook(one, `${name2}, pointer ${String(at + 1)}`))
-    };
-  });
-}
-function stepIds({ steps: steps3, lastStep = 0 }, inputs) {
-  let next = Math.max(lastStep, ...steps3.map((step) => Number(step.id)));
-  const pairs = inputs.flatMap((input, at) => {
-    const files3 = new Set(input.files);
-    return steps3.map((step, old) => ({ at, old, id: step.id, shared: step.files.filter((one) => files3.has(one)).length }));
-  });
-  pairs.sort((one, other) => other.shared - one.shared || one.old - other.old || one.at - other.at);
-  const ids = inputs.map(() => void 0);
-  const taken = /* @__PURE__ */ new Set();
-  for (const { at, id, shared } of pairs)
-    if (shared > 0 && ids[at] === void 0 && !taken.has(id)) {
-      ids[at] = id;
-      taken.add(id);
-    }
-  return ids.map((id) => id ?? String(++next));
-}
-var lookShown = (step, { file: file2, start: start2, end }) => {
-  const shown = step.files.includes(file2) ? shownLines(step, file2) : null;
-  return !!shown?.has(start2) && shown.has(end);
-};
-async function buildSteps(cwd, walkthrough, inputs) {
-  const { base, head } = walkthrough;
-  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
-  const problems = [];
-  const placed2 = /* @__PURE__ */ new Set();
-  for (const one of inputs.flatMap((input) => input.files)) {
-    if (!changed.has(one)) problems.push(`${one} is not changed in this walkthrough`);
-    else if (placed2.has(one)) problems.push(`${one} is in more than one step`);
-    placed2.add(one);
-  }
-  const left = [...changed.keys()].filter((one) => !placed2.has(one));
-  if (left.length > 0) problems.push(`no step has ${left.join(", ")}`);
-  if (problems.length > 0) throw new Error(`the steps were not recorded:
-  ${[...new Set(problems)].join("\n  ")}`);
-  const ids = stepIds(walkthrough, inputs);
-  const steps3 = await Promise.all(
-    inputs.map(async (input, at) => ({
-      id: ids[at] ?? "",
-      ...input,
-      diff: await diffOf(cwd, base, head, input.files.flatMap((one) => changed.get(one) ?? []))
-    }))
-  );
-  const astray = steps3.flatMap(
-    (step, at) => step.look.filter((one) => !lookShown(step, one)).map((one) => `step ${String(at + 1)} points to lines ${String(one.start)}-${String(one.end)} of ${one.file}, which are not in its diff`)
-  );
-  if (astray.length) throw new Error(`the steps were not recorded:
-  ${astray.join("\n  ")}`);
-  return steps3;
-}
-async function carrySteps(cwd, { base, head, steps: steps3 }) {
-  const changed = new Map((await changedFiles(cwd, base, head)).map((file2) => [file2.path, file2]));
-  const carried = await Promise.all(
-    steps3.map(async (step) => {
-      const files3 = step.files.filter((one) => changed.has(one));
-      if (!files3.length) return null;
-      const moved = { ...step, files: files3, diff: await diffOf(cwd, base, head, files3.flatMap((one) => changed.get(one) ?? [])) };
-      return { ...moved, look: moved.look.filter((one) => lookShown(moved, one)) };
-    })
-  );
-  const kept = carried.filter((step) => step !== null);
-  const placed2 = new Set(kept.flatMap((step) => step.files));
-  return { steps: kept, unplaced: [...changed.keys()].filter((file2) => !placed2.has(file2)) };
 }
 
 // src/record.ts
@@ -14057,12 +14385,9 @@ function parseThreads(text2, walkthrough) {
     ids.add(id);
     if (typeof resolved !== "boolean") throw new Error(`${name2}: resolved must be true or false`);
     if (!Array.isArray(replies)) throw new Error(`${name2}: replies must be a list`);
-    const { file: file2, lines, linesHash } = placed(walkthrough, fields, name2);
     return {
       id,
-      file: file2,
-      lines,
-      linesHash,
+      ...placed(walkthrough, fields, name2),
       ...said(fields, name2),
       ...resolved && { resolved: true },
       replies: replies.map((reply, at) => said(fieldsOf(reply), `${name2}, reply ${String(at + 1)}`))
@@ -14160,7 +14485,7 @@ function openPage(url, what, dir) {
     browser.status === 0 ? `${what} is open in your browser.` : `Could not open a browser; the address of ${what.toLowerCase()} is in ${dir}/server.json.`
   );
 }
-var repoDir = () => path11.join(stateDir(), currentRepo(process.cwd()));
+var repoDir = () => path12.join(stateDir(), currentRepo(process.cwd()));
 async function list2(args) {
   parseArgs2({ args, options: {} });
   openPage(await ensureServer(repoDir(), true), "The list of walkthroughs", repoDir());
@@ -14173,13 +14498,13 @@ function current2(args, config2 = {}) {
 }
 async function files2(args) {
   const { base, head } = current2(args).walkthrough;
-  for (const { path: path12 } of await changedFiles(process.cwd(), base, head)) console.log(path12);
+  for (const { path: path13 } of await changedFiles(process.cwd(), base, head)) console.log(path13);
 }
 var FILE_OPTION = { options: { file: { type: "string" } } };
 async function steps2(args) {
   const { cwd, dir, values } = located(args, FILE_OPTION);
   const inputs = parseSteps(readInput(values.file));
-  const { steps: recorded } = await recordSteps(dir, (walkthrough) => buildSteps(cwd, walkthrough, inputs));
+  const { steps: recorded } = await recordSteps(dir, (walkthrough) => buildSteps(cwd, dir, walkthrough, inputs));
   console.log(`Recorded ${plural(recorded.length, "step")}: ${recorded.map((step) => `${step.id} (${step.title})`).join(", ")}.`);
 }
 async function commentCommand(args) {
@@ -14205,6 +14530,13 @@ function comments2(args) {
   const { dir, values } = current2(args, { options: { all: { type: "boolean" } } });
   for (const line of reviewComments(dir, values.all)) console.log(JSON.stringify(line));
 }
+async function resolveCommand(args) {
+  const { dir, positionals } = current2(args, { allowPositionals: true });
+  const [id] = positionals;
+  if (positionals.length !== 1 || !id) throw new Error("usage: walkthrough resolve <comment id>");
+  await aiResolve(dir, id);
+  console.log(`Resolved the thread of comment ${id}.`);
+}
 async function posted(args) {
   const { dir, values } = current2(args, { options: { address: { type: "string" } } });
   const address = values.address?.trim();
@@ -14214,8 +14546,8 @@ async function posted(args) {
 }
 function exportCommand(args) {
   const { values, dir, walkthrough } = current2(args, { options: { out: { type: "string" } } });
-  const out = path11.resolve(values.out ?? path11.join(dir, "export.html"));
-  fs11.writeFileSync(out, exportPage(dir));
+  const out = path12.resolve(values.out ?? path12.join(dir, "export.html"));
+  fs12.writeFileSync(out, exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 async function listenCommand(args) {
@@ -14254,6 +14586,7 @@ var COMMANDS = {
   threads: threads2,
   criteria: criteria2,
   comments: comments2,
+  resolve: resolveCommand,
   posted,
   list: list2,
   export: exportCommand,
@@ -14283,7 +14616,7 @@ var COMMANDS = {
     const { source, dir } = located(args, { allowPositionals: true, branch: positionals[0] });
     if (positionals.length > 0 && source.kind === "range") throw new Error("name a branch or a range, not both");
     const listed = readWalkthrough(dir) ? void 0 : listView(repoDir()).find((one) => one.id === positionals[0] || decodeURIComponent(one.id) === positionals[0]);
-    console.log(await (listed ? pruneOne(path11.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
+    console.log(await (listed ? pruneOne(path12.join(repoDir(), listed.id), listed.name) : pruneOne(dir, nameOf(source))));
   },
   // The detached page server that start runs.
   serve: ([dir = "", mode]) => {
@@ -14295,7 +14628,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {

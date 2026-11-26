@@ -465,15 +465,15 @@ var require_template = __commonJS({
         },
         // find values with dotted names
         d: function(key2, ctx, partials, returnFound) {
-          var found, names = key2.split("."), val = this.f(names[0], ctx, partials, returnFound), doModelGet = this.options.modelGet, cx = null;
+          var found2, names = key2.split("."), val = this.f(names[0], ctx, partials, returnFound), doModelGet = this.options.modelGet, cx = null;
           if (key2 === "." && isArray(ctx[ctx.length - 2])) {
             val = ctx[ctx.length - 1];
           } else {
             for (var i = 1; i < names.length; i++) {
-              found = findInScope(names[i], val, doModelGet);
-              if (found !== void 0) {
+              found2 = findInScope(names[i], val, doModelGet);
+              if (found2 !== void 0) {
                 cx = val;
-                val = found;
+                val = found2;
               } else {
                 val = "";
               }
@@ -491,16 +491,16 @@ var require_template = __commonJS({
         },
         // find values with normal names
         f: function(key2, ctx, partials, returnFound) {
-          var val = false, v = null, found = false, doModelGet = this.options.modelGet;
+          var val = false, v = null, found2 = false, doModelGet = this.options.modelGet;
           for (var i = ctx.length - 1; i >= 0; i--) {
             v = ctx[i];
             val = findInScope(key2, v, doModelGet);
             if (val !== void 0) {
-              found = true;
+              found2 = true;
               break;
             }
           }
-          if (!found) {
+          if (!found2) {
             return returnFound ? false : "";
           }
           if (!returnFound && typeof val == "function") {
@@ -632,6 +632,9 @@ var require_hogan = __commonJS({
   }
 });
 
+// src/viewer.ts
+var DEFAULT_VIEWER = { theme: "system", colourBlind: false };
+
 // src/words.ts
 var MAX_TEXT = 4e3;
 function tooLong(fields) {
@@ -683,6 +686,13 @@ var ICONS = {
   edit: [line("M10.5 2.8l2.7 2.7-7.4 7.4-3.2.5.5-3.2z", 1.4)],
   trash: [line("M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 8.5h5.6l.7-8.5", 1.4)],
   "chevron-right": [line("M6 4l4 4-4 4")],
+  "chevron-down": [line("M4 6l4 4 4-4")],
+  branch: [
+    ["circle", { cx: 4.5, cy: 3.8, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    ["circle", { cx: 4.5, cy: 12.2, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    ["circle", { cx: 11.5, cy: 5.5, r: 1.7, fill: "none", stroke: "currentColor", "stroke-width": 1.4 }],
+    line("M4.5 5.5v5M11.5 7.2c0 2.4-2 3.4-5.4 3.8", 1.4)
+  ],
   previous: [line("M10 3.5L5.5 8l4.5 4.5")],
   next: [line("M6 3.5L10.5 8 6 12.5")],
   up: [line("M4 10l4-4 4 4")],
@@ -725,13 +735,27 @@ function el(tag2, props = {}, ...children) {
   return node;
 }
 function region(id) {
-  const found = document.getElementById(id);
-  if (!found) throw new Error(`the page has no #${id}`);
-  return found;
+  const found2 = document.getElementById(id);
+  if (!found2) throw new Error(`the page has no #${id}`);
+  return found2;
 }
 function attrs(node, given) {
   for (const [name, value] of Object.entries(given)) node.setAttribute(name, value);
   return node;
+}
+function menuKeys(menu2, close) {
+  menu2.onkeydown = (event) => {
+    const items = [...menu2.querySelectorAll(".menu-item")];
+    const at = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
+    const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+    if (step) {
+      event.preventDefault();
+      items[(at + step + items.length) % items.length]?.focus();
+    } else if (event.key === "Escape" || event.key === "Tab") {
+      event.preventDefault();
+      close();
+    }
+  };
 }
 var token = location.pathname.split("/")[2] ?? "";
 function showAlert(message) {
@@ -779,24 +803,28 @@ async function post(page, route, body) {
 }
 
 // src/page/appearance.ts
-function showTheme(theme2) {
-  document.documentElement.dataset["theme"] = theme2;
+function showViewer({ theme, colourBlind }) {
+  const root2 = document.documentElement;
+  root2.dataset["theme"] = theme;
+  root2.toggleAttribute("data-colour-blind", colourBlind);
 }
 async function loadViewer() {
   try {
     const answer = await fetch("data/viewer.json");
     if (answer.ok) {
-      const { theme: theme2 } = await answer.json();
-      showTheme(theme2);
-      return theme2;
+      const viewer2 = await answer.json();
+      showViewer(viewer2);
+      return viewer2;
     }
   } catch {
   }
-  return "system";
+  return { ...DEFAULT_VIEWER };
 }
-function chooseTheme(theme2) {
-  showTheme(theme2);
-  void postQuietly("viewer", { theme: theme2 });
+function chooseViewer(viewer2, change) {
+  const chosen = { ...viewer2, ...change };
+  showViewer(chosen);
+  void postQuietly("viewer", change);
+  return chosen;
 }
 
 // src/page/desk.ts
@@ -2619,7 +2647,7 @@ var lib = {
   ucmicro: build_exports
 };
 function parseLinkLabel(state2, start, disableNested) {
-  let level, found, marker, prevPos;
+  let level, found2, marker, prevPos;
   const max2 = state2.posMax;
   const oldPos = state2.pos;
   state2.pos = start + 1;
@@ -2629,7 +2657,7 @@ function parseLinkLabel(state2, start, disableNested) {
     if (marker === 93) {
       level--;
       if (level === 0) {
-        found = true;
+        found2 = true;
         break;
       }
     }
@@ -2644,7 +2672,7 @@ function parseLinkLabel(state2, start, disableNested) {
     }
   }
   let labelEnd = -1;
-  if (found) labelEnd = state2.pos;
+  if (found2) labelEnd = state2.pos;
   state2.pos = oldPos;
   return labelEnd;
 }
@@ -7227,8 +7255,10 @@ var stepOfFile = (file) => state.view.steps.find((step) => step.files.includes(f
 var pendingComments = () => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.pending).map((comment) => ({ thread, comment })));
 var sentComments = (review) => state.view.threads.flatMap((thread) => thread.comments.filter((one) => one.review === review).map((comment) => ({ thread, comment })));
 var threadsIn = (step, file) => state.view.threads.filter((one) => one.step === step && one.file === file);
-var commentCount = (step, file) => threadsIn(step, file).reduce((sum, one) => sum + one.comments.length, 0);
-var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && one.step !== null);
+var outdatedIn = (step, file) => state.view.threads.filter((one) => one.step === null && one.fileStep === step && one.file === file);
+var commentCount = (step, file) => [...threadsIn(step, file), ...outdatedIn(step, file)].reduce((sum, one) => sum + one.comments.length, 0);
+var threadStep = (thread) => thread.step ?? thread.fileStep;
+var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && threadStep(one) !== void 0);
 var notViewed = () => allFiles().filter((file) => !state.view.viewed.includes(file));
 var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.by ?? "you";
 var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
@@ -8075,14 +8105,14 @@ var WordDiff = class extends Diff {
       }
     }).join("");
   }
-  postProcess(changes, options) {
-    if (!changes || options.oneChangePerToken) {
-      return changes;
+  postProcess(changes2, options) {
+    if (!changes2 || options.oneChangePerToken) {
+      return changes2;
     }
     let lastKeep = null;
     let insertion = null;
     let deletion = null;
-    changes.forEach((change) => {
+    changes2.forEach((change) => {
       if (change.added) {
         insertion = change;
       } else if (change.removed) {
@@ -8099,7 +8129,7 @@ var WordDiff = class extends Diff {
     if (insertion || deletion) {
       dedupeWhitespaceInChangeObjects(lastKeep, deletion, insertion, null, options.intlSegmenter);
     }
-    return changes;
+    return changes2;
   }
 };
 var wordDiff = new WordDiff();
@@ -9349,6 +9379,201 @@ function shrink(element, done) {
   });
 }
 
+// src/moves.ts
+var MIN_LINES = 3;
+var MIN_ALNUM = 20;
+function runsOf(files, type) {
+  const runs = [];
+  let change = 0;
+  for (const file of files) {
+    const name = file.isDeleted ? file.oldName : file.newName;
+    let run = [];
+    for (const block2 of file.blocks) {
+      change++;
+      for (const one of block2.lines) {
+        if (one.type === LineType.CONTEXT) change++;
+        const line2 = type === LineType.DELETE ? one.oldNumber : one.newNumber;
+        if (one.type !== type || line2 === void 0) continue;
+        if (run.at(-1)?.line !== line2 - 1) runs.push(run = []);
+        run.push({ file: name, line: line2, text: one.content.slice(1).trimEnd(), change });
+      }
+    }
+  }
+  return runs;
+}
+var enough = (lines) => lines.length >= MIN_LINES && lines.reduce((sum, { text: text2 }) => sum + (text2.match(/[\p{L}\p{N}]/gu)?.length ?? 0), 0) >= MIN_ALNUM;
+function findMoves(files) {
+  const added = runsOf(files, LineType.INSERT);
+  const starts = /* @__PURE__ */ new Map();
+  for (const run of added) run.forEach(({ text: text2 }, at) => starts.set(text2, [...starts.get(text2) ?? [], [run, at]]));
+  const used = /* @__PURE__ */ new Set();
+  const moves = [];
+  for (const gone of runsOf(files, LineType.DELETE))
+    for (let at = 0; at < gone.length; ) {
+      let best = null;
+      for (const [run, from] of starts.get(gone[at]?.text ?? "") ?? []) {
+        let count = 0;
+        for (let line2 = run[from + count]; line2 && !used.has(line2) && gone[at + count]?.text === line2.text && gone[at + count]?.change !== line2.change; line2 = run[from + count]) count++;
+        if (count > (best?.count ?? 0)) best = { run, from, count };
+      }
+      const left = gone.slice(at, at + (best?.count ?? 0));
+      const [first2] = left;
+      const arrived2 = best?.run[best.from];
+      if (!best || !first2 || !arrived2 || !enough(left)) {
+        at++;
+        continue;
+      }
+      for (const line2 of best.run.slice(best.from, best.from + best.count)) used.add(line2);
+      moves.push({ from: { file: first2.file, line: first2.line }, to: { file: arrived2.file, line: arrived2.line }, count: best.count });
+      at += best.count;
+    }
+  return moves;
+}
+
+// src/page/since.ts
+var changes = {
+  /** Whether the page shows only what changed since the last review. */
+  since: false,
+  /** Shows that view, or all changes; set by the page. */
+  choose: (() => {
+  }),
+  /** Shows lines that only all changes show; set by the page. */
+  look: (() => {
+  })
+};
+var shownSince = () => changes.since ? state.view.since : null;
+function shownFiles(step) {
+  const since = shownSince();
+  return since ? step.files.filter((file) => Object.hasOwn(since.files, file)) : step.files;
+}
+var SINCE = "Changes since your last review";
+var ALL = "All changes";
+var ChangesSwitch = class {
+  box = el("span", { className: "changes-switch" });
+  label = el("span", { className: "changes-label" });
+  button = attrs(
+    el("button", { type: "button", className: "btn small changes-button", title: `${SINCE} (C)` }, icon("branch"), this.label, icon("chevron-down")),
+    { "aria-haspopup": "menu", "aria-expanded": "false" }
+  );
+  menu = null;
+  constructor() {
+    this.button.onclick = () => {
+      if (this.menu) this.close(true);
+      else this.open();
+    };
+    this.box.append(this.button);
+    document.addEventListener("pointerdown", (event) => {
+      if (this.menu && event.target instanceof Node && !this.box.contains(event.target)) this.close(false);
+    });
+  }
+  update() {
+    this.label.textContent = changes.since ? SINCE : ALL;
+  }
+  get isOpen() {
+    return this.menu !== null;
+  }
+  open() {
+    const since = state.view.since;
+    if (this.menu || !since || this.box.hidden) return;
+    const files = Object.keys(since.files).length;
+    const item = (shows, name, meta) => {
+      const checked = changes.since === shows;
+      const button = attrs(
+        el(
+          "button",
+          { type: "button", className: "menu-item", tabIndex: -1 },
+          el("span", { className: "menu-check" }, ...checked ? [icon("met")] : []),
+          el("span", { className: "menu-text" }, name, el("span", { className: "menu-meta" }, meta))
+        ),
+        { role: "menuitemradio", "aria-checked": String(checked) }
+      );
+      button.onclick = () => {
+        this.close(true);
+        if (!checked) changes.choose(shows);
+      };
+      return button;
+    };
+    const menu2 = attrs(
+      el(
+        "div",
+        { className: "menu changes-menu" },
+        item(false, ALL, plural(allFiles().length, "file")),
+        item(true, SINCE, `${plural(since.commits, "commit")} \xB7 ${plural(files, "file")}`)
+      ),
+      { role: "menu", "aria-label": "Changes" }
+    );
+    menuKeys(menu2, () => {
+      this.close(true);
+    });
+    this.menu = menu2;
+    this.box.append(menu2);
+    this.button.setAttribute("aria-expanded", "true");
+    animate(menu2, "menu-in", FADE_IN, { ms: "fast", curve: "linear" });
+    menu2.querySelector('[aria-checked="true"]')?.focus();
+  }
+  close(refocus) {
+    if (!this.menu) return;
+    this.menu.remove();
+    this.menu = null;
+    this.button.setAttribute("aria-expanded", "false");
+    if (refocus) this.button.focus();
+  }
+};
+
+// src/page/moves.ts
+var found = { diff: "", moves: [] };
+function shownMoves() {
+  const since = shownSince();
+  const diff = since ? Object.values(since.files).join("") : state.view.steps.map((step) => step.diff).join("");
+  if (diff !== found.diff) found = { diff, moves: findMoves(parseDiff(diff)) };
+  return found.moves;
+}
+var moving = { show: (() => {
+}), copied: (() => {
+}) };
+function drawMoves(table2, file, copies = []) {
+  const row = (type, line2) => [...table2.querySelectorAll(`tr:has(> td.d2h-${type})`)].find((one) => Number(one.querySelector(type === "del" ? ".line-num1" : ".line-num2")?.textContent.trim()) === line2);
+  const link2 = (onclick, down, text2) => el("button", { type: "button", className: "moved-link", onclick }, icon(down ? "chevron-down" : "chevron-right"), text2);
+  const label = (number, content2) => el("tr", { className: "moved-label" }, el("td", { className: "d2h-code-linenumber" }, el("div", { className: "line-num1" }, number)), el("td", {}, el("div", { className: "d2h-code-line" }, content2)));
+  const goTo = (move, to) => () => {
+    moving.show(move, to);
+  };
+  const where = (one, other) => one === other ? "" : `${other} `;
+  for (const move of shownMoves()) {
+    const { from, to, count } = move;
+    if (from.file === file) {
+      const rows = Array.from({ length: count }, (_, at) => row("del", from.line + at));
+      const departure = label(
+        String(from.line),
+        link2(goTo(move, "to"), true, `${plural(count, "line")} moved to ${where(from.file, to.file)}line ${String(to.line)}`)
+      );
+      departure.dataset["movedFrom"] = String(from.line);
+      rows[0]?.before(departure);
+      for (const one of rows) one?.remove();
+    }
+    if (to.file === file) {
+      const rows = Array.from({ length: count }, (_, at) => row("ins", to.line + at));
+      rows[0]?.before(label("", link2(goTo(move, "from"), false, `Moved from ${where(to.file, from.file)}line ${String(from.line)}`)));
+      for (const one of rows) {
+        one?.classList.add("moved");
+        for (const cell of one?.cells ?? []) cell.classList.replace("d2h-ins", "d2h-cntx");
+        const prefix = one?.querySelector(".d2h-code-line-prefix");
+        if (prefix) prefix.textContent = " ";
+        const code2 = one?.querySelector(".d2h-code-line-ctn");
+        if (code2) code2.textContent = code2.textContent;
+      }
+    }
+  }
+  for (const copy of copies) {
+    const { from, to } = copy;
+    const text2 = `Copied from ${where(to.file, from.file)}line ${String(from.line)}`;
+    const go2 = () => {
+      moving.copied(copy);
+    };
+    if (to.file === file) row("ins", to.line)?.before(label("", copy.inDiff ? link2(go2, false, text2) : el("span", {}, text2)));
+  }
+}
+
 // src/page/threads.ts
 var initials = (handle) => handle.split(/[-_.\s]+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("") || "?";
 var authorName = (comment) => comment.by === "you" ? "You" : comment.by === "ai" ? "AI" : comment.author ?? "";
@@ -9413,6 +9638,22 @@ var ThreadBox = class {
   box = el("div", { className: "thread" });
   list = el("div", { className: "thread-comments" });
   foot = el("div", { className: "thread-foot" });
+  outdated = el("div", { className: "outdated", hidden: true });
+  body = el("div", { className: "thread-body" }, el("div", { className: "thread-inner" }, this.outdated, this.list, this.foot));
+  resolvedPending = el("span", { className: "pending-tag" }, "Pending");
+  resolvedText = el("span", { className: "resolved-text" }, el("strong", {}, "AI"), " marked this conversation as resolved.");
+  showButton = attrs(el("button", { type: "button", className: "btn small ghost" }), { "aria-expanded": "false" });
+  /** The collapsed line of a thread the AI resolved. */
+  resolvedLine = el(
+    "div",
+    { className: "resolved-line" },
+    avatar({ by: "ai" }),
+    this.resolvedText,
+    el("span", { className: "spacer" }),
+    this.showButton
+  );
+  showResolved = false;
+  drawnFoot = "";
   shown = /* @__PURE__ */ new Map();
   answering = null;
   editing = null;
@@ -9421,13 +9662,47 @@ var ThreadBox = class {
   constructor(thread) {
     this.thread = thread;
     this.box.dataset["thread"] = thread.id;
-    this.box.append(this.list, this.foot);
+    this.box.append(this.body);
+    this.showButton.onclick = () => {
+      this.show(!this.showResolved);
+    };
     this.update(thread);
+  }
+  /** Opens or closes a thread the AI resolved; any other thread is always open. */
+  show(open = true) {
+    this.showResolved = open;
+    const folded = this.thread.resolvedBy === "ai" && !open;
+    this.box.classList.toggle("folded", folded);
+    this.body.inert = folded;
+    this.showButton.textContent = open ? "Hide resolved" : "Show resolved";
+    this.showButton.setAttribute("aria-expanded", String(open));
+  }
+  drawOutdated() {
+    const { thread } = this;
+    this.outdated.hidden = thread.step !== null;
+    if (thread.step !== null || this.outdated.hasChildNodes()) return;
+    const code2 = (thread.code ?? []).flatMap(([number, text2], at, all) => [
+      ...at > 0 && number !== (all[at - 1]?.[0] ?? 0) + 1 ? [attrs(el("div", { className: "outdated-gap" }), { "aria-hidden": "true" })] : [],
+      el("div", { className: "outdated-line" }, el("span", { className: "outdated-number" }, String(number)), el("span", {}, text2))
+    ]);
+    this.outdated.append(
+      el("div", { className: "outdated-head" }, el("span", { className: "outdated-path", title: thread.file }, thread.file), el("span", { className: "outdated-tag" }, "Outdated")),
+      ...code2.length ? [el("div", { className: "outdated-code" }, ...code2)] : []
+    );
   }
   /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
   update(thread) {
     this.thread = thread;
-    this.box.classList.toggle("resolved", !!thread.resolved);
+    const byAi = thread.resolvedBy === "ai";
+    this.box.classList.toggle("resolved", !!thread.resolved && !byAi);
+    this.box.classList.toggle("ai-resolved", byAi);
+    if (!byAi) this.resolvedLine.remove();
+    else if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    if (thread.resolvePending) {
+      if (!this.resolvedPending.isConnected) this.resolvedText.after(this.resolvedPending);
+    } else this.resolvedPending.remove();
+    this.show(this.showResolved);
+    this.drawOutdated();
     const arrived2 = [];
     const ids = new Set(thread.comments.map((one) => one.id));
     for (const [id, { element }] of this.shown)
@@ -9518,12 +9793,6 @@ var ThreadBox = class {
   }
   drawFoot() {
     const { thread } = this;
-    if (thread.resolved) {
-      this.foot.replaceChildren();
-      this.foot.hidden = true;
-      return;
-    }
-    this.foot.hidden = false;
     if (this.replying) {
       if (this.foot.querySelector(".composer")) return;
       const box2 = composer({
@@ -9542,17 +9811,23 @@ var ThreadBox = class {
       box2.querySelector("textarea")?.focus();
       return;
     }
-    if (this.foot.querySelector(".reply-field")) return;
+    const key2 = JSON.stringify([thread.colleague && !thread.resolved, thread.unresolvable]);
+    if (this.foot.querySelector(".reply-field") && key2 === this.drawnFoot) return;
+    this.drawnFoot = key2;
     this.foot.classList.remove("composing");
     const open = () => {
       this.replying = true;
       this.drawFoot();
     };
+    const flip = async (route) => {
+      if (await send2(route, { thread: thread.id })) this.foot.querySelector(".resolve, .unresolve, .reply-field")?.focus();
+    };
     const field = el("button", { type: "button", className: "reply-field", onclick: open }, "Reply\u2026");
     this.foot.replaceChildren(
       field,
       askButton(open),
-      ...thread.colleague ? [el("button", { type: "button", className: "btn small resolve", onclick: () => void send2("resolve", { thread: thread.id }) }, "Resolve")] : []
+      ...thread.colleague && !thread.resolved ? [el("button", { type: "button", className: "btn small resolve", onclick: () => void flip("resolve") }, "Resolve")] : [],
+      ...thread.unresolvable ? [el("button", { type: "button", className: "btn small unresolve", onclick: () => void flip("unresolve") }, "Unresolve conversation")] : []
     );
   }
   closeAfter(done) {
@@ -9581,30 +9856,37 @@ var reopened = /* @__PURE__ */ new Set();
 var LARGE_FILE = 400;
 var SVG3 = "http://www.w3.org/2000/svg";
 var FilePane = class {
-  constructor(step, parsed, diff) {
+  constructor(step, parsed, diff, shown = {}) {
     this.step = step;
+    this.shown = shown;
     this.name = parsed.isDeleted ? parsed.oldName : parsed.newName;
     this.changedLines = parsed.addedLines + parsed.deletedLines;
     this.box.dataset["file"] = this.name;
     this.diffBox = el("div", { className: "diff-scroll" }, ...diff ? [diff] : []);
-    const inner = el("div", { className: "file-inner" }, this.diffBox, this.stripe);
+    const area = el("div", { className: "diff-area" }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
-    if (this.preview) inner.append(this.preview);
-    this.body.append(inner);
+    if (this.preview) area.append(this.preview);
+    this.body.append(el("div", { className: "file-inner" }, this.outdatedZone, this.fileZone, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add("overview-stripe");
     attrs(this.stripe, { "aria-hidden": "true", preserveAspectRatio: "none" });
+    if (diff) drawMoves(diff, this.name, step.copies);
     this.prepareRows();
     this.drawHeader(parsed);
   }
   step;
+  shown;
   box = el("section", { className: "file" });
   header = el("div", { className: "file-header" });
   body = el("div", { className: "file-body" });
   rows = /* @__PURE__ */ new Map();
   /** Runs of added and removed lines, by their first and last row. */
   runs = [];
+  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone or the file's own. */
   threads = /* @__PURE__ */ new Map();
+  outdatedZone = el("div", { className: "outdated-zone", hidden: true });
+  /** Comments on the whole file and their composer, under the outdated ones. */
+  fileZone = el("div", { className: "file-threads", hidden: true });
   stripe = document.createElementNS(SVG3, "svg");
   composerRow = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
@@ -9619,26 +9901,38 @@ var FilePane = class {
   }
   closed() {
     const { view } = state;
-    return folds.get(this.name) ?? (view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
+    return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them. */
+  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
   look(start, end, scroller) {
+    if (!this.rows.has(start)) return false;
+    return this.flash(
+      [...this.rows].flatMap(([line2, row]) => line2 >= start && line2 <= end ? [row] : []),
+      scroller
+    );
+  }
+  /** The same for the row that says lines moved away from `line`. */
+  lookDeparture(line2, scroller) {
+    const row = this.diffBox.querySelector(`tr[data-moved-from="${String(line2)}"]`);
+    return this.flash(row ? [row] : [], scroller);
+  }
+  flash(rows, scroller) {
+    const [first2] = rows;
+    if (!first2) return false;
     if (this.closed()) {
       folds.set(this.name, false);
       this.update(() => false);
     }
     if (this.previewing) void this.showPreview(false);
-    const first2 = this.rows.get(start);
-    if (!first2) return;
     const top = first2.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
     scroller.scrollTo({ top, behavior: reduced() ? "instant" : "smooth" });
-    for (const [line2, row] of this.rows)
-      if (line2 >= start && line2 <= end) {
-        for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-        row.classList.remove("flash");
-        row.getBoundingClientRect();
-        row.classList.add("flash");
-      }
+    for (const row of rows) {
+      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
+      row.classList.remove("flash");
+      row.getBoundingClientRect();
+      row.classList.add("flash");
+    }
+    return true;
   }
   thread(id) {
     return this.threads.get(id);
@@ -9705,7 +9999,14 @@ var FilePane = class {
       ...reason ? [el("span", { className: "folded-reason", title: reason }, reason)] : [],
       el("span", { className: "spacer" }),
       ...this.preview ? [this.previewToggle()] : [],
-      el("label", { className: "viewed-toggle" }, viewed, "Viewed")
+      el("label", { className: "viewed-toggle", title: "Viewed (V)" }, viewed, "Viewed"),
+      attrs(
+        el("button", { type: "button", className: "icon-button file-comment", title: "Comment on this file", onclick: () => {
+          this.open();
+          pick({ step: this.step.id, file: this.name });
+        } }, icon("message")),
+        { "aria-label": "Comment on this file" }
+      )
     );
   }
   prepareRows() {
@@ -9717,7 +10018,9 @@ var FilePane = class {
       if (number && line2) {
         this.rows.set(line2, row);
         row.dataset["line"] = String(line2);
-        number.tabIndex = this.rows.size === 1 ? 0 : -1;
+      }
+      if (number && line2 && (this.shown.commentable?.has(line2) ?? true)) {
+        number.tabIndex = this.diffBox.querySelector('.line-num2[role="button"]') ? -1 : 0;
         attrs(number, { role: "button", "aria-label": `Comment on line ${String(line2)}` });
       }
       const type = types2[at];
@@ -9740,9 +10043,8 @@ var FilePane = class {
         this.choose(line2, event.shiftKey);
       } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
-        const lines = [...this.rows.keys()];
-        const next = lines[lines.indexOf(line2) + (event.key === "ArrowDown" ? 1 : -1)];
-        const target = next === void 0 ? null : this.rows.get(next)?.querySelector(".line-num2");
+        const numbers = [...this.diffBox.querySelectorAll('.line-num2[role="button"]')];
+        const target = numbers[numbers.indexOf(number) + (event.key === "ArrowDown" ? 1 : -1)];
         if (target) {
           number.tabIndex = -1;
           target.tabIndex = 0;
@@ -9753,7 +10055,7 @@ var FilePane = class {
   }
   choose(line2, extend) {
     const same = picked?.step === this.step.id && picked.file === this.name;
-    if (extend && same && picked) pick({ ...picked, start: Math.min(picked.start, line2), end: Math.max(picked.start, line2) });
+    if (extend && same && picked?.start !== void 0) pick({ ...picked, start: Math.min(picked.start, line2), end: Math.max(picked.start, line2) });
     else pick({ step: this.step.id, file: this.name, start: line2, end: line2 });
   }
   /** The whole file's runs and threads, placed by where their rows sit now that threads take room between them. */
@@ -9769,26 +10071,30 @@ var FilePane = class {
     this.stripe.replaceChildren(
       ...this.runs.map(({ type, from, to }) => mark(`run-${type}`, from.offsetTop, to.offsetTop + to.offsetHeight - from.offsetTop)),
       ...threadsIn(this.step.id, this.name).flatMap((thread) => {
-        const row = this.rows.get(thread.lines[1]);
+        const row = thread.lines && this.rows.get(thread.lines[1]);
         return row ? [mark(`tick ${threadBy(thread)}`, row.offsetTop, 3)] : [];
       })
     );
   }
-  /** Puts each thread under its last line and, at the lines picked, the composer; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, at the top of the file once outdated or when on the whole file, and the composer where it was picked; returns what arrived where it would move the page. */
   drawThreads(shows, closed) {
     const here = threadsIn(this.step.id, this.name);
+    const outdated = outdatedIn(this.step.id, this.name);
     const arrived2 = [];
-    const ids = new Set(here.map((one) => one.id));
+    const ids = new Set([...here, ...outdated].map((one) => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id)) {
+      if (!ids.has(id) || row.parentElement === this.outdatedZone !== outdated.some((one) => one.id === id) || row.parentElement === this.fileZone !== here.some((one) => one.id === id && !one.lines)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll(".gutter-mark")) old.remove();
-    for (const thread of here) {
-      const anchor = this.rows.get(thread.lines[1]);
-      if (!anchor) continue;
-      const held = !closed && shows(anchor);
+    this.outdatedZone.hidden = !outdated.length;
+    if (here.some((one) => !one.lines)) this.fileZone.hidden = false;
+    for (const thread of [...outdated, ...here]) {
+      const anchor = thread.step !== null && thread.lines ? this.rows.get(thread.lines[1]) : void 0;
+      const holder = anchor ?? (thread.step === null ? this.outdatedZone : thread.lines ? void 0 : this.fileZone);
+      if (!holder) continue;
+      const held = !closed && shows(holder);
       const kept = this.threads.get(thread.id);
       if (kept) {
         const fresh = kept.box.update(thread);
@@ -9797,9 +10103,11 @@ var FilePane = class {
         continue;
       }
       const box2 = new ThreadBox(thread);
-      const row = threadRow(box2.box);
+      const row = anchor ? threadRow(box2.box) : box2.box;
       row.dataset["thread"] = thread.id;
-      this.placeAfter(anchor, row);
+      if (anchor) this.placeAfter(anchor, row);
+      else if (holder === this.fileZone && this.composerRow?.parentElement === holder) this.composerRow.before(row);
+      else holder.append(row);
       this.threads.set(thread.id, { row, box: box2 });
       if (held) arrived2.push(hold(row));
       else if (this.drawn) for (const one of box2.box.querySelectorAll(".comment")) one.classList.add("arrive");
@@ -9807,6 +10115,7 @@ var FilePane = class {
     this.drawn = true;
     for (const thread of here) this.markThread(thread);
     this.drawComposer();
+    this.fileZone.hidden = !this.fileZone.childElementCount;
     this.drawStripe();
     return arrived2;
   }
@@ -9816,7 +10125,7 @@ var FilePane = class {
     last.after(row);
   }
   markThread(thread) {
-    const row = this.rows.get(thread.lines[1]);
+    const row = thread.lines && this.rows.get(thread.lines[1]);
     const cell = row?.querySelector(".line-num2");
     if (!row || !cell) return;
     const by = threadBy(thread);
@@ -9825,26 +10134,27 @@ var FilePane = class {
   }
   drawComposer() {
     const mine = picked?.step === this.step.id && picked.file === this.name ? picked : null;
-    for (const [line2, row] of this.rows) row.classList.toggle("picked", !!mine && line2 >= mine.start && line2 <= mine.end);
-    const key2 = mine && `${String(mine.start)}-${String(mine.end)}`;
+    const lines = mine?.start !== void 0 && mine.end !== void 0 ? [mine.start, mine.end] : null;
+    for (const [line2, row] of this.rows) row.classList.toggle("picked", !!lines && line2 >= lines[0] && line2 <= lines[1]);
+    const key2 = mine && (lines ? lines.join("-") : "file");
     if (this.composerRow && this.composerRow.dataset["lines"] !== key2) {
       this.composerRow.remove();
       this.composerRow = null;
     }
     if (!mine || this.composerRow) return;
-    const anchor = this.rows.get(mine.end);
-    if (!anchor) return;
-    const lines = [mine.start, mine.end];
+    const anchor = lines && this.rows.get(lines[1]);
+    if (lines && !anchor) return;
+    const where = { file: this.name, ...lines && { lines } };
     const box2 = composer({
       placeholder: "Leave a comment",
       primary: "Add comment",
       onPrimary: async (text2) => {
-        const done = await send2("comment", { file: this.name, lines, text: text2 });
+        const done = await send2("comment", { ...where, text: text2 });
         if (done) pick(null);
         return done;
       },
       onAsk: async (text2) => {
-        const done = await send2("ask", { file: this.name, lines, text: text2 });
+        const done = await send2("ask", { ...where, text: text2 });
         if (done) pick(null);
         return done;
       },
@@ -9852,10 +10162,12 @@ var FilePane = class {
         pick(null);
       }
     });
-    this.composerRow = threadRow(el("div", { className: "thread" }, box2));
+    const thread = el("div", { className: "thread" }, box2);
+    this.composerRow = anchor ? threadRow(thread) : el("div", {}, el("div", { className: "thread-cell" }, thread));
     this.composerRow.classList.add("composer-line");
     this.composerRow.dataset["lines"] = key2 ?? "";
-    this.placeAfter(anchor, this.composerRow);
+    if (anchor) this.placeAfter(anchor, this.composerRow);
+    else this.fileZone.append(this.composerRow);
     const cell = this.composerRow.querySelector(".thread-cell");
     if (cell) grow(cell);
   }
@@ -9919,12 +10231,18 @@ function hold(element) {
   element.classList.add("arriving");
   return element;
 }
-function drawFiles(step) {
+function drawFiles(step, { own, quiet } = {}) {
   const parsed = parseDiff(step.diff);
+  const ownFiles = own && parseDiff(own.diff);
+  const shown = (file) => {
+    if (quiet) return { quiet };
+    const mine = ownFiles?.find((one) => one.newName === file.newName);
+    return ownFiles ? { commentable: new Set(mine?.blocks.flatMap((block2) => block2.lines.flatMap((line2) => line2.newNumber ? [line2.newNumber] : []))) } : {};
+  };
   const holder = el("div");
   holder.innerHTML = html(parsed, { outputFormat: "line-by-line", drawFileList: false, matching: "lines" });
   const wrappers = [...holder.querySelectorAll(".d2h-file-wrapper")];
-  const panes2 = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector(".d2h-file-diff") ?? null));
+  const panes2 = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector(".d2h-file-diff") ?? null, shown(file)));
   return step.files.flatMap((file) => panes2.filter((pane) => pane.file === file));
 }
 
@@ -10029,12 +10347,15 @@ function openingNav() {
 
 // src/page/step.ts
 var StepPane = class {
-  constructor(step, scroller) {
+  /** `since` shows only what changed in each file since the last review; a step with nothing new shows its files quiet. */
+  constructor(step, scroller, since = null) {
     this.step = step;
     this.scroller = scroller;
-    this.files = drawFiles(step);
+    const changed = since && step.files.filter((file) => Object.hasOwn(since.files, file));
+    const quiet = changed?.length === 0;
+    this.files = !changed || quiet ? drawFiles(step, quiet ? { quiet } : {}) : drawFiles({ ...step, files: changed, diff: changed.map((file) => since.files[file]).join("") }, { own: step });
     this.box.dataset["step"] = step.id;
-    this.box.append(this.head, el("div", { className: "files" }, ...this.files.map((pane) => pane.box)), this.foot);
+    this.box.append(this.head, ...quiet ? [nothingNew()] : [], el("div", { className: quiet ? "files quiet" : "files" }, ...this.files.map((pane) => pane.box)), this.foot);
   }
   step;
   scroller;
@@ -10044,27 +10365,28 @@ var StepPane = class {
   foot = el("div", { className: "step-foot" });
   more = false;
   drawnHead = "";
+  shot;
   fileNamed(file) {
     return this.files.find((pane) => pane.file === file);
   }
   update(shows, go2) {
-    const key2 = JSON.stringify([this.step.title, this.step.explanation, this.step.look, this.more]);
+    const step = state.view.steps.find((one) => one.id === this.step.id) ?? this.step;
+    const key2 = JSON.stringify([step.title, step.explanation, step.look, step.screenshot, this.more]);
     if (key2 !== this.drawnHead) {
       this.drawnHead = key2;
-      this.drawHead();
+      this.drawHead(step);
     }
     this.drawFoot(go2);
     return this.files.flatMap((pane) => pane.update(shows));
   }
-  drawHead() {
-    const { step } = this;
+  drawHead(step) {
     const [first2 = "", ...rest] = step.explanation.trim().split(/\n\s*\n/);
     const explanation = markdown(this.more ? step.explanation : first2, "explanation");
     if (rest.length && !this.more) {
       const more = el("button", { type: "button", className: "link more" }, "More");
       more.onclick = () => {
         this.more = true;
-        this.drawHead();
+        this.drawHead(step);
         this.head.querySelector(".explanation")?.focus();
       };
       (explanation.lastElementChild ?? explanation).append(" ", more);
@@ -10073,7 +10395,9 @@ var StepPane = class {
     const look = step.look.map(
       (pointer) => el(
         "button",
-        { type: "button", className: "look-link", title: `${pointer.file} ${linesLabel([pointer.start, pointer.end])}`, onclick: () => this.fileNamed(pointer.file)?.look(pointer.start, pointer.end, this.scroller) },
+        { type: "button", className: "look-link", title: `${pointer.file} ${linesLabel([pointer.start, pointer.end])}`, onclick: () => {
+          if (!this.fileNamed(pointer.file)?.look(pointer.start, pointer.end, this.scroller)) changes.look(pointer);
+        } },
         icon("next"),
         el("code", {}, pointer.file.split("/").slice(-2).join("/")),
         ` ${linesLabel([pointer.start, pointer.end])} `,
@@ -10083,8 +10407,15 @@ var StepPane = class {
     this.head.replaceChildren(
       el("h1", { className: "step-title", tabIndex: -1 }, step.title),
       ...look.length ? [el("div", { className: "look" }, el("span", { className: "look-at" }, "Look at:"), ...look)] : [],
-      explanation
+      explanation,
+      ...step.screenshot ? [this.screenshot(step.screenshot)] : []
     );
+  }
+  // Kept while the screenshot is the same, so redrawing the head leaves it open.
+  screenshot(shot) {
+    const key2 = JSON.stringify(shot);
+    if (this.shot?.key !== key2) this.shot = { key: key2, figure: screenshot(shot) };
+    return this.shot.figure;
   }
   drawFoot(go2) {
     const { steps } = state.view;
@@ -10108,6 +10439,53 @@ var StepPane = class {
     );
   }
 };
+function screenshot({ name, alt }) {
+  const image3 = el("img", { className: "screenshot-image", src: `screenshot/${name}`, alt: "" });
+  const button = el("button", { type: "button", className: "screenshot-button" }, image3);
+  const close = el("button", { type: "button", className: "btn small ghost screenshot-close" }, "Close");
+  const figure = el("figure", { className: "screenshot" }, button, el("figcaption", {}, ...alt ? [el("span", {}, alt)] : [], close));
+  const onKey = (event) => {
+    if (event.key !== "Escape" || event.defaultPrevented || !figure.isConnected) return;
+    event.preventDefault();
+    toggle(false);
+  };
+  const toggle = (open) => {
+    const from = image3.getBoundingClientRect();
+    const hadFocus = figure.contains(document.activeElement);
+    settle(image3);
+    figure.classList.toggle("open", open);
+    attrs(button, { "aria-expanded": String(open), "aria-label": open ? "Close the screenshot" : alt ? `Open the screenshot: ${alt}` : "Open the screenshot" });
+    close.hidden = !open;
+    if (open) document.addEventListener("keydown", onKey);
+    else document.removeEventListener("keydown", onKey);
+    if (!open && hadFocus) button.focus();
+    if (!figure.isConnected || reduced()) return;
+    const to = image3.getBoundingClientRect();
+    const size = ({ width, height }) => ({ width: `${String(width)}px`, height: `${String(height)}px` });
+    animate(image3, "screenshot", [size(from), size(to)], open ? { ms: "slow", curve: "ease-out" } : { ms: "base", curve: "ease-in" });
+  };
+  button.onclick = () => {
+    toggle(!figure.classList.contains("open"));
+  };
+  close.onclick = () => {
+    toggle(false);
+  };
+  toggle(false);
+  return figure;
+}
+function nothingNew() {
+  const all = el("button", { type: "button", className: "btn small" }, "Show all changes");
+  all.onclick = () => {
+    changes.choose(false);
+  };
+  return el(
+    "div",
+    { className: "nothing-new" },
+    icon("met"),
+    el("div", {}, el("strong", {}, "No changes since your last review."), el("p", {}, "The files are as you viewed them.")),
+    all
+  );
+}
 
 // src/page/summary.ts
 var TYPES2 = Object.entries(TYPE_NAMES);
@@ -10117,6 +10495,8 @@ var CRITERIA = {
   "not-met": ["not-met", "Not met"],
   "not-checked": ["unchecked", "Not checked"]
 };
+var plainText = (body) => markdown(body, "row-text").textContent.replace(/\s+/g, " ").trim();
+var resolvedByAi = () => state.view.threads.filter((one) => one.resolvedBy === "ai" && (one.resolveReview === void 0 || one.resolveReview === state.view.submitted?.id));
 var SummaryPane = class {
   constructor(reveal2, end) {
     this.reveal = reveal2;
@@ -10138,7 +10518,7 @@ var SummaryPane = class {
   sentBox = null;
   update() {
     const { view } = state;
-    const key2 = JSON.stringify([pendingComments(), view.submitted, view.criteria, unresolved().length, notViewed().length, view.pr, this.sending]);
+    const key2 = JSON.stringify([pendingComments(), resolvedByAi(), view.submitted, view.criteria, unresolved().length, notViewed().length, view.pr, this.sending]);
     if (key2 === this.drawn) return;
     this.drawn = key2;
     const focused = document.activeElement;
@@ -10157,7 +10537,7 @@ var SummaryPane = class {
       ...rows.length || submitted ? [] : [el("p", { className: "empty" }, "No comments. Add one on a line.")],
       ...submitted ? [] : this.counts()
     );
-    const left = el("div", { className: "summary-lists" }, going, ...this.criteria());
+    const left = el("div", { className: "summary-lists" }, going, ...this.resolved(), ...this.criteria());
     const right = el("div", { className: "review-side" }, submitted ? this.done() : this.reviewBox());
     this.box.replaceChildren(el("h1", { className: "step-title", tabIndex: -1 }, "Summary"), el("div", { className: "summary-grid" }, left, right));
     if (submitted && this.shownSent === false) this.arrive(right);
@@ -10210,13 +10590,17 @@ var SummaryPane = class {
       this.update();
     });
   }
-  row(thread, comment, pending) {
-    const where = `${baseName(thread.file)}:${linesLabel(thread.lines)}`;
-    const link2 = thread.step === null ? el("span", { className: "where", title: thread.file }, where) : el("a", { className: "where", href: "#", title: thread.file, onclick: (event) => {
+  /** The thread's file and lines, or the file alone for a comment on the whole file; a link to it while it shows in a step. */
+  where(thread) {
+    const where = thread.lines ? `${baseName(thread.file)}:${linesLabel(thread.lines)}` : baseName(thread.file);
+    return threadStep(thread) === void 0 ? el("span", { className: "where", title: thread.file }, where) : el("a", { className: "where", href: "#", title: thread.file, onclick: (event) => {
       event.preventDefault();
       this.reveal({ thread: thread.id });
     } }, where);
-    const text2 = markdown(comment.body, "row-text").textContent.replace(/\s+/g, " ").trim();
+  }
+  row(thread, comment, pending) {
+    const link2 = this.where(thread);
+    const text2 = plainText(comment.body);
     const item = el("li", { className: "going-row" });
     item.dataset["comment"] = comment.id;
     const actions = pending ? [
@@ -10231,7 +10615,13 @@ var SummaryPane = class {
         } }, icon("trash")), { "aria-label": "Delete" })
       )
     ] : [];
-    const body = el("span", { className: "row-text", title: comment.by === "ai" ? `[AI] ${text2}` : text2 }, ...comment.by === "ai" ? [el("span", { className: "ai-tag" }, "[AI]"), " "] : [], text2);
+    const body = el(
+      "span",
+      { className: "row-text", title: comment.by === "ai" ? `[AI] ${text2}` : text2 },
+      ...thread.step === null && comment.id === thread.id ? [el("span", { className: "outdated-tag" }, "Outdated")] : [],
+      ...comment.by === "ai" ? [el("span", { className: "ai-tag" }, "[AI]"), " "] : [],
+      text2
+    );
     item.append(avatar(comment), link2, body, ...actions);
     return item;
   }
@@ -10249,6 +10639,40 @@ var SummaryPane = class {
       } }, icon("eye"), `${String(files.length)} ${files.length === 1 ? "file" : "files"} not viewed`)] : []
     ];
     return links.length ? [el("p", { className: "counts" }, ...links)] : [];
+  }
+  /** The conversations the AI resolved that go out with the review, or went out with the one submitted. */
+  resolved() {
+    const rows = resolvedByAi();
+    if (!rows.length) return [];
+    return [
+      el(
+        "section",
+        { className: "summary-section" },
+        el("h2", { className: "section-head" }, "Resolved conversations", el("span", { className: "counter" }, String(rows.length))),
+        el(
+          "ul",
+          { className: "going-out" },
+          ...rows.map((thread) => {
+            const text2 = plainText(thread.comments[0]?.body ?? "");
+            const item = el(
+              "li",
+              { className: "going-row resolved-row" },
+              avatar({ by: "ai" }),
+              this.where(thread),
+              el(
+                "span",
+                { className: "row-text", title: text2 },
+                el("span", { className: "resolved-tag" }, "Resolved"),
+                ...thread.resolvePending ? [el("span", { className: "pending-tag" }, "Pending")] : [],
+                text2
+              )
+            );
+            item.dataset["thread"] = thread.id;
+            return item;
+          })
+        )
+      )
+    ];
   }
   criteria() {
     const criteria = state.view.criteria ?? [];
@@ -10334,7 +10758,7 @@ main.append(pill, content);
 new ResizeObserver(() => {
   main.style.setProperty("--pane", `${String(content.clientWidth)}px`);
 }).observe(content);
-var theme = "system";
+var viewer = { ...DEFAULT_VIEWER };
 var stopped = false;
 var panes = /* @__PURE__ */ new Map();
 var summary = new SummaryPane(
@@ -10359,11 +10783,13 @@ function current() {
 function paneOf(id) {
   const step = state.view.steps.find((one) => one.id === id);
   if (!step) throw new Error(`no step ${id}`);
-  const key2 = JSON.stringify([step.diff, step.files, step.folded]);
-  const kept = panes.get(id);
+  const since = shownSince();
+  const moves = shownMoves().filter(({ from, to }) => step.files.includes(from.file) || step.files.includes(to.file));
+  const key2 = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map((file) => since.files[file] ?? null), moves, step.copies]);
+  const kept = panes.get(`${String(!!since)}:${id}`);
   if (kept?.key === key2) return kept.pane;
-  const pane = new StepPane(step, main);
-  panes.set(id, { key: key2, pane });
+  const pane = new StepPane(step, main, since);
+  panes.set(`${String(!!since)}:${id}`, { key: key2, pane });
   pane.update(() => false, go);
   return pane;
 }
@@ -10374,6 +10800,7 @@ function go(address) {
   moved();
 }
 function moved() {
+  onFile = null;
   for (const one of arrived) one.classList.remove("arriving");
   arrived = [];
   const old = content.firstElementChild;
@@ -10418,13 +10845,17 @@ function leave(old, scrolled) {
 }
 function reveal({ thread: id, edit, file }) {
   const thread = state.view.threads.find((one) => one.id === id);
-  const stepId = thread ? thread.step : file === void 0 ? void 0 : stepOfFile(file)?.id;
-  if (stepId === void 0 || stepId === null) return;
+  const stepId = thread ? threadStep(thread) : file === void 0 ? void 0 : stepOfFile(file)?.id;
+  if (stepId === void 0) return;
+  const name = thread?.file ?? file ?? "";
+  const found2 = paneOf(stepId).fileNamed(name);
+  if (changes.since && (!found2 || thread && !found2.thread(thread.id))) changes.since = false;
   go(stepAddress(stepId));
-  const pane = paneOf(stepId).fileNamed(thread?.file ?? file ?? "");
+  const pane = paneOf(stepId).fileNamed(name);
   if (!pane) return;
   pane.open();
   const shown = thread && pane.thread(thread.id);
+  shown?.box.show();
   const target = shown ? shown.row : pane.box;
   main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
   for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
@@ -10490,6 +10921,9 @@ finish.onclick = (event) => {
   go("summary");
 };
 var changeLabel = el("span");
+var changesSwitch = new ChangesSwitch();
+var behindLine = attrs(el("div", { className: "behind", hidden: true }), { role: "status" });
+header.after(behindLine);
 header.append(
   attrs(el("span", { className: "mark" }, icon("mark")), { "aria-hidden": "true" }),
   attrs(el("button", { type: "button", className: "icon-button steps-button", onclick: toggleDrawer }, icon("sidebar")), {
@@ -10498,6 +10932,7 @@ header.append(
     "aria-controls": "nav"
   }),
   changeLabel,
+  changesSwitch.box,
   filesViewed,
   filesChanged,
   el("span", { className: "spacer" }),
@@ -10541,6 +10976,12 @@ function drawHeader(onSummary) {
   const changed = view.changedFiles.length;
   if (!ready) filesChanged.replaceChildren(el("span", {}, plural(changed, "file"), el("span", { className: "long" }, " changed")));
   finish.hidden = onSummary || !ready;
+  changesSwitch.update();
+  changesSwitch.box.hidden = onSummary || !ready || !view.since;
+  if (changesSwitch.box.hidden) changesSwitch.close(false);
+  if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
+  else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
+  drawBehind(ready && view.behind && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
@@ -10548,6 +10989,11 @@ function drawHeader(onSummary) {
     fadeOut(reviewingNow, "base", () => {
       reviewingNow.remove();
     });
+}
+function drawBehind(behind) {
+  if (behind && !behindLine.hasChildNodes())
+    behindLine.append(icon("info"), el("span", { className: "behind-text" }, "The branch has new commits. Run the walkthrough again to see them:"), commandBox());
+  behindLine.hidden = !behind;
 }
 function showDrawer(open) {
   document.body.classList.toggle("drawer-open", open);
@@ -10587,34 +11033,28 @@ function toggleMenu() {
       names[one],
       "menuitemradio",
       () => {
-        theme = one;
-        chooseTheme(one);
+        viewer = chooseViewer(viewer, { theme: one });
       },
-      theme === one
+      viewer.theme === one
     )
   );
+  const colourBlind = item("Colour-blind diff", "menuitemcheckbox", () => {
+    viewer = chooseViewer(viewer, { colourBlind: !viewer.colourBlind });
+  }, viewer.colourBlind);
+  if (viewer.colourBlind) colourBlind.prepend(el("span", { className: "menu-check" }, icon("met")));
   const opened = attrs(
     el(
       "div",
       { className: "menu" },
-      attrs(el("div", {}, el("p", { className: "menu-label", id: "menu-theme" }, "Theme"), ...themes), { role: "group", "aria-labelledby": "menu-theme" }),
+      attrs(el("div", {}, el("p", { className: "menu-label", id: "menu-theme" }, "Theme"), ...themes, colourBlind), { role: "group", "aria-labelledby": "menu-theme" }),
       el("hr"),
       item("End session", "menuitem", endSession)
     ),
     { role: "menu", "aria-label": "Menu" }
   );
-  opened.onkeydown = (event) => {
-    const items = [...opened.querySelectorAll(".menu-item")];
-    const at = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
-    const step = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
-    if (step) {
-      event.preventDefault();
-      items[(at + step + items.length) % items.length]?.focus();
-    } else if (event.key === "Escape" || event.key === "Tab") {
-      event.preventDefault();
-      closeMenu(true);
-    }
-  };
+  menuKeys(opened, () => {
+    closeMenu(true);
+  });
   menu = opened;
   header.append(opened);
   header.querySelector(".menu-button")?.setAttribute("aria-expanded", "true");
@@ -10682,7 +11122,8 @@ function buildNav() {
   navSteps = state.view.steps.map((step, index) => {
     const row = navLink(stepAddress(step.id), "step-row", el("span", { className: "step-number" }, String(index + 1)), el("span", { className: "step-name", title: step.title }, step.title));
     row.dataset["key"] = `step:${step.id}`;
-    const files = step.files.map((file) => {
+    row.classList.toggle("quiet", shownFiles(step).length === 0);
+    const files = shownFiles(step).map((file) => {
       const tick2 = attrs(el("span", { className: "viewed-tick" }, icon("ring"), icon("met")), { role: "img" });
       const count = el("span", { className: "file-count" }, icon("message"), "");
       const fileRow = el("a", { className: "file-row", href: `#${stepAddress(step.id)}`, title: file }, tick2, el("span", { className: "file-name" }, baseName(file)), count);
@@ -10709,7 +11150,7 @@ function drawNav(at) {
     shownPending = void 0;
     return;
   }
-  const key2 = JSON.stringify(view.steps.map((step) => [step.id, step.title, step.files]));
+  const key2 = JSON.stringify(view.steps.map((step) => [step.id, step.title, step.files, shownFiles(step)]));
   if (key2 !== drawnNav) {
     drawnNav = key2;
     buildNav();
@@ -10741,6 +11182,7 @@ function drawNav(at) {
   }
 }
 function render(own, navigated = false) {
+  followSince();
   const at = current();
   drawHeader(at.kind === "summary");
   drawNav(at);
@@ -10767,7 +11209,87 @@ function render(own, navigated = false) {
   if (fromOpening && content.firstElementChild !== old) leaveOpening();
   if (anchor?.element.isConnected) main.scrollTop += anchor.element.getBoundingClientRect().top - anchor.top;
   drawPill();
+  drawOnFile();
   for (const time of content.querySelectorAll("time.comment-time")) time.textContent = ago(time.dateTime);
+}
+var sinceFor = "";
+function followSince() {
+  const { since, head } = state.view;
+  const key2 = since ? `${since.head}:${head}` : "";
+  if (key2 === sinceFor) return;
+  sinceFor = key2;
+  changes.since = !!since;
+}
+function showChanges(since) {
+  const top = main.getBoundingClientRect().top;
+  const reading = [...content.querySelectorAll(":scope > :first-child .file")].find((box2) => box2.getBoundingClientRect().bottom > top);
+  const was = reading?.getBoundingClientRect().top;
+  changes.since = since;
+  render(true, true);
+  const shown = content.firstElementChild;
+  if (shown) {
+    settle(shown);
+    shown.removeAttribute("inert");
+    shown.removeAttribute("aria-hidden");
+  }
+  const same = reading && content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(reading.dataset["file"] ?? "")}"]`);
+  if (same && was !== void 0) main.scrollTop += same.getBoundingClientRect().top - was;
+}
+changes.choose = showChanges;
+changes.look = ({ file, start, end }) => {
+  if (!changes.since) return;
+  showChanges(false);
+  const at = current();
+  if (at.kind === "step") at.pane.fileNamed(file)?.look(start, end, main);
+};
+function paneOfFile(file) {
+  const step = stepOfFile(file);
+  const at = current();
+  if (!step || at.kind === "opening") return void 0;
+  if (at.kind !== "step" || at.pane.step.id !== step.id) go(stepAddress(step.id));
+  for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
+  return paneOf(step.id).fileNamed(file);
+}
+moving.show = (move, to) => {
+  const { file, line: line2 } = move[to];
+  const pane = paneOfFile(file);
+  if (to === "from") pane?.lookDeparture(line2, main);
+  else pane?.look(line2, line2 + move.count - 1, main);
+};
+moving.copied = ({ from: { file, line: line2 }, count }) => {
+  const look = { file, start: line2, end: line2 + count - 1, label: "" };
+  if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+};
+var onFile = null;
+function drawOnFile() {
+  for (const box2 of content.querySelectorAll(".file")) box2.classList.toggle("on", box2.dataset["file"] === onFile);
+  for (const { files } of navSteps) for (const one of files) one.row.classList.toggle("on", one.file === onFile);
+}
+function fileAtTop() {
+  const top = main.getBoundingClientRect().top;
+  return [...content.querySelectorAll(":scope > :first-child .file")].find((box2) => box2.getBoundingClientRect().bottom > top)?.dataset["file"];
+}
+function moveFile(by) {
+  const at = current();
+  if (at.kind !== "step") return;
+  const { steps } = state.view;
+  const order = steps.flatMap((step, index) => shownFiles(step).map((file) => ({ step: step.id, index, file })));
+  const here = steps.findIndex((step) => step.id === at.pane.step.id);
+  const top = fileAtTop();
+  const on = order.findIndex((one) => one.file === onFile);
+  const next = on === -1 ? order.find((one) => one.file === top) ?? (by > 0 ? order.find((one) => one.index > here) : order.findLast((one) => one.index < here)) : order[on + by];
+  if (!next) return;
+  if (next.step !== at.pane.step.id) go(stepAddress(next.step));
+  onFile = next.file;
+  drawOnFile();
+  const box2 = paneOf(next.step).fileNamed(next.file)?.box;
+  for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
+  if (box2) main.scrollTop += box2.getBoundingClientRect().top - main.getBoundingClientRect().top - 16;
+}
+function toggleViewed() {
+  onFile ??= fileAtTop() ?? null;
+  drawOnFile();
+  if (onFile) content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(onFile)}"] .viewed-toggle input`)?.click();
 }
 function leaveOpening() {
   const leaving = opening;
@@ -10801,16 +11323,45 @@ state.render = (own) => {
 window.addEventListener("popstate", moved);
 phone.addEventListener("change", () => {
   showDrawer(false);
+  render(true);
 });
 var pendingKey = "";
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && document.body.classList.contains("drawer-open")) {
-    toggleDrawer();
-    header.querySelector(".steps-button")?.focus();
-    return;
+  if (event.key === "Escape") {
+    if (event.defaultPrevented) return;
+    const close = changesSwitch.isOpen ? () => {
+      changesSwitch.close(true);
+    } : menu ? () => {
+      closeMenu(true);
+    } : document.body.classList.contains("drawer-open") ? () => {
+      toggleDrawer();
+      header.querySelector(".steps-button")?.focus();
+    } : null;
+    if (close) {
+      event.preventDefault();
+      close();
+      return;
+    }
   }
-  const typing = event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]");
+  const typing = event.target instanceof HTMLElement && event.target.closest('textarea, select, [contenteditable], input:not([type="checkbox"], [type="radio"])');
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
+  const keys = {
+    j: () => {
+      moveFile(1);
+    },
+    k: () => {
+      moveFile(-1);
+    },
+    v: toggleViewed,
+    c: () => {
+      changesSwitch.open();
+    }
+  };
+  const key2 = event.shiftKey || !Object.hasOwn(keys, event.key) ? void 0 : keys[event.key];
+  if (key2 && state.view.ready && !ending && !menu) {
+    event.preventDefault();
+    key2();
+  }
   if (pendingKey === "g" && event.key === "s" && state.view.ready && !ending) go("summary");
   pendingKey = event.key === "g" ? "g" : "";
 });
@@ -10843,7 +11394,7 @@ function poll() {
   });
 }
 PAGE.lost = poll;
-theme = await loadViewer();
+viewer = await loadViewer();
 var first = await fetch("data/walkthrough.json");
 tag = first.headers.get("etag") ?? "";
 state.view = await first.json();

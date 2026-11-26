@@ -65,7 +65,7 @@ function words(command) {
   if (text !== null) found.push({ text, globbed });
   return found;
 }
-var SUBCOMMANDS = /* @__PURE__ */ new Set(["start", "files", "steps", "open", "ready", "comment", "threads", "criteria", "comments", "posted", "list", "export", "guide", "listen", "policy", "say", "stop", "prune"]);
+var SUBCOMMANDS = /* @__PURE__ */ new Set(["start", "files", "steps", "open", "ready", "comment", "threads", "criteria", "comments", "resolve", "posted", "list", "export", "guide", "listen", "policy", "say", "stop", "prune"]);
 function ownCommand(command) {
   const found = words(command);
   if (found?.[0]?.text !== "walkthrough" || !SUBCOMMANDS.has(found[1]?.text ?? "")) return false;
