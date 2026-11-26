@@ -45,7 +45,7 @@ describe('walkthrough list', () => {
     expect(name).toBe('shop');
     expect(list).toEqual([
       { id: 'range-Login%20change', name: 'Login change', files: 0, viewed: 0, last: expect.any(String) as unknown },
-      { id: 'branch-feature~login', name: 'feature/login', files: 2, viewed: 1, last: expect.any(String) as unknown },
+      { id: 'branch-feature%2Flogin', name: 'feature/login', files: 2, viewed: 1, last: expect.any(String) as unknown },
     ]);
     expect(Date.parse(list[0]?.last ?? '')).toBeGreaterThanOrEqual(Date.parse(list[1]?.last ?? ''));
   });
@@ -55,13 +55,13 @@ describe('walkthrough list', () => {
     repo.run('list');
     const list = repo.url();
 
-    const opened = await post(list, '/open', { id: 'branch-feature~login' });
+    const opened = await post(list, '/open', { id: 'branch-feature%2Flogin' });
 
     expect(opened.status).toBe(200);
     const { url } = (await opened.json()) as { url: string };
     expect((await (await fetch(`${url}data/walkthrough.json`)).json()) as unknown).toMatchObject({ branch: 'feature/login' });
     expect((await post(list, '/open', { id: '..' })).status).toBe(400);
-    expect((await post(list, '/open', { id: 'branch-feature~login' }, '0'.repeat(48))).status).toBe(404);
+    expect((await post(list, '/open', { id: 'branch-feature%2Flogin' }, '0'.repeat(48))).status).toBe(404);
     expect((await fetch(`${new URL(list).origin}/s/${'0'.repeat(48)}/data/list.json`)).status).toBe(404);
   });
 

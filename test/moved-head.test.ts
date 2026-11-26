@@ -52,4 +52,20 @@ describe('a new head', () => {
     expect(repo.run('ready').status).toBe(0);
     expect((await viewAt(page)).ready).toBe(true);
   });
+
+  test('names the head last reviewed until the walkthrough is ready again, through another move before that', () => {
+    repo = makeRepo();
+    repo.run('start');
+    repo.record([LOGIN, APP]);
+    repo.run('ready');
+    const reviewed = git(repo.dir, 'rev-parse', '--short=7', 'HEAD').trim();
+
+    moveHead({ 'app.ts': 'export const app = 3;\n' });
+    expect(repo.run('start').stdout).toContain(`Last reviewed at ${reviewed}.`);
+    moveHead({ 'app.ts': 'export const app = 4;\n' });
+    expect(repo.run('start').stdout).toContain(`Last reviewed at ${reviewed}.`);
+
+    repo.run('ready');
+    expect(repo.run('start').stdout).not.toContain('Last reviewed at');
+  });
 });

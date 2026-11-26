@@ -24,6 +24,7 @@ import {
   recordSteps,
   targetName,
   updateWalkthrough,
+  earlierDir,
   walkthroughDir,
 } from './walkthrough';
 
@@ -57,7 +58,17 @@ function located<T extends Options>(
   // Two changes fetched to the same name, such as FETCH_HEAD, would otherwise share one walkthrough.
   else if (!label?.trim()) throw new Error('--base and --head need a --label that names the change');
   else source = { kind: 'range', base, head, label };
-  return { ...parsed, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
+  return { ...parsed, cwd, source, dir: renamedDir(currentRepo(cwd), source) };
+}
+
+// An earlier release's folder moves to its new name, unless its page still runs from there.
+function renamedDir(repo: string, source: Source): string {
+  const dir = walkthroughDir(repo, source);
+  const earlier = earlierDir(repo, source);
+  if (earlier === dir || !fs.existsSync(earlier) || fs.existsSync(dir)) return dir;
+  if (serverRunning(earlier)) return earlier;
+  fs.renameSync(earlier, dir);
+  return dir;
 }
 
 async function start(args: string[]): Promise<void> {
@@ -78,6 +89,7 @@ async function start(args: string[]): Promise<void> {
     const line = reviewedLine(dir);
     if (line) console.log(line);
   }
+  if (walkthrough.ready === false && walkthrough.reviewedAt) console.log(`Last reviewed at ${short(walkthrough.reviewedAt)}.`);
   if (opened === 'moved' && steps.length > 0) {
     console.log(`The head moved: ${plural(steps.length, 'step')} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];

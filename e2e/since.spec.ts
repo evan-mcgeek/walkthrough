@@ -88,7 +88,7 @@ test('the behind line shows within a poll of a commit on the branch, on the Open
   await expect(behind).toBeHidden();
   commit(repo.dir, 'app.ts', 'export const app = 3;\n');
   await expect(behind).toContainText('The branch has new commits. Run the walkthrough again to see them:');
-  await expect(behind.locator('code')).toHaveText('/walkthrough');
+  await expect(behind.locator('code')).toHaveText('/walkthrough:update');
   await expect(behind.getByRole('button', { name: 'Copy command' })).toBeVisible();
   record(repo, STEPS);
   await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
