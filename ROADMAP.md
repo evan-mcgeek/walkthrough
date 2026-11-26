@@ -65,6 +65,13 @@ The pull request that ships or drops an item updates this file.
 - Walky, the mascot: the README banner, and the tab icon by session state (reading, awake, done, ended, asleep).
 - Every control's edge reaches 3:1 on every grey, and the primary button is a calmer mid-tone in dark.
 
+### 0.1.7 (2026-11-26): the next review, and criteria that say why
+
+- `/walkthrough:update` after the fixes: only what changed since your last review, with whether each comment was addressed, or the whole change again; the fix list ends by asking the agent to run it.
+- Acceptance criteria say what is missing and where: gaps first, each linked to the AI comment that closes it; a met one links to the lines that meet it, and a not checked one says why.
+- On a branch with a slash in its name, the session records its steps and comments without asking for permission.
+- The AI's comments keep the order they were given, and the new-comment pill goes to the highest one.
+
 ## Now
 
 - Nothing in progress.
