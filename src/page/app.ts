@@ -283,7 +283,7 @@ function drawHeader(onSummary: boolean): void {
   // At phone width the switch is the first row of the step.
   if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
   else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
-  drawBehind(ready && view.behind && !ending);
+  drawBehind(view.behind && !view.sessionGone && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
