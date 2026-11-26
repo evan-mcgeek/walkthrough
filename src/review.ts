@@ -93,7 +93,8 @@ const files = (dir: string) => ({
   viewed: path.join(dir, 'viewed.json'),
 });
 // One lock for the log, the inbox and the listener: an event and a listener taking events never interleave.
-const hold = <T>(dir: string, work: () => T) => locked(path.join(dir, 'review'), work);
+// Its work is a few small writes, so a listen killed while holding it blocks the next for 2s, not 10s.
+const hold = <T>(dir: string, work: () => T) => locked(path.join(dir, 'review'), work, 2000);
 
 function readLines<T>(file: string): T[] {
   let text = '';
@@ -483,8 +484,10 @@ export async function listen(dir: string, pageRunning: () => boolean): Promise<E
     const now = readJson<Listener | null>(listener, null);
     return now?.state === 'listening' && now.pid === process.pid;
   };
+  // Outside the lock: a listen killed while holding it leaves it held until it goes stale.
+  const started = psStart(process.pid);
   await hold(dir, () => {
-    writeJson(listener, { state: 'listening', pid: process.pid, started: psStart(process.pid) } satisfies Listener);
+    writeJson(listener, { state: 'listening', pid: process.pid, started } satisfies Listener);
   });
   const release = () =>
     hold(dir, () => {
