@@ -19,7 +19,8 @@ const nav = region('nav');
 const main = region('main');
 const pill = attrs(el('button', { type: 'button', className: 'new-pill', hidden: true }), { 'aria-live': 'polite' });
 const content = el('div', { className: 'content' });
-main.append(pill, content);
+// The pill floats over the diff in a dock with no height, so showing it never narrows or moves the page.
+main.append(el('div', { className: 'pill-dock' }, pill), content);
 // Threads stay in view while a wide diff scrolls sideways, so they need the width the pane shows.
 new ResizeObserver(() => {
   main.style.setProperty('--pane', `${String(content.clientWidth)}px`);
@@ -153,7 +154,9 @@ function readingAnchor(): { element: Element; top: number } | null {
   const top = main.getBoundingClientRect().top;
   for (const element of content.firstElementChild?.querySelectorAll('.step-head, .file-header, tr, .step-foot') ?? []) {
     const box = element.getBoundingClientRect();
-    if (box.height && box.bottom > top) return { element, top: box.top };
+    // A file header stuck at the top stays put while the lines under it move.
+    const stuck = element.classList.contains('file-header') && (element.parentElement?.getBoundingClientRect().top ?? top) < top;
+    if (box.height && box.bottom > top && !stuck) return { element, top: box.top };
   }
   return null;
 }
@@ -177,7 +180,8 @@ function drawPill(): void {
 }
 
 pill.onclick = () => {
-  const [first] = arrived;
+  // The highest on the page, whatever order they arrived in.
+  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove('arriving');
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
@@ -250,11 +254,13 @@ function drawHeader(onSummary: boolean): void {
     changeLabel.replaceWith(fresh);
     changeLabel = fresh;
   }
-  // The tab says the AI is still reviewing, so it reads from the tab strip; a static mark, since background tabs barely animate.
+  // The tab says what the session is doing, so it reads from the tab strip; static heads, since background tabs barely animate.
   const reviewing = !view.ready && !view.sessionGone && !ending;
   const title = `${reviewing ? 'Reviewing · ' : ''}${view.pr ? `#${view.pr.number} ${view.pr.title}` : name} · Walkthrough`;
   if (document.title !== title) document.title = title;
-  const favicon = reviewing ? 'favicon-reviewing.svg' : 'favicon.svg';
+  const asleep = ending?.kind === 'lost' || view.sessionGone;
+  const ended = ending?.kind === 'ended' ? (view.submitted ? 'done' : 'ended') : null;
+  const favicon = `favicon-${asleep ? 'asleep' : (ended ?? (view.ready ? 'awake' : 'reading'))}.svg`;
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon && icon.getAttribute('href') !== favicon) icon.setAttribute('href', favicon);
   const files = allFiles().length;
@@ -278,7 +284,7 @@ function drawHeader(onSummary: boolean): void {
   // At phone width the switch is the first row of the step.
   if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
   else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
-  drawBehind(ready && view.behind && !ending);
+  drawBehind(view.behind && !view.sessionGone && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
@@ -342,10 +348,10 @@ function toggleMenu(): void {
       viewer.theme === one,
     ),
   );
-  const colourBlind = item('Colour-blind diff', 'menuitemcheckbox', () => {
+  const colourBlind = item('Colorblind', 'menuitemcheckbox', () => {
     viewer = chooseViewer(viewer, { colourBlind: !viewer.colourBlind });
   }, viewer.colourBlind);
-  if (viewer.colourBlind) colourBlind.prepend(el('span', { className: 'menu-check' }, icon('met')));
+  colourBlind.prepend(el('span', { className: 'menu-check' }, icon('checkbox')));
   const opened = attrs(
     el(
       'div',

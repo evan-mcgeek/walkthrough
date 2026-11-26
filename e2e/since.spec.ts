@@ -48,7 +48,7 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await expect(tasks.locator('.d2h-ins .d2h-code-line-ctn')).toHaveText([/task5 = 500/, /task40 = 40;/]);
   await expect(tasks.locator('tr[data-line="5"] .line-num2')).toHaveAttribute('role', 'button');
   await expect(tasks.locator('tr[data-line="40"] .line-num2')).not.toHaveAttribute('role', 'button');
-  await expect(tasks.locator('.outdated-zone .thread')).toContainText('Why 400?');
+  await expect(tasks.locator('.file-threads .thread')).toContainText('Why 400?');
   await expect(tasks.locator(`.thread[data-thread="${ai}"] .resolved-line`)).toContainText('AI marked this conversation as resolved.');
   await tasks.getByRole('checkbox', { name: 'Viewed' }).check();
 
@@ -81,16 +81,18 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await expect(tasks.locator('tr[data-line="15"]')).toHaveClass(/flash/);
 });
 
-test('the behind line shows within a poll of a commit on the branch, with the command to copy', async ({ page, repo, url }) => {
-  record(repo, STEPS);
+test('the behind line shows within a poll of a commit on the branch, on the Opening, the steps and the Summary, with the command to copy', async ({ page, repo, url }) => {
   await open(page, url);
   const behind = page.locator('.behind');
-  await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Preparing the walkthrough' })).toBeVisible();
   await expect(behind).toBeHidden();
   commit(repo.dir, 'app.ts', 'export const app = 3;\n');
   await expect(behind).toContainText('The branch has new commits. Run the walkthrough again to see them:');
   await expect(behind.locator('code')).toHaveText('/walkthrough');
   await expect(behind.getByRole('button', { name: 'Copy command' })).toBeVisible();
+  record(repo, STEPS);
+  await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
+  await expect(behind).toBeVisible();
   await page.getByRole('link', { name: 'Finish review' }).click();
   await expect(behind).toBeVisible();
 });

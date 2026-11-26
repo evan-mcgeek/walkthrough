@@ -11,7 +11,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | N / M files viewed | header progress | **GH** |
 | Finish review | header, primary | **GH** ("Finish your review"); tooltip "Go to the Summary (G S)" |
 | Theme | menu | System, Light, Dark |
-| Colour-blind diff | menu, under the themes | checkable; with any theme |
+| Colorblind | menu, checkbox in the Theme group | **GH** (GitHub's "colorblind" themes, spelt as GitHub spells it); decision 22; replaces "Colour-blind diff" |
 | End session | menu | |
 | Steps and files | phone header button, accessible name | |
 
@@ -44,7 +44,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Collapse / Expand `<path>` | chevron, accessible name | |
 | Generated from the schema | folded generated file | written by the session (the reason), one line |
 | Comment on line N | line number button, accessible name | **GH** |
-| Comment on this file | file header icon button, after Viewed; accessible name and tooltip | **GH**; opens the composer above the file's diff |
+| Comment on this file | file header icon button, accessible name and tooltip; the file composer's accessible name | **GH**; built in 0.1.5, kept (decision 25); Tooltip cap, 12 |
 | Diff / Preview | image file, switch | **GH** |
 | Before / After | image preview, under each side | |
 | Preview failed. | image preview, when an image does not load | |
@@ -53,6 +53,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 
 | String | Where | Note |
 |---|---|---|
+| Suggested change | header row of a suggestion block in a comment; tag on its Summary row | **GH**; decision 21; no Apply or Commit button |
 | You | your name on your comments | |
 | AI | the AI's name | |
 | `[AI]` | prefix of the AI's pending comments (not its Ask AI answers) | |
@@ -67,7 +68,7 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Ask AI: `<question>` | your question in the thread | stays on the page; never goes out |
 | Answering… | beside the spinner while the AI writes its reply | |
 | AI is answering | dots, accessible name | |
-| Leave a comment | composer placeholder | **GH** |
+| Leave a comment | composer placeholder, on lines and on a file | **GH** |
 | Cancel | composer | **GH** |
 | Update comment | composer, primary, when editing a pending comment | **GH** |
 | Add comment | composer, primary | **GH** ("Add single comment" / "Start a review": one button, the review is always pending) |
@@ -175,9 +176,8 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | Resolved conversations | Summary section heading | Heading, 3 | GitHub's words; lists what the AI resolved since your last review |
 | Resolved | Summary row tag | Tag, 2 | **GH** |
 | Pending | on the AI-resolved line, in its step and on the Summary, until Submit review | Tag, 2 | **GH**; the existing tag; not on your own change |
-| Moved from `<file>` line N | diff row above moved lines | Diff row, 8 | "Moved from line N" in the same file; links to where they left |
+| Moved from `<file>` lines N–M | diff row above moved lines | Diff row, 8 | "line N" when one; "Moved from lines N–M" in the same file; links to where they left; at 390 the file name only, the whole label as tooltip (decision 24) |
 | N lines moved to `<file>` line M | diff row where moved lines left | Diff row, 8 | "1 line moved to …"; same file: "N lines moved to line M"; links to where they arrive |
-| Copied from `<file>` line N | diff row above copied lines | Diff row, 8 | "Copied from line N" in the same file; links to where they come from when the change shows those lines, else plain text |
 | `<alt text>` | caption under the author's screenshot | the author's words | from the pull request; none if it has none |
 | Open the screenshot: `<alt text>` | accessible name of the closed screenshot | Tooltip, 12 | |
 | Open the screenshot | accessible name of the closed screenshot when it has no alt text | Tooltip, 12 | |
@@ -185,6 +185,46 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | Close | under the open screenshot | Button, 3 | also Esc or a click on the image |
 | Viewed (V) · Changes since your last review (C) | tooltips of the Viewed checkbox and the changes switch | Tooltip, 12 | the key in brackets, as "Go to the Summary (G S)"; no key caps; J and K show nowhere, as on GitHub |
 
+## Colorblind, copied code, comments on a whole file
+
+New and changed strings from decisions 22 to 25 (features built in 0.1.5). Cap as above.
+
+| String | Where | Cap | Note |
+|---|---|---|---|
+| Colorblind | menu, checkbox item in the Theme group | Switch label or menu item, 3 | **GH**; was "Colour-blind diff" |
+| Copied from `<file>` lines N–M | diff row above copied lines | Diff row, 8 | was "Copied from `<file>` line N"; "line N" when one; "Copied from lines N–M" in the same file; links to the source, plain text when the change does not show it; at 390 the file name only, the whole label as tooltip |
+| Moved from `<file>` lines N–M | diff row above moved lines | Diff row, 8 | was "line N"; full row under "Back on a new head" above |
+| `<file name>` | Summary row link for a file comment, no line | the file name | tooltip: "`<path>`: go to the comment" |
+
+## Accessible names, tooltips and the walkthroughs list
+
+Strings the built page already shows, added here so the list is complete. Cap as above.
+
+| String | Where | Cap | Note |
+|---|---|---|---|
+| Menu | the header's … button and its menu, accessible name | Button, 3 | |
+| Changes | the changes switch's menu, accessible name | Button, 3 | |
+| Finish | the header's Finish review at 390 | Button, 3 | **GH** |
+| binary | file header in place of +N −N, for a binary file | Tag, 2 | **GH** |
+| Preview of `<path>` | an image file's preview, region name | Tooltip, 12 | |
+| Show `<path>` as | the Diff / Preview switch, group name | Tooltip, 12 | |
+| `<path>`, before · `<path>`, after | an image preview's alt text | Tooltip, 12 | |
+| Before · W×H · After · W×H | under each side of an image preview | Tag, 4 | the image's size in pixels |
+| Leave a comment | the summary box's placeholder | Hint, 8 | **GH** |
+| Summary | the summary box, accessible name | Button, 3 | |
+| `<file>` `<lines>` | a Look at pointer's tooltip | Tooltip, 12 | |
+| Summary | the last step's next link | Button, 3 | |
+| `<date and time>` | a comment time's tooltip | as the reader's locale writes it | **GH** |
+| Walkthrough | the tab title before the page names the change | Heading, 3 | |
+| Walkthroughs | the list page's title and tab | Heading, 3 | |
+| Walkthrough · Viewed · Review · Last activity | the list's column headers | Heading, 3 | |
+| Stop | the list page's header button | Button, 3 | stops the list's server |
+| No walkthroughs. Run /walkthrough. | the list, when empty | Empty state, 8 | |
+| List stopped. You can close this tab. | the list's banner after Stop | Notice, 12 | |
+| N / M files viewed | the list's Viewed column | Chip, 4 | **GH** |
+| `<time ago>` | the list's Last activity column | as the reader's locale writes it | |
+| The list could not do that (N). | alert on the list page, when its server refuses with no reason | Notice, 12 | as "The walkthrough could not do that (N)." |
+
 ## Strings to remove from the existing page
 
-Any string not listed above is removed. Grep the templates for at least: "GitHub" and "Claude Code" in any page string, "Could not reach the walkthrough page.", Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide.
+Any string not listed above is removed. Grep the templates for at least: "GitHub" and "Claude Code" in any page string, "Could not reach the walkthrough page.", Approve and Flag on steps, Undecided, Decided, N decided, Changed since you decided, Still open, Goes out, Verdict, the session status words, Session messages, Being checked notices, New finding banners, Add to fixes, Not an issue, Accept, Reject, Ignore, Checklist and its Met / Partly / Not met buttons, Files to skim, Help, Icons, Keys, Appearance, Swipe to decide, Colour-blind diff, and "Copied from … line" with a single line where a range is copied.

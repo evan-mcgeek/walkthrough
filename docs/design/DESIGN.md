@@ -7,13 +7,15 @@ colors:
   surface-tint: "#eef0f3"
   rule: "#dde1e6"
   rule-soft: "#e9ecef"
-  control-edge: "#d0d5dc"
+  control-edge: "#818b98"
   ink: "#1d2126"
   ink-secondary: "#3a4048"
   muted: "#5b636d"
-  ultramarine: "#2433b8"
-  ultramarine-hover: "#1b2896"
-  ultramarine-text: "#2433b8"
+  ultramarine: "#2d3a9e"
+  ultramarine-hover: "#252f85"
+  ultramarine-text: "#2d3a9e"
+  ultramarine-fill: "#2d3a9e"
+  ultramarine-fill-hover: "#252f85"
   ultramarine-wash: "#eceefc"
   ultramarine-line: "#d3d7f7"
   on-ultramarine: "#ffffff"
@@ -27,9 +29,9 @@ colors:
   diff-add: "#e8f6ec"
   diff-add-gutter: "#d3eedc"
   diff-del: "#fcebea"
-  diff-del-gutter: "#f6d6d3"
-  diff-add-word: "#b9e5c6"
-  diff-del-word: "#f4c4bf"
+  diff-del-gutter: "#f7d9d6"
+  diff-add-word: "#c4e9cf"
+  diff-del-word: "#f7cdc8"
   stripe-add: "#3c9a5f"
   stripe-del: "#c8473b"
   line-pick: "#eef0fd"
@@ -39,7 +41,7 @@ colors:
   surface-tint-dark: "#232830"
   rule-dark: "#2c323b"
   rule-soft-dark: "#252a32"
-  control-edge-dark: "#3a414b"
+  control-edge-dark: "#6e7681"
   ink-dark: "#e5e8ec"
   ink-secondary-dark: "#c3c8cf"
   muted-dark: "#9aa2ac"
@@ -48,7 +50,9 @@ colors:
   ultramarine-text-dark: "#a9b1ff"
   ultramarine-wash-dark: "#1e2346"
   ultramarine-line-dark: "#333b70"
-  on-ultramarine-dark: "#0b0f2e"
+  on-ultramarine-dark: "#ffffff"
+  ultramarine-fill-dark: "#4f5bd5"
+  ultramarine-fill-hover-dark: "#5b67e0"
   icon-knockout-dark: "#15181d"
   amber-dark: "#e3b260"
   ok-dark: "#5fd38d"
@@ -60,12 +64,54 @@ colors:
   diff-add-gutter-dark: "#193423"
   diff-del-dark: "#33191a"
   diff-del-gutter-dark: "#3f1f20"
-  diff-add-word-dark: "#1f4a2e"
-  diff-del-word-dark: "#5a2626"
+  diff-add-word-dark: "#1d4129"
+  diff-del-word-dark: "#4f2526"
   stripe-add-dark: "#4fbf7a"
   stripe-del-dark: "#ef7e6f"
   line-pick-dark: "#1d2242"
   line-pick-gutter-dark: "#2a3263"
+  cb-add: "#ddf4ff"
+  cb-add-gutter: "#ccecff"
+  cb-del: "#fff1e5"
+  cb-del-gutter: "#ffe2c8"
+  cb-add-word: "#b8e2ff"
+  cb-del-word: "#ffd5b3"
+  cb-stripe-add: "#0969da"
+  cb-stripe-del: "#bc4c00"
+  cb-ok: "#0969da"
+  cb-ok-wash: "#ddf4ff"
+  cb-bad: "#bc4c00"
+  cb-bad-wash: "#fff1e5"
+  cb-add-dark: "#112a45"
+  cb-add-gutter-dark: "#14345a"
+  cb-del-dark: "#2e1f16"
+  cb-del-gutter-dark: "#42261a"
+  cb-add-word-dark: "#1a3f69"
+  cb-del-word-dark: "#4c2c1a"
+  cb-stripe-add-dark: "#4493f8"
+  cb-stripe-del-dark: "#db6d28"
+  cb-ok-dark: "#58a6ff"
+  cb-ok-wash-dark: "#14263b"
+  cb-bad-dark: "#f0883e"
+  cb-bad-wash-dark: "#2e1f16"
+  syntax-comment: "#555e68"
+  syntax-keyword: "#b0282a"
+  syntax-constant: "#005abf"
+  syntax-entity: "#6f42c1"
+  syntax-tag: "#1a6c2d"
+  syntax-string: "#032f62"
+  syntax-regexp: "#032f62"
+  syntax-variable: "#9f4009"
+  syntax-invalid: "#b31d28"
+  syntax-comment-dark: "#a0a9b3"
+  syntax-keyword-dark: "#f98795"
+  syntax-constant-dark: "#79b8ff"
+  syntax-entity-dark: "#bb9af0"
+  syntax-tag-dark: "#85e89d"
+  syntax-string-dark: "#9ecbff"
+  syntax-regexp-dark: "#dbedff"
+  syntax-variable-dark: "#ffab70"
+  syntax-invalid-dark: "#fdaeb7"
 typography:
   headline:
     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
@@ -130,15 +176,15 @@ spacing:
   s6: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.control}"
     padding: "0 12px"
     height: "30px"
   button-primary-hover:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-primary-active:
-    backgroundColor: "{colors.ultramarine-hover}"
+    backgroundColor: "{colors.ultramarine-fill-hover}"
   button-secondary:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -220,7 +266,7 @@ components:
     rounded: "{rounded.xl}"
     padding: "12px 16px"
   add-comment:
-    backgroundColor: "{colors.ultramarine}"
+    backgroundColor: "{colors.ultramarine-fill}"
     textColor: "{colors.on-ultramarine}"
     rounded: "{rounded.sm}"
     size: "20px"
@@ -252,7 +298,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 - One accent, Ultramarine, for the primary action, focus, links, "Look at" links and your own avatar; never status.
 - Colour for meaning only where GitHub has it: diff additions and deletions, the amber Pending tag, and the criteria marks (green met, amber partly, red not met, grey not checked).
 - Reading prose at 15px/1.6 within 72ch; comments at 14px/1.55.
-- A walked-W mark in the accent signs the header and favicon.
+- A walked-W mark in the accent signs the header and the app icon; the tab icon is Walky's head, by session state (`brand/mascot/README.md`).
 - System UI sans for everything human; JetBrains Mono for code, paths and line numbers.
 - Flat at rest; files and threads are bordered boxes because you act on them; one floating shadow for menus and the new-comment pill.
 - One 4px spacing scale (4, 8, 12, 16, 24, 32px).
@@ -260,7 +306,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 
 ## Brand
 
-**The mark** is a W walked in four round-capped strokes (2.3 stroke on a 16px grid, round joins); the last stroke sits at 40% opacity, the part of the walk still to go. In the page it is drawn in the current accent on the canvas, so it follows the person's Appearance choice. For the favicon and app icon it is knocked out of an Ultramarine rounded square (22% corner radius) with the strokes in the on-accent colour; the favicon switches to the dark-theme Ultramarine under a dark colour scheme. Master files: `project/brand/mark.svg`, `project/brand/favicon.svg`, and `app-icon-16/32/180/512.png` rendered from the favicon SVG with provenance embedded.
+**The mark** is a W walked in four round-capped strokes (2.3 stroke on a 16px grid, round joins); the last stroke sits at 40% opacity, the part of the walk still to go. In the page it is drawn in the current accent on the canvas, so it follows the person's Appearance choice. For the app icon it is knocked out of an Ultramarine rounded square (22% corner radius) with the strokes in the on-accent colour; `favicon.svg` switches to the dark-theme Ultramarine under a dark colour scheme. The tab icon is Walky's head instead: `favicon-reading.svg` during the Opening, `favicon-awake.svg` while the walkthrough is open, `favicon-done.svg` once the review is submitted or sent and on the farewell, `favicon-asleep.svg` when the session is not running. Master files: `project/brand/mark.svg`, `project/brand/favicon.svg`, and `app-icon-16/32/180/512.png` rendered from the favicon SVG with provenance embedded.
 
 **The lockup** is the mark plus "Walkthrough" in the UI sans at 700. In the header: 16px mark, 8px gap, -0.01em tracking, ink text. The display lockup (brand sheet): 34px mark, 14px gap, 34px text, -0.02em. The export page uses a quiet lockup: 14px mark, 13px text in muted ink, the mark still in the accent.
 
@@ -271,13 +317,13 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 
 ## Colors
 
-A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu.
+A cool grey neutral scale with one fixed accent, Ultramarine, and status colour only where GitHub has the same meaning (diff washes, the amber Pending tag) or the AI's criteria check needs it; each token is defined once as a light and dark pair (`light-dark()`). The theme follows the system unless the person picks one from the menu. Colorblind (decision 22) swaps the green and red pair for blue and orange in either theme; see Colorblind below.
 
 ### Primary (the accent)
-- **Ultramarine** (light `ultramarine`, dark `ultramarine-dark`): the default accent and the brand colour. The primary button fill (with an inset 1px bottom shade), focus rings (2px, 2px offset), the text caret, the gutter "+" for a new comment, and the mark. It never carries status: not in the files-viewed bar, not in the step list.
-- **Ultramarine Hover** (`ultramarine-hover`): the primary button's hover and active fill. A disabled primary stays plain Ultramarine on hover.
+- **Ultramarine** (light `ultramarine` #2d3a9e, dark `ultramarine-dark` #8c97ff): the default accent and the brand colour, as a line or a mark: focus rings (2px, 2px offset), the text caret, the checked radio ring, your stripe mark, and the mark. It never carries status: not in the files-viewed bar, not in the step list. Decision 34 softened light from #2433b8 (chroma 0.21, the most this hue holds at its depth) to #2d3a9e (0.16, same hue); white on it is 9.5:1.
+- **Ultramarine Fill / Fill Hover** (`ultramarine-fill`, `ultramarine-fill-hover`; decision 34): the three filled things: the primary button (with an inset 1px bottom shade; hover and active take Fill Hover; a disabled primary stays on Fill), your avatar, and the gutter "+" that starts a comment, all with `on-ultramarine` (white) on top. Light: the same as Ultramarine and its hover (#2d3a9e, #252f85). Dark: #4f5bd5 and #5b67e0, a mid-tone so the primary button is no longer the brightest thing on a dark page; white on them is 5.5:1 and 4.7:1. New because dark needs a darker fill for white text while rings and marks need the bright tone. `ultramarine-hover` stays as the light fill hover, for anything already reading it.
 - **Ultramarine Text** (`ultramarine-text`): the accent at text contrast, for links, step-number links, the "Look at" links, the selected-line gutter number, the reviewer's own gutter marker and "Your comment" label.
-- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, your avatar, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
+- **Ultramarine Wash / Ultramarine Line** (`ultramarine-wash`, `ultramarine-line`): the "Look at" link border and hover, the focused-input halo (3px), the Ask-about-lines row and step-link borders.
 
 ### Status
 Status colour survives only where GitHub has the same meaning or the AI's criteria check needs it. Each still carries an icon and a word.
@@ -291,28 +337,80 @@ Status colour survives only where GitHub has the same meaning or the AI's criter
 
 
 ### Diff
-- **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell. Preview-mode insertions use the addition wash full-bleed.
-- **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at 55% and 60% opacity.
-- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line.
-- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad` unless the colour-blind diff is on.
+- **Addition / Deletion** (`diff-add`, `diff-add-gutter`, `diff-del`, `diff-del-gutter`): diff2html line backgrounds, with the gutter one step deeper than the code cell (line numbers in muted reach 4.5:1 on every gutter, which is why `diff-del-gutter` moved from #f6d6d3 to #f7d9d6). Preview-mode insertions use the addition wash full-bleed.
+- **Stripe Add / Stripe Del** (`stripe-add`, `stripe-del`): saturated run marks in the overview stripe only, drawn at full colour (decision 23; the built 55% and 60% gave 1.8:1 and 2.4:1 in light, under the 3:1 a mark needs).
+- **Word Add / Word Del** (`diff-add-word`, `diff-del-word`): the changed words inside a changed line. Light #c4e9cf / #f7cdc8, dark #1d4129 / #4f2526 (decision 27; built in 0.1.5 as #b9e5c6 / #f4c4bf and #1f4a2e / #5a2626, deep enough that syntax colours could not reach 4.5:1 on them without losing their hue, see Syntax).
+- **Count Add / Count Del** (`diff-add-text`, `diff-del-text`): the +N and -N counts in file headers and the Opening's file list, and the diff bars on the Opening's desk; `ok` and `bad`, so Colorblind swaps them too.
 - **Picked Lines** (`line-pick`, `line-pick-gutter`): lines the reviewer has selected to ask or comment about; gutter number turns accent text, semibold.
 
-#### Colour-blind diff
-The menu's "Colour-blind diff" sets `data-colour-blind` on the root, which swaps only the diff tokens from green and red to blue and orange, with any theme.
-The values are GitHub's Protanopia and Deuteranopia ones (Primer `light_colorblind` and `dark_colorblind`); GitHub's translucent dark values are laid on the dark canvas, so each token stays one solid colour.
+### Colorblind (decision 22)
+GitHub's Protanopia and Deuteranopia palette. With Colorblind on, these replace their pair in either theme; every other token stays, amber included.
 
-| Token | Light | Dark |
-|---|---|---|
-| `diff-add` / `diff-add-gutter` / `diff-add-word` | #ddf4ff / #b6e3ff / #b6e3ff | #1a293e / #294361 / #26508a |
-| `diff-del` / `diff-del-gutter` / `diff-del-word` | #fff1e5 / #ffd8b5 / #ffd8b5 | #33251f / #513220 / #764223 |
-| `diff-add-text` / `stripe-add` | #0969da | #58a6ff |
-| `diff-del-text` / `stripe-del` | #bc4c00 | #f0883e |
+| Token | Light | Dark | Replaces |
+|---|---|---|---|
+| `cb-add` / `cb-add-gutter` | #ddf4ff / #ccecff | #112a45 / #14345a | `diff-add` / `diff-add-gutter` |
+| `cb-del` / `cb-del-gutter` | #fff1e5 / #ffe2c8 | #2e1f16 / #42261a | `diff-del` / `diff-del-gutter` |
+| `cb-add-word` / `cb-del-word` | #b8e2ff / #ffd5b3 | #1a3f69 / #4c2c1a | `diff-add-word` / `diff-del-word` |
+| `cb-stripe-add` / `cb-stripe-del` | #0969da / #bc4c00 | #4493f8 / #db6d28 | `stripe-add` / `stripe-del` |
+| `cb-ok` / `cb-ok-wash` | #0969da / #ddf4ff | #58a6ff / #14263b | `ok` / `ok-wash` |
+| `cb-bad` / `cb-bad-wash` | #bc4c00 / #fff1e5 | #f0883e / #2e1f16 | `bad` / `bad-wash` |
+
+GitHub's light gutters (#b6e3ff, #ffd8b5) and its dark ones put muted line numbers at 4.47:1 and 3.93:1, so the gutters are lighter (light) or deeper (dark) than GitHub's; the changed words are lighter than GitHub's in light and less deep in dark (decision 27), so syntax colours read on them. Checked: code text on every wash 11:1 or more; muted line numbers on the gutters 4.8:1 (light) and 4.9:1 (dark); `cb-ok` and `cb-bad` as text 4.6:1 or more on canvas, surface and their washes; stripe marks 4.7:1 or more on the stripe. Blue and orange marks have near-equal lightness: they part by hue, which is what these readers see.
+
+### Syntax (decision 26)
+GitHub's own themes, github-light and github-dark, through Shiki. The page tokenizes each file whole with both themes and maps each theme colour to one of these tokens as a class (`sx-c`, `sx-k`, …), so the strict CSP needs no inline style and the page's own values apply. Each token is GitHub's colour, darkened in light or lightened in dark in its own hue only as far as it takes to reach 4.5:1 on every background code sits on (context, moved, a code block, picked lines, added, removed, the changed-word washes, and all of these with Colorblind). Plain code is `ink`, as now. Bold, italic and underline from the themes are dropped, so colours change no width. Colorblind keeps these tokens: syntax hues name code, not change. Each token is new for one reason: GitHub's theme gives that kind of code its own colour.
+
+| Token | Covers | Light | Dark | Lowest ratio, light / dark |
+|---|---|---|---|---|
+| `syntax-comment` | Comment | #555e68 (GitHub #6a737d) | #a0a9b3 (GitHub #6a737d) | 4.6 / 4.5 |
+| `syntax-keyword` | Keyword, storage | #b0282a (GitHub #d73a49) | #f98795 (GitHub #f97583) | 4.6 / 4.6 |
+| `syntax-constant` | Constant, support, property | #005abf (GitHub #005cc5) | #79b8ff | 4.5 / 5.2 |
+| `syntax-entity` | Function, type, class | #6f42c1 | #bb9af0 (GitHub #b392f0) | 4.5 / 4.6 |
+| `syntax-tag` | Tag, escape | #1a6c2d (GitHub #22863a) | #85e89d | 4.5 / 7.2 |
+| `syntax-string` | String | #032f62 | #9ecbff | 9.2 / 6.3 |
+| `syntax-regexp` | Regexp | #032f62 | #dbedff | 9.2 / 9.0 |
+| `syntax-variable` | Variable, parameter | #9f4009 (GitHub #e36209) | #ffab70 | 4.5 / 5.8 |
+| `syntax-invalid` | Invalid | #b31d28 | #fdaeb7 | 4.7 / 6.1 |
+
+- **Changed words** (decision 27): `diff-add-word` / `diff-del-word` and their Colorblind pair, under Diff and Colorblind above. On the built values GitHub's comment colour falls to 1.7:1 (Colorblind dark) and 2.1:1 (dark), and keeping every token at 4.5:1 would have turned dark comments to #bac3cd and keywords to #f9adbb, nearly plain text; on the new values the tokens stay close to GitHub's. They sit 1.2 to 1.4:1 from their line wash, enough to see.
+
+Contrast of each token on each background, ours, with GitHub's in brackets where we changed it (bold where it falls under 4.5:1). CB is Colorblind.
+
+**Light**
+
+| Token | Context | Moved | Code block | Picked | Added | Removed | Added word | Removed word | CB added | CB removed | CB added word | CB removed word |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comment | 6.6 (4.8) | 6.2 (**4.5**) | 5.8 (**4.2**) | 5.8 (**4.2**) | 5.9 (**4.3**) | 5.7 (**4.2**) | 5.0 (**3.6**) | 4.6 (**3.3**) | 5.8 (**4.2**) | 6.0 (**4.3**) | 4.8 (**3.5**) | 4.8 (**3.5**) |
+| Keyword, storage | 6.6 (4.6) | 6.2 (**4.3**) | 5.8 (**4.0**) | 5.8 (**4.0**) | 5.9 (**4.1**) | 5.7 (**4.0**) | 5.0 (**3.5**) | 4.6 (**3.2**) | 5.8 (**4.0**) | 6.0 (**4.1**) | 4.8 (**3.4**) | 4.8 (**3.4**) |
+| Constant, support, property | 6.5 (6.3) | 6.1 (5.9) | 5.7 (5.5) | 5.8 (5.5) | 5.9 (5.6) | 5.7 (5.5) | 5.0 (4.8) | 4.5 (**4.3**) | 5.7 (5.5) | 5.9 (5.7) | 4.8 (4.6) | 4.8 (4.6) |
+| Function, type, class | 6.5 | 6.1 | 5.7 | 5.7 | 5.8 | 5.7 | 4.9 | 4.5 | 5.7 | 5.9 | 4.8 | 4.8 |
+| Tag, escape | 6.5 (4.6) | 6.1 (**4.3**) | 5.7 (**4.0**) | 5.7 (**4.1**) | 5.8 (**4.2**) | 5.6 (**4.0**) | 4.9 (**3.5**) | 4.5 (**3.2**) | 5.7 (**4.1**) | 5.9 (**4.2**) | 4.8 (**3.4**) | 4.8 (**3.4**) |
+| String | 13.2 | 12.3 | 11.6 | 11.7 | 11.9 | 11.5 | 10.0 | 9.2 | 11.6 | 11.9 | 9.7 | 9.7 |
+| Regexp | 13.2 | 12.3 | 11.6 | 11.7 | 11.9 | 11.5 | 10.0 | 9.2 | 11.6 | 11.9 | 9.7 | 9.7 |
+| Variable, parameter | 6.5 (**3.5**) | 6.1 (**3.3**) | 5.7 (**3.1**) | 5.8 (**3.1**) | 5.9 (**3.1**) | 5.7 (**3.0**) | 5.0 (**2.6**) | 4.5 (**2.4**) | 5.8 (**3.1**) | 5.9 (**3.1**) | 4.8 (**2.5**) | 4.8 (**2.6**) |
+| Invalid | 6.7 | 6.3 | 5.9 | 5.9 | 6.0 | 5.8 | 5.1 | 4.7 | 5.9 | 6.1 | 4.9 | 4.9 |
+| Plain text (`ink`) | 16.2 | 15.1 | 14.2 | 14.3 | 14.5 | 14.0 | 12.2 | 11.2 | 14.2 | 14.6 | 11.8 | 11.9 |
+
+**Dark**
+
+| Token | Context | Moved | Code block | Picked | Added | Removed | Added word | Removed word | CB added | CB removed | CB added word | CB removed word |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Comment | 7.5 (**3.7**) | 7.0 (**3.4**) | 6.2 (**3.1**) | 6.5 (**3.2**) | 6.5 (**3.2**) | 6.8 (**3.4**) | 4.8 (**2.4**) | 5.4 (**2.7**) | 6.1 (**3.0**) | 6.7 (**3.3**) | 4.5 (**2.2**) | 5.2 (**2.6**) |
+| Keyword, storage | 7.6 (6.7) | 7.0 (6.2) | 6.3 (5.6) | 6.6 (5.8) | 6.6 (5.8) | 6.9 (6.1) | 4.8 (**4.3**) | 5.5 (4.9) | 6.2 (5.5) | 6.7 (6.0) | 4.6 (**4.0**) | 5.3 (4.7) |
+| Constant, support, property | 8.6 | 8.0 | 7.1 | 7.4 | 7.5 | 7.8 | 5.5 | 6.2 | 7.0 | 7.6 | 5.2 | 6.0 |
+| Function, type, class | 7.6 (7.0) | 7.1 (6.5) | 6.3 (5.8) | 6.6 (6.1) | 6.7 (6.1) | 7.0 (6.4) | 4.9 (4.5) | 5.5 (5.1) | 6.2 (5.8) | 6.8 (6.3) | 4.6 (**4.2**) | 5.3 (4.9) |
+| Tag, escape | 11.9 | 11.1 | 9.9 | 10.3 | 10.4 | 10.8 | 7.6 | 8.6 | 9.7 | 10.6 | 7.2 | 8.3 |
+| String | 10.5 | 9.8 | 8.8 | 9.2 | 9.2 | 9.6 | 6.8 | 7.7 | 8.6 | 9.4 | 6.3 | 7.4 |
+| Regexp | 14.9 | 13.8 | 12.4 | 12.9 | 13.0 | 13.6 | 9.6 | 10.8 | 12.2 | 13.3 | 9.0 | 10.4 |
+| Variable, parameter | 9.6 | 8.9 | 8.0 | 8.3 | 8.4 | 8.7 | 6.2 | 7.0 | 7.8 | 8.5 | 5.8 | 6.7 |
+| Invalid | 10.1 | 9.4 | 8.4 | 8.8 | 8.8 | 9.2 | 6.5 | 7.3 | 8.3 | 9.0 | 6.1 | 7.1 |
+| Plain text (`ink`) | 14.5 | 13.5 | 12.1 | 12.6 | 12.7 | 13.2 | 9.3 | 10.5 | 11.9 | 12.9 | 8.7 | 10.2 |
 
 ### Neutral
 - **Canvas** (`canvas`): page and main pane background; also inputs, thread boxes, the current step row in the step list, and popovers.
 - **Surface** (`surface`): the step list, file headers, secondary buttons, the code pane, the overview stripe, and the AI's comment rows.
 - **Surface Tint** (`surface-tint`): hover fill and every pressed or chosen neutral state (a checked Viewed pill), counters, step numbers, inline code.
-- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control.
+- **Rule / Rule Soft / Control Edge** (`rule`, `rule-soft`, `control-edge`): primary dividers; secondary dividers between list rows, under file headers and beside the stripe; the 1px edge of every control. Control Edge is GitHub's emphasis border, light #818b98 and dark #6e7681 (decision 33): 3:1 or more on canvas, surface, surface tint and picked lines (light 3.0 to 3.5:1, dark 3.2 to 3.9:1), so a control keeps its edge when hover or pressed fills it with the tint, or when it sits on the tint. Before: #8390a3 / #5e6a7a, 3:1 on canvas and surface but 2.8 and 2.7:1 on the tint; built in 0.1.5 at #d0d5dc / #3a414b, 1.3 to 1.7:1. Rules stay as they are: they divide, they do not bound a control.
 - **Ink / Ink Secondary / Muted** (`ink`, `ink-secondary`, `muted`): primary text and all reading prose; secondary labels, the PR number, a viewed file's tick, quotes and table values; the single secondary grey per theme, for metadata, counts, placeholders, line numbers, hunk headers, a criterion not checked, and resting icons.
 - **Files viewed bar** (`rule` track, `ink-secondary` fill): the 72px bar in the header.
 - **Overview stripe marks:** additions and deletions in the stripe colours; a comment by the AI or a colleague in muted, yours in the accent. Hidden at 390.
@@ -389,8 +487,8 @@ Small, tight radii. 4px on every control (buttons, inputs, icon buttons, inline 
 
 ### Inputs
 - Canvas fill, 1px control edge, 4px corners, 30px tall; comment and summary textareas 6px corners, min 64px, resizable. Placeholders are GitHub's: "Leave a comment", "Reply…".
-- **Viewed:** GitHub's checkbox with the word, in a 26px bordered pill at the right of the file header; checked, the pill takes surface tint and the file folds. When new commits change a file you marked Viewed, Viewed clears, the file opens again, its step-list tick goes back to a ring, and a neutral pill beside the count reads "Changed since last view" (as on GitHub).
-- **Review type:** three native radios, Comment, Approve, Request changes, accent-coloured, no descriptions.
+- **Viewed:** GitHub's checkbox (14px, control edge; checked, filled in secondary ink with a canvas tick) with the word, in a 26px bordered pill at the right of the file header; checked, the pill takes surface tint and the file folds. When new commits change a file you marked Viewed, Viewed clears, the file opens again, its step-list tick goes back to a ring, and a neutral pill beside the count reads "Changed since last view" (as on GitHub).
+- **Review type:** three radios, Comment, Approve, Request changes, no descriptions: a 16px ring in the control edge, checked as an accent ring around a canvas dot (a native ring is about 1.7:1, under decision 33's 3:1).
 
 ### Header
 44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", Finish (not on the Summary), menu. "AI reviewing" with the spinner belongs to the Opening's header only (HANDOFF decision 10).
@@ -405,10 +503,17 @@ The title (20px; no step-number line above it: the step list shows where you are
 "Look at:" in 600 ink, then each pointer as a 24px link pill: a 1px accent-line border, 5px corners, a small arrow, the file name in mono and the line range in accent text, and two to four words naming the spot in secondary ink. Clicking opens the file if it is folded, scrolls the lines into view with 120px of context above, and flashes the range in the line-pick tone (fading over 1.4s).
 
 ### Files
-GitHub's file header in a bordered box (1px rule, 7px corners): a 40px sticky header on the surface tone with the collapse chevron, the mono path, +N in green and −N in red, a comment count, and Viewed at the right. Viewed folds the file and mutes its path. A generated or copied file arrives folded with one muted line after its counts saying why ("Generated from the schema"). Files in a step are 16px apart.
+GitHub's file header in a bordered box (1px rule, 7px corners): a 40px sticky header on the surface tone with the collapse chevron, the mono path, +N in green and −N in red, a comment count, then at the right Viewed and GitHub's "Comment on this file" icon button (the comment icon, 16px, a 28px target; 44px at 390). At 390 the header takes two rows: chevron and path, then the counts, Viewed and the button. Viewed folds the file and mutes its path. A generated or copied file arrives folded with one muted line after its counts saying why ("Generated from the schema"). Files in a step are 16px apart.
 
 ### Diff and gutter
 diff2html line-by-line, restyled through classes, as before: 46px number columns, 12.5/21px mono, addition and deletion washes, picked lines in the line-pick tone, hunk headers muted. A line number is a button: click (and Shift-click for a range) opens a composer under the line. A line with a thread shows a 13px bubble in its gutter: ink for an AI comment, accent person for yours, muted for a colleague's. The overview stripe stays (hidden at 390): additions and deletions, AI and colleague comments in muted, yours in the accent.
+
+### Syntax colours in the page (decisions 26 to 30)
+- **Where:** every diff line (context, added, removed, moved, copied, picked), an outdated thread's quoted code, a suggested change, and fenced code blocks in comments, explanations and answers. Not: hunk headers, line numbers, inline `code`, file paths.
+- **Changed words** (decision 27): diff2html's word marks inside a changed line, in the word tokens, square, under the syntax colours; they come from the diff, so they show before colours arrive.
+- **Code block** (decision 28; GitHub's fenced block, new on the page because comments and answers had no way to show more than inline code): surface tint, 6px corners, 8px 12px padding, 12.5/20px mono, up to 680px, scrolls sideways, 6px above and below. Coloured by the language its fence names; no language, plain.
+- **Arriving** (decision 29): no indicator and no motion. Colours replace plain text in place.
+- **Plain** (decision 30): a line over 1,000 characters, a file or block whose language Shiki does not know or does not name; no label.
 
 ### Comments and threads
 One component. A thread is a bordered box (1px rule, 8px corners, up to 760px) under its line. Each comment is a row: a 24px avatar (you: accent circle with your initial; the AI: an ink rounded square reading "AI"; a colleague: a grey circle with initials), the name (You, AI, or the colleague's handle), a Pending tag (amber outline, 12px) while it is pending, the time, and at the right Edit and Delete for pending comments; the body at 14/1.55; the AI's pending comments start with a mono `[AI]` (its answers to Ask AI do not, since they never go out). An AI comment row sits on a faint surface tone. The thread's foot holds a Reply field, Ask AI, and Resolve for colleagues' threads.
@@ -416,6 +521,7 @@ One component. A thread is a bordered box (1px rule, 8px corners, up to 760px) u
 - **Ask AI:** posts your question in the thread ("Ask AI: …", no Pending tag: questions to the AI stay on the page and never go out) and the AI answers as a reply in the same thread; while it writes, a row with its avatar, the checking spinner and "Answering…" holds the place.
 - **New comments while you read:** a comment that lands above or inside the view is added folded (0 height) and announced by a pill at the top right of the step, "1 new comment above", with an up arrow; clicking scrolls to it and opens it. Nothing you are reading moves.
 
+- **Suggested change** (decision 21; GitHub's block, so nothing new to learn): after the comment's text, a bordered box (1px rule, 6px corners) with a 28px header row on the surface tone reading "Suggested change" in 12.5px secondary ink, then the commented lines as deletions and the suggestion as additions in the diff tokens, 12.5/21px mono with line numbers. No Apply or Commit button and no batch control. Editing a pending comment edits the suggestion as text in the same textarea, fenced as GitHub writes it. On the Summary the row puts a "Suggested change" tag before the text, as "Outdated" does (outlined pill).
 ### Summary
 GitHub's "Finish your review" made visible, two columns 32px apart up to 1120px:
 - **Going out (N):** every pending comment, yours and the AI's, one row each: avatar, its file name and line (`tasks.ts:29`, full path in the tooltip) as a mono accent link, the text in up to two lines, Edit and Delete. At 390 the link sits on its own line above the text.
@@ -447,11 +553,13 @@ One line under the header (new component: the page had no place for a fact about
 - **Summary:** an outdated pending comment keeps its row and link (now to its thread at the top of the file) with "Outdated" before the text. "Resolved conversations (N)" follows the counts: one row each, avatar, link, a "Resolved" tag on surface tint, "Pending" until Submit review, the comment in secondary ink.
 
 ### Moved code (decision 18)
-Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from …" as an accent link with a chevron, then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
+Two diff rows (new: GitHub has no moved lines; git's moved-lines colouring is the model). Where lines arrive: a label row in the hunk-header tone, "Moved from `<file>` lines N–M" as an accent link with a chevron (the file name only at 390, the whole label as tooltip; decision 24), then the moved lines on the surface tone with their numbers on surface tint and no + or −. Where they left: one row in the hunk-header tone with the old line number, "N lines moved to …" as a link. Lines changed while moving stay a deletion and an addition. The overview stripe marks neither.
 
-### Copied code
-The same label row above lines copied from elsewhere at the head, "Copied from …" as an accent link with a chevron, or in secondary ink without one when the change does not show where they come from.
-The copied lines keep their + and the added tone: they are new code.
+### Copied code (decision 24)
+A copy is new code, so its lines stay additions (+, the addition wash); that is how it differs from a move. Above them a label row in the hunk-header tone, like "Moved from": "Copied from `<file>` lines N–M" as an accent link with a chevron, to the source (in the same file "Copied from lines N–M"), or in secondary ink without a link when the change does not show the source, as built. A 2px muted rule (new: the label alone cannot show where a copy ends when more additions follow) runs down the left edge of the code cells from the label row to the last copied line and turns right for 10px under it. The source gets no row: it did not change. At 390 the label shows the file name only and carries the whole label as its tooltip; "Moved from" does the same. The overview stripe marks copied lines as additions.
+
+### Comments on a whole file (decision 25)
+"Comment on this file" opens a composer (the existing one: "Leave a comment", Ask AI, Cancel, Add comment; no suggested change) at the top of the file, inside the band that also holds outdated threads (surface tone, 12px gap, 12/14px padding), with the button in its pressed state (surface tint) while it is open. File threads sit first in that band, oldest first, then outdated threads. A file thread is the ordinary thread: the AI's with [AI] and Pending, yours with Pending, a colleague's with Reply and Resolve. On the Summary the row's link is the file name with no line, its tooltip the full path. The file's comment count, in its header and the step list, counts file threads too.
 
 ### The author's screenshot (decision 19)
 A figure (new component: nothing in a step showed an image) under the explanation and above the files: the image 240 × 156 with a 1px rule and 6px corners, the author's alt text under it in 12.5px secondary ink. A click (or Enter) opens it in place to the width of the step, up to 960px, with Close at the right of the caption; a click on the image, Close or Esc closes it. Several screenshots sit in a row, 8px apart. At 390 it is the full column width, 180 tall closed. Opening and closing animate height (320ms ease-out, 200ms ease-in); reduced motion snaps.
@@ -460,7 +568,7 @@ A figure (new component: nothing in a step showed an image) under the explanatio
 J and K move to the next and previous file across steps in reading order; C opens the changes switch; V toggles Viewed on the file you are on; Esc closes a composer, a menu or the open screenshot. The file you are on carries the 2px accent focus ring, and its row in the step list the same ring. A key shows only in the tooltip of the control it presses, in brackets, as on Finish review ("Go to the Summary (G S)"): "Viewed (V)", "Changes since your last review (C)". No key caps, no list, no ? sheet.
 
 ### Menu
-The header's … opens a small menu: Theme (System, Light, Dark) and End session. Nothing else.
+The header's … opens a small menu (8px corners, 4px padding, 200px): a muted "Theme" label; System, Light and Dark as radio items with a check on the chosen one; Colorblind as a checkbox item in the same group (decision 22), its box in the check column; a rule; End session. Nothing else. At 390 the same menu under the … button.
 
 ### Phone (390)
 The same page in one column: the step list opens from the header's steps button; steps read top to bottom; threads are full width; previous and next sit at the foot; the Summary stacks the review box under the lists.
@@ -478,6 +586,8 @@ One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezie
 - **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
 - **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the review is ready, the opening block fades out (120ms ease-in) and the whole walkthrough enters at once: the first step with the usual pane swap, the step list and header counts fading in (200ms).
 - **After the session:** the robot waves once (1.6s, after 400ms; ease-in-out swing, no overshoot) and then stays still.
+- **Syntax colours:** none. A file's colours replace its plain text in one frame; nothing fades and nothing moves, under reduced motion too.
+- **Colorblind, copied code, file comments:** nothing new moves. Turning Colorblind on recolours at once, no transition. A file composer opens by grid rows like any composer.
 - **Back on a new head:** steps switch with the usual pane swap; Show resolved opens by grid rows (320ms) like a comment growing; the screenshot opens in place by height. Nothing else moves: the switch, the behind line and the Outdated band appear without motion.
 - **Reduced motion:** no translate, scale or height animation; things fade, then snap; the spinner stands still; the desk scene is one still picture of the AI reading, with no bubbles; the farewell robot does not wave and the "z" stand still.
 
@@ -491,11 +601,11 @@ The page's own words have caps; the session's words have shapes, written into th
 |---|---|
 | Button | 3 words |
 | Badge | 4 words (prefer an icon and a count) |
-| Tag | 2 words |
+| Tag | 2 words, or GitHub's own phrase ("Changed since last view") |
 | Hint | 8 words, only for a consequence a label hides |
 | Notice or banner | 12 words |
 | Empty state | 8 words |
-| Tooltip | 12 words |
+| Tooltip | 12 words; text the author or the code host wrote (an image's alt text, a path, a date) is shown as it is |
 | Chip | 4 words |
 | Switch label or menu item | 3 words, or GitHub's own phrase |
 | Diff row label | 8 words |
@@ -510,6 +620,8 @@ Rules: one place per thing (elsewhere at most a count that leads to it); list ro
 | AI comment | 1 to 2 sentences, 30 words: what is wrong and what to do; no evidence, plans or verifier verdicts (they stay in the chat) | "A typo in the date becomes null and clears it, instead of a 400." | "Verifier: WEAKENED to a taste call. parseDueDate returns null when…" (12 lines) |
 | Criterion | The ticket's own sentence, 12 words max; status one of Met, Partly met, Not met, Not checked | "Invalid dates rejected with a clear error" · "Not met: bad dates become null" | The evidence paragraph as the criterion text |
 | Answer to an ask | 2 sentences, the first answers directly | "No: 30 February rolls over to 2 March. isNaN won't catch it." | "Great question! Let's look at how Date parsing works…" |
+| Suggested change | only when the fix fits in a few lines on the commented lines; at most 6 lines; the comment's sentence still says why | "[AI] Return 400 here." then the suggestion block | A block that rewrites the whole function, or a suggestion with no sentence |
+| Code block in a comment or answer | only when the point is code; at most 6 lines; the fence names the language; the sentence still says why | "Treat it as missing:" then ```ts if (!value) return null; ``` | A pasted function, or a block with no language |
 | Draft comment | 2 sentences, 40 words, starts with [AI] | "[AI] Return 400 for an invalid dueDate, with the field name." | A paragraph restating the finding and the policy |
 
 

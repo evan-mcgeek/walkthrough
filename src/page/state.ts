@@ -1,8 +1,10 @@
 // The view the page shows, what it sends, and what the modules that draw it share.
+import type { Code } from '../lines';
 import type { CommentView, ThreadView, WalkthroughView } from '../review';
 import type { Step } from '../walkthrough';
 import { type PageName, post } from './dom';
-import { renderMarkdown } from './markdown';
+import { colourCode } from './highlight';
+import { renderComment, renderMarkdown } from './markdown';
 
 /** A request that never reached the server asks it again at once, so a server gone shows as soon as polls show it. */
 export const PAGE = { name: 'walkthrough', lost: () => {} } satisfies PageName;
@@ -54,11 +56,13 @@ export const plural = (count: number, one: string, many = `${one}s`) => `${Strin
 export const linesLabel = ([first, last]: [number, number]) => (first === last ? String(first) : `${String(first)}–${String(last)}`);
 export const baseName = (file: string) => file.slice(file.lastIndexOf('/') + 1);
 
-export function markdown(text: string, className: string): HTMLElement {
+/** With `code`, the lines a comment is on, its suggestion block shows as a suggested change. */
+export function markdown(text: string, className: string, code?: Code): HTMLElement {
   const box = document.createElement('div');
   box.className = `markdown ${className}`.trim();
   // Raw HTML in the text shows as text, and markdown-it drops script links, so this is safe to put in the page.
-  box.innerHTML = renderMarkdown(text);
+  box.innerHTML = code ? renderComment(text, code) : renderMarkdown(text);
+  colourCode(box);
   return box;
 }
 
@@ -77,5 +81,8 @@ export function ago(iso: string): string {
   for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
   return 'now';
 }
+
+/** The lines a suggestion block on the thread replaces: none on a whole file or once outdated. */
+export const suggestionCode = (thread: ThreadView) => (thread.lines && thread.step !== null ? thread.code : undefined);
 
 export const goesOut = (comment: CommentView) => comment.by === 'ai' && (comment.pending === true || comment.review !== undefined);

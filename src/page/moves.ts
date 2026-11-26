@@ -24,14 +24,21 @@ export const moving = { show: (() => {}) as (move: Move, to: 'from' | 'to') => v
 export function drawMoves(table: Element, file: string, copies: Copy[] = []): void {
   const row = (type: 'del' | 'ins', line: number) =>
     [...table.querySelectorAll<HTMLTableRowElement>(`tr:has(> td.d2h-${type})`)].find(one => Number(one.querySelector(type === 'del' ? '.line-num1' : '.line-num2')?.textContent.trim()) === line);
-  const link = (onclick: () => void, down: boolean, text: string) =>
-    el('button', { type: 'button', className: 'moved-link', onclick }, icon(down ? 'chevron-down' : 'chevron-right'), text);
+  const link = (onclick: () => void, down: boolean, ...text: (Node | string)[]) =>
+    el('button', { type: 'button', className: 'moved-link', onclick }, icon(down ? 'chevron-down' : 'chevron-right'), el('span', {}, ...text));
   const label = (number: string, content: HTMLElement) =>
     el('tr', { className: 'moved-label' }, el('td', { className: 'd2h-code-linenumber' }, el('div', { className: 'line-num1' }, number)), el('td', {}, el('div', { className: 'd2h-code-line' }, content)));
   const goTo = (move: Move, to: 'from' | 'to') => () => {
     moving.show(move, to);
   };
   const where = (one: string, other: string) => (one === other ? '' : `${other} `);
+  // The source's range; at 760 and below the file's folder hides and the whole label is the tooltip.
+  const source = (verb: string, { file: from, line }: Move['from'], count: number) => {
+    const lines = count === 1 ? `line ${String(line)}` : `lines ${String(line)}–${String(line + count - 1)}`;
+    const cut = from.lastIndexOf('/') + 1;
+    if (from === file) return { title: '', text: [`${verb} from ${lines}`] };
+    return { title: cut ? `${verb} from ${from} ${lines}` : '', text: [`${verb} from `, el('span', { className: 'long' }, from.slice(0, cut)), `${from.slice(cut)} ${lines}`] };
+  };
   for (const move of shownMoves()) {
     const { from, to, count } = move;
     if (from.file === file) {
@@ -46,7 +53,8 @@ export function drawMoves(table: Element, file: string, copies: Copy[] = []): vo
     }
     if (to.file === file) {
       const rows = Array.from({ length: count }, (_, at) => row('ins', to.line + at));
-      rows[0]?.before(label('', link(goTo(move, 'from'), false, `Moved from ${where(to.file, from.file)}line ${String(from.line)}`)));
+      const { title, text } = source('Moved', from, count);
+      rows[0]?.before(label('', Object.assign(link(goTo(move, 'from'), false, ...text), { title })));
       for (const one of rows) {
         one?.classList.add('moved');
         for (const cell of one?.cells ?? []) cell.classList.replace('d2h-ins', 'd2h-cntx');
@@ -59,11 +67,16 @@ export function drawMoves(table: Element, file: string, copies: Copy[] = []): vo
     }
   }
   for (const copy of copies) {
-    const { from, to } = copy;
-    const text = `Copied from ${where(to.file, from.file)}line ${String(from.line)}`;
+    const { from, to, count } = copy;
+    if (to.file !== file) continue;
+    const { title, text } = source('Copied', from, count);
     const go = () => {
       moving.copied(copy);
     };
-    if (to.file === file) row('ins', to.line)?.before(label('', copy.inDiff ? link(go, false, text) : el('span', {}, text)));
+    const rows = Array.from({ length: count }, (_, at) => row('ins', to.line + at));
+    const top = label('', Object.assign(copy.inDiff ? link(go, false, ...text) : el('span', {}, ...text), { title }));
+    rows[0]?.before(top);
+    for (const one of [top, ...rows]) one?.classList.add('copied');
+    rows.at(-1)?.classList.add('copied-end');
   }
 }

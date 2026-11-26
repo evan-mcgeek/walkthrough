@@ -122,16 +122,16 @@ textarea {
 }
 
 .btn.primary {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
   box-shadow: inset 0 -1px 0 rgb(0 0 0 / 18%);
   color: var(--on-accent);
   font-weight: 600;
 }
 
 .btn.primary:hover {
-  border-color: var(--accent-hover);
-  background: var(--accent-hover);
+  border-color: var(--accent-fill-hover);
+  background: var(--accent-fill-hover);
 }
 
 .btn.ghost {
@@ -151,8 +151,8 @@ textarea {
 }
 
 .btn.primary:disabled:hover {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
 }
 
 .btn .icon {
@@ -233,7 +233,6 @@ textarea {
 
 .unreachable .frame,
 .unreachable .app-header > :not(.mark) {
-  opacity: 0.55;
   pointer-events: none;
 }
 
@@ -467,8 +466,26 @@ textarea {
 }
 
 .menu-item[role='menuitemcheckbox'] .menu-check {
+  display: flex;
   margin: 0 5px 0 -21px;
-  color: var(--accent);
+  color: var(--muted);
+}
+
+.menu-check .icon-checkbox path {
+  display: none;
+}
+
+.menu-item[aria-checked='true'] .menu-check {
+  color: var(--ink-secondary);
+}
+
+.menu-item[aria-checked='true'] .icon-checkbox rect {
+  fill: currentColor;
+}
+
+.menu-item[aria-checked='true'] .icon-checkbox path {
+  display: inline;
+  stroke: var(--icon-knockout);
 }
 
 .menu hr {
@@ -551,8 +568,8 @@ textarea {
   font-weight: 500;
 }
 
-.step-row.quiet .step-number {
-  opacity: 0.6;
+.step-row.quiet:not([aria-current='page']) .step-number {
+  color: var(--muted);
 }
 
 /* The file J and K are on. */
@@ -975,9 +992,33 @@ textarea {
     color var(--fast) linear;
 }
 
+/* GitHub's checkbox, drawn so its edge is the control edge (decision 33); the browser's own is lighter. */
 .viewed-toggle input {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
   margin: 0;
-  accent-color: var(--ink-secondary);
+  border: 1px solid var(--control-edge);
+  border-radius: 3px;
+  background: var(--canvas);
+  appearance: none;
+}
+
+.viewed-toggle input:checked {
+  border-color: var(--ink-secondary);
+  background: var(--ink-secondary);
+}
+
+.viewed-toggle input:checked::after {
+  width: 4px;
+  height: 8px;
+  margin-top: -2px;
+  border: solid var(--canvas);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  content: '';
 }
 
 .file.viewed .viewed-toggle {
@@ -1002,7 +1043,8 @@ textarea {
   font-size: 12px;
 }
 
-.segmented button[aria-pressed='true'] {
+.segmented button[aria-pressed='true'],
+.file-comment[aria-pressed='true'] {
   background: var(--surface-tint);
   color: var(--ink);
 }
@@ -1030,24 +1072,23 @@ textarea {
   padding-right: 10px;
 }
 
-/* Outdated threads, each with the code it was written on, then comments on the whole file: surface bands above the diff. */
-:is(.outdated-zone, .file-threads) {
+/* Comments on the whole file, then outdated threads with the code they were written on: a surface band above the diff. */
+.file-threads {
   display: flex;
   flex-direction: column;
   gap: var(--s3);
-  padding: var(--s3);
+  padding: var(--s3) 14px;
   border-bottom: 1px solid var(--rule-soft);
   background: var(--surface);
 }
 
-.outdated-zone > .thread,
 .file-threads .thread {
   position: static;
   margin: 0;
   max-width: 760px;
 }
 
-:is(.outdated-zone, .file-threads) > .thread.arriving {
+.file-threads > .thread.arriving {
   display: none;
 }
 
@@ -1078,7 +1119,7 @@ textarea {
   white-space: nowrap;
 }
 
-:is(.outdated-tag, .resolved-tag) {
+:is(.outdated-tag, .resolved-tag, .suggestion-tag) {
   flex: none;
   display: inline-block;
   margin-right: 6px;
@@ -1148,12 +1189,10 @@ textarea {
 
 .overview-stripe .run-add {
   fill: var(--stripe-add);
-  opacity: 0.55;
 }
 
 .overview-stripe .run-del {
   fill: var(--stripe-del);
-  opacity: 0.6;
 }
 
 .overview-stripe .tick {
@@ -1237,7 +1276,6 @@ textarea {
 
 .d2h-code-line ins,
 .d2h-code-line del {
-  border-radius: 2px;
   text-decoration: none;
 }
 
@@ -1255,7 +1293,6 @@ td.d2h-ins {
 
 td.d2h-code-linenumber.d2h-ins {
   background: var(--diff-add-gutter);
-  color: var(--ink-secondary);
 }
 
 td.d2h-del {
@@ -1264,7 +1301,6 @@ td.d2h-del {
 
 td.d2h-code-linenumber.d2h-del {
   background: var(--diff-del-gutter);
-  color: var(--ink-secondary);
 }
 
 td.d2h-info {
@@ -1316,6 +1352,18 @@ tr.moved-label .line-num1 {
   height: 13px;
 }
 
+/* Copied code: a muted rule down the code cells from the label to the last copied line, turning under it. */
+tr.copied > td:not(.d2h-code-linenumber) {
+  box-shadow: inset 2px 0 var(--muted);
+}
+
+tr.copied-end > td:not(.d2h-code-linenumber) {
+  background-image: linear-gradient(var(--muted), var(--muted));
+  background-position: 0 100%;
+  background-size: 10px 2px;
+  background-repeat: no-repeat;
+}
+
 tr.picked td {
   background: var(--line-pick);
 }
@@ -1336,7 +1384,7 @@ tr.flash td {
 @keyframes flash {
   0%,
   30% {
-    background: var(--line-pick-gutter);
+    background-color: var(--line-pick-gutter);
   }
 }
 
@@ -1395,12 +1443,8 @@ tr.flash td {
   background: var(--canvas);
 }
 
-.thread.resolved .thread-comments {
-  opacity: 0.75;
-}
-
-/* A thread the AI resolved: one resolved line, the thread opening under it by grid rows. */
-.thread.ai-resolved {
+/* A resolved thread: one resolved line, the thread opening under it by grid rows. */
+.thread.resolved {
   background: var(--surface);
 }
 
@@ -1413,7 +1457,7 @@ tr.flash td {
   font-size: 13px;
 }
 
-.thread.ai-resolved:not(.folded) .resolved-line {
+.thread.resolved:not(.folded) .resolved-line {
   border-bottom: 1px solid var(--rule-soft);
 }
 
@@ -1426,10 +1470,6 @@ tr.flash td {
 .resolved-text strong {
   color: var(--ink);
   font-weight: 600;
-}
-
-.thread.ai-resolved .comment {
-  opacity: 0.85;
 }
 
 .thread-body {
@@ -1515,6 +1555,80 @@ tr.flash td {
   font: 600 12px var(--font-mono);
 }
 
+.markdown .suggestion {
+  margin: 0 0 var(--s3);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.suggestion-head {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--s3);
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font: 500 12.5px/1 var(--font-ui);
+}
+
+.suggestion-scroll {
+  overflow-x: auto;
+}
+
+.suggestion .suggestion-code {
+  min-width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font: var(--text-code);
+  font-variant-ligatures: none;
+}
+
+.suggestion .suggestion-code td {
+  padding: 0;
+  border: 0;
+  vertical-align: top;
+}
+
+.suggestion td.suggestion-number {
+  width: 46px;
+  min-width: 46px;
+  padding: 0 var(--s2);
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.suggestion td.suggestion-line {
+  width: 100%;
+  padding: 0 var(--s4) 0 var(--s2);
+  white-space: pre;
+}
+
+.suggestion-sign {
+  display: inline-block;
+  width: 14px;
+  user-select: none;
+}
+
+.suggestion-del td {
+  background: var(--diff-del);
+}
+
+.suggestion-del .suggestion-number {
+  background: var(--diff-del-gutter);
+}
+
+.suggestion-add td {
+  background: var(--diff-add);
+}
+
+.suggestion-add .suggestion-number {
+  background: var(--diff-add-gutter);
+}
+
 .avatar {
   display: grid;
   flex: none;
@@ -1527,7 +1641,7 @@ tr.flash td {
 }
 
 .avatar-you {
-  background: var(--accent);
+  background: var(--accent-fill);
   color: var(--on-accent);
 }
 
@@ -1637,13 +1751,19 @@ tr.flash td {
   margin-top: var(--s2);
 }
 
-.new-pill {
+.pill-dock {
   position: sticky;
   /* Under a file header stuck at the top of the pane. */
   top: 28px;
   z-index: 5;
-  float: right;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+}
+
+.new-pill {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
   margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0 0;
@@ -1769,11 +1889,24 @@ tr.flash td {
   font-size: 0.86em;
 }
 
+/* GitHub's fenced code block: coloured by the language its fence names. */
 .markdown pre {
+  max-width: 680px;
+  margin: 6px 0;
   padding: var(--s2) var(--s3);
   overflow-x: auto;
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: var(--surface-tint);
+  font: 400 12.5px/20px var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.markdown pre code {
+  font: inherit;
+}
+
+.markdown :has(+ pre) {
+  margin-bottom: 0;
 }
 
 .markdown blockquote {
@@ -2010,9 +2143,20 @@ tr.flash td {
   font-size: 13.5px;
 }
 
+/* A native radio's ring is under 3:1, so it is drawn with the control edge; checked, it takes the accent. */
 .radio input {
+  flex: none;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  accent-color: var(--accent);
+  border: 1px solid var(--control-edge);
+  border-radius: 50%;
+  background: var(--canvas);
+  appearance: none;
+}
+
+.radio input:checked {
+  border: 5px solid var(--accent);
 }
 
 .btn.wide {
@@ -2313,7 +2457,7 @@ tr.flash td {
     display: none;
   }
 
-  .new-pill {
+  .pill-dock {
     top: 84px;
   }
 

@@ -8,6 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { changedFiles, commonDir, fileAt } from './change';
 import { locked, readJson, writeJson } from './json-files';
+import { PLAIN } from './colours';
+import { tokensAt, tokensFor, warm } from './highlight';
 import { inState, stateDir } from './paths';
 import { imagesIn, previewType } from './preview';
 import { alive, psStart } from './processes';
@@ -28,8 +30,7 @@ const IDLE_MS = 30 * 60 * 1000;
 export const PAGE = path.join(import.meta.dirname, 'page');
 const SHARED_FILES: Record<string, { file: string; type: string }> = {
   'style.css': { file: 'style.css', type: 'text/css; charset=utf-8' },
-  'favicon.svg': { file: 'favicon.svg', type: 'image/svg+xml' },
-  'favicon-reviewing.svg': { file: 'favicon-reviewing.svg', type: 'image/svg+xml' },
+  ...Object.fromEntries(['reading', 'awake', 'done', 'ended', 'asleep'].map(state => [`favicon-${state}.svg`, { file: `favicon-${state}.svg`, type: 'image/svg+xml' }])),
   'apple-touch-icon.png': { file: 'app-icon-180.png', type: 'image/png' },
 };
 const PAGE_FILES: Record<string, { file: string; type: string }> = {
@@ -142,6 +143,10 @@ export function serve(dir: string, list = false): void {
         '/resolve': async fields => answered(dir, await resolve(dir, fields)),
         '/unresolve': async fields => answered(dir, await unresolve(dir, fields)),
         '/submit': async fields => answered(dir, await submit(dir, fields)),
+        '/code': async ({ language, file, code }) =>
+          typeof code === 'string' && (typeof language === 'string' || typeof file === 'string')
+            ? { status: 200, body: (await tokensFor(code, typeof language === 'string' ? { language } : { file: String(file) })) ?? PLAIN }
+            : { status: 400 },
         '/stop': stop,
       };
   let seen = Date.now();
@@ -236,6 +241,9 @@ async function serveFileAt(dir: string, file: string, atBase: boolean, res: http
 function serveFile(dir: string, list: boolean, what: string, req: http.IncomingMessage, res: http.ServerResponse): void {
   const query = new URL(req.url ?? '', 'http://127.0.0.1').searchParams;
   if (!list && what === 'data/walkthrough.json') {
+    const walkthrough = readWalkthrough(dir);
+    // During the Opening the first step's files come first, so the walkthrough arrives coloured.
+    if (walkthrough) warm(process.cwd(), walkthrough.base, walkthrough.head, walkthrough.steps.flatMap(step => step.files));
     // Taken before the view is built, so a change meanwhile only makes the next poll fetch it again.
     const tag = `"${walkthroughVersion(dir)}"`;
     if (req.headers['if-none-match'] === tag) res.writeHead(304, { etag: tag, 'cache-control': 'no-store' }).end();
@@ -246,6 +254,14 @@ function serveFile(dir: string, list: boolean, what: string, req: http.IncomingM
     serveFileAt(dir, query.get('path') ?? '', query.get('at') === 'base', res).catch((error: unknown) => {
       failRequest(res, error);
     });
+    return;
+  }
+  if (!list && what === 'tokens') {
+    tokensAt(process.cwd(), query.get('rev') ?? '', query.get('path') ?? '')
+      .then(lines => res.writeHead(200, JSON_HEADERS).end(JSON.stringify(lines ?? PLAIN)))
+      .catch((error: unknown) => {
+        failRequest(res, error);
+      });
     return;
   }
   const screenshot = list ? null : /^screenshot\/([0-9a-f]{64}\.(png|jpg|gif|webp))$/.exec(what);

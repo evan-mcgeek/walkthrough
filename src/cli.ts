@@ -198,10 +198,10 @@ async function posted(args: string[]): Promise<void> {
   console.log(address ? `Recorded that the review went to ${address}.` : 'Recorded that the review went out.');
 }
 
-function exportCommand(args: string[]): void {
+async function exportCommand(args: string[]): Promise<void> {
   const { values, dir, walkthrough } = current(args, { options: { out: { type: 'string' } } });
   const out = path.resolve(values.out ?? path.join(dir, 'export.html'));
-  fs.writeFileSync(out, exportPage(dir));
+  fs.writeFileSync(out, await exportPage(dir));
   console.log(`Exported the walkthrough of ${nameOf(walkthrough)} to ${out}.`);
 }
 

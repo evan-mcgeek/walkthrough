@@ -12,19 +12,22 @@
   --surface-tint: light-dark(#eef0f3, #232830);
   --rule: light-dark(#dde1e6, #2c323b);
   --rule-soft: light-dark(#e9ecef, #252a32);
-  --control-edge: light-dark(#d0d5dc, #3a414b);
+  --control-edge: light-dark(#818b98, #6e7681);
   --ink: light-dark(#1d2126, #e5e8ec);
   --ink-secondary: light-dark(#3a4048, #c3c8cf);
   --muted: light-dark(#5b636d, #9aa2ac);
   --icon-knockout: light-dark(#ffffff, #15181d);
 
   /* The one accent, Ultramarine: the mark, the primary action, focus, picked lines and your own words; never status */
-  --accent: light-dark(#2433b8, #8c97ff);
-  --accent-hover: light-dark(#1b2896, #a3abff);
-  --accent-text: light-dark(#2433b8, #a9b1ff);
+  --accent: light-dark(#2d3a9e, #8c97ff);
+  --accent-hover: light-dark(#252f85, #a3abff);
+  --accent-text: light-dark(#2d3a9e, #a9b1ff);
+  /* The filled things, the primary button and your avatar: a mid-tone in dark, so the primary is never the brightest thing on screen */
+  --accent-fill: light-dark(#2d3a9e, #4f5bd5);
+  --accent-fill-hover: light-dark(#252f85, #5b67e0);
   --accent-wash: light-dark(#eceefc, #1e2346);
   --accent-line: light-dark(#d3d7f7, #333b70);
-  --on-accent: light-dark(#ffffff, #0b0f2e);
+  --on-accent: #ffffff;
   --line-pick: light-dark(#eef0fd, #1d2242);
   --line-pick-gutter: light-dark(#d9ddf8, #2a3263);
 
@@ -40,13 +43,38 @@
   --diff-add: light-dark(#e8f6ec, #14281c);
   --diff-add-gutter: light-dark(#d3eedc, #193423);
   --diff-del: light-dark(#fcebea, #33191a);
-  --diff-del-gutter: light-dark(#f6d6d3, #3f1f20);
+  --diff-del-gutter: light-dark(#f7d9d6, #3f1f20);
   --stripe-add: light-dark(#3c9a5f, #4fbf7a);
   --stripe-del: light-dark(#c8473b, #ef7e6f);
-  --diff-add-word: light-dark(#b9e5c6, #1f4a2e);
-  --diff-del-word: light-dark(#f4c4bf, #5a2626);
+  --diff-add-word: light-dark(#c4e9cf, #1d4129);
+  --diff-del-word: light-dark(#f7cdc8, #4f2526);
   --diff-add-text: var(--ok);
   --diff-del-text: var(--bad);
+
+  /* Colorblind: GitHub's Protanopia and Deuteranopia palette, blue for added and orange for removed */
+  --cb-add: light-dark(#ddf4ff, #112a45);
+  --cb-add-gutter: light-dark(#ccecff, #14345a);
+  --cb-del: light-dark(#fff1e5, #2e1f16);
+  --cb-del-gutter: light-dark(#ffe2c8, #42261a);
+  --cb-add-word: light-dark(#b8e2ff, #1a3f69);
+  --cb-del-word: light-dark(#ffd5b3, #4c2c1a);
+  --cb-stripe-add: light-dark(#0969da, #4493f8);
+  --cb-stripe-del: light-dark(#bc4c00, #db6d28);
+  --cb-ok: light-dark(#0969da, #58a6ff);
+  --cb-ok-bg: light-dark(#ddf4ff, #14263b);
+  --cb-bad: light-dark(#bc4c00, #f0883e);
+  --cb-bad-bg: light-dark(#fff1e5, #2e1f16);
+
+  /* Syntax: GitHub's theme colours, moved in their own hue to 4.5:1 on every background code sits on; Colorblind keeps them */
+  --syntax-comment: light-dark(#555e68, #a0a9b3);
+  --syntax-keyword: light-dark(#b0282a, #f98795);
+  --syntax-constant: light-dark(#005abf, #79b8ff);
+  --syntax-entity: light-dark(#6f42c1, #bb9af0);
+  --syntax-tag: light-dark(#1a6c2d, #85e89d);
+  --syntax-string: light-dark(#032f62, #9ecbff);
+  --syntax-regexp: light-dark(#032f62, #dbedff);
+  --syntax-variable: light-dark(#9f4009, #ffab70);
+  --syntax-invalid: light-dark(#b31d28, #fdaeb7);
 
   --shadow-float:
     0 1px 2px light-dark(rgb(20 24 30 / 6%), rgb(0 0 0 / 40%)), 0 8px 24px light-dark(rgb(20 24 30 / 10%), rgb(0 0 0 / 35%));
@@ -57,13 +85,11 @@
   --text-headline: 650 19px/1.25 var(--font-ui);
   --text-title: 650 17px/1.4 var(--font-ui);
   --text-prose: 400 15px/1.6 var(--font-ui);
-  --text-body: 400 14.5px/1.5 var(--font-ui);
-  --text-body-ui: 400 13.5px/1.4 var(--font-ui);
-  --text-label: 650 13px/1.4 var(--font-ui);
+  --text-body-ui: 400 13px/1.4 var(--font-ui);
+  --text-label: 600 12.5px/1.4 var(--font-ui);
   --text-meta: 500 12px/1.4 var(--font-ui);
   --text-code: 400 12.5px/21px var(--font-mono);
   --text-mono-label: 500 12.5px/1.4 var(--font-mono);
-  --text-key: 500 11.5px/1.4 var(--font-mono);
 
   /* Spacing: the one 4px scale */
   --s1: 4px;
@@ -80,7 +106,6 @@
   --r-md: 6px;
   --r-lg: 7px;
   --r-xl: 8px;
-  --r-card: 12px;
   --r-pill: 999px;
 
   /* Motion */
@@ -91,18 +116,57 @@
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-/* Colour-blind diff: GitHub's Protanopia and Deuteranopia diff colours, blue for added and orange for removed; dark ones laid on the canvas. */
+/* Colorblind swaps every green and red pair; amber stays. */
 :root[data-colour-blind] {
-  --diff-add: light-dark(#ddf4ff, #1a293e);
-  --diff-add-gutter: light-dark(#b6e3ff, #294361);
-  --diff-add-word: light-dark(#b6e3ff, #26508a);
-  --diff-del: light-dark(#fff1e5, #33251f);
-  --diff-del-gutter: light-dark(#ffd8b5, #513220);
-  --diff-del-word: light-dark(#ffd8b5, #764223);
-  --diff-add-text: light-dark(#0969da, #58a6ff);
-  --diff-del-text: light-dark(#bc4c00, #f0883e);
-  --stripe-add: light-dark(#0969da, #58a6ff);
-  --stripe-del: light-dark(#bc4c00, #f0883e);
+  --diff-add: var(--cb-add);
+  --diff-add-gutter: var(--cb-add-gutter);
+  --diff-del: var(--cb-del);
+  --diff-del-gutter: var(--cb-del-gutter);
+  --diff-add-word: var(--cb-add-word);
+  --diff-del-word: var(--cb-del-word);
+  --stripe-add: var(--cb-stripe-add);
+  --stripe-del: var(--cb-stripe-del);
+  --ok: var(--cb-ok);
+  --ok-bg: var(--cb-ok-bg);
+  --bad: var(--cb-bad);
+  --bad-bg: var(--cb-bad-bg);
+}
+
+/* Each kind of code the CLI names takes its syntax token. */
+.sx-c {
+  color: var(--syntax-comment);
+}
+
+.sx-k {
+  color: var(--syntax-keyword);
+}
+
+.sx-n {
+  color: var(--syntax-constant);
+}
+
+.sx-e {
+  color: var(--syntax-entity);
+}
+
+.sx-t {
+  color: var(--syntax-tag);
+}
+
+.sx-s {
+  color: var(--syntax-string);
+}
+
+.sx-r {
+  color: var(--syntax-regexp);
+}
+
+.sx-v {
+  color: var(--syntax-variable);
+}
+
+.sx-x {
+  color: var(--syntax-invalid);
 }
 
 :root[data-theme='light'] {

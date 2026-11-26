@@ -1,6 +1,9 @@
-<p align="center"><img src="docs/images/icon.png" alt="" width="96"></p>
-
-# Walkthrough
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/design/brand/banner/banner-dark.svg">
+    <img alt="Walkthrough" src="docs/design/brand/banner/banner-light.svg" width="100%">
+  </picture>
+</p>
 
 A pull request review page on your laptop, made better by AI.
 It's a Claude Code plugin.
@@ -50,7 +53,7 @@ Nothing is ever checked out, and uncommitted edits are left out with a warning.
 1. The session asks how well you know the feature, from "I know it well" to "It's new to me", and explains only as much as you need.
 2. The AI splits the change into steps and reviews it against the ticket.
    The page opens when the review is nearly done and shows the whole walkthrough once it is ready.
-   Meanwhile the tab shows an amber dot and "Reviewing", and you can ask the session to open it earlier.
+   Meanwhile the tab shows Walky reading and its title starts with "Reviewing", and you can ask the session to open it earlier.
 3. Each step has "Look at:" links to the lines that matter and a sentence or two of explanation.
    The AI's comments are on the lines, marked `[AI]`. Colleagues' threads show on their lines as well.
 4. You read, mark files Viewed, comment, edit or delete the AI's comments, reply and resolve.
@@ -97,6 +100,9 @@ The tool itself has no rules: nothing about your language, tracker, code host or
 The session drives the `walkthrough` CLI; you rarely type it yourself.
 It writes what it records to files in the walkthrough's inbox and passes them with `--file`.
 `walkthrough listen` waits in the background, so the chat stays free, and only Ask AI and the submitted review wake it ([ADR 0004](docs/adr/0004-no-mcp.md)).
+
+Code on the page takes GitHub's light and dark syntax colours.
+The CLI downloads a language's grammar from jsDelivr the first time a change needs it, checks it against a hash recorded at build and keeps it in its state folder; without the network that code stays plain.
 
 The plugin's hook approves only `walkthrough` commands and the session's writes to its inbox; everything else goes through your usual permissions ([ADR 0006](docs/adr/0006-a-plugin-hook-approves-the-cli.md)).
 

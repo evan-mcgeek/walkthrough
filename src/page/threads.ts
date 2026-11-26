@@ -1,8 +1,10 @@
 // One comment component for everyone, threads of them, and the composer they are written in.
+import type { Code } from '../lines';
 import type { CommentView, ThreadView } from '../review';
 import { attrs, el } from './dom';
+import { colourLines } from './highlight';
 import { icon } from './icons';
-import { ago, goesOut, markdown, send } from './state';
+import { ago, goesOut, markdown, send, suggestionCode } from './state';
 
 const initials = (handle: string) =>
   handle
@@ -21,15 +23,17 @@ export function avatar(comment: Pick<CommentView, 'by' | 'author'>): HTMLElement
   return attrs(el('span', { className: `avatar avatar-${comment.by}` }, text), { 'aria-hidden': 'true' });
 }
 
-/** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it. */
-export function commentBody(comment: CommentView): HTMLElement {
-  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text');
+/** The body as it shows: `[AI]` before an AI comment that goes out, "Ask AI:" before a question to it, a suggestion on `code` as a suggested change. */
+export function commentBody(comment: CommentView, code?: Code): HTMLElement {
+  const body = markdown(comment.ask ? `Ask AI: ${comment.body}` : comment.body, 'comment-text', code);
   if (goesOut(comment)) (body.querySelector('p') ?? body).prepend(el('span', { className: 'ai-tag' }, '[AI]'), ' ');
   return body;
 }
 
 type ComposerOptions = {
   placeholder: string;
+  /** The accessible name, when it says more than the placeholder. */
+  label?: string;
   text?: string;
   primary: string;
   onPrimary: (text: string) => Promise<boolean>;
@@ -37,9 +41,9 @@ type ComposerOptions = {
   onCancel: () => void;
 };
 
-export function composer({ placeholder, text = '', primary, onPrimary, onAsk, onCancel }: ComposerOptions): HTMLElement {
+export function composer({ placeholder, label = placeholder, text = '', primary, onPrimary, onAsk, onCancel }: ComposerOptions): HTMLElement {
   const area = el('textarea', { className: 'composer-text', placeholder, value: text, rows: 3 });
-  area.setAttribute('aria-label', placeholder);
+  area.setAttribute('aria-label', label);
   const add = el('button', { type: 'button', className: 'btn primary small', disabled: !text.trim() }, primary);
   const busy = (doing: boolean) => {
     for (const button of box.querySelectorAll('button')) button.disabled = doing;
@@ -96,9 +100,10 @@ export class ThreadBox {
   private readonly outdated = el('div', { className: 'outdated', hidden: true });
   private readonly body = el('div', { className: 'thread-body' }, el('div', { className: 'thread-inner' }, this.outdated, this.list, this.foot));
   private readonly resolvedPending = el('span', { className: 'pending-tag' }, 'Pending');
-  private readonly resolvedText = el('span', { className: 'resolved-text' }, el('strong', {}, 'AI'), ' marked this conversation as resolved.');
+  private readonly resolver = el('strong', {}, 'AI');
+  private readonly resolvedText = el('span', { className: 'resolved-text' }, this.resolver, ' marked this conversation as resolved.');
   private readonly showButton = attrs(el('button', { type: 'button', className: 'btn small ghost' }), { 'aria-expanded': 'false' });
-  /** The collapsed line of a thread the AI resolved. */
+  /** GitHub's collapsed line of a resolved thread, naming who resolved it. */
   private readonly resolvedLine = el(
     'div',
     { className: 'resolved-line' },
@@ -125,10 +130,10 @@ export class ThreadBox {
     this.update(thread);
   }
 
-  /** Opens or closes a thread the AI resolved; any other thread is always open. */
+  /** Opens or closes a resolved thread; an open thread is always open. */
   show(open = true): void {
     this.showResolved = open;
-    const folded = this.thread.resolvedBy === 'ai' && !open;
+    const folded = !!this.thread.resolvedBy && !open;
     this.box.classList.toggle('folded', folded);
     this.body.inert = folded;
     this.showButton.textContent = open ? 'Hide resolved' : 'Show resolved';
@@ -140,10 +145,12 @@ export class ThreadBox {
     this.outdated.hidden = thread.step !== null;
     if (thread.step !== null || this.outdated.hasChildNodes()) return;
     // A gap row stands where the numbers jump, between two hunks.
-    const code = (thread.code ?? []).flatMap(([number, text], at, all) => [
+    const texts = (thread.code ?? []).map(([, text]) => el('span', {}, text));
+    const code = (thread.code ?? []).flatMap(([number], at, all) => [
       ...(at > 0 && number !== (all[at - 1]?.[0] ?? 0) + 1 ? [attrs(el('div', { className: 'outdated-gap' }), { 'aria-hidden': 'true' })] : []),
-      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(number)), el('span', {}, text)),
+      el('div', { className: 'outdated-line' }, el('span', { className: 'outdated-number' }, String(number)), texts[at] ?? ''),
     ]);
+    colourLines(texts, thread.file);
     this.outdated.append(
       el('div', { className: 'outdated-head' }, el('span', { className: 'outdated-path', title: thread.file }, thread.file), el('span', { className: 'outdated-tag' }, 'Outdated')),
       ...(code.length ? [el('div', { className: 'outdated-code' }, ...code)] : []),
@@ -153,12 +160,17 @@ export class ThreadBox {
   /** Brings the thread up to date; returns the comments that arrived, which the file may hold behind the pill. */
   update(thread: ThreadView): HTMLElement[] {
     this.thread = thread;
-    const byAi = thread.resolvedBy === 'ai';
-    this.box.classList.toggle('resolved', !!thread.resolved && !byAi);
-    this.box.classList.toggle('ai-resolved', byAi);
+    const by = thread.resolvedBy;
+    this.box.classList.toggle('resolved', !!by);
     // In the page only while they apply, so a thread never holds a hidden "Pending".
-    if (!byAi) this.resolvedLine.remove();
-    else if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    if (!by) this.resolvedLine.remove();
+    else {
+      if (this.resolver.textContent !== (by === 'ai' ? 'AI' : 'You')) {
+        this.resolver.textContent = by === 'ai' ? 'AI' : 'You';
+        this.resolvedLine.firstElementChild?.replaceWith(avatar({ by }));
+      }
+      if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    }
     if (thread.resolvePending) {
       if (!this.resolvedPending.isConnected) this.resolvedText.after(this.resolvedPending);
     }
@@ -174,7 +186,7 @@ export class ThreadBox {
       }
     let before: Element | null = null;
     for (const comment of thread.comments) {
-      const key = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id]);
+      const key = JSON.stringify([comment.body, comment.pending, comment.review, comment.waiting, this.editing === comment.id, suggestionCode(thread)]);
       const was = this.shown.get(comment.id);
       let element = was?.element;
       if (!was || (was.key !== key && this.editing !== comment.id) || (this.editing === comment.id && !was.element.querySelector('textarea'))) {
@@ -255,7 +267,7 @@ export class ThreadBox {
               this.update(this.thread);
             },
           })
-        : commentBody(comment);
+        : commentBody(comment, suggestionCode(this.thread));
     row.append(avatar(comment), el('div', { className: 'comment-main' }, head, body));
     return row;
   }

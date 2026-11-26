@@ -16,7 +16,7 @@ describe('walkthrough export', () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.' }], 'comment');
+    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.\n\n```suggestion\nexport const login = () => false;\n```' }], 'comment');
     repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria');
     const out = path.join(path.dirname(repo.dir), 'login.html');
 
@@ -27,7 +27,14 @@ describe('walkthrough export', () => {
     const html = fs.readFileSync(out, 'utf8');
     expect(html).toContain('Everyone gets in.');
     expect(html).toContain('Logs in: Partly met');
-    expect(html).toContain('login = () =&gt; true;');
+    expect(html).toContain('<div class="suggestion-head">Suggested change</div>');
+    const text = html.replace(/<\/?span[^>]*>/g, '');
+    expect(text).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
+    expect(text).toContain('login = () =&gt; true;');
+    // Its code, the suggested change's lines too, takes the syntax classes, whose tokens are in the file's one stylesheet.
+    expect(html).toContain('<span class="sx-k">const</span>');
+    expect(html).toMatch(/<tr class="suggestion-del">.*?<span class="sx-k">export<\/span>.*?<tr class="suggestion-add">.*?<span class="sx-k">export<\/span>/);
+    expect(html).toContain('--syntax-keyword: light-dark(#b0282a, #f98795)');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b/i);
     // The self-hosted code font travels inside the file.
