@@ -96,14 +96,14 @@ export class ThreadBox {
   private readonly outdated = el('div', { className: 'outdated', hidden: true });
   private readonly body = el('div', { className: 'thread-body' }, el('div', { className: 'thread-inner' }, this.outdated, this.list, this.foot));
   private readonly resolvedPending = el('span', { className: 'pending-tag' }, 'Pending');
+  private readonly resolvedText = el('span', { className: 'resolved-text' }, el('strong', {}, 'AI'), ' marked this conversation as resolved.');
   private readonly showButton = attrs(el('button', { type: 'button', className: 'btn small ghost' }), { 'aria-expanded': 'false' });
   /** The collapsed line of a thread the AI resolved. */
   private readonly resolvedLine = el(
     'div',
-    { className: 'resolved-line', hidden: true },
+    { className: 'resolved-line' },
     avatar({ by: 'ai' }),
-    el('span', { className: 'resolved-text' }, el('strong', {}, 'AI'), ' marked this conversation as resolved.'),
-    this.resolvedPending,
+    this.resolvedText,
     el('span', { className: 'spacer' }),
     this.showButton,
   );
@@ -118,7 +118,7 @@ export class ThreadBox {
   constructor(thread: ThreadView) {
     this.thread = thread;
     this.box.dataset['thread'] = thread.id;
-    this.box.append(this.resolvedLine, this.body);
+    this.box.append(this.body);
     this.showButton.onclick = () => {
       this.show(!this.showResolved);
     };
@@ -155,8 +155,13 @@ export class ThreadBox {
     const byAi = thread.resolvedBy === 'ai';
     this.box.classList.toggle('resolved', !!thread.resolved && !byAi);
     this.box.classList.toggle('ai-resolved', byAi);
-    this.resolvedLine.hidden = !byAi;
-    this.resolvedPending.hidden = !thread.resolvePending;
+    // In the page only while they apply, so a thread never holds a hidden "Pending".
+    if (!byAi) this.resolvedLine.remove();
+    else if (!this.resolvedLine.isConnected) this.box.prepend(this.resolvedLine);
+    if (thread.resolvePending) {
+      if (!this.resolvedPending.isConnected) this.resolvedText.after(this.resolvedPending);
+    }
+    else this.resolvedPending.remove();
     this.show(this.showResolved);
     this.drawOutdated();
     const arrived: HTMLElement[] = [];
