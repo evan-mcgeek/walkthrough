@@ -1148,7 +1148,7 @@ tr.flash td {
   opacity: 0.75;
 }
 
-/* A thread the AI resolved: GitHub's one resolved line, the thread opening under it by grid rows. */
+/* A thread the AI resolved: one resolved line, the thread opening under it by grid rows. */
 .thread.ai-resolved {
   background: var(--surface);
 }
@@ -2033,6 +2033,14 @@ tr.flash td {
 
   .composer-row {
     flex-wrap: wrap;
+  }
+
+  .thread-foot:has(.unresolve) {
+    flex-wrap: wrap;
+  }
+
+  .thread-foot:has(.unresolve) .reply-field {
+    flex-basis: 100%;
   }
 
   .summary-grid {

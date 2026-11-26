@@ -38,6 +38,10 @@ describe('walkthrough resolve', () => {
     await postTo(page, '/comment', { comment: dropped, delete: true });
     await postTo(page, '/comment', { file: 'app.ts', lines: [1, 1], text: 'Mine.' });
     const mine = (await viewAt(page)).threads.find(one => one.comments[0]?.by === 'you')?.id ?? '';
+    await postTo(page, '/resolve', { thread: '1042' });
+    expect(await threadOf(page, '1042')).toMatchObject({ resolvedBy: 'you', resolvePending: true, unresolvable: true });
+    expect((await postTo(page, '/unresolve', { thread: '1042' })).status).toBe(200);
+    expect(await threadOf(page, '1042')).not.toHaveProperty('resolved');
 
     expect(repo.run('resolve', fixed).stderr).toContain(`the comment ${fixed} is still pending`);
     expect((await postTo(page, '/submit', { type: 'comment', summary: '' })).status).toBe(200);

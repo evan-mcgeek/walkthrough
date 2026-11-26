@@ -97,7 +97,7 @@ export class ThreadBox {
   private readonly body = el('div', { className: 'thread-body' }, el('div', { className: 'thread-inner' }, this.outdated, this.list, this.foot));
   private readonly resolvedPending = el('span', { className: 'pending-tag' }, 'Pending');
   private readonly showButton = attrs(el('button', { type: 'button', className: 'btn small ghost' }), { 'aria-expanded': 'false' });
-  /** GitHub's collapsed line for a thread the AI resolved. */
+  /** The collapsed line of a thread the AI resolved. */
   private readonly resolvedLine = el(
     'div',
     { className: 'resolved-line', hidden: true },
