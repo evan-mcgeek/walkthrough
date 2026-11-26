@@ -9,6 +9,7 @@ import { attrs, el } from './dom';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 import { grow, reduced } from './motion';
+import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
 
@@ -74,6 +75,7 @@ export class FilePane {
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
+    if (diff) drawMoves(diff, this.name);
     this.prepareRows();
     this.drawHeader(parsed);
   }
@@ -89,7 +91,20 @@ export class FilePane {
 
   /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
   look(start: number, end: number, scroller: HTMLElement): boolean {
-    const first = this.rows.get(start);
+    return this.flash(
+      [...this.rows].flatMap(([line, row]) => (line >= start && line <= end ? [row] : [])),
+      scroller,
+    );
+  }
+
+  /** The same for the row that says lines moved away from `line`. */
+  lookDeparture(line: number, scroller: HTMLElement): boolean {
+    const row = this.diffBox.querySelector<HTMLTableRowElement>(`tr[data-moved-from="${String(line)}"]`);
+    return this.flash(row ? [row] : [], scroller);
+  }
+
+  private flash(rows: HTMLTableRowElement[], scroller: HTMLElement): boolean {
+    const [first] = rows;
     if (!first) return false;
     if (this.closed()) {
       folds.set(this.name, false);
@@ -98,14 +113,13 @@ export class FilePane {
     if (this.previewing) void this.showPreview(false);
     const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
     scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
-    for (const [line, row] of this.rows)
-      if (line >= start && line <= end) {
-        // Restarted in this task, so a second click flashes again.
-        for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-        row.classList.remove('flash');
-        row.getBoundingClientRect();
-        row.classList.add('flash');
-      }
+    for (const row of rows) {
+      // Restarted in this task, so a second click flashes again.
+      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
+      row.classList.remove('flash');
+      row.getBoundingClientRect();
+      row.classList.add('flash');
+    }
     return true;
   }
 
