@@ -1,8 +1,10 @@
 // A step: its title, "Look at:", the AI's explanation, its files, then the steps before and after it.
+import type { Since } from '../review';
 import type { Step } from '../walkthrough';
 import { el } from './dom';
 import { drawFiles, type FilePane, type Shows } from './files';
 import { icon } from './icons';
+import { changes } from './since';
 import { linesLabel, markdown, state } from './state';
 
 export class StepPane {
@@ -13,13 +15,17 @@ export class StepPane {
   private more = false;
   private drawnHead = '';
 
+  /** `since` shows only what changed in each file since the last review; a step with nothing new shows its files quiet. */
   constructor(
     readonly step: Step,
     private readonly scroller: HTMLElement,
+    since: Since | null = null,
   ) {
-    this.files = drawFiles(step);
+    const changed = since && step.files.filter(file => Object.hasOwn(since.files, file));
+    const quiet = changed?.length === 0;
+    this.files = !changed || quiet ? drawFiles(step, quiet ? { quiet } : {}) : drawFiles({ ...step, files: changed, diff: changed.map(file => since.files[file]).join('') }, { own: step });
     this.box.dataset['step'] = step.id;
-    this.box.append(this.head, el('div', { className: 'files' }, ...this.files.map(pane => pane.box)), this.foot);
+    this.box.append(this.head, ...(quiet ? [nothingNew()] : []), el('div', { className: quiet ? 'files quiet' : 'files' }, ...this.files.map(pane => pane.box)), this.foot);
   }
 
   fileNamed(file: string): FilePane | undefined {
@@ -86,4 +92,18 @@ export class StepPane {
       after ? link(after.title, `step-${after.id}`, 'next') : link('Summary', 'summary', 'next'),
     );
   }
+}
+
+function nothingNew(): HTMLElement {
+  const all = el('button', { type: 'button', className: 'btn small' }, 'Show all changes');
+  all.onclick = () => {
+    changes.choose(false);
+  };
+  return el(
+    'div',
+    { className: 'nothing-new' },
+    icon('met'),
+    el('div', {}, el('strong', {}, 'No changes since your last review.'), el('p', {}, 'The files are as you viewed them.')),
+    all,
+  );
 }

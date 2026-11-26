@@ -59,6 +59,7 @@ export class FilePane {
     private readonly step: Step,
     parsed: DiffFile,
     diff: Element | null,
+    private readonly shown: Shown = {},
   ) {
     this.name = parsed.isDeleted ? parsed.oldName : parsed.newName;
     this.changedLines = parsed.addedLines + parsed.deletedLines;
@@ -81,7 +82,7 @@ export class FilePane {
 
   closed(): boolean {
     const { view } = state;
-    return folds.get(this.name) ?? (view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
+    return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
 
   /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them. */
@@ -175,7 +176,7 @@ export class FilePane {
       ...(reason ? [el('span', { className: 'folded-reason', title: reason }, reason)] : []),
       el('span', { className: 'spacer' }),
       ...(this.preview ? [this.previewToggle()] : []),
-      el('label', { className: 'viewed-toggle' }, viewed, 'Viewed'),
+      el('label', { className: 'viewed-toggle', title: 'Viewed (V)' }, viewed, 'Viewed'),
     );
   }
 
@@ -188,7 +189,9 @@ export class FilePane {
       if (number && line) {
         this.rows.set(line, row);
         row.dataset['line'] = String(line);
-        number.tabIndex = this.rows.size === 1 ? 0 : -1;
+      }
+      if (number && line && (this.shown.commentable?.has(line) ?? true)) {
+        number.tabIndex = this.diffBox.querySelector('.line-num2[role="button"]') ? -1 : 0;
         attrs(number, { role: 'button', 'aria-label': `Comment on line ${String(line)}` });
       }
       const type = types[at];
@@ -211,9 +214,8 @@ export class FilePane {
         this.choose(line, event.shiftKey);
       } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
-        const lines = [...this.rows.keys()];
-        const next = lines[lines.indexOf(line) + (event.key === 'ArrowDown' ? 1 : -1)];
-        const target = next === undefined ? null : this.rows.get(next)?.querySelector<HTMLElement>('.line-num2');
+        const numbers = [...this.diffBox.querySelectorAll<HTMLElement>('.line-num2[role="button"]')];
+        const target = numbers[numbers.indexOf(number) + (event.key === 'ArrowDown' ? 1 : -1)];
         if (target) {
           number.tabIndex = -1;
           target.tabIndex = 0;
@@ -405,14 +407,23 @@ function hold(element: HTMLElement): HTMLElement {
   return element;
 }
 
-/** The step's files, drawn once per diff. */
-export function drawFiles(step: Step): FilePane[] {
+/** A file as a view other than All changes shows it: quiet when nothing in it changed since, folded; else only the lines in the step's own diff take comments. */
+type Shown = { quiet?: true; commentable?: Set<number> };
+
+/** The step's files, drawn once per diff; `own` is the step's own diff when `step` holds what changed since the last review. */
+export function drawFiles(step: Step, { own, quiet }: { own?: Step; quiet?: true } = {}): FilePane[] {
   const parsed = parseDiff(step.diff);
+  const ownFiles = own && parseDiff(own.diff);
+  const shown = (file: DiffFile): Shown => {
+    if (quiet) return { quiet };
+    const mine = ownFiles?.find(one => one.newName === file.newName);
+    return ownFiles ? { commentable: new Set(mine?.blocks.flatMap(block => block.lines.flatMap(line => (line.newNumber ? [line.newNumber] : [])))) } : {};
+  };
   const holder = el('div');
   // diff2html escapes the code it draws, so its markup is safe to put in the page.
   holder.innerHTML = html(parsed, { outputFormat: 'line-by-line', drawFileList: false, matching: 'lines' });
   const wrappers = [...holder.querySelectorAll('.d2h-file-wrapper')];
-  const panes = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector('.d2h-file-diff') ?? null));
+  const panes = parsed.map((file, at) => new FilePane(step, file, wrappers[at]?.querySelector('.d2h-file-diff') ?? null, shown(file)));
   // A step shows its files in the order the session gave them.
   return step.files.flatMap(file => panes.filter(pane => pane.file === file));
 }

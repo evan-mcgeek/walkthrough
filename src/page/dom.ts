@@ -23,6 +23,22 @@ export function attrs<T extends Element>(node: T, given: Record<string, string>)
   return node;
 }
 
+/** Arrow keys move through a menu's items; Escape and Tab close it. */
+export function menuKeys(menu: HTMLElement, close: () => void): void {
+  menu.onkeydown = event => {
+    const items = [...menu.querySelectorAll<HTMLElement>('.menu-item')];
+    const at = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
+    const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+    if (step) {
+      event.preventDefault();
+      items[(at + step + items.length) % items.length]?.focus();
+    } else if (event.key === 'Escape' || event.key === 'Tab') {
+      event.preventDefault();
+      close();
+    }
+  };
+}
+
 const token = location.pathname.split('/')[2] ?? '';
 
 export function showAlert(message: string | null): void {

@@ -2,13 +2,14 @@
 import type { WalkthroughView } from '../review';
 import type { Viewer } from '../viewer';
 import { chooseTheme, loadViewer } from './appearance';
-import { attrs, el, postQuietly, region, showAlert } from './dom';
-import { type Ending, endScreen } from './end';
+import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
+import { commandBox, type Ending, endScreen } from './end';
 import { pick } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
 import { Opening, openingNav } from './opening';
 import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile } from './state';
+import { changes, ChangesSwitch, shownFiles, shownSince } from './since';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
 
@@ -53,20 +54,23 @@ function current(): At {
   return step ? { kind: 'step', pane: paneOf(step.id) } : { kind: 'opening' };
 }
 
+/** The step's pane in the view shown, drawn again when what it shows changes. */
 function paneOf(id: string): StepPane {
   const step = state.view.steps.find(one => one.id === id);
   if (!step) throw new Error(`no step ${id}`);
-  const key = JSON.stringify([step.diff, step.files, step.folded]);
-  const kept = panes.get(id);
+  const since = shownSince();
+  const key = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map(file => since.files[file] ?? null)]);
+  const kept = panes.get(`${String(!!since)}:${id}`);
   if (kept?.key === key) return kept.pane;
-  const pane = new StepPane(step, main);
-  panes.set(id, { key, pane });
+  const pane = new StepPane(step, main, since);
+  panes.set(`${String(!!since)}:${id}`, { key, pane });
   pane.update(() => false, go);
   return pane;
 }
 
 function go(address: string): void {
   pick(null);
+  onFile = null;
   if (decodeURIComponent(location.hash.slice(1)) !== address) history.pushState(null, '', `#${address}`);
   showDrawer(false);
   moved();
@@ -125,8 +129,12 @@ function reveal({ thread: id, edit, file }: Reveal): void {
   const thread = state.view.threads.find(one => one.id === id);
   const stepId = thread ? thread.step : file === undefined ? undefined : stepOfFile(file)?.id;
   if (stepId === undefined || stepId === null) return;
+  const name = thread?.file ?? file ?? '';
+  // What changed since the last review may leave out the file or the thread's lines.
+  const found = paneOf(stepId).fileNamed(name);
+  if (changes.since && (!found || (thread && !found.thread(thread.id)))) changes.since = false;
   go(stepAddress(stepId));
-  const pane = paneOf(stepId).fileNamed(thread?.file ?? file ?? '');
+  const pane = paneOf(stepId).fileNamed(name);
   if (!pane) return;
   pane.open();
   const shown = thread && pane.thread(thread.id);
@@ -202,6 +210,9 @@ finish.onclick = event => {
   go('summary');
 };
 let changeLabel: HTMLElement = el('span');
+const changesSwitch = new ChangesSwitch();
+const behindLine = attrs(el('div', { className: 'behind', hidden: true }), { role: 'status' });
+header.after(behindLine);
 header.append(
   attrs(el('span', { className: 'mark' }, icon('mark')), { 'aria-hidden': 'true' }),
   attrs(el('button', { type: 'button', className: 'icon-button steps-button', onclick: toggleDrawer }, icon('sidebar')), {
@@ -210,6 +221,7 @@ header.append(
     'aria-controls': 'nav',
   }),
   changeLabel,
+  changesSwitch.box,
   filesViewed,
   filesChanged,
   el('span', { className: 'spacer' }),
@@ -257,6 +269,13 @@ function drawHeader(onSummary: boolean): void {
   const changed = view.changedFiles.length;
   if (!ready) filesChanged.replaceChildren(el('span', {}, plural(changed, 'file'), el('span', { className: 'long' }, ' changed')));
   finish.hidden = onSummary || !ready;
+  changesSwitch.update();
+  changesSwitch.box.hidden = onSummary || !ready || !view.since;
+  if (changesSwitch.box.hidden) changesSwitch.close(false);
+  // At phone width the switch is the first row of the step.
+  if (phone.matches && changesSwitch.box.parentElement !== main) content.before(changesSwitch.box);
+  else if (!phone.matches && changesSwitch.box.parentElement !== header) changeLabel.after(changesSwitch.box);
+  drawBehind(ready && view.behind && !ending);
   if (!ready && !view.sessionGone) {
     settle(reviewingNow);
     if (!reviewingNow.isConnected) filesChanged.after(reviewingNow);
@@ -264,6 +283,13 @@ function drawHeader(onSummary: boolean): void {
     fadeOut(reviewingNow, 'base', () => {
       reviewingNow.remove();
     });
+}
+
+/** The line under the header once the branch has commits the walkthrough does not show. */
+function drawBehind(behind: boolean): void {
+  if (behind && !behindLine.hasChildNodes())
+    behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox());
+  behindLine.hidden = !behind;
 }
 
 function showDrawer(open: boolean): void {
@@ -324,18 +350,9 @@ function toggleMenu(): void {
     ),
     { role: 'menu', 'aria-label': 'Menu' },
   );
-  opened.onkeydown = event => {
-    const items = [...opened.querySelectorAll<HTMLElement>('.menu-item')];
-    const at = document.activeElement instanceof HTMLElement ? items.indexOf(document.activeElement) : -1;
-    const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
-    if (step) {
-      event.preventDefault();
-      items[(at + step + items.length) % items.length]?.focus();
-    } else if (event.key === 'Escape' || event.key === 'Tab') {
-      event.preventDefault();
-      closeMenu(true);
-    }
-  };
+  menuKeys(opened, () => {
+    closeMenu(true);
+  });
   menu = opened;
   header.append(opened);
   header.querySelector('.menu-button')?.setAttribute('aria-expanded', 'true');
@@ -416,7 +433,8 @@ function buildNav(): void {
   navSteps = state.view.steps.map((step, index) => {
     const row = navLink(stepAddress(step.id), 'step-row', el('span', { className: 'step-number' }, String(index + 1)), el('span', { className: 'step-name', title: step.title }, step.title));
     row.dataset['key'] = `step:${step.id}`;
-    const files = step.files.map(file => {
+    row.classList.toggle('quiet', shownFiles(step).length === 0);
+    const files = shownFiles(step).map(file => {
       const tick = attrs(el('span', { className: 'viewed-tick' }, icon('ring'), icon('met')), { role: 'img' });
       const count = el('span', { className: 'file-count' }, icon('message'), '');
       const fileRow = el('a', { className: 'file-row', href: `#${stepAddress(step.id)}`, title: file }, tick, el('span', { className: 'file-name' }, baseName(file)), count);
@@ -444,7 +462,7 @@ function drawNav(at: At): void {
     shownPending = undefined;
     return;
   }
-  const key = JSON.stringify(view.steps.map(step => [step.id, step.title, step.files]));
+  const key = JSON.stringify(view.steps.map(step => [step.id, step.title, step.files, shownFiles(step)]));
   if (key !== drawnNav) {
     drawnNav = key;
     buildNav();
@@ -478,6 +496,7 @@ function drawNav(at: At): void {
 
 /** Redraws what changed, keeping the line being read where it is; `own` for what the person did, which shows in place. */
 function render(own: boolean, navigated = false): void {
+  followSince();
   const at = current();
   drawHeader(at.kind === 'summary');
   drawNav(at);
@@ -506,7 +525,80 @@ function render(own: boolean, navigated = false): void {
   if (fromOpening && content.firstElementChild !== old) leaveOpening();
   if (anchor?.element.isConnected) main.scrollTop += anchor.element.getBoundingClientRect().top - anchor.top;
   drawPill();
+  drawOnFile();
   for (const time of content.querySelectorAll<HTMLTimeElement>('time.comment-time')) time.textContent = ago(time.dateTime);
+}
+
+let sinceFor = '';
+
+/** Back on a new head after a review, the page opens on what changed since. */
+function followSince(): void {
+  const { since, head } = state.view;
+  const key = since ? `${since.head}:${head}` : '';
+  if (key === sinceFor) return;
+  sinceFor = key;
+  changes.since = !!since;
+}
+
+/** Switches between all changes and those since the last review, keeping the step and the file read where they are. */
+function showChanges(since: boolean): void {
+  const top = main.getBoundingClientRect().top;
+  const reading = [...content.querySelectorAll<HTMLElement>(':scope > :first-child .file')].find(box => box.getBoundingClientRect().bottom > top);
+  const was = reading?.getBoundingClientRect().top;
+  changes.since = since;
+  render(true, true);
+  // A pane shown before may have left with the page's last move.
+  const shown = content.firstElementChild;
+  if (shown) {
+    settle(shown);
+    shown.removeAttribute('inert');
+    shown.removeAttribute('aria-hidden');
+  }
+  const same = reading && content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(reading.dataset['file'] ?? '')}"]`);
+  if (same && was !== undefined) main.scrollTop += same.getBoundingClientRect().top - was;
+}
+changes.choose = showChanges;
+
+/** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */
+let onFile: string | null = null;
+
+function drawOnFile(): void {
+  for (const box of content.querySelectorAll<HTMLElement>('.file')) box.classList.toggle('on', box.dataset['file'] === onFile);
+  for (const { files } of navSteps) for (const one of files) one.row.classList.toggle('on', one.file === onFile);
+}
+
+/** The first file of the step shown that reaches below the top of the pane. */
+function fileAtTop(): string | undefined {
+  const top = main.getBoundingClientRect().top;
+  return [...content.querySelectorAll<HTMLElement>(':scope > :first-child .file')].find(box => box.getBoundingClientRect().bottom > top)?.dataset['file'];
+}
+
+/** J and K: the next or previous file the view shows, through the steps in reading order; with none on yet, the file at the top. */
+function moveFile(by: 1 | -1): void {
+  const at = current();
+  if (at.kind !== 'step') return;
+  const { steps } = state.view;
+  const order = steps.flatMap((step, index) => shownFiles(step).map(file => ({ step: step.id, index, file })));
+  const here = steps.indexOf(at.pane.step);
+  const top = fileAtTop();
+  const next =
+    onFile === null
+      ? (order.find(one => one.file === top) ?? (by > 0 ? order.find(one => one.index > here) : order.findLast(one => one.index < here)))
+      : order[order.findIndex(one => one.file === onFile) + by];
+  if (!next) return;
+  if (next.step !== at.pane.step.id) go(stepAddress(next.step));
+  onFile = next.file;
+  drawOnFile();
+  const box = paneOf(next.step).fileNamed(next.file)?.box;
+  for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
+  if (box) main.scrollTop += box.getBoundingClientRect().top - main.getBoundingClientRect().top - 16;
+}
+
+/** V: Viewed on the file you are on, or else the one at the top. */
+function toggleViewed(): void {
+  onFile ??= fileAtTop() ?? null;
+  drawOnFile();
+  if (onFile) content.querySelector<HTMLElement>(`:scope > :first-child .file[data-file="${CSS.escape(onFile)}"] .viewed-toggle input`)?.click();
 }
 
 /** The Opening fades out, then the walkthrough enters as a step does. */
@@ -543,6 +635,7 @@ state.render = own => {
 window.addEventListener('popstate', moved);
 phone.addEventListener('change', () => {
   showDrawer(false);
+  render(true);
 });
 
 let pendingKey = '';
@@ -552,8 +645,29 @@ document.addEventListener('keydown', event => {
     header.querySelector<HTMLElement>('.steps-button')?.focus();
     return;
   }
-  const typing = event.target instanceof HTMLElement && event.target.closest('input, textarea, [contenteditable]');
+  if (event.key === 'Escape' && changesSwitch.isOpen) {
+    changesSwitch.close(true);
+    return;
+  }
+  const typing = event.target instanceof HTMLElement && event.target.closest('textarea, select, [contenteditable], input:not([type="checkbox"], [type="radio"])');
   if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
+  const keys: Record<string, () => void> = {
+    j: () => {
+      moveFile(1);
+    },
+    k: () => {
+      moveFile(-1);
+    },
+    v: toggleViewed,
+    c: () => {
+      changesSwitch.open();
+    },
+  };
+  const key = event.shiftKey || !Object.hasOwn(keys, event.key) ? undefined : keys[event.key];
+  if (key && state.view.ready && !ending && !menu) {
+    event.preventDefault();
+    key();
+  }
   if (pendingKey === 'g' && event.key === 's' && state.view.ready && !ending) go('summary');
   pendingKey = event.key === 'g' ? 'g' : '';
 });
