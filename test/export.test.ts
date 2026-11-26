@@ -16,7 +16,7 @@ describe('walkthrough export', () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.' }], 'comment');
+    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.\n\n```suggestion\nexport const login = () => false;\n```' }], 'comment');
     repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria');
     const out = path.join(path.dirname(repo.dir), 'login.html');
 
@@ -27,6 +27,8 @@ describe('walkthrough export', () => {
     const html = fs.readFileSync(out, 'utf8');
     expect(html).toContain('Everyone gets in.');
     expect(html).toContain('Logs in: Partly met');
+    expect(html).toContain('<div class="suggestion-head">Suggested change</div>');
+    expect(html).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
     expect(html).toContain('login = () =&gt; true;');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b/i);

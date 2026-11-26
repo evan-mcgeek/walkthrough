@@ -43,9 +43,10 @@ test.describe('a pull request', () => {
   });
 });
 
-test('an outdated comment sits at the top of its file with the code it was written on, and its Summary row links there', async ({ page, repo, url }) => {
+test('an outdated comment sits at the top of its file, under the file’s own comments, with the code it was written on, and its Summary row links there', async ({ page, repo, url }) => {
   record(repo, ONE_STEP);
   await postTo(url, '/comment', { file: 'app.ts', lines: [1, 1], text: 'Bump it once.' });
+  await postTo(url, '/comment', { file: 'app.ts', text: 'Split this file.' });
   record(repo, [{ id: '1042', file: 'app.ts', lines: [1, 1], author: 'dana-k', at: '2026-11-23T09:30:00Z', body: 'Why 2?' }], 'threads');
   fs.writeFileSync(path.join(repo.dir, 'app.ts'), 'export const app = 3;\n');
   git(repo.dir, 'commit', '-am', 'More');
@@ -54,16 +55,17 @@ test('an outdated comment sits at the top of its file with the code it was writt
   await open(page, url);
 
   const file = page.locator('.file[data-file="app.ts"]');
-  const thread = file.locator('.outdated-zone .thread').filter({ hasText: 'Bump it once.' });
+  await expect(file.locator('.file-threads > .thread')).toHaveText([/Split this file\./, /Why 2\?/, /Bump it once\./]);
+  const thread = file.locator('.file-threads .thread').filter({ hasText: 'Bump it once.' });
   await expect(thread.locator('.outdated-head')).toHaveText('app.tsOutdated');
   await expect(thread.locator('.outdated-line')).toHaveText('1export const app = 2;');
   await expect(thread.locator('.comment-you')).toContainText('Bump it once.');
   await expect(thread.getByRole('button', { name: 'Edit' })).toBeVisible();
   await expect(file.locator('.thread-row')).toHaveCount(0);
-  await expect(file.locator('.file-comments')).toHaveText('2');
+  await expect(file.locator('.file-comments')).toHaveText('3');
 
   await page.getByRole('link', { name: 'Finish review' }).click();
-  const row = page.locator('.going-row');
+  const row = page.locator('.going-row').filter({ hasText: 'Bump it once.' });
   await expect(row.locator('.outdated-tag')).toHaveText('Outdated');
   await row.getByRole('link', { name: 'app.ts:1' }).click();
   await expect(thread).toBeInViewport();

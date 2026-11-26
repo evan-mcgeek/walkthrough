@@ -1020,7 +1020,8 @@ textarea {
   font-size: 12px;
 }
 
-.segmented button[aria-pressed='true'] {
+.segmented button[aria-pressed='true'],
+.file-comment[aria-pressed='true'] {
   background: var(--surface-tint);
   color: var(--ink);
 }
@@ -1048,24 +1049,23 @@ textarea {
   padding-right: 10px;
 }
 
-/* Outdated threads, each with the code it was written on, then comments on the whole file: surface bands above the diff. */
-:is(.outdated-zone, .file-threads) {
+/* Comments on the whole file, then outdated threads with the code they were written on: a surface band above the diff. */
+.file-threads {
   display: flex;
   flex-direction: column;
   gap: var(--s3);
-  padding: var(--s3);
+  padding: var(--s3) 14px;
   border-bottom: 1px solid var(--rule-soft);
   background: var(--surface);
 }
 
-.outdated-zone > .thread,
 .file-threads .thread {
   position: static;
   margin: 0;
   max-width: 760px;
 }
 
-:is(.outdated-zone, .file-threads) > .thread.arriving {
+.file-threads > .thread.arriving {
   display: none;
 }
 

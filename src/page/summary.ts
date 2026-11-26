@@ -130,7 +130,7 @@ export class SummaryPane {
     const where = thread.lines ? `${baseName(thread.file)}:${linesLabel(thread.lines)}` : baseName(thread.file);
     return threadStep(thread) === undefined
       ? el('span', { className: 'where', title: thread.file }, where)
-      : el('a', { className: 'where', href: '#', title: thread.file, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where);
+      : el('a', { className: 'where', href: '#', title: thread.lines ? thread.file : `${thread.file}: go to the comment`, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where);
   }
 
   private row(thread: ThreadView, comment: CommentView, pending: boolean): HTMLElement {

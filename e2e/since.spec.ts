@@ -48,7 +48,7 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await expect(tasks.locator('.d2h-ins .d2h-code-line-ctn')).toHaveText([/task5 = 500/, /task40 = 40;/]);
   await expect(tasks.locator('tr[data-line="5"] .line-num2')).toHaveAttribute('role', 'button');
   await expect(tasks.locator('tr[data-line="40"] .line-num2')).not.toHaveAttribute('role', 'button');
-  await expect(tasks.locator('.outdated-zone .thread')).toContainText('Why 400?');
+  await expect(tasks.locator('.file-threads .thread')).toContainText('Why 400?');
   await expect(tasks.locator(`.thread[data-thread="${ai}"] .resolved-line`)).toContainText('AI marked this conversation as resolved.');
   await tasks.getByRole('checkbox', { name: 'Viewed' }).check();
 
