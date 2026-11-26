@@ -20,11 +20,14 @@ test('back after a review, the page opens on the changes since; a quiet step off
   record(repo, STEPS);
   for (const file of ['login.ts', 'tasks.ts', 'app.ts']) await postTo(url, '/viewed', { file, viewed: true });
   await postTo(url, '/comment', { file: 'login.ts', lines: [1, 1], text: 'Who gets in?' });
+  await postTo(url, '/comment', { file: 'tasks.ts', lines: [40, 40], text: 'Why 400?' });
+  const ai = /: ([0-9a-f]{8})\./.exec(repo.record([{ file: 'tasks.ts', lines: [6, 6], body: 'Six stays.' }], 'comment').stdout)?.[1] ?? '';
   expect((await postTo(url, '/submit', { summary: '' })).status).toBe(200);
   // One task changes again and the other goes back to how it was.
   commit(repo.dir, 'tasks.ts', TASKS.replace('task5 = 5;', 'task5 = 500;').replace('task15 = 15;', 'task15 = 150;'));
   repo.run('start');
   record(repo, STEPS);
+  expect(repo.run('resolve', ai).status).toBe(0);
 
   await open(page, url);
   const changes = page.locator('.changes-button');
@@ -45,6 +48,8 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await expect(tasks.locator('.d2h-ins .d2h-code-line-ctn')).toHaveText([/task5 = 500/, /task40 = 40;/]);
   await expect(tasks.locator('tr[data-line="5"] .line-num2')).toHaveAttribute('role', 'button');
   await expect(tasks.locator('tr[data-line="40"] .line-num2')).not.toHaveAttribute('role', 'button');
+  await expect(tasks.locator('.outdated-zone .thread')).toContainText('Why 400?');
+  await expect(tasks.locator(`.thread[data-thread="${ai}"] .resolved-line`)).toContainText('AI marked this conversation as resolved.');
   await tasks.getByRole('checkbox', { name: 'Viewed' }).check();
 
   await page.keyboard.press('c');

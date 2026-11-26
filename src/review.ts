@@ -5,7 +5,7 @@ import path from 'node:path';
 import { changesBetween, commitOf, type FileStat, fileStats } from './change';
 import { parseDiff } from './diff';
 import { locked, readJson, writeJson } from './json-files';
-import { anchorOf, type Lines, type Place, placeIn } from './lines';
+import { anchorOf, type Code, type Lines, type Place, placeIn, stepOfFile } from './lines';
 import { alive, psStart } from './processes';
 import { branchOfDir, readWalkthrough, type Step, type Walkthrough } from './walkthrough';
 
@@ -24,7 +24,9 @@ export type Event = Logged &
     | { kind: 'edit'; comment: string; text: string }
     | { kind: 'delete'; comment: string }
     | { kind: 'answer'; ask: string; text: string }
-    | { kind: 'resolve'; thread: string }
+    /** A resolve logged before `by` existed is the person's. */
+    | { kind: 'resolve'; thread: string; by?: By }
+    | { kind: 'unresolve'; thread: string }
     | { kind: 'submit'; type?: ReviewType; summary: string; head: string }
     | { kind: 'posted'; submit: string; address?: string }
   );
@@ -53,6 +55,17 @@ export type ThreadView = {
   step: string | null;
   colleague?: true;
   resolved?: true;
+  /** Who resolved it here; unset for a thread that came resolved. */
+  resolvedBy?: By;
+  /** On a pull request, the resolve goes out with the next review. */
+  resolvePending?: true;
+  /** The submitted review the resolve went out with. */
+  resolveReview?: string;
+  /** Unresolve conversation takes the resolve back: it has not gone out, or it is the AI's on your own change. */
+  unresolvable?: true;
+  /** Once outdated: the lines' text when the thread was placed, and the step that now changes its file, if any. */
+  code?: Code;
+  fileStep?: string;
   comments: CommentView[];
 };
 /** `type` only on a pull request: your own change goes to the agent without one. */
@@ -133,7 +146,9 @@ type Comment = { view: CommentView; thread: string; deleted?: true; wrote: strin
 function replay(walkthrough: Walkthrough, log: Event[]) {
   const comments = new Map<string, Comment>();
   const roots = new Map<string, Place>();
-  const resolved = new Map<string, string | undefined>();
+  const resolved = new Map<string, { by: By; review?: string }>();
+  // On your own change the AI's resolve never goes anywhere, so it can always be taken back.
+  const takesBack = (one: { by: By; review?: string }) => one.review === undefined || (!walkthrough.pr && one.by === 'ai');
   const submits: (Event & { kind: 'submit' })[] = [];
   const posted = new Map<string, string | undefined>();
   for (const event of log) {
@@ -165,8 +180,13 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
         break;
       }
       case 'resolve':
-        if (!resolved.has(event.thread)) resolved.set(event.thread, undefined);
+        if (!resolved.has(event.thread)) resolved.set(event.thread, { by: event.by ?? 'you' });
         break;
+      case 'unresolve': {
+        const one = resolved.get(event.thread);
+        if (one && takesBack(one)) resolved.delete(event.thread);
+        break;
+      }
       case 'submit':
         submits.push(event);
         for (const { view, deleted } of comments.values())
@@ -174,7 +194,7 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
             delete view.pending;
             view.review = event.id;
           }
-        for (const [thread, review] of resolved) if (review === undefined) resolved.set(thread, event.id);
+        for (const one of resolved.values()) one.review ??= event.id;
         break;
       case 'posted':
         posted.set(event.submit, event.address);
@@ -186,14 +206,34 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
   const live = [...comments.values()].filter(one => !one.deleted && !gone.has(one.thread));
   const kept = live.map(one => one.view);
   const ownIn = (thread: string) => live.filter(one => one.thread === thread).map(one => one.view);
+  const resolvedIn = (id: string, was?: true): Partial<ThreadView> => {
+    const one = resolved.get(id);
+    if (!one) return was ? { resolved: true } : {};
+    return {
+      resolved: true,
+      resolvedBy: one.by,
+      ...(walkthrough.pr && one.review === undefined && { resolvePending: true }),
+      ...(one.review !== undefined && { resolveReview: one.review }),
+      ...(takesBack(one) && { unresolvable: true }),
+    };
+  };
+  const placed = (place: Place): Pick<ThreadView, 'file' | 'lines' | 'step' | 'code' | 'fileStep'> => {
+    const step = anchorOf(walkthrough, place);
+    const fileStep = step === null ? stepOfFile(walkthrough, place.file) : undefined;
+    return {
+      file: place.file,
+      lines: place.lines,
+      step,
+      ...(step === null && place.code && { code: place.code }),
+      ...(fileStep !== undefined && { fileStep }),
+    };
+  };
   const threads: ThreadView[] = [
-    ...(walkthrough.threads ?? []).map(({ id, file, lines, linesHash = '', resolved: was, author, at, body, replies }): ThreadView => ({
+    ...(walkthrough.threads ?? []).map(({ id, file, lines, linesHash = '', code, resolved: was, author, at, body, replies }): ThreadView => ({
       id,
-      file,
-      lines,
-      step: anchorOf(walkthrough, { file, lines, linesHash }),
+      ...placed({ file, lines, linesHash, ...(code && { code }) }),
       colleague: true,
-      ...((was || resolved.has(id)) && { resolved: true }),
+      ...resolvedIn(id, was),
       comments: [
         { id, by: 'colleague', author, at, body },
         ...replies.map((reply, number): CommentView => ({ id: `${id}.${String(number + 1)}`, by: 'colleague', ...reply })),
@@ -202,7 +242,7 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
     })),
     ...[...roots]
       .filter(([id]) => !gone.has(id))
-      .map(([id, place]): ThreadView => ({ id, file: place.file, lines: place.lines, step: anchorOf(walkthrough, place), comments: ownIn(id) })),
+      .map(([id, place]): ThreadView => ({ id, ...placed(place), ...resolvedIn(id), comments: ownIn(id) })),
   ];
   const wrote = new Map([...comments].map(([id, one]) => [id, one.wrote]));
   const dropped = [...comments.values()].filter(one => one.deleted && one.view.by === 'ai' && roots.has(one.view.id)).map(one => ({ ...one, place: roots.get(one.view.id) as Place }));
@@ -252,7 +292,7 @@ export function walkthroughView(dir: string): WalkthroughView | null {
   const marks = readJson<string[]>(files(dir).viewed, []);
   const current = fileMarks(walkthrough.steps);
   const last = submits.at(-1);
-  const showsSubmitted = last && last.head === walkthrough.head && !kept.some(one => one.pending);
+  const showsSubmitted = last && last.head === walkthrough.head && !kept.some(one => one.pending) && !threads.some(one => one.resolvePending);
   const address = last && posted.get(last.id);
   const ready = walkthrough.ready !== false && walkthrough.steps.length > 0;
   return {
@@ -294,7 +334,7 @@ export async function comment(dir: string, { comment: id, text, delete: deleting
   }
   if (!said) return false;
   if (thread !== undefined) {
-    if (!threads.some(one => one.id === thread && !one.resolved)) return false;
+    if (!threads.some(one => one.id === thread)) return false;
     return !!(await record(dir, { kind: 'comment', by: 'you', text: said, thread: thread as string }));
   }
   const place = placeOrNull(walkthrough, where);
@@ -321,10 +361,32 @@ export async function ask(dir: string, { text, thread, ...where }: Record<string
   return !!place && !!(await record(dir, { kind: 'ask', text: said, place }));
 }
 
-export async function resolve(dir: string, { thread }: Record<string, unknown>): Promise<boolean> {
+const threadOf = (dir: string, id: unknown) => {
   const walkthrough = readWalkthrough(dir);
-  const found = walkthrough && replay(walkthrough, logOf(dir)).threads.find(one => one.id === thread);
-  return !!found?.colleague && !found.resolved && !!(await record(dir, { kind: 'resolve', thread: found.id }));
+  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find(one => one.id === id) : undefined;
+};
+
+/** The person resolves a colleague's thread from the page. */
+export async function resolve(dir: string, { thread }: Record<string, unknown>): Promise<boolean> {
+  const found = threadOf(dir, thread);
+  return !!found?.colleague && !found.resolved && !!(await record(dir, { kind: 'resolve', thread: found.id, by: 'you' }));
+}
+
+export async function unresolve(dir: string, { thread }: Record<string, unknown>): Promise<boolean> {
+  const found = threadOf(dir, thread);
+  return !!found?.unresolvable && !!(await record(dir, { kind: 'unresolve', thread: found.id }));
+}
+
+/** The session resolves the thread of one of its comments that went out with an earlier review, once the new code fixes it. */
+export async function aiResolve(dir: string, id: string): Promise<void> {
+  const found = threadOf(dir, id);
+  const first = found?.comments[0];
+  if (logOf(dir).some(event => event.kind === 'delete' && event.comment === id)) throw new Error(`the comment ${id} was deleted`);
+  if (!found || !first) throw new Error(`no thread starts with the comment ${id}; pass the id of your comment that started it`);
+  if (first.by !== 'ai') throw new Error(`the comment ${id} is not yours`);
+  if (first.pending) throw new Error(`the comment ${id} is still pending: it has not gone out with a review`);
+  if (found.resolved) throw new Error(`the thread of the comment ${id} is already resolved`);
+  await record(dir, { kind: 'resolve', thread: id, by: 'ai' });
 }
 
 /** A pull request's review has a type; your own change goes to the agent with its comments and no type. */
@@ -388,7 +450,12 @@ export function reviewComments(dir: string, all = false): Record<string, unknown
       }),
     ),
     ...(all ? dropped : []).map(({ view, wrote: text, place }) => ({ kind: 'comment', id: view.id, by: 'ai', file: place.file, lines: place.lines, body: AI_PREFIX + text, deleted: true })),
-    ...[...resolved].filter(([, round]) => all || round === review).map(([thread]) => ({ kind: 'resolve', thread })),
+    ...[...resolved]
+      .filter(([, one]) => all || (one.review === review && (walkthrough.pr || one.by === 'you')))
+      .map(([id, one]) => {
+        const thread = one.by === 'ai' ? threads.find(found => found.id === id) : undefined;
+        return thread ? { kind: 'resolve', thread: id, by: 'ai', file: thread.file, lines: thread.lines, body: AI_PREFIX + (thread.comments[0]?.body ?? '') } : { kind: 'resolve', thread: id };
+      }),
   ];
 }
 

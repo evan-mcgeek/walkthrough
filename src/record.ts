@@ -42,12 +42,9 @@ export function parseThreads(text: string, walkthrough: Walkthrough): Thread[] {
     ids.add(id);
     if (typeof resolved !== 'boolean') throw new Error(`${name}: resolved must be true or false`);
     if (!Array.isArray(replies)) throw new Error(`${name}: replies must be a list`);
-    const { file, lines, linesHash } = placed(walkthrough, fields, name);
     return {
       id,
-      file,
-      lines,
-      linesHash,
+      ...placed(walkthrough, fields, name),
       ...said(fields, name),
       ...(resolved && { resolved: true as const }),
       replies: replies.map((reply: unknown, at) => said(fieldsOf(reply), `${name}, reply ${String(at + 1)}`)),

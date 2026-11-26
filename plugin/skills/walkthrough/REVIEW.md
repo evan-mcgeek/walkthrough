@@ -75,6 +75,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 - One or two sentences, 40 words at most: what is wrong and what it breaks, then the fix when it is clear.
   No evidence and no verdicts in it.
 - Do not repeat what a thread already on the change says.
+- On a new head, resolve each of your comments from an earlier review that the new code fixes, without a reply.
 
 ### Acceptance criteria
 
@@ -124,7 +125,7 @@ Follow the shared rules and the one part for this walkthrough, and leave the oth
 ### My review
 
 - When I submit, post one finished review on your code host, not a pending one: my review type, my summary and every comment as a line comment on its lines.
-- Post my replies in their threads, and resolve the threads I resolved.
+- Post my replies in their threads, and resolve the threads I resolved and those you resolved.
 - A comment whose lines changed since goes in the review's summary, with its file and line.
 - Then record where the review is; when something did not go out, tell me in the chat what.
 - The author's branch and the change's description stay as they are.

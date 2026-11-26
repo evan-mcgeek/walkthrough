@@ -9,7 +9,7 @@ import { attrs, el } from './dom';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
 import { grow, reduced } from './motion';
-import { commentCount, plural, send, state, threadBy, threadsIn } from './state';
+import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
 
 /** Lines picked for a new comment; one composer at a time on the page. */
@@ -44,7 +44,9 @@ export class FilePane {
   private readonly rows = new Map<number, HTMLTableRowElement>();
   /** Runs of added and removed lines, by their first and last row. */
   private readonly runs: { type: 'add' | 'del'; from: HTMLTableRowElement; to: HTMLTableRowElement }[] = [];
-  private readonly threads = new Map<string, { row: HTMLTableRowElement; box: ThreadBox }>();
+  /** Each thread with what holds it: a row under its line, or its own box in the outdated zone. */
+  private readonly threads = new Map<string, { row: HTMLElement; box: ThreadBox }>();
+  private readonly outdatedZone = el('div', { className: 'outdated-zone', hidden: true });
   private readonly stripe = document.createElementNS(SVG, 'svg');
   private composerRow: HTMLTableRowElement | null = null;
   /** Whether the threads were drawn before, so what is new since then can arrive. */
@@ -65,10 +67,10 @@ export class FilePane {
     this.changedLines = parsed.addedLines + parsed.deletedLines;
     this.box.dataset['file'] = this.name;
     this.diffBox = el('div', { className: 'diff-scroll' }, ...(diff ? [diff] : []));
-    const inner = el('div', { className: 'file-inner' }, this.diffBox, this.stripe);
+    const area = el('div', { className: 'diff-area' }, this.diffBox, this.stripe);
     this.preview = this.previewBox(parsed);
-    if (this.preview) inner.append(this.preview);
-    this.body.append(inner);
+    if (this.preview) area.append(this.preview);
+    this.body.append(el('div', { className: 'file-inner' }, this.outdatedZone, area));
     this.box.append(this.header, this.body);
     this.stripe.classList.add('overview-stripe');
     attrs(this.stripe, { 'aria-hidden': 'true', preserveAspectRatio: 'none' });
@@ -107,7 +109,7 @@ export class FilePane {
     return true;
   }
 
-  thread(id: string): { row: HTMLTableRowElement; box: ThreadBox } | undefined {
+  thread(id: string): { row: HTMLElement; box: ThreadBox } | undefined {
     return this.threads.get(id);
   }
 
@@ -251,21 +253,23 @@ export class FilePane {
     );
   }
 
-  /** Puts each thread under its last line and, at the lines picked, the composer; returns what arrived where it would move the page. */
+  /** Puts each thread under its last line, or at the top of the file once outdated, and at the lines picked, the composer; returns what arrived where it would move the page. */
   private drawThreads(shows: Shows, closed: boolean): HTMLElement[] {
     const here = threadsIn(this.step.id, this.name);
+    const outdated = outdatedIn(this.step.id, this.name);
     const arrived: HTMLElement[] = [];
-    const ids = new Set(here.map(one => one.id));
+    const ids = new Set([...here, ...outdated].map(one => one.id));
     for (const [id, { row }] of this.threads)
-      if (!ids.has(id)) {
+      if (!ids.has(id) || (row.parentElement === this.outdatedZone) !== outdated.some(one => one.id === id)) {
         row.remove();
         this.threads.delete(id);
       }
     for (const old of this.diffBox.querySelectorAll('.gutter-mark')) old.remove();
-    for (const thread of here) {
-      const anchor = this.rows.get(thread.lines[1]);
-      if (!anchor) continue;
-      const held = !closed && shows(anchor);
+    this.outdatedZone.hidden = !outdated.length;
+    for (const thread of [...outdated, ...here]) {
+      const anchor = thread.step === null ? null : this.rows.get(thread.lines[1]);
+      if (thread.step !== null && !anchor) continue;
+      const held = !closed && shows(anchor ?? this.outdatedZone);
       const kept = this.threads.get(thread.id);
       if (kept) {
         const fresh = kept.box.update(thread);
@@ -274,9 +278,10 @@ export class FilePane {
         continue;
       }
       const box = new ThreadBox(thread);
-      const row = threadRow(box.box);
+      const row = anchor ? threadRow(box.box) : box.box;
       row.dataset['thread'] = thread.id;
-      this.placeAfter(anchor, row);
+      if (anchor) this.placeAfter(anchor, row);
+      else this.outdatedZone.append(row);
       this.threads.set(thread.id, { row, box });
       if (held) arrived.push(hold(row));
       else if (this.drawn) for (const one of box.box.querySelectorAll('.comment')) one.classList.add('arrive');
@@ -288,7 +293,7 @@ export class FilePane {
     return arrived;
   }
 
-  private placeAfter(anchor: HTMLTableRowElement, row: HTMLTableRowElement): void {
+  private placeAfter(anchor: HTMLTableRowElement, row: HTMLElement): void {
     let last: Element = anchor;
     while (last.nextElementSibling?.classList.contains('thread-row')) last = last.nextElementSibling;
     last.after(row);

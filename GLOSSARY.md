@@ -49,6 +49,14 @@ _Avoid_: Note, finding, draft
 **Thread**:
 A comment with its replies; colleagues' existing threads come from the code host through the session, and the person can reply to them and resolve them.
 
+**Outdated**:
+A thread whose lines changed since it was written; it sits at the top of its file with the code it was written on, and on the Summary.
+_Avoid_: Stale, detached
+
+**Resolved conversations**:
+The Summary's list of the threads the AI resolved because the new code fixes its comment; on a pull request each resolve goes out with the next review, and on the person's own change it stays on the page.
+_Avoid_: Fixed comments, closed threads
+
 **Ask AI**:
 A question the person asks the agent on picked lines or in a thread.
 The agent's answer is a reply in that thread; the question and the answer stay on the page and never go out.

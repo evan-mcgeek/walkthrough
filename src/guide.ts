@@ -98,7 +98,15 @@ walkthrough comments [--all]
       a new thread; "outdated" only when its lines changed since
     {"kind": "reply", "id": string, "by": "you" | "ai", "thread": id, "body": string}   in a colleague's thread or after a comment above
     {"kind": "resolve", "thread": id}   the person resolved a colleague's thread
+    {"kind": "resolve", "thread": id, "by": "ai", "file": path, "lines": [first, last], "body": string}
+      you resolved the thread of your comment with walkthrough resolve; find it on the code host by its file, lines and body.
+      On the person's own change these never go out, so only --all lists them.
   An AI comment's body starts with [AI].
+
+walkthrough resolve <comment id>
+  On a new head, resolves the thread of one of your comments that went out with an earlier review once the new code fixes it; reply nothing.
+  The id is the comment's, from walkthrough comments --all. It refuses a comment that is not yours, was deleted, is still pending or is already resolved.
+  The resolve goes out with the next review, as the person's do; the person can take it back on the page until then.
 
 walkthrough posted [--address <url>]
   Records that the submitted review went out, and where; the page then links View review to the address.
