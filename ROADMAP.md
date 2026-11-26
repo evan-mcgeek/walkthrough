@@ -40,18 +40,23 @@ The pull request that ships or drops an item updates this file.
 - Reviewers by risk: a change that touches risky areas gets the full set of reviewers at any size, and each run's model is picked by what it could miss.
 - Steps by attention: the step that most needs attention comes early where the order allows, and the session says when a change is too big to walk through well.
 
+### 0.1.5 (2026-11-26): since your last review
+
+- Changes since your last review: back on a new head after a review, the page opens on GitHub's switch and shows only what is new.
+- The page says when your branch has new commits since the walkthrough, with the command to run it again.
+- Outdated comments sit at the top of their file with the code they were written on.
+- The AI resolves its own comment once the new code fixes it; the resolve goes out with your next review, and the Summary lists it under Resolved conversations.
+- Moved code shows once, where it arrives, linked to where it left; copied code says where it was copied from.
+- The author's screenshot on the step it shows.
+- GitHub's keys: J and K through the files, V for Viewed, C for the changes switch.
+- Comments on a whole file, and colour-blind diff colours.
+- `/walkthrough:init` sets everything up before a first review, and offers to write your comments in your voice.
+- The first step opens with what the change makes behave differently.
+
 ## Now
 
-- A design round for "Next", with Claude Design.
+- Nothing in progress.
 
-## Next: design first
+## Next
 
-- Changes since your last review: on a new head, show what changed since the person last reviewed. (2)
-- The page says when it is behind the branch. (2)
-- Outdated comments, and the AI resolves its own comment once the new code fixes it. (2)
-
-## Later
-
-- Moved code shown as moved, not as a deletion and an addition. (2)
-- The author's screenshot on a step that changes the UI. (2)
-- Moving between steps and files with GitHub's keys. (2)
+- The page says when a pull request's branch has new commits: how the page learns that it moved is still open, to rethink. (2)
