@@ -50,7 +50,7 @@ function readScreenshot(file: string, name: string): Screenshot | string {
   return { file, bytes, name: `${crypto.createHash('sha256').update(bytes).digest('hex')}.${type}` };
 }
 
-function parseScreenshot(given: unknown, name: string): StepInput['screenshot'] {
+function parseScreenshot(given: unknown, name: string): NonNullable<StepInput['screenshot']> {
   const { file, alt = '' } = fieldsOf(given);
   if (!filled(file) || typeof alt !== 'string') throw new Error(`${name}: a screenshot is {"file": path, "alt": text}`);
   return { file, alt: alt.trim() };

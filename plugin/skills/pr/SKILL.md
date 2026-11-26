@@ -15,6 +15,8 @@ For their own change, `/walkthrough` is the procedure instead.
 2. Fetch the change as the policy's "Someone else's change" part says, into a local ref, never checking it out; the person approves those commands as usual.
 3. Run `walkthrough start --base <rev> --head <rev> --label <label> --pr <number> --title <title>` in the repo, with a short label naming the change, and its number and title on the code host.
    Give the same label whenever the person opens this change again, so the walkthrough goes on where they left it; fetch its head again first.
+   When the change's description shows a screenshot of the change, download it into the inbox start printed, as the policy says; the person approves the download as usual.
+   Give it to the step whose UI it shows, as `walkthrough guide` says; leave out a screenshot that fits no step.
 4. Unless start printed "Already reviewed at this head", ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
    Read the change while they answer; their answer sets how much your explanations say, as the policy says.
 5. Go on as "Walking through" says, until the walkthrough stops.
