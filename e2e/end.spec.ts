@@ -33,6 +33,7 @@ test.describe('a pull request', () => {
     await page.getByRole('radio', { name: 'Request changes' }).check();
     await page.getByRole('button', { name: 'Submit review' }).click();
     await expect(page.getByText('Review submitted')).toBeVisible();
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-done.svg');
     expect(repo.run('posted', '--address', 'https://example.test/review/7').status).toBe(0);
     const view = page.locator('.review-box.done').getByRole('link', { name: 'View review' });
     await expect(view).toHaveAttribute('href', 'https://example.test/review/7');
@@ -71,7 +72,7 @@ test.describe('a pull request', () => {
     await expect(page.getByRole('button', { name: 'Menu' })).toBeHidden();
     await expect(page.getByRole('alert')).toBeHidden();
     await expect(page).toHaveTitle('#212 Due dates for tasks · Walkthrough');
-    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon.svg');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-done.svg');
     await expect.poll(() => fetch(url).then(() => 'up', () => 'down')).toBe('down');
   });
 
@@ -91,6 +92,7 @@ test.describe('a pull request', () => {
     await expect(end.getByRole('link', { name: 'View review' })).toHaveCount(0);
     await expect(end.locator('.bye6 .eye')).toHaveCount(2);
     await expect(end.locator('.bye6 .hap')).toHaveCount(0);
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-done.svg');
     const polls = pollsFrom(page);
 
     await end.getByRole('button', { name: 'Copy command' }).click();
@@ -122,6 +124,7 @@ test.describe('a pull request', () => {
     await expect(end.locator('.command code')).toHaveText('/walkthrough:pr 212');
     await expect(end.getByText('You can close this tab.')).toHaveCount(0);
     await expect(end.locator('.bye6 .zz')).toHaveCount(1);
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-asleep.svg');
     await expect(page.getByText('Could not reach the walkthrough page.')).toHaveCount(0);
     await expect(page.locator('#nav')).toBeHidden();
     expect(await end.evaluate(box => box.getAnimations({ subtree: true }).map(one => (one as CSSAnimation).animationName))).toContain('zz6');
@@ -146,6 +149,7 @@ test.describe('a pull request', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
     await expect(end).toBeHidden();
     await expect(page.locator('#nav')).toBeVisible();
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-awake.svg');
   });
 });
 
