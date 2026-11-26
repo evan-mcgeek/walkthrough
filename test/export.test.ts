@@ -27,7 +27,10 @@ describe('walkthrough export', () => {
     const html = fs.readFileSync(out, 'utf8');
     expect(html).toContain('Everyone gets in.');
     expect(html).toContain('Logs in: Partly met');
-    expect(html).toContain('login = () =&gt; true;');
+    expect(html.replace(/<\/?span[^>]*>/g, '')).toContain('login = () =&gt; true;');
+    // Its code is coloured, with each colour's rule in the file's one stylesheet.
+    expect(html).toContain('<span class="hl-d73a49-f97583">const</span>');
+    expect(html).toContain('.hl-d73a49-f97583{color:light-dark(#d73a49,#f97583)}');
     expect(html).toMatch(/<meta http-equiv="content-security-policy" content="default-src 'none'; style-src 'sha256-/);
     expect(html).not.toMatch(/<(script|link|img)\b/i);
     // The self-hosted code font travels inside the file.
