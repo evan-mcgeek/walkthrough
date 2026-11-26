@@ -1,22 +1,13 @@
 // Syntax colours as the CLI hands them out, and how the page and the export put them on code that is already HTML.
 
-/** A run of characters and its colour key, '' for the text's own colour; a line is a list of runs. */
+/** A run of characters and its kind of code (`c` comment, `k` keyword, …), '' for plain; a line is a list of runs. */
 export type Run = [number, string];
 
 /** The answer for a language the CLI has no grammar for, or one it could not get. */
 export const PLAIN = 'plain';
 
-/** A key is the light and the dark colour, with -i for italic and -b for bold. */
-const KEY = /^([0-9a-f]{6,8})-([0-9a-f]{6,8})(-i)?(-b)?$/;
-
-export const classOf = (key: string) => `hl-${key}`;
-
-/** The rule for a key's class, or null for a key that is not one; switching theme stays CSS only. */
-export function ruleFor(key: string): string | null {
-  const [, light, dark, italic, bold] = KEY.exec(key) ?? [];
-  if (!light || !dark) return null;
-  return `.${classOf(key)}{color:light-dark(#${light},#${dark})${italic ? ';font-style:italic' : ''}${bold ? ';font-weight:bold' : ''}}`;
-}
+/** Each kind's class, `sx-c` and so on, takes its syntax token from the page's stylesheet. */
+const KINDS = new Set(['c', 'k', 'n', 'e', 't', 's', 'r', 'v', 'x']);
 
 /** A block's lines as one list of runs, with each line break plain. */
 export const joinLines = (lines: Run[][]): Run[] => lines.flatMap((line, at) => (at ? [[1, ''] as Run, ...line] : line));
@@ -42,11 +33,13 @@ export function colourHtml(html: string, runs: Run[]): string | null {
       continue;
     }
     while (at >= end && run < runs.length) end += runs[++run]?.[0] ?? 0;
-    const key = runs[run]?.[1] ?? '';
-    if (key !== open) {
+    const kind = runs[run]?.[1] ?? '';
+    if (kind !== open) {
       close();
-      if (ruleFor(key)) out += `<span class="${classOf(key)}">`;
-      open = ruleFor(key) ? key : '';
+      if (KINDS.has(kind)) {
+        out += `<span class="sx-${kind}">`;
+        open = kind;
+      }
     }
     out += part;
     at++;

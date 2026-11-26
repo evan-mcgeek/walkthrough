@@ -480,7 +480,7 @@ export function drawFiles(step: Step, { own, quiet }: { own?: Step; quiet?: true
   const revs = { base: own ? state.view.since?.head : state.view.base, head: state.view.head };
   parsed.forEach((file, at) => {
     const table = tables[at];
-    if (table) colourDiff(table, file, revs);
+    if (table) void colourDiff(table, file, revs);
   });
   // A step shows its files in the order the session gave them.
   return step.files.flatMap(file => panes.filter(pane => pane.file === file));

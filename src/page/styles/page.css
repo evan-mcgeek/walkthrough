@@ -1253,7 +1253,6 @@ textarea {
 
 .d2h-code-line ins,
 .d2h-code-line del {
-  border-radius: 2px;
   text-decoration: none;
 }
 
@@ -1871,11 +1870,24 @@ tr.flash td {
   font-size: 0.86em;
 }
 
+/* GitHub's fenced code block: coloured by the language its fence names. */
 .markdown pre {
+  max-width: 680px;
+  margin: 6px 0;
   padding: var(--s2) var(--s3);
   overflow-x: auto;
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: var(--surface-tint);
+  font: 400 12.5px/20px var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+.markdown pre code {
+  font: inherit;
+}
+
+.markdown :has(+ pre) {
+  margin-bottom: 0;
 }
 
 .markdown blockquote {

@@ -43,8 +43,8 @@
   --diff-del-gutter: light-dark(#f7d9d6, #3f1f20);
   --stripe-add: light-dark(#3c9a5f, #4fbf7a);
   --stripe-del: light-dark(#c8473b, #ef7e6f);
-  --diff-add-word: light-dark(#b9e5c6, #1f4a2e);
-  --diff-del-word: light-dark(#f4c4bf, #5a2626);
+  --diff-add-word: light-dark(#c4e9cf, #1d4129);
+  --diff-del-word: light-dark(#f7cdc8, #4f2526);
   --diff-add-text: var(--ok);
   --diff-del-text: var(--bad);
 
@@ -53,14 +53,25 @@
   --cb-add-gutter: light-dark(#ccecff, #14345a);
   --cb-del: light-dark(#fff1e5, #2e1f16);
   --cb-del-gutter: light-dark(#ffe2c8, #42261a);
-  --cb-add-word: light-dark(#b6e3ff, #26508a);
-  --cb-del-word: light-dark(#ffd8b5, #764223);
+  --cb-add-word: light-dark(#b8e2ff, #1a3f69);
+  --cb-del-word: light-dark(#ffd5b3, #4c2c1a);
   --cb-stripe-add: light-dark(#0969da, #4493f8);
   --cb-stripe-del: light-dark(#bc4c00, #db6d28);
   --cb-ok: light-dark(#0969da, #58a6ff);
   --cb-ok-bg: light-dark(#ddf4ff, #14263b);
   --cb-bad: light-dark(#bc4c00, #f0883e);
   --cb-bad-bg: light-dark(#fff1e5, #2e1f16);
+
+  /* Syntax: GitHub's theme colours, moved in their own hue to 4.5:1 on every background code sits on; Colorblind keeps them */
+  --syntax-comment: light-dark(#555e68, #a0a9b3);
+  --syntax-keyword: light-dark(#b0282a, #f98795);
+  --syntax-constant: light-dark(#005abf, #79b8ff);
+  --syntax-entity: light-dark(#6f42c1, #bb9af0);
+  --syntax-tag: light-dark(#1a6c2d, #85e89d);
+  --syntax-string: light-dark(#032f62, #9ecbff);
+  --syntax-regexp: light-dark(#032f62, #dbedff);
+  --syntax-variable: light-dark(#9f4009, #ffab70);
+  --syntax-invalid: light-dark(#b31d28, #fdaeb7);
 
   --shadow-float:
     0 1px 2px light-dark(rgb(20 24 30 / 6%), rgb(0 0 0 / 40%)), 0 8px 24px light-dark(rgb(20 24 30 / 10%), rgb(0 0 0 / 35%));
@@ -119,6 +130,43 @@
   --ok-bg: var(--cb-ok-bg);
   --bad: var(--cb-bad);
   --bad-bg: var(--cb-bad-bg);
+}
+
+/* Each kind of code the CLI names takes its syntax token. */
+.sx-c {
+  color: var(--syntax-comment);
+}
+
+.sx-k {
+  color: var(--syntax-keyword);
+}
+
+.sx-n {
+  color: var(--syntax-constant);
+}
+
+.sx-e {
+  color: var(--syntax-entity);
+}
+
+.sx-t {
+  color: var(--syntax-tag);
+}
+
+.sx-s {
+  color: var(--syntax-string);
+}
+
+.sx-r {
+  color: var(--syntax-regexp);
+}
+
+.sx-v {
+  color: var(--syntax-variable);
+}
+
+.sx-x {
+  color: var(--syntax-invalid);
 }
 
 :root[data-theme='light'] {
