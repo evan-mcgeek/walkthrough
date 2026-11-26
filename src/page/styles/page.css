@@ -1531,7 +1531,6 @@ tr.flash td {
   font: 600 12px var(--font-mono);
 }
 
-/* As the blocks around it in a comment, whose Markdown spacing it takes. */
 .markdown .suggestion {
   margin: 0 0 var(--s3);
   overflow: hidden;
@@ -1559,6 +1558,7 @@ tr.flash td {
   margin: 0;
   border-collapse: collapse;
   font: var(--text-code);
+  font-variant-ligatures: none;
 }
 
 .suggestion .suggestion-code td {
