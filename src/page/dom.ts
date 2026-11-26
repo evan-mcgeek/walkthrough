@@ -51,7 +51,7 @@ export function showAlert(message: string | null): void {
 /** A page that says in a banner how to reopen it, or one that handles losing its server with `lost`. */
 export type PageName = { name: string; reopen: string } | { name: string; lost: () => void };
 
-/** Says the server is gone and dims the page behind the banner until it answers again. */
+/** Says the server is gone and holds the page behind the banner until it answers again. */
 export function showUnreachable({ name, reopen }: { name: string; reopen: string }): void {
   // Drawn once: a banner redrawn on every failed poll is announced again and takes the focus off Retry.
   if (document.body.classList.contains('unreachable')) return;

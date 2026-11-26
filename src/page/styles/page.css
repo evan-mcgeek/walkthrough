@@ -233,7 +233,6 @@ textarea {
 
 .unreachable .frame,
 .unreachable .app-header > :not(.mark) {
-  opacity: 0.55;
   pointer-events: none;
 }
 
@@ -1270,7 +1269,6 @@ td.d2h-ins {
 
 td.d2h-code-linenumber.d2h-ins {
   background: var(--diff-add-gutter);
-  color: var(--ink-secondary);
 }
 
 td.d2h-del {
@@ -1279,7 +1277,6 @@ td.d2h-del {
 
 td.d2h-code-linenumber.d2h-del {
   background: var(--diff-del-gutter);
-  color: var(--ink-secondary);
 }
 
 td.d2h-info {
@@ -1422,10 +1419,6 @@ tr.flash td {
   background: var(--canvas);
 }
 
-.thread.resolved .thread-comments {
-  opacity: 0.75;
-}
-
 /* A thread the AI resolved: one resolved line, the thread opening under it by grid rows. */
 .thread.ai-resolved {
   background: var(--surface);
@@ -1453,10 +1446,6 @@ tr.flash td {
 .resolved-text strong {
   color: var(--ink);
   font-weight: 600;
-}
-
-.thread.ai-resolved .comment {
-  opacity: 0.85;
 }
 
 .thread-body {
