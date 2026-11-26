@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { changedFiles, diffOf } from './change';
+import { withCopies } from './copies';
 import { fieldsOf, filled, parseList } from './input';
 import { inInbox } from './paths';
 import { shownLines } from './lines';
@@ -154,7 +155,7 @@ export async function buildSteps(cwd: string, dir: string, walkthrough: Walkthro
       fs.writeFileSync(path.join(dir, shot.name), shot.bytes, { mode: 0o600 });
       if (inInbox(shot.file)) fs.rmSync(shot.file);
     }
-  return steps;
+  return withCopies(cwd, head, steps);
 }
 
 /** At a new head each step keeps the files that still change and the pointers still in its diff; a step with no file left is gone. */
@@ -168,7 +169,7 @@ export async function carrySteps(cwd: string, { base, head, steps }: Walkthrough
       return { ...moved, look: moved.look.filter(one => lookShown(moved, one)) };
     }),
   );
-  const kept = carried.filter(step => step !== null);
+  const kept = await withCopies(cwd, head, carried.filter(step => step !== null));
   const placed = new Set(kept.flatMap(step => step.files));
   return { steps: kept, unplaced: [...changed.keys()].filter(file => !placed.has(file)) };
 }

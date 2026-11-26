@@ -4,7 +4,7 @@ import { DEFAULT_VIEWER } from '../viewer';
 import { chooseViewer, loadViewer } from './appearance';
 import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
-import { pick } from './files';
+import { type FilePane, pick } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
 import { moving, shownMoves } from './moves';
@@ -61,7 +61,7 @@ function paneOf(id: string): StepPane {
   if (!step) throw new Error(`no step ${id}`);
   const since = shownSince();
   const moves = shownMoves().filter(({ from, to }) => step.files.includes(from.file) || step.files.includes(to.file));
-  const key = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map(file => since.files[file] ?? null), moves]);
+  const key = JSON.stringify([step.diff, step.files, step.folded, since && step.files.map(file => since.files[file] ?? null), moves, step.copies]);
   const kept = panes.get(`${String(!!since)}:${id}`);
   if (kept?.key === key) return kept.pane;
   const pane = new StepPane(step, main, since);
@@ -571,16 +571,25 @@ changes.look = ({ file, start, end }) => {
   if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main);
 };
 
-moving.show = (move, to) => {
-  const { file, line } = move[to];
+/** Opens the step that changes the file, at once, and gives the file's pane there. */
+function paneOfFile(file: string): FilePane | undefined {
   const step = stepOfFile(file);
   const at = current();
-  if (!step || at.kind === 'opening') return;
+  if (!step || at.kind === 'opening') return undefined;
   if (at.kind !== 'step' || at.pane.step.id !== step.id) go(stepAddress(step.id));
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
-  const pane = paneOf(step.id).fileNamed(file);
+  return paneOf(step.id).fileNamed(file);
+}
+
+moving.show = (move, to) => {
+  const { file, line } = move[to];
+  const pane = paneOfFile(file);
   if (to === 'from') pane?.lookDeparture(line, main);
   else pane?.look(line, line + move.count - 1, main);
+};
+moving.copied = ({ from: { file, line }, count }) => {
+  const look = { file, start: line, end: line + count - 1, label: '' };
+  if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
 };
 
 /** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */

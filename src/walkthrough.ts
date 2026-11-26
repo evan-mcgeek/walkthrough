@@ -1,6 +1,7 @@
 // A walkthrough's saved state: one folder per walkthrough under the state folder, written only by this CLI.
 import path from 'node:path';
 import type { Change, Source } from './change';
+import type { Copy } from './copies';
 import type { Code, Lines } from './lines';
 import { locked, readJson, readSavedJson, writeJson } from './json-files';
 import { stateDir } from './paths';
@@ -18,6 +19,8 @@ export type Step = {
   /** The author's screenshot of the change, kept in the walkthrough's folder by `name`, with the author's alt text. */
   screenshot?: { name: string; alt: string };
   diff: string;
+  /** Runs of added lines that also stand elsewhere at the head, found when the steps are recorded. */
+  copies?: Copy[];
 };
 export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;
 export type Criterion = { text: string; status: (typeof CRITERION_STATUSES)[number] };
