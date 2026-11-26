@@ -419,8 +419,11 @@ export async function markViewed(dir: string, { file, viewed }: Record<string, u
 }
 
 /** The session's own pending comments on lines; they go out with the review unless the person deletes them. */
-export function aiComments(dir: string, given: { place: Place; body: string }[]): Promise<Event[]> {
-  return Promise.all(given.map(({ place, body }) => record(dir, { kind: 'comment', by: 'ai', text: body, place })));
+export async function aiComments(dir: string, given: { place: Place; body: string }[]): Promise<Event[]> {
+  const recorded: Event[] = [];
+  // One after another, so the log keeps them in the order the session gave them.
+  for (const { place, body } of given) recorded.push(await record(dir, { kind: 'comment', by: 'ai', text: body, place }));
+  return recorded;
 }
 
 export async function answer(dir: string, id: string, text: string): Promise<void> {

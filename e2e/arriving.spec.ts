@@ -14,7 +14,10 @@ test('a comment arriving above or in view never moves the line being read; the p
   const width = () => page.locator('tr[data-line="120"]').evaluate(row => row.getBoundingClientRect().width);
   const wide = await width();
 
-  record(repo, [{ file: 'tasks.ts', lines: [100, 100], body: 'Above you.' }, { file: 'tasks.ts', lines: [125, 125], body: 'In view.' }], 'comment');
+  // The lower one arrives first, so the pill must find the highest by where it shows.
+  record(repo, [{ file: 'tasks.ts', lines: [125, 125], body: 'In view.' }], 'comment');
+  await expect(page.getByRole('button', { name: '1 new comment above' })).toBeVisible();
+  record(repo, [{ file: 'tasks.ts', lines: [100, 100], body: 'Above you.' }], 'comment');
 
   const pill = page.getByRole('button', { name: '2 new comments above' });
   await expect(pill).toBeVisible();

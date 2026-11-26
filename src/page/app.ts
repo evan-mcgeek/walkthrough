@@ -185,9 +185,9 @@ function drawPill(): void {
 }
 
 pill.onclick = () => {
-  // The highest on the page, whatever order they arrived in.
-  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove('arriving');
+  // The highest on the page, whatever order they arrived in; a folded one has no place until it shows.
+  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
   drawPill();
