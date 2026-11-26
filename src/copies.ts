@@ -29,8 +29,9 @@ function gitOut(cwd: string, args: string[], input: string): Promise<Buffer> {
 
 const keyOf = (file: string, line: number) => `${file}\n${String(line)}`;
 
-/** The lines of each run that start with a line that is not blank. */
-const trimmed = (run: Line[]) => run.slice(Math.max(0, run.findIndex(line => line.text.trim())));
+// A line found more often is too common to start a copy from.
+const MAX_HITS = 20;
+const hasWord = (text: string) => /[\p{L}\p{N}]/u.test(text);
 
 // Paths are printed from the repo top; a path holding a newline is skipped.
 async function grep(cwd: string, head: string, patterns: string[]): Promise<{ file: string; line: number; text: string }[]> {
@@ -60,7 +61,7 @@ async function linesAt(cwd: string, head: string, files: string[]): Promise<Map<
   return read;
 }
 
-/** The copies across the change's diff: each qualifying run of added lines found whole at the head outside itself; moved lines and edits in place are never one. */
+/** The copies across the change's diff: each longest part of a run of added lines that stands at the head outside it; moved lines and edits in place are never one. */
 export async function findCopies(cwd: string, head: string, diff: string, steps: Step[]): Promise<Copy[]> {
   const files = parseDiff(diff);
   const moved = new Set(findMoves(files).flatMap(({ to, count }) => Array.from({ length: count }, (_, at) => keyOf(to.file, to.line + at))));
@@ -80,29 +81,42 @@ export async function findCopies(cwd: string, head: string, diff: string, steps:
   const runOf = new Map(added.flatMap((run, at) => run.map(line => [keyOf(line.file, line.line), at] as const)));
   const deleted = new Set(runsOf(files, LineType.DELETE).flatMap(run => run.map(line => `${String(line.change)}\n${line.text}`)));
   const runs = added
-    .map((run, at) => ({ lines: trimmed(run), at }))
+    .map((lines, at) => ({ lines, at }))
     .filter(({ lines }) => enough(lines) && !lines.some(line => deleted.has(`${String(line.change)}\n${line.text}`)));
   if (!runs.length) return [];
-  // ponytail: one grep for every run's first line, then every file it hits is read; a very common first line reads many files.
+  // ponytail: one grep for every line a copy could start with, then every file found is read; MAX_HITS keeps common lines out.
   const hits = new Map<string, { file: string; line: number }[]>();
-  for (const hit of await grep(cwd, head, [...new Set(runs.map(({ lines }) => lines[0]?.text ?? ''))])) hits.set(hit.text, [...(hits.get(hit.text) ?? []), hit]);
+  const starts = new Set(runs.flatMap(({ lines }) => lines.filter(line => hasWord(line.text)).map(line => line.text)));
+  for (const hit of await grep(cwd, head, [...starts])) if (starts.has(hit.text)) hits.set(hit.text, [...(hits.get(hit.text) ?? []), hit]);
+  for (const [text, found] of hits) if (found.length > MAX_HITS) hits.delete(text);
   const read = await linesAt(cwd, head, [...new Set([...hits.values()].flat().map(hit => hit.file))].filter(file => !file.includes('\n')));
   const copies: Copy[] = [];
-  for (const { lines, at } of runs) {
-    const [first] = lines;
-    if (!first) continue;
-    // A source that is added code of this run or a later one would make the earlier of two equal runs the copy.
-    const later = (file: string, line: number) => lines.some((_, offset) => (runOf.get(keyOf(file, line + offset)) ?? -1) >= at);
-    const isAdded = (file: string, line: number) => lines.some((_, offset) => runOf.has(keyOf(file, line + offset)));
-    const source = (hits.get(first.text) ?? [])
-      .filter(({ file, line }) => !later(file, line) && lines.every((one, offset) => read.get(file)?.[line - 1 + offset]?.trimEnd() === one.text))
-      .sort((one, other) => Number(isAdded(one.file, one.line)) - Number(isAdded(other.file, other.line)) || Number(one.file !== first.file) - Number(other.file !== first.file))[0];
-    if (!source) continue;
-    const step = steps.find(one => one.files.includes(source.file));
-    const shown = step && shownLines(step, source.file);
-    const inDiff = !!shown && lines.every((_, offset) => shown.has(source.line + offset));
-    copies.push({ from: { file: source.file, line: source.line }, to: { file: first.file, line: first.line }, count: lines.length, inDiff });
-  }
+  for (const { lines, at: index } of runs)
+    for (let at = 0; at < lines.length; ) {
+      const first = lines[at];
+      // A source in added code of this run or a later one would make the earlier of two equal runs the copy.
+      const later = (file: string, line: number) => (runOf.get(keyOf(file, line)) ?? -1) >= index;
+      const isAdded = (file: string, line: number, count: number) => Array.from({ length: count }, (_, offset) => runOf.has(keyOf(file, line + offset))).includes(true);
+      // The longest source wins, then one that is not added code, then one in the same file.
+      const score = (file: string, line: number, count: number) => count * 4 - (isAdded(file, line, count) ? 2 : 0) - (file === first?.file ? 0 : 1);
+      let best: { file: string; line: number; count: number; score: number } | null = null;
+      for (const { file, line } of hits.get(first?.text ?? '') ?? []) {
+        let count = 0;
+        while (lines[at + count] && !later(file, line + count) && read.get(file)?.[line - 1 + count]?.trimEnd() === lines[at + count]?.text) count++;
+        if (count && score(file, line, count) > (best?.score ?? 0)) best = { file, line, count, score: score(file, line, count) };
+      }
+      const part = lines.slice(at, at + (best?.count ?? 0));
+      if (!best || !first || !enough(part)) {
+        at++;
+        continue;
+      }
+      const { file, line, count } = best;
+      const step = steps.find(one => one.files.includes(file));
+      const shown = step && shownLines(step, file);
+      const inDiff = !!shown && part.every((_, offset) => shown.has(line + offset));
+      copies.push({ from: { file, line }, to: { file: first.file, line: first.line }, count, inDiff });
+      at += count;
+    }
   return copies;
 }
 

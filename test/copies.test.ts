@@ -17,7 +17,7 @@ const TWO = ['export const shippingCountries = loadCountries();', 'export const 
 test('finds code copied from elsewhere at the head when the steps are recorded, never a move or a run under the thresholds', async () => {
   repo = makeRepo({
     start: { 'util.ts': file('// Helpers', ...TOTAL), 'old.ts': file(...PARSE, 'export const old = 1;'), 'keep.ts': file(...PARSE), 'tiny.ts': file(...TINY, ...TWO), 'sum.ts': file(...COUNT) },
-    feature: { 'cart.ts': file(...TOTAL), 'old.ts': file('export const old = 1;'), 'new.ts': file(...PARSE), 'tiny2.ts': file(...TINY), 'two.ts': file(...TWO), 'sum.ts': file(...COUNT, ...COUNT) },
+    feature: { 'cart.ts': file('// Cart', ...TOTAL, 'export const cart = [];'), 'old.ts': file('export const old = 1;'), 'new.ts': file(...PARSE), 'tiny2.ts': file(...TINY), 'two.ts': file(...TWO), 'sum.ts': file(...COUNT, ...COUNT) },
   });
   repo.run('start');
   const all = ['app.ts', 'cart.ts', 'login.ts', 'new.ts', 'old.ts', 'sum.ts', 'tiny2.ts', 'two.ts'];
@@ -25,7 +25,7 @@ test('finds code copied from elsewhere at the head when the steps are recorded, 
 
   const [step] = (await viewAt(repo.url())).steps;
   expect(step?.copies).toEqual([
-    { from: { file: 'util.ts', line: 2 }, to: { file: 'cart.ts', line: 1 }, count: 3, inDiff: false },
+    { from: { file: 'util.ts', line: 2 }, to: { file: 'cart.ts', line: 2 }, count: 3, inDiff: false },
     { from: { file: 'sum.ts', line: 1 }, to: { file: 'sum.ts', line: 4 }, count: 3, inDiff: true },
   ]);
 });
