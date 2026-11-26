@@ -1,7 +1,7 @@
 // The review page: the header, the AI's steps with their files on the left, and the open step or the Summary.
 import type { WalkthroughView } from '../review';
-import type { Viewer } from '../viewer';
-import { chooseTheme, loadViewer } from './appearance';
+import { DEFAULT_VIEWER } from '../viewer';
+import { chooseViewer, loadViewer } from './appearance';
 import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
 import { pick } from './files';
@@ -24,7 +24,7 @@ new ResizeObserver(() => {
   main.style.setProperty('--pane', `${String(content.clientWidth)}px`);
 }).observe(content);
 
-let theme: Viewer['theme'] = 'system';
+let viewer = { ...DEFAULT_VIEWER };
 let stopped = false;
 const panes = new Map<string, { key: string; pane: StepPane }>();
 const summary = new SummaryPane(
@@ -335,17 +335,20 @@ function toggleMenu(): void {
       names[one],
       'menuitemradio',
       () => {
-        theme = one;
-        chooseTheme(one);
+        viewer = chooseViewer(viewer, { theme: one });
       },
-      theme === one,
+      viewer.theme === one,
     ),
   );
+  const colourBlind = item('Colour-blind diff', 'menuitemcheckbox', () => {
+    viewer = chooseViewer(viewer, { colourBlind: !viewer.colourBlind });
+  }, viewer.colourBlind);
+  if (viewer.colourBlind) colourBlind.prepend(el('span', { className: 'menu-check' }, icon('met')));
   const opened = attrs(
     el(
       'div',
       { className: 'menu' },
-      attrs(el('div', {}, el('p', { className: 'menu-label', id: 'menu-theme' }, 'Theme'), ...themes), { role: 'group', 'aria-labelledby': 'menu-theme' }),
+      attrs(el('div', {}, el('p', { className: 'menu-label', id: 'menu-theme' }, 'Theme'), ...themes, colourBlind), { role: 'group', 'aria-labelledby': 'menu-theme' }),
       el('hr'),
       item('End session', 'menuitem', endSession),
     ),
@@ -716,7 +719,7 @@ function poll(): void {
 }
 
 PAGE.lost = poll;
-theme = await loadViewer();
+viewer = await loadViewer();
 const first = await fetch('data/walkthrough.json');
 tag = first.headers.get('etag') ?? '';
 state.view = (await first.json()) as WalkthroughView;
