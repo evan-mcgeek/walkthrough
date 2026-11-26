@@ -59,7 +59,9 @@ export class StepPane {
     const look = step.look.map(pointer =>
       el(
         'button',
-        { type: 'button', className: 'look-link', title: `${pointer.file} ${linesLabel([pointer.start, pointer.end])}`, onclick: () => this.fileNamed(pointer.file)?.look(pointer.start, pointer.end, this.scroller) },
+        { type: 'button', className: 'look-link', title: `${pointer.file} ${linesLabel([pointer.start, pointer.end])}`, onclick: () => {
+          if (!this.fileNamed(pointer.file)?.look(pointer.start, pointer.end, this.scroller)) changes.look(pointer);
+        } },
         icon('next'),
         el('code', {}, pointer.file.split('/').slice(-2).join('/')),
         ` ${linesLabel([pointer.start, pointer.end])} `,

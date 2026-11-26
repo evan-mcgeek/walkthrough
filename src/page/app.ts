@@ -558,6 +558,12 @@ function showChanges(since: boolean): void {
   if (same && was !== undefined) main.scrollTop += same.getBoundingClientRect().top - was;
 }
 changes.choose = showChanges;
+changes.look = ({ file, start, end }) => {
+  if (!changes.since) return;
+  showChanges(false);
+  const at = current();
+  if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main);
+};
 
 /** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */
 let onFile: string | null = null;

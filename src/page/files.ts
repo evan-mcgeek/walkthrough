@@ -85,15 +85,15 @@ export class FilePane {
     return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
 
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them. */
-  look(start: number, end: number, scroller: HTMLElement): void {
+  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
+  look(start: number, end: number, scroller: HTMLElement): boolean {
+    const first = this.rows.get(start);
+    if (!first) return false;
     if (this.closed()) {
       folds.set(this.name, false);
       this.update(() => false);
     }
     if (this.previewing) void this.showPreview(false);
-    const first = this.rows.get(start);
-    if (!first) return;
     const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
     scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
     for (const [line, row] of this.rows)
@@ -104,6 +104,7 @@ export class FilePane {
         row.getBoundingClientRect();
         row.classList.add('flash');
       }
+    return true;
   }
 
   thread(id: string): { row: HTMLTableRowElement; box: ThreadBox } | undefined {

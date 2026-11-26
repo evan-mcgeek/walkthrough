@@ -4,11 +4,11 @@ import { git, postTo } from '../test/helpers';
 import { expect, lines, open, record, test } from './walkthrough';
 
 const TASKS = lines(60, 'task');
-test.use({ start: { 'tasks.ts': TASKS }, files: { 'tasks.ts': TASKS.replace('task5 = 5;', 'task5 = 50;').replace('task40 = 40;', 'task40 = 400;') } });
+test.use({ start: { 'tasks.ts': TASKS }, files: { 'tasks.ts': TASKS.replace('task5 = 5;', 'task5 = 50;').replace('task15 = 15;', 'task15 = 150;').replace('task40 = 40;', 'task40 = 400;') } });
 
 const STEPS = [
   { title: 'Login', explanation: 'Adds login.', files: ['login.ts'] },
-  { title: 'Tasks', explanation: 'Changes two tasks.', files: ['tasks.ts', 'app.ts'] },
+  { title: 'Tasks', explanation: 'Changes three tasks.', files: ['tasks.ts', 'app.ts'], look: [{ file: 'tasks.ts', start: 15, end: 15, label: 'the one kept' }] },
 ];
 
 const commit = (dir: string, file: string, text: string) => {
@@ -22,7 +22,7 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await postTo(url, '/comment', { file: 'login.ts', lines: [1, 1], text: 'Who gets in?' });
   expect((await postTo(url, '/submit', { summary: '' })).status).toBe(200);
   // One task changes again and the other goes back to how it was.
-  commit(repo.dir, 'tasks.ts', TASKS.replace('task5 = 5;', 'task5 = 500;'));
+  commit(repo.dir, 'tasks.ts', TASKS.replace('task5 = 5;', 'task5 = 500;').replace('task15 = 15;', 'task15 = 150;'));
   repo.run('start');
   record(repo, STEPS);
 
@@ -69,6 +69,11 @@ test('back after a review, the page opens on the changes since; a quiet step off
   await expect(page.getByRole('heading', { level: 1, name: 'Tasks' })).toBeVisible();
   await expect(tasks.getByRole('checkbox', { name: 'Viewed' })).toBeChecked();
   await expect(page.locator('.files-viewed')).toContainText('3 / 3 files viewed');
+
+  // Look at lines only all changes show switches to them.
+  await page.getByRole('button', { name: /tasks\.ts 15 the one kept/ }).click();
+  await expect(changes).toHaveText('All changes');
+  await expect(tasks.locator('tr[data-line="15"]')).toHaveClass(/flash/);
 });
 
 test('the behind line shows within a poll of a commit on the branch, with the command to copy', async ({ page, repo, url }) => {

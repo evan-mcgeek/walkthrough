@@ -1,5 +1,5 @@
 // "Changes since your last review": GitHub's switch between that and all changes, and the steps' files each shows.
-import type { Step } from '../walkthrough';
+import type { Look, Step } from '../walkthrough';
 import { attrs, el, menuKeys } from './dom';
 import { icon } from './icons';
 import { FADE_IN, animate } from './motion';
@@ -10,6 +10,8 @@ export const changes = {
   since: false,
   /** Shows that view, or all changes; set by the page. */
   choose: (() => {}) as (since: boolean) => void,
+  /** Shows lines that only all changes show; set by the page. */
+  look: (() => {}) as (look: Look) => void,
 };
 
 /** The changes since the last review while the page shows them. */
