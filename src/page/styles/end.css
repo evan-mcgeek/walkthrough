@@ -1,12 +1,15 @@
 /* After the session (docs/design/DESIGN.md, After the session): one centred column under a header with the mark and the label only. */
 
+/* While the walkthrough fades out, the screen that replaces it lies over it in the same row. */
 body.walkthrough > .end-page {
-  grid-row: 4;
+  position: relative;
+  z-index: 1;
+  grid-area: 4 / 1;
 }
 
-.ended > .frame,
+.ended:not(.fading) > .frame,
 .ended > .banner,
-.ended .app-header > :not(.mark, .change-label) {
+.ended:not(.fading) .app-header > :not(.mark, .change-label) {
   display: none !important;
 }
 

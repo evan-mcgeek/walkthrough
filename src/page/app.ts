@@ -4,9 +4,9 @@ import { DEFAULT_VIEWER } from '../viewer';
 import { chooseViewer, loadViewer } from './appearance';
 import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
-import { type FilePane, pick, setViewed } from './files';
+import { type FilePane, goTo, pick, setViewed } from './files';
 import { icon } from './icons';
-import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
+import { animate, duration, FADE_IN, fadeAway, fadeOut, flash, grow, reduced, settle, tick } from './motion';
 import { moving, shownMoves } from './moves';
 import { Opening, openingNav } from './opening';
 import { ago, allFiles, baseName, commentCount, outdatedIn, PAGE, pendingComments, phone, plural, state, stepOfFile, threadsIn, threadStep } from './state';
@@ -112,14 +112,14 @@ function moved(): void {
 
 const LEAVE_MS = 100;
 
-/** The pane moved away from stays where it was read and leaves to the left, then goes. */
-function leave(old: HTMLElement, scrolled: number): void {
+/** The pane moved away from stays where it was read and leaves, to the left unless `slide` is false, then goes. */
+function leave(old: HTMLElement, scrolled: number, slide = true): void {
   attrs(old, { inert: '', 'aria-hidden': 'true' });
   content.append(old);
-  const at = `translateY(${String(-scrolled)}px)`;
-  const still = reduced();
+  const at = `translateY(${String(main.scrollTop - scrolled)}px)`;
+  const still = reduced() || !slide;
   const leaving = animate(old, 'pane-leave', [{ opacity: 1, transform: at }, { opacity: 0, transform: still ? at : `${at} translateX(-12px)` }], {
-    ms: LEAVE_MS,
+    ms: slide ? LEAVE_MS : 'fast',
     curve: still ? 'linear' : 'ease-in',
     fill: 'forwards',
   });
@@ -131,10 +131,12 @@ function leave(old: HTMLElement, scrolled: number): void {
   );
 }
 
+/** Goes to a file, a thread or lines and marks them: in the step you are on by a scroll, in another after the pane swap. */
 function reveal({ thread: id, edit, file, lines }: Reveal): void {
   if (file !== undefined && lines) {
     const look = { file, start: lines[0], end: lines[1], label: '' };
-    if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+    const found = paneOfFile(file);
+    if (!found?.pane?.look(look.start, look.end, main, found.smooth)) changes.look(look);
     return;
   }
   const thread = state.view.threads.find(one => one.id === id);
@@ -143,17 +145,28 @@ function reveal({ thread: id, edit, file, lines }: Reveal): void {
   const name = thread?.file ?? file ?? '';
   // What changed since the last review may leave out the file or the thread's lines.
   const found = paneOf(stepId).fileNamed(name);
-  if (changes.since && (!found || (thread && !found.thread(thread.id)))) changes.since = false;
-  go(stepAddress(stepId));
+  const widen = changes.since && (!found || (thread && !found.thread(thread.id)));
+  if (widen) changes.since = false;
+  const at = current();
+  const smooth = !widen && at.kind === 'step' && at.pane.step.id === stepId;
+  if (smooth) {
+    pick(null);
+    showDrawer(false);
+  } else go(stepAddress(stepId));
   const pane = paneOf(stepId).fileNamed(name);
   if (!pane) return;
   pane.open();
-  const shown = thread && pane.thread(thread.id);
-  shown?.box.show();
-  const target = shown ? shown.row : pane.box;
-  main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
   // A pane still leaving would scroll along with the one landing here.
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
+  onFile = name;
+  drawOnFile();
+  const shown = thread && pane.thread(thread.id);
+  if (shown) {
+    shown.box.show();
+    goTo(main, shown.row, 120, smooth);
+    const marked = pane.linesOf(thread.id);
+    flash(marked.length ? marked : [shown.row]);
+  } else pane.mark(main, smooth);
   if (shown && edit) shown.box.edit(edit);
 }
 
@@ -194,11 +207,10 @@ pill.onclick = () => {
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
   drawPill();
-  if (first)
-    main.scrollTo({
-      top: main.scrollTop + first.getBoundingClientRect().top - main.getBoundingClientRect().top - 120,
-      behavior: reduced() ? 'instant' : 'smooth',
-    });
+  if (first) {
+    goTo(main, first, 120, true);
+    flash([first]);
+  }
 };
 
 // The header is drawn once and changed in place, so its count, bar and indicator can move.
@@ -304,9 +316,13 @@ function drawHeader(onSummary: boolean): void {
 
 /** The line under the header once the branch has commits the walkthrough does not show. */
 function drawBehind(behind: boolean): void {
+  if (behindLine.hidden === !behind) return;
   if (behind && !behindLine.hasChildNodes())
     behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox(true));
+  // The line goes in above the pane without motion, and the pane scrolls by its height so the line being read stays put.
+  const top = main.getBoundingClientRect().top;
   behindLine.hidden = !behind;
+  main.scrollTop += main.getBoundingClientRect().top - top;
 }
 
 function showDrawer(open: boolean): void {
@@ -324,7 +340,7 @@ let menu: HTMLElement | null = null;
 
 function closeMenu(refocus: boolean): void {
   if (!menu) return;
-  menu.remove();
+  fadeAway(menu);
   menu = null;
   const button = header.querySelector<HTMLElement>('.menu-button');
   button?.setAttribute('aria-expanded', 'false');
@@ -397,9 +413,22 @@ const endPage = el('main', { className: 'end-page', hidden: true });
 document.body.append(endPage);
 let ending: { kind: Ending; stop: () => void; scrolled: [number, number] } | null = null;
 
-/** Puts the farewell or the lost session in place of the walkthrough, which stays as it was underneath. */
+/** What the farewell and the lost session hide: the panes and the header's controls. */
+const walkthroughParts = () => [frame, ...[...header.children].filter((one): one is HTMLElement => one instanceof HTMLElement && !one.matches('.mark, .change-label'))];
+
+/** The walkthrough fading out under the screen that replaces it, settled and hidden once faded. */
+function settleWalkthrough(): void {
+  document.body.classList.remove('fading');
+  for (const part of walkthroughParts()) {
+    settle(part);
+    part.inert = false;
+  }
+}
+
+/** Puts the farewell or the lost session in place of the walkthrough, which stays as it was underneath; the walkthrough fades out, then the screen fades in. */
 function showEnd(kind: Ending): void {
   if (ending?.kind === kind) return;
+  const fromWalkthrough = !ending;
   ending?.stop();
   closeMenu(false);
   showDrawer(false);
@@ -412,6 +441,17 @@ function showEnd(kind: Ending): void {
   document.body.classList.add('ended');
   drawHeader(current().kind === 'summary');
   endPage.querySelector<HTMLElement>('.end-title')?.focus({ preventScroll: true });
+  if (!fromWalkthrough) {
+    animate(endPage, 'end-in', FADE_IN, { ms: 'base', curve: 'linear' });
+    return;
+  }
+  document.body.classList.add('fading');
+  const fades = walkthroughParts().map(part => {
+    part.inert = true;
+    return animate(part, 'end-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 'fast', curve: 'ease-in', fill: 'forwards' }).finished;
+  });
+  animate(endPage, 'end-in', FADE_IN, { ms: 'base', curve: 'linear', delay: duration('fast') });
+  Promise.all(fades).then(settleWalkthrough, () => {});
 }
 
 /** The server answered again: the walkthrough comes back where it was. */
@@ -420,6 +460,7 @@ function hideEnd(): void {
   const [mainTop, navTop] = ending.scrolled;
   ending.stop();
   ending = null;
+  settleWalkthrough();
   endPage.hidden = true;
   endPage.replaceChildren();
   document.body.classList.remove('ended');
@@ -661,6 +702,9 @@ function showChanges(since: boolean): void {
   const top = main.getBoundingClientRect().top;
   const reading = [...content.querySelectorAll<HTMLElement>(':scope > :first-child .file')].find(box => box.getBoundingClientRect().bottom > top);
   const was = reading?.getBoundingClientRect().top;
+  const old = content.firstElementChild;
+  const scrolled = main.scrollTop;
+  if (old) settle(old);
   changes.since = since;
   render(true, true);
   // A pane shown before may have left with the page's last move.
@@ -672,34 +716,41 @@ function showChanges(since: boolean): void {
   }
   const same = reading && content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(reading.dataset['file'] ?? '')}"]`);
   if (same && was !== undefined) main.scrollTop += same.getBoundingClientRect().top - was;
+  // Same step, other content: the panes cross-fade where they are, with no slide.
+  if (old instanceof HTMLElement && shown && shown !== old) {
+    leave(old, scrolled, false);
+    animate(shown, 'pane-enter', FADE_IN, { ms: 'base', curve: 'linear' });
+  }
 }
 changes.choose = showChanges;
 changes.look = ({ file, start, end }) => {
   if (!changes.since) return;
   showChanges(false);
   const at = current();
-  if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main);
+  if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main, false);
 };
 
-/** Opens the step that changes the file, at once, and gives the file's pane there. */
-function paneOfFile(file: string): FilePane | undefined {
+/** Opens the step that changes the file and gives the file's pane there; `smooth` when it is the step you are on, which scrolls rather than swaps. */
+function paneOfFile(file: string): { pane: FilePane | undefined; smooth: boolean } | undefined {
   const step = stepOfFile(file);
   const at = current();
   if (!step || at.kind === 'opening') return undefined;
-  if (at.kind !== 'step' || at.pane.step.id !== step.id) go(stepAddress(step.id));
+  const smooth = at.kind === 'step' && at.pane.step.id === step.id;
+  if (!smooth) go(stepAddress(step.id));
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
-  return paneOf(step.id).fileNamed(file);
+  return { pane: paneOf(step.id).fileNamed(file), smooth };
 }
 
 moving.show = (move, to) => {
   const { file, line } = move[to];
-  const pane = paneOfFile(file);
-  if (to === 'from') pane?.lookDeparture(line, main);
-  else pane?.look(line, line + move.count - 1, main);
+  const found = paneOfFile(file);
+  if (to === 'from') found?.pane?.lookDeparture(line, main, found.smooth);
+  else found?.pane?.look(line, line + move.count - 1, main, found.smooth);
 };
 moving.copied = ({ from: { file, line }, count }) => {
   const look = { file, start: line, end: line + count - 1, label: '' };
-  if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+  const found = paneOfFile(file);
+  if (!found?.pane?.look(look.start, look.end, main, found.smooth)) changes.look(look);
 };
 
 /** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */
@@ -730,12 +781,12 @@ function moveFile(by: 1 | -1): void {
       ? (order.find(one => one.file === top) ?? (by > 0 ? order.find(one => one.index > here) : order.findLast(one => one.index < here)))
       : order[on + by];
   if (!next) return;
-  if (next.step !== at.pane.step.id) go(stepAddress(next.step));
+  const smooth = next.step === at.pane.step.id;
+  if (!smooth) go(stepAddress(next.step));
   onFile = next.file;
   drawOnFile();
-  const box = paneOf(next.step).fileNamed(next.file)?.box;
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
-  if (box) main.scrollTop += box.getBoundingClientRect().top - main.getBoundingClientRect().top - 16;
+  paneOf(next.step).fileNamed(next.file)?.mark(main, smooth);
 }
 
 /** V: Viewed on the file you are on, or else the one at the top. */

@@ -9,7 +9,7 @@ import { attrs, el } from './dom';
 import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
-import { grow, reduced } from './motion';
+import { flash, grow, scrollPane } from './motion';
 import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
@@ -26,7 +26,7 @@ export function pick(next: typeof picked): void {
   // The composer is still opening, so this scrolls to where its foot will be.
   const scroller = cell.closest('.main');
   const below = cell.getBoundingClientRect().top + cell.scrollHeight - (scroller?.getBoundingClientRect().bottom ?? innerHeight);
-  if (scroller && below > 0) scroller.scrollBy({ top: below, behavior: reduced() ? 'instant' : 'smooth' });
+  if (scroller instanceof HTMLElement && below > 0) scrollPane(scroller, scroller.scrollTop + below);
 }
 
 /** Files the person opened or folded themselves, by path; the others fold while viewed, generated or large. */
@@ -48,6 +48,13 @@ export function setViewed(file: string, now: boolean): void {
   folds.set(file, now);
   state.render(true);
   void send('viewed', { file, viewed: now });
+}
+
+/** Brings `target` to `above` px under the top of `scroller`, smoothly or at once. */
+export function goTo(scroller: HTMLElement, target: Element, above: number, smooth: boolean): void {
+  const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - above;
+  if (smooth) scrollPane(scroller, top);
+  else scroller.scrollTop = top;
 }
 
 /** Says whether something at `element` is above the bottom of what the reader sees, so adding it would move what they read. */
@@ -105,22 +112,38 @@ export class FilePane {
     return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
 
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
-  look(start: number, end: number, scroller: HTMLElement): boolean {
+  /**
+   * Opens the file and its lines, brings them into view with 120px above, and flashes them; false when the diff does not show them.
+   * `smooth` scrolls there, as on the step you are on; otherwise the pane that just swapped in starts there.
+   */
+  look(start: number, end: number, scroller: HTMLElement, smooth = true): boolean {
     if (!this.rows.has(start)) return false;
-    return this.flash(
+    return this.flashRows(
       [...this.rows].flatMap(([line, row]) => (line >= start && line <= end ? [row] : [])),
       scroller,
+      smooth,
     );
   }
 
   /** The same for the row that says lines moved away from `line`. */
-  lookDeparture(line: number, scroller: HTMLElement): boolean {
+  lookDeparture(line: number, scroller: HTMLElement, smooth = true): boolean {
     const row = this.diffBox.querySelector<HTMLTableRowElement>(`tr[data-moved-from="${String(line)}"]`);
-    return this.flash(row ? [row] : [], scroller);
+    return this.flashRows(row ? [row] : [], scroller, smooth);
   }
 
-  private flash(rows: HTMLTableRowElement[], scroller: HTMLElement): boolean {
+  /** Brings the file's header to the top of the pane and flashes it. */
+  mark(scroller: HTMLElement, smooth: boolean): void {
+    goTo(scroller, this.box, 16, smooth);
+    flash([this.header]);
+  }
+
+  /** The rows of a thread's lines, to mark when it is reached; none on a whole file. */
+  linesOf(id: string): HTMLTableRowElement[] {
+    const lines = state.view.threads.find(one => one.id === id)?.lines;
+    return lines ? [...this.rows].flatMap(([line, row]) => (line >= lines[0] && line <= lines[1] ? [row] : [])) : [];
+  }
+
+  private flashRows(rows: HTMLTableRowElement[], scroller: HTMLElement, smooth: boolean): boolean {
     const [first] = rows;
     if (!first) return false;
     if (this.closed()) {
@@ -128,15 +151,8 @@ export class FilePane {
       this.update(() => false);
     }
     if (this.previewing) void this.showPreview(false);
-    const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
-    scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
-    for (const row of rows) {
-      // Restarted in this task, so a second click flashes again.
-      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-      row.classList.remove('flash');
-      row.getBoundingClientRect();
-      row.classList.add('flash');
-    }
+    goTo(scroller, first, 120, smooth);
+    flash(rows);
     return true;
   }
 

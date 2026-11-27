@@ -93,7 +93,7 @@ test('a file row is a Viewed checkbox shared with the file header and V, a link 
   await count.click();
   await expect(page.locator('.comment', { hasText: 'The first one down the file.' })).toBeInViewport();
 
-  await page.keyboard.press('j');
+  // Where it lands keeps the focus ring, so V acts on that file.
   await expect(page.locator('.file.on')).toHaveAttribute('data-file', 'tasks.ts');
   await page.keyboard.press('v');
   await expect(mark).toHaveAttribute('aria-checked', 'true');
