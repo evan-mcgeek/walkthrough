@@ -10915,6 +10915,7 @@ var SummaryPane = class {
     area.oninput = () => {
       this.draft = area.value;
     };
+    const types2 = !own && !state.view.pr?.yours;
     const blocked = own && pendingComments().length === 0;
     const submit = el("button", { type: "button", className: "btn primary wide", disabled: blocked || this.sending }, own ? "Send to agent" : "Submit review");
     const note = el("p", { className: "review-note", hidden: !blocked }, "Add a comment to send it.");
@@ -10937,7 +10938,7 @@ var SummaryPane = class {
         fill: "forwards"
       });
       this.sentBox = { box: box2, fading };
-      const done = await send2("submit", { ...!own && { type: this.type }, summary: this.draft.trim() });
+      const done = await send2("submit", { ...!own && { type: types2 ? this.type : "comment" }, summary: this.draft.trim() });
       this.sending = false;
       if (done) this.draft = "";
       else {
@@ -10950,7 +10951,7 @@ var SummaryPane = class {
       { className: "review-box" },
       el("h2", { className: "section-head" }, "Finish your review"),
       area,
-      ...own ? [] : [attrs(el("div", { className: "radios" }, ...radios), { role: "radiogroup", "aria-label": "Finish your review" })],
+      ...types2 ? [attrs(el("div", { className: "radios" }, ...radios), { role: "radiogroup", "aria-label": "Finish your review" })] : [],
       submit,
       note
     );

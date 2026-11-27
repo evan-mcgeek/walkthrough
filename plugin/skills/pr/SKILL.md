@@ -13,11 +13,12 @@ For their own change, `/walkthrough` is the procedure instead.
 1. Find the review policy and read it, as "Review policy" below says; follow its "Shared rules" and "Someone else's change" parts, and leave the other part out.
    Read the project's instructions for agents (its CLAUDE.md, AGENTS.md and the files they point to).
 2. Fetch the change as the policy's "Someone else's change" part says, into a local ref, never checking it out; the person approves those commands as usual.
-3. Run `walkthrough start --base <rev> --head <rev> --label <label> --pr <number> --title <title>` in the repo, with a short label naming the change, and its number and title on the code host.
-   Give the same label whenever the person opens this change again, so the walkthrough goes on where they left it; fetch its head again first.
+3. Run `walkthrough start --base <rev> --head <rev> --label "PR <number>" --pr <number> --title <title>` in the repo, with its number and title on the code host.
+   Label it `PR <number>`, exactly, so any session that opens this pull request again goes on with the same walkthrough; fetch its head again first.
+   When the person is the pull request's author on the code host, add `--yours`: an author can only comment, so the page offers no Approve or Request changes.
    When the change's description shows a screenshot of the change, download it into the inbox start printed, as the policy says; the person approves the download as usual.
    Give it to the step whose UI it shows, as `walkthrough guide` says; leave out a screenshot that fits no step.
-4. Unless start printed "Already reviewed at this head" or "Last reviewed at", ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
+4. Unless start printed "Already reviewed at this head" or "Last reviewed at", or counted steps already recorded, ask the person in the chat how well they know the feature, with your question tool so they pick rather than type, offering the policy's four answers, from "I know it well" to "It's new to me", and saying they may skip.
    Read the change while they answer; their answer sets how much your explanations say, as the policy says.
 5. Go on as "Walking through" says, until the walkthrough stops.
    The page ends in Submit review: nothing goes out before it, and then one finished review goes out, as the policy's "Someone else's change" part says.
@@ -41,6 +42,8 @@ Your working notes (evidence, reviewers' verdicts, plans) stay in the chat; the 
    Tell the person in one line what that line says, run `walkthrough open`, and start listening for the page, as "Listening for the page" says.
    If start also warned about uncommitted changes, add one line: commit them for the AI to review what changed.
    If the person asks in the chat to review it again, read `walkthrough comments --all` first, then review as "Reviewing" says without repeating a comment already there.
+   When start counts steps already recorded but prints neither "Already reviewed at this head" nor "Last reviewed at", an earlier session stopped before the review was done: keep its steps, read its comments with `walkthrough comments --all`, and finish the review without repeating a comment.
+   Whenever start finds an earlier walkthrough, tell the person in one line what it already holds: its steps, and the comments pending or sent.
 3. Run `walkthrough guide` and follow the formats it prints; they are the CLI's own and replace anything you remember.
 4. Record the steps, as "Steps" below says, then start listening for the page, as "Listening for the page" says; while you review, the page takes a running listen as the sign that you are still at work.
 5. Review the change, as "Reviewing" says.

@@ -13603,7 +13603,7 @@ async function submit(dir, { type, summary }) {
   const view = walkthroughView(dir);
   if (!view || summary !== void 0 && typeof summary !== "string" || view.submitted) return false;
   const pending = view.threads.flatMap((one) => one.comments).some((one) => one.pending);
-  if (view.pr ? !REVIEW_TYPES.includes(type) : type !== void 0 || !pending) return false;
+  if (view.pr ? !REVIEW_TYPES.includes(type) || view.pr.yours && type !== "comment" : type !== void 0 || !pending) return false;
   return !!await record(dir, { kind: "submit", ...view.pr && { type }, summary: cleanText(summary), head: view.head });
 }
 async function markViewed(dir, { file: file2, viewed }) {
@@ -14078,6 +14078,7 @@ function tooLong(fields) {
 }
 
 // src/server.ts
+var SCRIPT = fileURLToPath(import.meta.url);
 var MAX_BODY_BYTES = 256 * 1024;
 var IDLE_MS = 30 * 60 * 1e3;
 var PAGE = path9.join(import.meta.dirname, "page");
@@ -14136,9 +14137,12 @@ function ensureServer(dir, list3 = false) {
   fs8.mkdirSync(dir, { recursive: true, mode: 448 });
   return locked(recordFile(dir), async () => {
     const running = readRecord(dir);
-    if (running && alive(running)) return running.url;
+    if (running && alive(running)) {
+      if (running.script === SCRIPT) return running.url;
+      await stopServer(dir);
+    }
     const log = fs8.openSync(path9.join(dir, "server.log"), "a", 384);
-    const child = spawn2(process.execPath, [fileURLToPath(import.meta.url), "serve", dir, ...list3 ? ["--list"] : []], {
+    const child = spawn2(process.execPath, [SCRIPT, "serve", dir, ...list3 ? ["--list"] : []], {
       // Not the folder start ran in, which may be a worktree removed while the page is open.
       cwd: commonDir(process.cwd()),
       detached: true,
@@ -14207,7 +14211,8 @@ function serve(dir, list3 = false) {
     const record2 = {
       pid: process.pid,
       started: psStart(process.pid),
-      url: `http://127.0.0.1:${String(port)}/s/${token}/`
+      url: `http://127.0.0.1:${String(port)}/s/${token}/`,
+      script: SCRIPT
     };
     writeJson(recordFile(dir), record2);
   });
@@ -14603,11 +14608,12 @@ var criteria = [
   { text: "Date picker works on phones", status: "not-checked", reason: "Needs the running app." },
   { text: "Optional due date on create and edit", status: "met", file: "src/api/tasks.ts", lines: [19, 22] }
 ];
-var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
+var GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>] [--yours]]
   Starts or resumes a walkthrough and serves its page without opening it; nothing is checked out.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label.
   --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
+  --yours says the person opened the pull request: its author can only comment, so the page offers no review type and the review goes out as a comment.
   Every command below finds the walkthrough from the same source options start was given, so pass them to each.
   When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
   A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
@@ -14889,11 +14895,12 @@ function renamedDir(repo, source) {
   return dir;
 }
 async function start2(args) {
-  const { cwd, source, dir, values } = located(args, { options: { pr: { type: "string" }, title: { type: "string" } } });
+  const { cwd, source, dir, values } = located(args, { options: { pr: { type: "string" }, title: { type: "string" }, yours: { type: "boolean" } } });
   const number = values.pr?.trim();
   if (number === "") throw new Error("--pr needs the number of the pull request");
   if (values.title !== void 0 && number === void 0) throw new Error("--title goes with --pr");
-  const pr = number === void 0 ? void 0 : { number, title: values.title?.trim() || nameOf(source) };
+  if (values.yours && number === void 0) throw new Error("--yours goes with --pr");
+  const pr = number === void 0 ? void 0 : { number, title: values.title?.trim() || nameOf(source), ...values.yours && { yours: true } };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = await openWalkthrough(dir, source, change, pr, (moved) => carrySteps(cwd, moved));
@@ -15088,7 +15095,7 @@ var command = COMMANDS[name];
 try {
   if (!command)
     throw new Error(
-      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
+      "usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n  commands: start [--pr <number> [--title <text>] [--yours]] | guide | files | steps --file <file> | open | ready\n    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n    | policy [show | init | save --file <file>]\n  every command but guide, list and policy finds the walkthrough from the options start was given: none for the current branch"
     );
   await command(rest);
 } catch (error) {
