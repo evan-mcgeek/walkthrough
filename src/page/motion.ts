@@ -84,23 +84,6 @@ export function shrink(element: HTMLElement, done: () => void): void {
 }
 
 /**
- * Puts `scroller` at `top` at once; while a folded file on the way still opens, the page is not yet tall enough to get there,
- * so it is put there again each frame until it gets there, the opening is over, or the person scrolls.
- */
-export function placePane(scroller: HTMLElement, top: number): void {
-  const to = Math.max(0, top);
-  const until = performance.now() + duration('slow') + duration('fast');
-  let last = -1;
-  const place = () => {
-    if (last >= 0 && Math.abs(scroller.scrollTop - last) > 1) return;
-    scroller.scrollTop = to;
-    last = scroller.scrollTop;
-    if (last < to - 1 && performance.now() < until) requestAnimationFrame(place);
-  };
-  place();
-}
-
-/**
  * Scroll and mark's scroll: `scroller` eases to `top` in 320ms, after a cut to one screen away when it is farther;
  * at once under reduced motion. It stops where it is when the person scrolls meanwhile.
  */
@@ -109,7 +92,7 @@ export function scrollPane(scroller: HTMLElement, top: number): void {
   // Not held to the scroll height now: something opening on the way may still be making room for the target.
   const to = Math.max(0, top);
   if (reduced()) {
-    placePane(scroller, to);
+    scroller.scrollTop = to;
     return;
   }
   const screen = scroller.clientHeight;

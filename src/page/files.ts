@@ -9,7 +9,7 @@ import { attrs, el } from './dom';
 import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
-import { flash, grow, placePane, scrollPane } from './motion';
+import { flash, grow, scrollPane } from './motion';
 import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
@@ -54,7 +54,7 @@ export function setViewed(file: string, now: boolean): void {
 export function goTo(scroller: HTMLElement, target: Element, above: number, smooth: boolean): void {
   const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - above;
   if (smooth) scrollPane(scroller, top);
-  else placePane(scroller, top);
+  else scroller.scrollTop = top;
 }
 
 /** Says whether something at `element` is above the bottom of what the reader sees, so adding it would move what they read. */
@@ -157,10 +157,7 @@ export class FilePane {
   private flashRows(rows: HTMLTableRowElement[], scroller: HTMLElement, smooth: boolean): boolean {
     const [first] = rows;
     if (!first) return false;
-    if (this.closed()) {
-      folds.set(this.name, false);
-      this.update(() => false);
-    }
+    this.open();
     if (this.previewing) void this.showPreview(false);
     goTo(scroller, first, 120, smooth);
     flash(rows);
@@ -171,10 +168,14 @@ export class FilePane {
     return this.threads.get(id);
   }
 
+  /** Opens the file at once, with no animation: it is being jumped to, so its lines must be where they stay before the jump. */
   open(): void {
     if (!this.closed()) return;
     folds.set(this.name, false);
+    this.box.classList.add('opening-now');
     this.update(() => false);
+    void this.box.getBoundingClientRect();
+    this.box.classList.remove('opening-now');
   }
 
   /** Brings the file up to date; returns what arrived where the reader would see it move, which waits behind the pill. */

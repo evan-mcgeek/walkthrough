@@ -2805,6 +2805,11 @@ tr.flash td,
   }
 }
 
+/* A file opened by a jump to it opens at once, so the jump lands where its lines stay. */
+.file.opening-now :is(.file-body, .file-inner, .file-header) {
+  transition: none !important;
+}
+
 /* Reduced motion keeps opacity and colour: things fade, then snap, and the spinner stands still. */
 @media (prefers-reduced-motion: reduce) {
   .icon-spinner {
