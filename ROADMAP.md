@@ -72,6 +72,13 @@ The pull request that ships or drops an item updates this file.
 - On a branch with a slash in its name, the session records its steps and comments without asking for permission.
 - The AI's comments keep the order they were given, and the new-comment pill goes to the highest one.
 
+### 0.1.8 (2026-11-27): your own pull request, and coming back
+
+- A pull request you opened offers no Approve or Request changes: its author can only comment, so Submit review goes out as a comment.
+- Coming back to a pull request goes on with the same walkthrough: its label is always `PR <number>`, a review an earlier session left halfway keeps its steps and comments, and the session says what the walkthrough already holds.
+- A page server an older release of the plugin started is replaced, so the page always has what the release you run ships, such as syntax colours.
+- A release makes its own tag, and a release run by hand keeps its notes.
+
 ## Now
 
 - Nothing in progress.
