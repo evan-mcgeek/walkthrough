@@ -2626,11 +2626,11 @@ tr.flash td,
     font-size: 19px;
   }
 
-  /* Chevron, path, counts and Viewed keep one line, the path cut short; anything else goes on its own line under it. */
+  /* Two rows: the chevron and the whole path, then the counts, Viewed and Comment on this file; anything else goes on its own line under them. */
   .file-header {
     top: calc(-1 * var(--s4));
     display: grid;
-    grid-template-columns: 44px minmax(0, max-content) auto auto 1fr auto auto;
+    grid-template-columns: 44px auto auto 1fr auto auto;
     row-gap: 0;
     padding: 0 var(--s2) 0 0;
   }
@@ -2640,27 +2640,30 @@ tr.flash td,
   }
 
   .file-path {
-    grid-area: 1 / 2;
+    grid-area: 1 / 2 / auto / -1;
+    padding: var(--s2) 0 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .file-stats {
-    grid-area: 1 / 3;
+    grid-area: 2 / 2;
   }
 
   .file-comments {
-    grid-area: 1 / 4;
+    grid-area: 2 / 3;
   }
 
   .file-header > .spacer {
-    grid-area: 1 / 5;
+    grid-area: 2 / 4;
   }
 
   .viewed-toggle {
-    grid-area: 1 / 6;
+    grid-area: 2 / 5;
   }
 
   .file-comment {
-    grid-area: 1 / 7;
+    grid-area: 2 / 6;
   }
 
   .file-header :is(.changed-tag, .folded-reason, .segmented) {
@@ -2671,15 +2674,15 @@ tr.flash td,
   }
 
   .changed-tag {
-    grid-row: 2;
-  }
-
-  .folded-reason {
     grid-row: 3;
   }
 
-  .file-header .segmented {
+  .folded-reason {
     grid-row: 4;
+  }
+
+  .file-header .segmented {
+    grid-row: 5;
   }
 
   /* Viewed and the Look at links keep the board's pill size to the eye; their targets reach 44px around it. */
