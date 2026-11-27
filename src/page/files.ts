@@ -36,6 +36,20 @@ const reopened = new Set<string>();
 const LARGE_FILE = 400;
 const SVG = 'http://www.w3.org/2000/svg';
 
+/** Marks a file Viewed or not, from its header, its row in the step list or V, as one state; Viewed folds the file. */
+export function setViewed(file: string, now: boolean): void {
+  const { view } = state;
+  if (view.viewed.includes(file) === now) return;
+  state.view = {
+    ...view,
+    viewed: now ? [...view.viewed, file] : view.viewed.filter(one => one !== file),
+    changed: view.changed.filter(one => one !== file),
+  };
+  folds.set(file, now);
+  state.render(true);
+  void send('viewed', { file, viewed: now });
+}
+
 /** Says whether something at `element` is above the bottom of what the reader sees, so adding it would move what they read. */
 export type Shows = (element: Element) => boolean;
 
@@ -174,16 +188,7 @@ export class FilePane {
     };
     const viewed = el('input', { type: 'checkbox' });
     viewed.onchange = () => {
-      const now = viewed.checked;
-      const { view } = state;
-      state.view = {
-        ...view,
-        viewed: now ? [...view.viewed, this.name] : view.viewed.filter(one => one !== this.name),
-        changed: view.changed.filter(one => one !== this.name),
-      };
-      folds.set(this.name, now);
-      state.render(true);
-      void send('viewed', { file: this.name, viewed: now });
+      setViewed(this.name, viewed.checked);
     };
     const stats = parsed.isBinary
       ? [el('span', { className: 'file-stats' }, 'binary')]

@@ -104,11 +104,11 @@ test('J and K move through the files across steps, V marks the file you are on V
 
   await page.keyboard.press('j');
   await expect(page.locator('.file.on')).toHaveAttribute('data-file', 'login.ts');
-  await expect(page.locator('.file-row.on')).toHaveAttribute('title', 'login.ts');
+  await expect(page.locator('.file-row.on')).toHaveAttribute('data-file', 'login.ts');
   await page.keyboard.press('j');
   await expect(page.getByRole('heading', { level: 1, name: 'Tasks' })).toBeVisible();
   await expect(page.locator('.file.on')).toHaveAttribute('data-file', 'tasks.ts');
-  await expect(page.locator('.file-row.on')).toHaveAttribute('title', 'tasks.ts');
+  await expect(page.locator('.file-row.on')).toHaveAttribute('data-file', 'tasks.ts');
 
   await page.keyboard.press('v');
   await expect(page.locator('.file[data-file="tasks.ts"]').getByRole('checkbox', { name: 'Viewed' })).toBeChecked();
