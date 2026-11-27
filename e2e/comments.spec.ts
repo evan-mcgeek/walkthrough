@@ -69,7 +69,7 @@ test('the AI and you comment on a whole file in the band above its diff, oldest 
   await expect(thread.getByText('Pending')).toBeVisible();
   await expect(file.locator('.thread-row')).toHaveCount(0);
   await expect(file.locator('.file-comments')).toHaveText('2');
-  await expect(page.locator('.file-row[title="login.ts"] .file-count')).toHaveText('2');
+  await expect(page.locator('.file-row[data-file="login.ts"] .file-count')).toHaveText('2');
   expect(repo.run('comments').stdout.trim().split('\n').map(line => JSON.parse(line) as unknown)).toContainEqual(expect.objectContaining({ file: 'login.ts', subject: 'file', body: 'Name it for what it does.' }));
 
   await thread.getByRole('button', { name: 'Ask AI' }).click();

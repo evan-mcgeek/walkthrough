@@ -138,6 +138,8 @@ function screenshot({ name, alt }: NonNullable<Step['screenshot']>): HTMLElement
   };
   close.onclick = () => {
     toggle(false);
+    // Close hides itself; Safari never focused it on a click, so the keyboard goes back to the screenshot either way.
+    button.focus();
   };
   toggle(false);
   return figure;

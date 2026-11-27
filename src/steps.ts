@@ -106,7 +106,7 @@ function stepIds({ steps, lastStep = 0 }: Walkthrough, inputs: StepInput[]): str
   return ids.map(id => id ?? String(++next));
 }
 
-const lookShown = (step: Step, { file, start, end }: Look) => {
+export const lookShown = (step: Step, { file, start, end }: Pick<Look, 'file' | 'start' | 'end'>) => {
   const shown = step.files.includes(file) ? shownLines(step, file) : null;
   return !!shown?.has(start) && shown.has(end);
 };

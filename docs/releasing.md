@@ -9,12 +9,13 @@ A merged pull request labelled `release` releases Walkthrough.
    1. stops if `v<version>` is tagged already, so a release without a version bump publishes nothing, or if `ROADMAP.md` has no section for it;
    2. runs the lint, the tests in Chromium and `claude plugin validate`;
    3. builds the plugin onto the `release` branch with `npm run release` and pushes it;
-   4. tags that build `v<version>` and makes its GitHub Release, with the pull request's description as notes.
+   4. makes its GitHub Release, which tags that build `v<version>`, with the pull request's description as notes.
 
 The marketplace installs from the `release` branch, so an install or `claude plugin update walkthrough@walkthrough` takes the new version once the branch is pushed.
 
 If a release stops part-way, run the workflow by hand on `main` (Actions, Release, Run workflow).
 It releases the version in `package.json` when that version has no tag yet.
+Its notes are the description of the last merged pull request labelled `release`.
 
 A pull request from a fork gets a read-only token, so merging one labelled `release` cannot publish.
 Release from a branch in this repository: merge the fork's work first, then open the version bump from your own branch.

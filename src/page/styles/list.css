@@ -54,8 +54,9 @@
   border-radius: var(--r-xs);
   background: none;
   color: var(--ink);
-  font: 500 13.5px/1.4 var(--font-mono);
+  font: 500 14px/1.4 var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-align: left;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -68,8 +69,9 @@
 .list-id {
   display: block;
   color: var(--muted);
-  font: 400 12px/1.4 var(--font-mono);
+  font: 400 12.5px/1.4 var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   overflow-wrap: anywhere;
 }
 

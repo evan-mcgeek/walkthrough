@@ -14,6 +14,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   release:
@@ -50,15 +51,19 @@ jobs:
       - run: npx -y @anthropic-ai/claude-code@2.1.331 plugin validate --strict plugin
       - run: npm run release
       - run: git push origin release
+      # The release makes its own tag on the build, so no tag is pushed; run by hand, the notes come from the last pull request labelled release.
       - name: Tag the build and make its GitHub Release
         run: |
-          git tag -a "$TAG" release -m "Walkthrough ${TAG#v}"
-          git push origin "$TAG"
+          if [ -z "$PR_NUMBER" ]; then
+            PR_NUMBER=$(gh pr list --state merged --label release --limit 1 --json number -q '.[0].number')
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --json title -q .title)
+            PR_BODY=$(gh pr view "$PR_NUMBER" --json body -q .body)
+          fi
           notes="Install or update with \`claude plugin marketplace update walkthrough\` and \`claude plugin update walkthrough@walkthrough\`."
           if [ -n "$PR_NUMBER" ]; then
             notes="$notes"$'\n\n'"$PR_TITLE (#$PR_NUMBER)"$'\n\n'"$PR_BODY"
           fi
-          gh release create "$TAG" --verify-tag --latest --title "Walkthrough ${TAG#v}" --notes "$notes"
+          gh release create "$TAG" --target "$(git rev-parse release)" --latest --title "Walkthrough ${TAG#v}" --notes "$notes"
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}

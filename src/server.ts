@@ -20,7 +20,9 @@ import { readWalkthrough } from './walkthrough';
 import { DEFAULT_VIEWER, mergeViewer, type Viewer } from './viewer';
 import { tooLong } from './words';
 
-type ServerRecord = { pid: number; started: string; url: string };
+/** The built CLI the server runs, which names the plugin release it came from. */
+type ServerRecord = { pid: number; started: string; url: string; script?: string };
+const SCRIPT = fileURLToPath(import.meta.url);
 type Answer = { status: number; body?: unknown; after?: () => void };
 type Route = (body: Record<string, unknown>) => Answer | Promise<Answer>;
 
@@ -96,9 +98,13 @@ export function ensureServer(dir: string, list = false): Promise<string> {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   return locked(recordFile(dir), async () => {
     const running = readRecord(dir);
-    if (running && alive(running)) return running.url;
+    if (running && alive(running)) {
+      if (running.script === SCRIPT) return running.url;
+      // Each release of the plugin runs from its own folder: a server another one started serves that release's page.
+      await stopServer(dir);
+    }
     const log = fs.openSync(path.join(dir, 'server.log'), 'a', 0o600);
-    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), 'serve', dir, ...(list ? ['--list'] : [])], {
+    const child = spawn(process.execPath, [SCRIPT, 'serve', dir, ...(list ? ['--list'] : [])], {
       // Not the folder start ran in, which may be a worktree removed while the page is open.
       cwd: commonDir(process.cwd()),
       detached: true,
@@ -176,6 +182,7 @@ export function serve(dir: string, list = false): void {
       pid: process.pid,
       started: psStart(process.pid),
       url: `http://127.0.0.1:${String(port)}/s/${token}/`,
+      script: SCRIPT,
     };
     writeJson(recordFile(dir), record);
   });

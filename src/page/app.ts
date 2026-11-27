@@ -2,11 +2,11 @@
 import type { WalkthroughView } from '../review';
 import { DEFAULT_VIEWER } from '../viewer';
 import { chooseViewer, loadViewer } from './appearance';
-import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
+import { attrs, el, menuKeys, postQuietly, region, showAlert, stopReading } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
-import { type FilePane, pick } from './files';
+import { type FilePane, goTo, pick, setViewed } from './files';
 import { icon } from './icons';
-import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
+import { animate, duration, FADE_IN, fadeAway, fadeOut, flash, grow, reduced, settle, tick } from './motion';
 import { moving, shownMoves } from './moves';
 import { Opening, openingNav } from './opening';
 import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile, threadStep } from './state';
@@ -81,6 +81,9 @@ function go(address: string): void {
 /** After moving to another step or the Summary: what was held opens, the old pane leaves, the new one enters, and the page starts at its top. */
 function moved(): void {
   onFile = null;
+  const to = current();
+  // Moving to a step opens it, even one its chevron folded.
+  if (to.kind === 'step' && stepFolds.get(to.pane.step.id) === false) stepFolds.delete(to.pane.step.id);
   for (const one of arrived) one.classList.remove('arriving');
   arrived = [];
   const old = content.firstElementChild;
@@ -109,14 +112,14 @@ function moved(): void {
 
 const LEAVE_MS = 100;
 
-/** The pane moved away from stays where it was read and leaves to the left, then goes. */
-function leave(old: HTMLElement, scrolled: number): void {
+/** The pane moved away from stays where it was read and leaves, to the left unless `slide` is false, then goes. */
+function leave(old: HTMLElement, scrolled: number, slide = true): void {
   attrs(old, { inert: '', 'aria-hidden': 'true' });
   content.append(old);
-  const at = `translateY(${String(-scrolled)}px)`;
-  const still = reduced();
+  const at = `translateY(${String(main.scrollTop - scrolled)}px)`;
+  const still = reduced() || !slide;
   const leaving = animate(old, 'pane-leave', [{ opacity: 1, transform: at }, { opacity: 0, transform: still ? at : `${at} translateX(-12px)` }], {
-    ms: LEAVE_MS,
+    ms: slide ? LEAVE_MS : 'fast',
     curve: still ? 'linear' : 'ease-in',
     fill: 'forwards',
   });
@@ -128,24 +131,44 @@ function leave(old: HTMLElement, scrolled: number): void {
   );
 }
 
-function reveal({ thread: id, edit, file }: Reveal): void {
+/** Goes to a file, a thread or lines and marks them: in the step you are on by a scroll, in another after the pane swap. */
+function reveal({ thread: id, edit, file, lines }: Reveal): void {
+  if (file !== undefined && lines) {
+    const look = { file, start: lines[0], end: lines[1], label: '' };
+    const found = paneOfFile(file);
+    if (!found?.pane?.look(look.start, look.end, main, found.smooth)) changes.look(look);
+    return;
+  }
   const thread = state.view.threads.find(one => one.id === id);
   const stepId = thread ? threadStep(thread) : file === undefined ? undefined : stepOfFile(file)?.id;
   if (stepId === undefined) return;
   const name = thread?.file ?? file ?? '';
   // What changed since the last review may leave out the file or the thread's lines.
   const found = paneOf(stepId).fileNamed(name);
-  if (changes.since && (!found || (thread && !found.thread(thread.id)))) changes.since = false;
-  go(stepAddress(stepId));
+  const widen = changes.since && (!found || (thread && !found.thread(thread.id)));
+  if (widen) changes.since = false;
+  const at = current();
+  const smooth = !widen && at.kind === 'step' && at.pane.step.id === stepId;
+  if (smooth) {
+    pick(null);
+    showDrawer(false);
+  } else go(stepAddress(stepId));
   const pane = paneOf(stepId).fileNamed(name);
   if (!pane) return;
   pane.open();
-  const shown = thread && pane.thread(thread.id);
-  shown?.box.show();
-  const target = shown ? shown.row : pane.box;
-  main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
   // A pane still leaving would scroll along with the one landing here.
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
+  onFile = name;
+  drawOnFile();
+  const shown = thread && pane.thread(thread.id);
+  if (shown) {
+    shown.box.show();
+    goTo(main, shown.row, 120, smooth);
+    const marked = pane.linesOf(thread.id);
+    flash(marked.length ? marked : [shown.row]);
+  } else pane.mark(main, smooth);
+  // The keyboard goes where the page went, as it goes to the step title after a pane swap; the step list may have closed under it.
+  pane.focus();
   if (shown && edit) shown.box.edit(edit);
 }
 
@@ -180,17 +203,16 @@ function drawPill(): void {
 }
 
 pill.onclick = () => {
-  // The highest on the page, whatever order they arrived in.
-  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) one.classList.remove('arriving');
+  // The highest on the page, whatever order they arrived in; a folded one has no place until it shows.
+  const [first] = [...arrived].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   for (const one of arrived) grow(one.querySelector<HTMLElement>(':scope > td > .thread-cell') ?? one);
   arrived = [];
   drawPill();
-  if (first)
-    main.scrollTo({
-      top: main.scrollTop + first.getBoundingClientRect().top - main.getBoundingClientRect().top - 120,
-      behavior: reduced() ? 'instant' : 'smooth',
-    });
+  if (first) {
+    goTo(main, first, 120, true);
+    flash([first]);
+  }
 };
 
 // The header is drawn once and changed in place, so its count, bar and indicator can move.
@@ -296,9 +318,13 @@ function drawHeader(onSummary: boolean): void {
 
 /** The line under the header once the branch has commits the walkthrough does not show. */
 function drawBehind(behind: boolean): void {
+  if (behindLine.hidden === !behind) return;
   if (behind && !behindLine.hasChildNodes())
-    behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox());
+    behindLine.append(icon('info'), el('span', { className: 'behind-text' }, 'The branch has new commits. Run the walkthrough again to see them:'), commandBox(true));
+  // The line goes in above the pane without motion, and the pane scrolls by its height so the line being read stays put.
+  const top = main.getBoundingClientRect().top;
   behindLine.hidden = !behind;
+  main.scrollTop += main.getBoundingClientRect().top - top;
 }
 
 function showDrawer(open: boolean): void {
@@ -316,7 +342,7 @@ let menu: HTMLElement | null = null;
 
 function closeMenu(refocus: boolean): void {
   if (!menu) return;
-  menu.remove();
+  fadeAway(menu);
   menu = null;
   const button = header.querySelector<HTMLElement>('.menu-button');
   button?.setAttribute('aria-expanded', 'false');
@@ -382,6 +408,7 @@ function endSession(): void {
   stopped = true;
   clearInterval(poller);
   showEnd('ended');
+  stopReading();
   void postQuietly('stop', {});
 }
 
@@ -389,9 +416,22 @@ const endPage = el('main', { className: 'end-page', hidden: true });
 document.body.append(endPage);
 let ending: { kind: Ending; stop: () => void; scrolled: [number, number] } | null = null;
 
-/** Puts the farewell or the lost session in place of the walkthrough, which stays as it was underneath. */
+/** What the farewell and the lost session hide: the panes and the header's controls. */
+const walkthroughParts = () => [frame, ...[...header.children].filter((one): one is HTMLElement => one instanceof HTMLElement && !one.matches('.mark, .change-label'))];
+
+/** The walkthrough fading out under the screen that replaces it, settled and hidden once faded. */
+function settleWalkthrough(): void {
+  document.body.classList.remove('fading');
+  for (const part of walkthroughParts()) {
+    settle(part);
+    part.inert = false;
+  }
+}
+
+/** Puts the farewell or the lost session in place of the walkthrough, which stays as it was underneath; the walkthrough fades out, then the screen fades in. */
 function showEnd(kind: Ending): void {
   if (ending?.kind === kind) return;
+  const fromWalkthrough = !ending;
   ending?.stop();
   closeMenu(false);
   showDrawer(false);
@@ -401,9 +441,21 @@ function showEnd(kind: Ending): void {
   endPage.replaceChildren(screen.box);
   endPage.hidden = false;
   endPage.scrollTop = 0;
+  // Fading first, so the walkthrough is never hidden in between and keeps its scroll while it fades.
+  if (fromWalkthrough) document.body.classList.add('fading');
   document.body.classList.add('ended');
   drawHeader(current().kind === 'summary');
   endPage.querySelector<HTMLElement>('.end-title')?.focus({ preventScroll: true });
+  if (!fromWalkthrough) {
+    animate(endPage, 'end-in', FADE_IN, { ms: 'base', curve: 'linear' });
+    return;
+  }
+  const fades = walkthroughParts().map(part => {
+    part.inert = true;
+    return animate(part, 'end-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 'fast', curve: 'ease-in', fill: 'forwards' }).finished;
+  });
+  animate(endPage, 'end-in', FADE_IN, { ms: 'base', curve: 'linear', delay: duration('fast') });
+  Promise.all(fades).then(settleWalkthrough, () => {});
 }
 
 /** The server answered again: the walkthrough comes back where it was. */
@@ -412,19 +464,24 @@ function hideEnd(): void {
   const [mainTop, navTop] = ending.scrolled;
   ending.stop();
   ending = null;
+  settleWalkthrough();
   endPage.hidden = true;
   endPage.replaceChildren();
   document.body.classList.remove('ended');
+  render(true);
+  // After the redraw, which may put the behind line back and scroll by its height.
   main.scrollTop = mainTop;
   nav.scrollTop = navTop;
-  render(true);
   content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
 }
 
-// The step list is drawn again only when the steps change; Viewed, counts, spinners and the current row change in place.
+// The step list is drawn again only when the steps change; Viewed, counts, folds and the current row change in place.
 let drawnNav = '';
-type NavFile = { file: string; row: HTMLElement; tick: HTMLElement; count: HTMLElement; shown: number };
-let navSteps: { id: string; row: HTMLElement; files: NavFile[] }[] = [];
+type NavFile = { file: string; row: HTMLElement; mark: HTMLElement; count: HTMLElement; shown: number };
+type NavStep = { id: string; item: HTMLElement; row: HTMLElement; toggle: HTMLElement; meta: HTMLElement; files: NavFile[] };
+let navSteps: NavStep[] = [];
+/** Steps folded or opened by their chevron, kept while the page is open; the others are open only while you are on them. */
+const stepFolds = new Map<string, boolean>();
 const pendingCount = el('span', { className: 'file-count' });
 const summaryRow = navLink('summary', 'step-row summary-row', icon('summary'), el('span', { className: 'step-name' }, 'Summary'), pendingCount);
 summaryRow.dataset['key'] = 'summary';
@@ -439,6 +496,37 @@ function navLink(address: string, className: string, ...children: (Node | string
   return row;
 }
 
+
+/** A file's row: its Viewed checkbox, its name going to the file and its comment count going to the first comment. */
+function navFile(step: string, file: string, id: string): NavFile {
+  const mark = attrs(el('button', { type: 'button', className: 'viewed-mark', title: 'Viewed' }, icon('ring'), icon('met')), {
+    role: 'checkbox',
+    'aria-label': 'Viewed',
+    'aria-describedby': id,
+  });
+  mark.dataset['key'] = `mark:${file}`;
+  mark.onclick = () => {
+    setViewed(file, !state.view.viewed.includes(file));
+  };
+  const name = el('a', { className: 'file-name', id, href: `#${stepAddress(step)}`, title: file }, baseName(file));
+  name.dataset['key'] = `file:${file}`;
+  name.onclick = event => {
+    event.preventDefault();
+    reveal({ file });
+  };
+  const count = el('a', { className: 'file-count', href: `#${stepAddress(step)}`, hidden: true }, icon('message'), '');
+  count.dataset['key'] = `count:${file}`;
+  count.onclick = event => {
+    event.preventDefault();
+    // The first as the page draws them: the band above the diff, then down the lines.
+    const first = paneOf(step).fileNamed(file)?.firstThread();
+    if (first) reveal({ thread: first });
+  };
+  const row = el('div', { className: 'file-row' }, mark, name, count);
+  row.dataset['file'] = file;
+  return { file, row, mark, count, shown: -1 };
+}
+
 function buildNav(): void {
   const focused = document.activeElement instanceof HTMLElement && nav.contains(document.activeElement) ? document.activeElement.dataset['key'] : undefined;
   const scrolled = nav.scrollTop;
@@ -446,21 +534,19 @@ function buildNav(): void {
     const row = navLink(stepAddress(step.id), 'step-row', el('span', { className: 'step-number' }, String(index + 1)), el('span', { className: 'step-name', title: step.title }, step.title));
     row.dataset['key'] = `step:${step.id}`;
     row.classList.toggle('quiet', shownFiles(step).length === 0);
-    const files = shownFiles(step).map(file => {
-      const tick = attrs(el('span', { className: 'viewed-tick' }, icon('ring'), icon('met')), { role: 'img' });
-      const count = el('span', { className: 'file-count' }, icon('message'), '');
-      const fileRow = el('a', { className: 'file-row', href: `#${stepAddress(step.id)}`, title: file }, tick, el('span', { className: 'file-name' }, baseName(file)), count);
-      fileRow.dataset['key'] = `file:${file}`;
-      fileRow.onclick = event => {
-        event.preventDefault();
-        reveal({ file });
-      };
-      return { file, row: fileRow, tick, count, shown: -1 };
-    });
-    return { id: step.id, row, files };
+    const files = shownFiles(step).map((file, at) => navFile(step.id, file, `nav-file-${String(index)}-${String(at)}`));
+    const list = el('ul', { className: 'file-list', id: `nav-files-${String(index)}` }, ...files.map(one => el('li', {}, one.row)));
+    const toggle = attrs(el('button', { type: 'button', className: 'icon-button step-toggle' }, icon('chevron-right')), { 'aria-controls': list.id });
+    toggle.dataset['key'] = `fold:${step.id}`;
+    toggle.onclick = () => {
+      stepFolds.set(step.id, !navSteps.find(one => one.id === step.id)?.item.classList.contains('open'));
+      drawNav(current());
+    };
+    const meta = el('p', { className: 'step-meta' });
+    const item = el('li', { className: 'step-item' }, el('div', { className: 'step-line' }, toggle, row), meta, el('div', { className: 'step-files' }, list));
+    return { id: step.id, item, row, toggle, meta, files };
   });
-  const items = navSteps.map(({ row, files }) => el('li', {}, row, el('ul', { className: 'file-list' }, ...files.map(one => el('li', {}, one.row)))));
-  nav.replaceChildren(el('ol', { className: 'steps' }, ...items), summaryRow);
+  nav.replaceChildren(el('ol', { className: 'steps' }, ...navSteps.map(({ item }) => item)), el('div', { className: 'summary-dock' }, summaryRow));
   nav.scrollTop = scrolled;
   if (focused !== undefined) nav.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }
@@ -480,21 +566,37 @@ function drawNav(at: At): void {
     buildNav();
   }
   const here = at.kind === 'step' ? at.pane.step.id : at.kind;
-  for (const { id, row, files } of navSteps) {
+  for (const { id, item, row, toggle, meta, files } of navSteps) {
     if (here === id) row.setAttribute('aria-current', 'page');
     else row.removeAttribute('aria-current');
+    const open = stepFolds.get(id) ?? here === id;
+    item.classList.toggle('open', open);
+    const fold = open ? 'Hide files' : 'Show files';
+    attrs(toggle, { 'aria-expanded': String(open), 'aria-label': fold, title: fold });
+    const list = item.querySelector<HTMLElement>('.step-files');
+    if (list) list.inert = !open;
+    let viewed = 0;
+    let comments = 0;
     for (const one of files) {
       const seen = view.viewed.includes(one.file);
+      if (seen) viewed++;
       one.row.classList.toggle('viewed', seen);
-      one.tick.setAttribute('aria-label', seen ? 'Viewed' : 'Not viewed');
+      one.mark.setAttribute('aria-checked', String(seen));
       const count = commentCount(id, one.file);
+      comments += count;
       if (count === one.shown) continue;
       one.count.hidden = count === 0;
-      one.count.title = plural(count, 'comment');
+      one.count.title = `${plural(count, 'comment')}: go to the first`;
+      one.count.setAttribute('aria-label', `${plural(count, 'comment')} on ${baseName(one.file)}: go to the first`);
       one.count.lastChild?.replaceWith(String(count));
       if (one.shown > 0 && count > 0) tick(one.count);
       one.shown = count;
     }
+    meta.hidden = open || files.length === 0;
+    meta.replaceChildren(
+      el('span', {}, viewed ? `${String(viewed)} of ${String(files.length)} viewed` : plural(files.length, 'file')),
+      ...(comments ? [attrs(el('span', { className: 'file-count', title: plural(comments, 'comment') }, icon('message'), String(comments)), { role: 'img', 'aria-label': plural(comments, 'comment') })] : []),
+    );
   }
   if (here === 'summary') summaryRow.setAttribute('aria-current', 'page');
   else summaryRow.removeAttribute('aria-current');
@@ -505,6 +607,49 @@ function drawNav(at: At): void {
     shownPending = pending;
   }
 }
+
+// The step list's right edge resizes it while the page is open; at phone width the list is a drawer and the edge is hidden.
+const WIDTH = { least: 200, most: 400, start: 248, key: 16 } as const;
+const frame = nav.parentElement ?? document.body;
+let stepListWidth: number = WIDTH.start;
+const edge = attrs(el('div', { className: 'step-list-edge', tabIndex: 0, title: 'Resize the step list' }), {
+  role: 'separator',
+  'aria-label': 'Resize the step list',
+  'aria-orientation': 'vertical',
+  'aria-controls': 'nav',
+  'aria-valuemin': String(WIDTH.least),
+  'aria-valuemax': String(WIDTH.most),
+});
+
+function resizeStepList(width: number): void {
+  stepListWidth = Math.round(Math.min(WIDTH.most, Math.max(WIDTH.least, width)));
+  frame.style.setProperty('--step-list-width', `${String(stepListWidth)}px`);
+  edge.setAttribute('aria-valuenow', String(stepListWidth));
+}
+
+edge.onpointerdown = event => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  edge.setPointerCapture(event.pointerId);
+  edge.classList.add('dragging');
+};
+edge.onpointermove = event => {
+  if (edge.hasPointerCapture(event.pointerId)) resizeStepList(event.clientX - frame.getBoundingClientRect().left);
+};
+edge.onlostpointercapture = () => {
+  edge.classList.remove('dragging');
+};
+edge.ondblclick = () => {
+  resizeStepList(WIDTH.start);
+};
+edge.onkeydown = event => {
+  const by = event.key === 'ArrowLeft' ? -WIDTH.key : event.key === 'ArrowRight' ? WIDTH.key : 0;
+  if (!by) return;
+  event.preventDefault();
+  resizeStepList(stepListWidth + by);
+};
+resizeStepList(WIDTH.start);
+nav.after(edge);
 
 /** Redraws what changed, keeping the line being read where it is; `own` for what the person did, which shows in place. */
 function render(own: boolean, navigated = false): void {
@@ -557,6 +702,9 @@ function showChanges(since: boolean): void {
   const top = main.getBoundingClientRect().top;
   const reading = [...content.querySelectorAll<HTMLElement>(':scope > :first-child .file')].find(box => box.getBoundingClientRect().bottom > top);
   const was = reading?.getBoundingClientRect().top;
+  const old = content.firstElementChild;
+  const scrolled = main.scrollTop;
+  if (old) settle(old);
   changes.since = since;
   render(true, true);
   // A pane shown before may have left with the page's last move.
@@ -568,34 +716,41 @@ function showChanges(since: boolean): void {
   }
   const same = reading && content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(reading.dataset['file'] ?? '')}"]`);
   if (same && was !== undefined) main.scrollTop += same.getBoundingClientRect().top - was;
+  // Same step, other content: the panes cross-fade where they are, with no slide.
+  if (old instanceof HTMLElement && shown && shown !== old) {
+    leave(old, scrolled, false);
+    animate(shown, 'pane-enter', FADE_IN, { ms: 'base', curve: 'linear' });
+  }
 }
 changes.choose = showChanges;
 changes.look = ({ file, start, end }) => {
   if (!changes.since) return;
   showChanges(false);
   const at = current();
-  if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main);
+  if (at.kind === 'step') at.pane.fileNamed(file)?.look(start, end, main, false);
 };
 
-/** Opens the step that changes the file, at once, and gives the file's pane there. */
-function paneOfFile(file: string): FilePane | undefined {
+/** Opens the step that changes the file and gives the file's pane there; `smooth` when it is the step you are on, which scrolls rather than swaps. */
+function paneOfFile(file: string): { pane: FilePane | undefined; smooth: boolean } | undefined {
   const step = stepOfFile(file);
   const at = current();
   if (!step || at.kind === 'opening') return undefined;
-  if (at.kind !== 'step' || at.pane.step.id !== step.id) go(stepAddress(step.id));
+  const smooth = at.kind === 'step' && at.pane.step.id === step.id;
+  if (!smooth) go(stepAddress(step.id));
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
-  return paneOf(step.id).fileNamed(file);
+  return { pane: paneOf(step.id).fileNamed(file), smooth };
 }
 
 moving.show = (move, to) => {
   const { file, line } = move[to];
-  const pane = paneOfFile(file);
-  if (to === 'from') pane?.lookDeparture(line, main);
-  else pane?.look(line, line + move.count - 1, main);
+  const found = paneOfFile(file);
+  if (to === 'from') found?.pane?.lookDeparture(line, main, found.smooth);
+  else found?.pane?.look(line, line + move.count - 1, main, found.smooth);
 };
 moving.copied = ({ from: { file, line }, count }) => {
   const look = { file, start: line, end: line + count - 1, label: '' };
-  if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+  const found = paneOfFile(file);
+  if (!found?.pane?.look(look.start, look.end, main, found.smooth)) changes.look(look);
 };
 
 /** The file J, K and V act on; it carries the focus ring in the diff and in the step list. */
@@ -626,19 +781,19 @@ function moveFile(by: 1 | -1): void {
       ? (order.find(one => one.file === top) ?? (by > 0 ? order.find(one => one.index > here) : order.findLast(one => one.index < here)))
       : order[on + by];
   if (!next) return;
-  if (next.step !== at.pane.step.id) go(stepAddress(next.step));
+  const smooth = next.step === at.pane.step.id;
+  if (!smooth) go(stepAddress(next.step));
   onFile = next.file;
   drawOnFile();
-  const box = paneOf(next.step).fileNamed(next.file)?.box;
   for (const leaving of content.querySelectorAll(':scope > [inert]')) leaving.remove();
-  if (box) main.scrollTop += box.getBoundingClientRect().top - main.getBoundingClientRect().top - 16;
+  paneOf(next.step).fileNamed(next.file)?.mark(main, smooth);
 }
 
 /** V: Viewed on the file you are on, or else the one at the top. */
 function toggleViewed(): void {
   onFile ??= fileAtTop() ?? null;
   drawOnFile();
-  if (onFile) content.querySelector<HTMLElement>(`:scope > :first-child .file[data-file="${CSS.escape(onFile)}"] .viewed-toggle input`)?.click();
+  if (onFile) setViewed(onFile, !state.view.viewed.includes(onFile));
 }
 
 /** The Opening fades out, then the walkthrough enters as a step does. */
@@ -762,7 +917,15 @@ function poll(): void {
 
 PAGE.lost = poll;
 viewer = await loadViewer();
-const first = await fetch('data/walkthrough.json');
+// A first load that fails, as when the system briefly suspends the network, is tried again on the poll's beat.
+let first: Response | undefined;
+while (!first)
+  first = await fetch('data/walkthrough.json').catch(
+    () =>
+      new Promise<undefined>(done => {
+        setTimeout(done, POLL_MS);
+      }),
+  );
 tag = first.headers.get('etag') ?? '';
 state.view = (await first.json()) as WalkthroughView;
 if (!location.hash && firstAddress()) history.replaceState(null, '', `#${firstAddress()}`);

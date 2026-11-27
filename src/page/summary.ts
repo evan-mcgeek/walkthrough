@@ -5,7 +5,7 @@ import { attrs, el } from './dom';
 import { sentLine, them, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
 import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, suggestionCode, threadStep, unresolved } from './state';
-import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
+import { animate, duration, FADE_IN, shrink, tick } from './motion';
 import { avatar } from './threads';
 
 const TYPES = Object.entries(TYPE_NAMES) as [ReviewType, string][];
@@ -15,6 +15,9 @@ const CRITERIA: Record<Criterion['status'], [IconName, string]> = {
   'not-met': ['not-met', 'Not met'],
   'not-checked': ['unchecked', 'Not checked'],
 };
+/** Gaps first, then what the AI could not check, then what is met; the ticket's order within each. */
+const ORDER: Criterion['status'][] = ['not-met', 'partly', 'not-checked', 'met'];
+const linesWord = (lines: [number, number]) => `${lines[0] === lines[1] ? 'line' : 'lines'} ${linesLabel(lines)}`;
 
 /** The text on one line, without its suggestion blocks, which show only in the thread. */
 function rowText(body: string): { text: string; suggests: boolean } {
@@ -27,8 +30,8 @@ function rowText(body: string): { text: string; suggests: boolean } {
 /** The AI's resolves not sent yet, or sent with the review the Summary shows as submitted. */
 const resolvedByAi = () => state.view.threads.filter(one => one.resolvedBy === 'ai' && (one.resolveReview === undefined || one.resolveReview === state.view.submitted?.id));
 
-/** What the Summary links to: a thread, which it can open for editing, or a file. */
-export type Reveal = { thread?: string; edit?: string; file?: string };
+/** What the Summary links to: a thread, which it can open for editing, a file, or lines of it to flash. */
+export type Reveal = { thread?: string; edit?: string; file?: string; lines?: [number, number] };
 
 export class SummaryPane {
   readonly box = el('section', { className: 'summary' });
@@ -101,10 +104,7 @@ export class SummaryPane {
         () => {},
       );
     }
-    const still = reduced();
-    animate(note, 'review-done', still ? FADE_IN : [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { ms: 'base', curve: still ? 'linear' : 'ease-out', delay: after });
-    const check = note.querySelector(':scope > .icon');
-    if (check && !still) animate(check, 'review-check', [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], { ms: 'slow', curve: 'ease-out', delay: after + 40 });
+    animate(note, 'review-done', FADE_IN, { ms: 'base', curve: 'linear', delay: after });
   }
 
   /** The row fades, then closes, while the comment is deleted. */
@@ -216,13 +216,46 @@ export class SummaryPane {
         el(
           'ul',
           { className: 'criteria' },
-          ...criteria.map(({ text, status }) => {
-            const [mark, word] = CRITERIA[status];
-            return el('li', { className: `criterion ${status}` }, icon(mark), el('span', { className: 'criterion-text', title: text }, text), el('span', { className: 'criterion-word' }, word));
-          }),
+          ...[...criteria]
+            .sort((one, other) => ORDER.indexOf(one.status) - ORDER.indexOf(other.status))
+            .map(criterion => {
+              const { text, status } = criterion;
+              const [mark, word] = CRITERIA[status];
+              const shows = this.shows(criterion);
+              return el(
+                'li',
+                { className: `criterion ${status}` },
+                icon(mark),
+                el('span', { className: 'criterion-body' }, el('span', { className: 'criterion-text' }, text), ...(shows.length ? [el('span', { className: 'criterion-shows' }, ...shows)] : [])),
+                el('span', { className: 'criterion-word' }, word),
+              );
+            }),
         ),
       ),
     ];
+  }
+
+  /** A gap's link to the AI comment that closes it and what is missing; met's link to its lines; not checked's reason. */
+  private shows({ comment, missing, file, lines, reason }: Criterion): (HTMLElement | string)[] {
+    if (reason) return [reason];
+    if (file && lines)
+      return [
+        el(
+          'a',
+          { className: 'where', href: '#', title: `${file} ${linesWord(lines)}: go to the lines`, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ file, lines }); } },
+          `${baseName(file)}:${linesLabel(lines)}`,
+        ),
+      ];
+    // A deleted comment takes its link with it.
+    const thread = comment === undefined ? undefined : state.view.threads.find(one => one.comments.some(said => said.id === comment));
+    const where = thread ? `${baseName(thread.file)}${thread.lines ? `:${linesLabel(thread.lines)}` : ''}` : '';
+    const title = thread ? `${thread.file}${thread.lines ? ` ${linesWord(thread.lines)}` : ''}: go to the comment` : '';
+    const link = !thread
+      ? []
+      : threadStep(thread) === undefined
+        ? [el('span', { className: 'where', title }, where)]
+        : [el('a', { className: 'where', href: '#', title, onclick: (event: MouseEvent) => { event.preventDefault(); this.reveal({ thread: thread.id }); } }, where)];
+    return [...link, ...(missing ? [missing] : [])];
   }
 
   private reviewBox(): HTMLElement {
@@ -233,6 +266,8 @@ export class SummaryPane {
       this.draft = area.value;
     };
     // Your own change has no review type: it goes to the agent with its comments, so it needs one.
+    // Your own pull request has none either: its author can only comment.
+    const types = !own && !state.view.pr?.yours;
     const blocked = own && pendingComments().length === 0;
     const submit = el('button', { type: 'button', className: 'btn primary wide', disabled: blocked || this.sending }, own ? 'Send to agent' : 'Submit review');
     const note = el('p', { className: 'review-note', hidden: !blocked }, 'Add a comment to send it.');
@@ -248,14 +283,13 @@ export class SummaryPane {
     submit.onclick = async () => {
       this.sending = true;
       submit.disabled = true;
-      const still = reduced();
-      const fading = animate(box, 'review-leave', still ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], {
+      const fading = animate(box, 'review-leave', [{ opacity: 1 }, { opacity: 0 }], {
         ms: 'fast',
         curve: 'ease-in',
         fill: 'forwards',
       });
       this.sentBox = { box, fading };
-      const done = await send('submit', { ...(!own && { type: this.type }), summary: this.draft.trim() });
+      const done = await send('submit', { ...(!own && { type: types ? this.type : 'comment' }), summary: this.draft.trim() });
       this.sending = false;
       if (done) this.draft = '';
       else {
@@ -268,7 +302,7 @@ export class SummaryPane {
       { className: 'review-box' },
       el('h2', { className: 'section-head' }, 'Finish your review'),
       area,
-      ...(own ? [] : [attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' })]),
+      ...(types ? [attrs(el('div', { className: 'radios' }, ...radios), { role: 'radiogroup', 'aria-label': 'Finish your review' })] : []),
       submit,
       note,
     );

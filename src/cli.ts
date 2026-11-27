@@ -14,7 +14,7 @@ import { makeInbox, stateDir } from './paths';
 import { readInput } from './input';
 import { buildSteps, carrySteps, parseSteps } from './steps';
 import { parseComments, parseCriteria, parseThreads } from './record';
-import { aiComments, aiResolve, answer, forgetStoppedListener, handedAsk, listen, markPosted, reviewComments, walkthroughView } from './review';
+import { aiComments, aiResolve, answer, forgetStoppedListener, handedAsk, listen, logOf, markPosted, reviewComments, walkthroughView } from './review';
 import {
   markOpened,
   markReady,
@@ -24,6 +24,7 @@ import {
   recordSteps,
   targetName,
   updateWalkthrough,
+  earlierDir,
   walkthroughDir,
 } from './walkthrough';
 
@@ -57,15 +58,26 @@ function located<T extends Options>(
   // Two changes fetched to the same name, such as FETCH_HEAD, would otherwise share one walkthrough.
   else if (!label?.trim()) throw new Error('--base and --head need a --label that names the change');
   else source = { kind: 'range', base, head, label };
-  return { ...parsed, cwd, source, dir: walkthroughDir(currentRepo(cwd), source) };
+  return { ...parsed, cwd, source, dir: renamedDir(currentRepo(cwd), source) };
+}
+
+// An earlier release's folder moves to its new name, unless its page still runs from there.
+function renamedDir(repo: string, source: Source): string {
+  const dir = walkthroughDir(repo, source);
+  const earlier = earlierDir(repo, source);
+  if (earlier === dir || !fs.existsSync(earlier) || fs.existsSync(dir)) return dir;
+  if (serverRunning(earlier)) return earlier;
+  fs.renameSync(earlier, dir);
+  return dir;
 }
 
 async function start(args: string[]): Promise<void> {
-  const { cwd, source, dir, values } = located(args, { options: { pr: { type: 'string' }, title: { type: 'string' } } });
+  const { cwd, source, dir, values } = located(args, { options: { pr: { type: 'string' }, title: { type: 'string' }, yours: { type: 'boolean' } } });
   const number = values.pr?.trim();
   if (number === '') throw new Error('--pr needs the number of the pull request');
   if (values.title !== undefined && number === undefined) throw new Error('--title goes with --pr');
-  const pr = number === undefined ? undefined : { number, title: values.title?.trim() || nameOf(source) };
+  if (values.yours && number === undefined) throw new Error('--yours goes with --pr');
+  const pr = number === undefined ? undefined : { number, title: values.title?.trim() || nameOf(source), ...(values.yours && { yours: true as const }) };
   const change = await changeOf(cwd, source);
   for (const line of await pruneDaily(cwd)) console.log(line);
   const { walkthrough, opened } = await openWalkthrough(dir, source, change, pr, moved => carrySteps(cwd, moved));
@@ -78,6 +90,7 @@ async function start(args: string[]): Promise<void> {
     const line = reviewedLine(dir);
     if (line) console.log(line);
   }
+  if (walkthrough.ready === false && walkthrough.reviewedAt) console.log(`Last reviewed at ${short(walkthrough.reviewedAt)}.`);
   if (opened === 'moved' && steps.length > 0) {
     console.log(`The head moved: ${plural(steps.length, 'step')} kept their files that still change.`);
     const left = walkthrough.unplaced ?? [];
@@ -170,10 +183,9 @@ async function threads(args: string[]): Promise<void> {
 
 async function criteria(args: string[]): Promise<void> {
   const { dir, values } = located(args, FILE_OPTION);
-  const recorded = parseCriteria(readInput(values.file));
-  await updateWalkthrough(dir, walkthrough => {
-    walkthrough.criteria = recorded;
-  });
+  const text = readInput(values.file);
+  const ai = new Set(logOf(dir).flatMap(event => (event.kind === 'comment' && event.by === 'ai' ? [event.id] : [])));
+  const recorded = await updateWalkthrough(dir, walkthrough => (walkthrough.criteria = parseCriteria(text, walkthrough, ai)));
   console.log(`Recorded ${String(recorded.length)} ${recorded.length === 1 ? 'criterion' : 'criteria'}.`);
 }
 
@@ -287,7 +299,7 @@ try {
   if (!command)
     throw new Error(
       'usage: walkthrough <command> [--target <branch> | --base <rev> --head <rev> --label <text>]\n' +
-        '  commands: start [--pr <number> [--title <text>]] | guide | files | steps --file <file> | open | ready\n' +
+        '  commands: start [--pr <number> [--title <text>] [--yours]] | guide | files | steps --file <file> | open | ready\n' +
         '    | comment --file <file> | threads --file <file> | criteria --file <file> | listen | say --answer <id> (<text> | --file <file>)\n' +
         '    | comments | resolve <comment id> | posted [--address <url>] | stop | prune [<branch> | <id>] | export [--out <file>] | list | stop --list\n' +
         '    | policy [show | init | save --file <file>]\n' +

@@ -147,6 +147,29 @@ type Comment = { view: CommentView; thread: string; deleted?: true; wrote: strin
 
 /** The review as the log builds it: each thread with its comments, and the submits in order. */
 function replay(walkthrough: Walkthrough, log: Event[]) {
+  const once = replayAs(walkthrough, log, new Map());
+  const became = sentAndBack(walkthrough, once.threads);
+  return became.size ? replayAs(walkthrough, log, became) : once;
+}
+
+const sameWords = (one: string, other: string) => withoutPrefix(one).replace(/\s+/g, ' ') === withoutPrefix(other).replace(/\s+/g, ' ');
+
+/** Each comment that went out and was recorded back as a thread on the code host, by that thread's id: same place, same words. */
+function sentAndBack(walkthrough: Walkthrough, threads: ThreadView[]): Map<string, string> {
+  const became = new Map<string, string>();
+  for (const back of walkthrough.threads ?? []) {
+    const sent = threads.find(({ id, colleague, file, lines, comments: [first] }) => {
+      if (colleague || became.has(id) || !first || first.review === undefined) return false;
+      return file === back.file && JSON.stringify(lines) === JSON.stringify(back.lines) && sameWords(first.body, back.body);
+    });
+    if (sent) became.set(sent.id, back.id);
+  }
+  return became;
+}
+
+// `became` names the code host's thread each sent comment went on as, so the page shows it once, by that thread's id.
+function replayAs(walkthrough: Walkthrough, log: Event[], became: Map<string, string>) {
+  const as = (thread: string) => became.get(thread) ?? thread;
   const comments = new Map<string, Comment>();
   const roots = new Map<string, Place>();
   const resolved = new Map<string, { by: By; review?: string }>();
@@ -158,8 +181,8 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
     switch (event.kind) {
       case 'comment':
       case 'ask': {
-        const thread = event.thread ?? event.id;
-        if (event.place && !event.thread) roots.set(event.id, event.place);
+        const thread = as(event.thread ?? event.id);
+        if (event.place && !event.thread && !became.has(event.id)) roots.set(event.id, event.place);
         const said = { id: event.id, at: event.at, body: event.text };
         const view: CommentView = event.kind === 'comment' ? { ...said, by: event.by, pending: true } : { ...said, by: 'you', ask: true, waiting: true };
         comments.set(event.id, { view, thread, wrote: event.text });
@@ -183,11 +206,11 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
         break;
       }
       case 'resolve':
-        if (!resolved.has(event.thread)) resolved.set(event.thread, { by: event.by ?? 'you' });
+        if (!resolved.has(as(event.thread))) resolved.set(as(event.thread), { by: event.by ?? 'you' });
         break;
       case 'unresolve': {
-        const one = resolved.get(event.thread);
-        if (one && takesBack(one)) resolved.delete(event.thread);
+        const one = resolved.get(as(event.thread));
+        if (one && takesBack(one)) resolved.delete(as(event.thread));
         break;
       }
       case 'submit':
@@ -233,17 +256,22 @@ function replay(walkthrough: Walkthrough, log: Event[]) {
     };
   };
   const threads: ThreadView[] = [
-    ...(walkthrough.threads ?? []).map(({ id, file, lines, linesHash = '', code, resolved: was, author, at, body, replies }): ThreadView => ({
-      id,
-      ...placed(lines ? { file, lines, linesHash, ...(code && { code }) } : { file }),
-      colleague: true,
-      ...resolvedIn(id, was),
-      comments: [
-        { id, by: 'colleague', author, at, body },
-        ...replies.map((reply, number): CommentView => ({ id: `${id}.${String(number + 1)}`, by: 'colleague', ...reply })),
-        ...ownIn(id),
-      ],
-    })),
+    ...(walkthrough.threads ?? []).map(({ id, file, lines, linesHash = '', code, resolved: was, author, at, body, replies }): ThreadView => {
+      // A comment of the review that came back starts its thread as written here, with the code host's replies after it.
+      const own = ownIn(id);
+      const sent = [...became.values()].includes(id) ? own.shift() : undefined;
+      return {
+        id,
+        ...placed(lines ? { file, lines, linesHash, ...(code && { code }) } : { file }),
+        colleague: true,
+        ...resolvedIn(id, was),
+        comments: [
+          sent ?? { id, by: 'colleague', author, at, body },
+          ...replies.map((reply, number): CommentView => ({ id: `${id}.${String(number + 1)}`, by: 'colleague', ...reply })),
+          ...own,
+        ],
+      };
+    }),
     ...[...roots]
       .filter(([id]) => !gone.has(id))
       .map(([id, place]): ThreadView => ({ id, ...placed(place), ...resolvedIn(id), comments: ownIn(id) })),
@@ -371,7 +399,8 @@ export async function ask(dir: string, { text, thread, ...where }: Record<string
 
 const threadOf = (dir: string, id: unknown) => {
   const walkthrough = readWalkthrough(dir);
-  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find(one => one.id === id) : undefined;
+  // A comment of the review that came back as a thread on the code host is found by its own id too.
+  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find(one => one.id === id || one.comments[0]?.id === id) : undefined;
 };
 
 /** The person resolves a colleague's thread from the page. */
@@ -402,7 +431,8 @@ export async function submit(dir: string, { type, summary }: Record<string, unkn
   const view = walkthroughView(dir);
   if (!view || (summary !== undefined && typeof summary !== 'string') || view.submitted) return false;
   const pending = view.threads.flatMap(one => one.comments).some(one => one.pending);
-  if (view.pr ? !REVIEW_TYPES.includes(type as ReviewType) : type !== undefined || !pending) return false;
+  // The author of a pull request can only comment on it.
+  if (view.pr ? !REVIEW_TYPES.includes(type as ReviewType) || (view.pr.yours && type !== 'comment') : type !== undefined || !pending) return false;
   return !!(await record(dir, { kind: 'submit', ...(view.pr && { type: type as ReviewType }), summary: cleanText(summary), head: view.head }));
 }
 
@@ -419,8 +449,11 @@ export async function markViewed(dir: string, { file, viewed }: Record<string, u
 }
 
 /** The session's own pending comments on lines; they go out with the review unless the person deletes them. */
-export function aiComments(dir: string, given: { place: Place; body: string }[]): Promise<Event[]> {
-  return Promise.all(given.map(({ place, body }) => record(dir, { kind: 'comment', by: 'ai', text: body, place })));
+export async function aiComments(dir: string, given: { place: Place; body: string }[]): Promise<Event[]> {
+  const recorded: Event[] = [];
+  // One after another, so the log keeps them in the order the session gave them.
+  for (const { place, body } of given) recorded.push(await record(dir, { kind: 'comment', by: 'ai', text: body, place }));
+  return recorded;
 }
 
 export async function answer(dir: string, id: string, text: string): Promise<void> {
@@ -454,7 +487,7 @@ export function reviewComments(dir: string, all = false): Record<string, unknown
       thread.comments.filter(inReview).map(one => {
         const body = one.by === 'ai' ? AI_PREFIX + one.body : one.body;
         const by = one.by === 'colleague' ? one.author : one.by;
-        return one.id === thread.id
+        return one === thread.comments[0]
           ? { kind: 'comment', id: one.id, by, ...whereOf(thread), body, ...reworded(one), ...(thread.step === null && { outdated: true }) }
           : { kind: 'reply', id: one.id, by, thread: thread.id, body, ...reworded(one) };
       }),

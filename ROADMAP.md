@@ -65,6 +65,29 @@ The pull request that ships or drops an item updates this file.
 - Walky, the mascot: the README banner, and the tab icon by session state (reading, awake, done, ended, asleep).
 - Every control's edge reaches 3:1 on every grey, and the primary button is a calmer mid-tone in dark.
 
+### 0.1.7 (2026-11-26): the next review, and criteria that say why
+
+- `/walkthrough:update` after the fixes: only what changed since your last review, with whether each comment was addressed, or the whole change again; the fix list ends by asking the agent to run it.
+- Acceptance criteria say what is missing and where: gaps first, each linked to the AI comment that closes it; a met one links to the lines that meet it, and a not checked one says why.
+- On a branch with a slash in its name, the session records its steps and comments without asking for permission.
+- The AI's comments keep the order they were given, and the new-comment pill goes to the highest one.
+
+### 0.1.8 (2026-11-27): your own pull request, and coming back
+
+- A pull request you opened offers no Approve or Request changes: its author can only comment, so Submit review goes out as a comment.
+- Coming back to a pull request goes on with the same walkthrough: its label is always `PR <number>`, a review an earlier session left halfway keeps its steps and comments, and the session says what the walkthrough already holds.
+- A page server an older release of the plugin started is replaced, so the page always has what the release you run ships, such as syntax colours.
+- A release makes its own tag, and a release run by hand keeps its notes.
+
+### 0.1.9 (2026-11-27): a step list that folds, calmer motion, and Geist Mono
+
+- Code, paths and file names in Geist Mono, self-hosted, half a pixel larger, with ligatures off and no shift when the font loads.
+- The step list folds every step but the one you are on to its title and "N of M viewed"; a file row's Viewed mark, name and comment count each do their own job; the list resizes and its Summary stays at the foot.
+- Moving between files scrolls and then marks where you landed; other changes fade, with no pops or jumps; a jump into a folded file opens it and lands on its line.
+- At 390 a file header takes two rows, with the whole path.
+- Fixes: a first load the network drops is tried again instead of leaving the page blank; End session leaves no request to fail; Close returns the keyboard to the screenshot in Safari; quick Viewed clicks reach the server in order.
+- The page tests pass in Chromium, Firefox and WebKit, and no test reaches the web.
+
 ## Now
 
 - Nothing in progress.

@@ -25,6 +25,14 @@ export const test = base.extend<{ start: Record<string, string>; files: Record<s
     if (started.status !== 0) throw new Error(started.stderr);
     // A script blocked by the CSP or a page that throws shows up here.
     const problems: string[] = [];
+    // Nothing a test runs may reach the web: any request off this machine is blocked and fails the test.
+    await page.route(
+      address => address.hostname !== '127.0.0.1',
+      route => {
+        problems.push(`left the machine: ${route.request().url()}`);
+        return route.abort('blockedbyclient');
+      },
+    );
     page.on('pageerror', error => problems.push(error.message));
     page.on('console', message => {
       // A request that never reached a server, as a test that takes the server away causes, is not the page's fault.
@@ -50,3 +58,21 @@ export async function open(page: Page, url: string, address = ''): Promise<void>
 /** Where `locator` sits in the page, to tell whether anything moved it. */
 export const topOf = async (page: Page, selector: string) =>
   page.locator(selector).first().evaluate(element => element.getBoundingClientRect().top);
+
+/** Records what the page copies, in place of the clipboard, which Firefox and WebKit will not let a test read. */
+export const catchCopies = (page: Page) =>
+  page.addInitScript(() => {
+    const copies: string[] = [];
+    Object.assign(window, { copies });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: (text: string) => {
+          copies.push(text);
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+
+/** The last thing the page copied. */
+export const lastCopied = (page: Page) => page.evaluate(() => (window as unknown as { copies: string[] }).copies.at(-1));

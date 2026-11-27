@@ -24,9 +24,10 @@ export const viewReview = (): HTMLElement[] => {
   return address ? [el('a', { className: 'btn small', href: address, target: '_blank', rel: 'noopener noreferrer' }, icon('external'), 'View review')] : [];
 };
 
-/** The command that starts this walkthrough again, with Copy command. */
-export function commandBox(): HTMLElement {
-  const command = state.view.pr ? `/walkthrough:pr ${state.view.pr.number}` : '/walkthrough';
+/** The command that starts this walkthrough again, or reviews its new commits, with Copy command. */
+export function commandBox(update = false): HTMLElement {
+  const skill = update ? '/walkthrough:update' : state.view.pr ? '/walkthrough:pr' : '/walkthrough';
+  const command = state.view.pr ? `${skill} ${state.view.pr.number}` : skill;
   const word = el('span', {}, 'Copy command');
   const copy = attrs(el('button', { type: 'button', className: 'btn small' }, icon('copy'), word), { 'aria-live': 'polite' });
   let shown = 0;

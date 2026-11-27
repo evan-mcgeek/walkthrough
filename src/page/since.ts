@@ -2,7 +2,7 @@
 import type { Look, Step } from '../walkthrough';
 import { attrs, el, menuKeys } from './dom';
 import { icon } from './icons';
-import { FADE_IN, animate } from './motion';
+import { FADE_IN, animate, fadeAway } from './motion';
 import { allFiles, plural, state } from './state';
 
 export const changes = {
@@ -97,7 +97,7 @@ export class ChangesSwitch {
 
   close(refocus: boolean): void {
     if (!this.menu) return;
-    this.menu.remove();
+    fadeAway(this.menu);
     this.menu = null;
     this.button.setAttribute('aria-expanded', 'false');
     if (refocus) this.button.focus();

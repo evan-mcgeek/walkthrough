@@ -15,7 +15,7 @@ afterEach(() => {
 /** The repo's folder of saved walkthroughs: its name and a short hash of where it is. */
 const repoState = () =>
   path.join(repo.state, fs.readdirSync(repo.state).find(name => /^shop-[0-9a-f]{8}$/.test(name)) ?? '');
-const saved = (branch: string) => fs.existsSync(path.join(repoState(), `branch-${branch.replaceAll('/', '~')}`));
+const saved = (branch: string) => fs.existsSync(path.join(repoState(), `branch-${encodeURIComponent(branch)}`));
 
 /** A walkthrough saved for `feature/login` and one for `feature/cart`, both pages stopped, left on `feature/cart`. */
 function twoWalkthroughs() {

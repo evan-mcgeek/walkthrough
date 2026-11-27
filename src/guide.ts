@@ -23,15 +23,17 @@ const threads = [
   },
 ];
 const criteria = [
-  { text: 'Optional due date on create and edit', status: 'met' },
-  { text: 'Invalid dates rejected with a clear error', status: 'not-met' },
+  { text: 'Invalid dates rejected with a clear error', status: 'not-met', comment: '48f3f82c', missing: 'An invalid date becomes null and clears the field.' },
+  { text: 'Date picker works on phones', status: 'not-checked', reason: 'Needs the running app.' },
+  { text: 'Optional due date on create and edit', status: 'met', file: 'src/api/tasks.ts', lines: [19, 22] },
 ];
 
-export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>]]
+export const GUIDE = `walkthrough start [--target <branch> | --base <rev> --head <rev> --label <text>] [--pr <number> [--title <text>] [--yours]]
   Starts or resumes a walkthrough and serves its page without opening it; nothing is checked out.
   With no options it is of the current branch against origin/<target>, or the local <target> when the remote has none, and the remote's default branch unless given.
   With --base and --head it is of that range, named by its --label.
   --pr makes it a pull request: the page shows "#<number> <title>" and ends with Submit review; without it, the change is the person's own and ends with Send to agent.
+  --yours says the person opened the pull request: its author can only comment, so the page offers no review type and the review goes out as a comment.
   Every command below finds the walkthrough from the same source options start was given, so pass them to each.
   When the head moved, each step keeps the files that still change and its Look at pointers still in its diff; start prints the files no step has yet; record the steps again with those.
   A new head makes the walkthrough not ready again, so the page shows the AI at work until ready.
@@ -80,7 +82,9 @@ walkthrough threads --file <file>
 ${JSON.stringify(threads, null, 2)}
 
 walkthrough criteria --file <file>
-  Records the acceptance criteria as checked, replacing those before; read-only on the page. status: met, partly, not-met or not-checked.
+  Records the acceptance criteria as checked, replacing those before; read-only on the page, gaps first. status: met, partly, not-met or not-checked.
+  partly and not-met need comment, the id walkthrough comment printed for your comment that closes the gap, and missing: what is missing, in 12 words, never the fix.
+  met needs the file and lines that meet it, in a step's diff; the page opens them as a Look at pointer does. not-checked needs reason: why, in 8 words.
 ${JSON.stringify(criteria, null, 2)}
 
 walkthrough listen

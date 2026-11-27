@@ -32,7 +32,7 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   await file.getByRole('checkbox', { name: 'Viewed' }).check();
   await expect(file).toHaveClass(/closed/);
   await expect(header).toContainText('1 / 3 files viewed');
-  await expect(page.locator('.file-row[title="tasks.ts"]').getByRole('img', { name: 'Viewed' })).toBeVisible();
+  await expect(page.locator('.file-row[data-file="tasks.ts"]').getByRole('checkbox', { name: 'Viewed' })).toHaveAttribute('aria-checked', 'true');
 
   fs.writeFileSync(path.join(repo.dir, 'tasks.ts'), lines(61, 'task'));
   git(repo.dir, 'commit', '-am', 'One more task');
@@ -43,5 +43,5 @@ test('a step reads with Look at and More; Viewed folds a file and counts, and cl
   await expect(file).not.toHaveClass(/closed/);
   await expect(file.getByRole('checkbox', { name: 'Viewed' })).not.toBeChecked();
   await expect(header).toContainText('0 / 3 files viewed');
-  await expect(page.locator('.file-row[title="tasks.ts"]').getByRole('img', { name: 'Not viewed' })).toBeVisible();
+  await expect(page.locator('.file-row[data-file="tasks.ts"]').getByRole('checkbox', { name: 'Viewed' })).toHaveAttribute('aria-checked', 'false');
 });

@@ -11,7 +11,7 @@ test('the sandbox finds the server records in every state folder, past a folder 
     fs.writeFileSync(file, '{}');
     return file;
   };
-  const shared = record('state', 'shop-12345678', 'branch-feature~login');
+  const shared = record('state', 'shop-12345678', 'branch-feature%2Flogin');
   const list = record('repo-a', 'state', 'shop-12345678');
   const locked = [path.join(sandbox, 'home', 'Library'), path.join(sandbox, 'state', 'locked')];
   for (const folder of locked) {

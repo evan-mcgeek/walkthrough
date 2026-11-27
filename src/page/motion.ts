@@ -1,5 +1,6 @@
 // The design's motion (docs/design/DESIGN.md, Motion), played with the Web Animations API, which the strict CSP allows.
 // Under reduced motion each keeps opacity and colour only: things fade, then snap.
+import { attrs } from './dom';
 
 type Timing = { ms: 'fast' | 'base' | 'slow' | number; curve: 'ease-out' | 'ease-in' | 'linear'; delay?: number; fill?: FillMode };
 
@@ -79,5 +80,56 @@ export function shrink(element: HTMLElement, done: () => void): void {
   });
   closing.finished.then(done, () => {
     element.classList.remove('growing');
+  });
+}
+
+/**
+ * Scroll and mark's scroll: `scroller` eases to `top` in 320ms, after a cut to one screen away when it is farther;
+ * at once under reduced motion. It stops where it is when the person scrolls meanwhile.
+ */
+export function scrollPane(scroller: HTMLElement, top: number): void {
+  for (const running of scroller.getAnimations()) if (running.id === 'scroll') running.cancel();
+  // Not held to the scroll height now: something opening on the way may still be making room for the target.
+  const to = Math.max(0, top);
+  if (reduced()) {
+    scroller.scrollTop = to;
+    return;
+  }
+  const screen = scroller.clientHeight;
+  scroller.scrollTop = Math.max(to - screen, Math.min(to + screen, scroller.scrollTop));
+  const from = scroller.scrollTop;
+  // An animation with no keyframes keeps the time and the house curve; each frame scrolls by its progress.
+  const timing = animate(scroller, 'scroll', [], { ms: 'slow', curve: 'ease-out', fill: 'none' });
+  let last = from;
+  const step = () => {
+    if (timing.playState === 'idle') return;
+    if (Math.abs(scroller.scrollTop - last) > 1) {
+      timing.cancel();
+      return;
+    }
+    const progress = timing.playState === 'finished' ? 1 : (timing.effect?.getComputedTiming().progress ?? 0);
+    scroller.scrollTop = from + (to - from) * progress;
+    last = scroller.scrollTop;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/** Scroll and mark's mark: the elements flash in the line-pick tone and fade over 1.4s, from the start again on a second call; one mark at a time. */
+export function flash(elements: Element[]): void {
+  for (const marked of document.querySelectorAll('.flash')) if (!elements.includes(marked)) marked.classList.remove('flash');
+  for (const element of elements) {
+    for (const running of element.getAnimations({ subtree: true })) if (running instanceof CSSAnimation && running.animationName === 'flash') running.cancel();
+    element.classList.remove('flash');
+    element.getBoundingClientRect();
+    element.classList.add('flash');
+  }
+}
+
+/** A menu or a pane that goes fades out, out of reach of the keyboard and screen readers, then leaves the page. */
+export function fadeAway(element: HTMLElement): void {
+  attrs(element, { inert: '', 'aria-hidden': 'true' });
+  fadeOut(element, 'fast', () => {
+    element.remove();
   });
 }

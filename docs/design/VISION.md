@@ -46,13 +46,13 @@ If it does neither, it does not ship, however well it is drawn.
 
 ## The flow
 
-1. Start with `/walkthrough` for your own change, or `/walkthrough:pr <number or link>` for a pull request.
+1. Start with `/walkthrough` for your own change, or `/walkthrough:pr <number or link>` for a pull request; run `/walkthrough:init` once, to set it up.
 2. The AI asks once how well you know the feature, with four answers, from "I know it well" to "It's new to me"; the answer sets how much it explains.
 3. The AI reads the ticket, splits the change into steps, and gives each step "Look at" pointers to what matters and a short explanation.
 4. The AI reviews and leaves its comments on the lines as pending review comments marked `[AI]`; colleagues' existing threads show on their lines.
 5. You read step by step, mark files Viewed, comment on lines, edit or delete the AI's comments, reply in threads, and ask the AI in a thread.
 6. You finish on the Summary, GitHub's "Finish your review" made visible: every comment that will go out, yours and the AI's, one line each with Edit, Delete and a link to its line, so you can dismiss what you do not want; unresolved threads and files not yet viewed, as counts; the acceptance criteria as the AI assessed them; then a summary, Comment, Approve or Request changes, and Submit.
-   On a pull request it goes to GitHub as one review that you submit there; on your own change, your comments go back to the agent to fix.
+   On a pull request, Submit review posts it as one review with your summary, type and comments; on your own change, your comments go back to the agent to fix.
 
 ## Not in the tool
 

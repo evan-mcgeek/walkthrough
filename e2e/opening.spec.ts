@@ -2,13 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { ONE_STEP, type Repo } from '../test/helpers';
-import { expect, open, test } from './walkthrough';
+import { catchCopies, expect, lastCopied, open, record, test } from './walkthrough';
 
 /** The scene's animations still running, so a still picture has none. */
 const sceneMotion = (page: Page) => page.locator('.desk-scene').evaluate(scene => scene.getAnimations({ subtree: true }).length);
 
 const listenerFile = (repo: Repo) =>
-  path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature~login', 'listener.json');
+  path.join(repo.state, fs.readdirSync(repo.state).find(name => name.startsWith('shop-')) ?? '', 'branch-feature%2Flogin', 'listener.json');
 
 test('the Opening shows until ready, then the whole walkthrough appears at once; under reduced motion the scene stands still', async ({ page, repo, url }) => {
   await open(page, url);
@@ -50,7 +50,7 @@ test('the Opening shows until ready, then the whole walkthrough appears at once;
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-awake.svg');
 });
 
-test('once the session stops listening before ready, the page says so and how to pick it up', async ({ page, repo, url, context }) => {
+test('once the session stops listening before ready, the page says so and how to pick it up', async ({ page, repo, url }) => {
   repo.record(ONE_STEP);
   const { child } = repo.background('listen');
   await expect.poll(() => fs.existsSync(listenerFile(repo))).toBe(true);
@@ -58,7 +58,7 @@ test('once the session stops listening before ready, the page says so and how to
   await expect.poll(() => child.exitCode !== null || child.signalCode !== null).toBe(true);
   const then = new Date(Date.now() - 20_000);
   fs.utimesSync(listenerFile(repo), then, then);
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await catchCopies(page);
 
   await open(page, url);
 
@@ -73,9 +73,38 @@ test('once the session stops listening before ready, the page says so and how to
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-asleep.svg');
   await page.getByRole('button', { name: 'Copy command' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('/walkthrough');
+  expect(await lastCopied(page)).toBe('/walkthrough');
 
   repo.background('listen');
   await expect(page.getByRole('heading', { level: 1, name: 'Preparing the walkthrough' })).toBeVisible();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-reading.svg');
+});
+
+test('the Opening’s placeholder steps are 8px apart, each bar centred on its circle', async ({ page, url }) => {
+  await open(page, url);
+  const placeholders = page.locator('.step-placeholder');
+  await expect(placeholders).toHaveCount(3);
+  const shape = await placeholders.evaluateAll(items =>
+    items.map(item => {
+      const circle = item.querySelector('.step-number')?.getBoundingClientRect();
+      const bar = item.querySelector('.step-row .placeholder-bar')?.getBoundingClientRect();
+      return { gap: Number.parseFloat(getComputedStyle(item).marginBottom), offset: circle && bar ? Math.abs(circle.top + circle.height / 2 - (bar.top + bar.height / 2)) : -1 };
+    }),
+  );
+  expect(shape).toEqual(Array(3).fill({ gap: 8, offset: 0 }));
+});
+
+test('a first load the network drops is tried again, and the page draws', async ({ page, repo, url }) => {
+  record(repo, ONE_STEP);
+  let dropped = false;
+  await page.route('**/data/walkthrough.json', route => {
+    if (dropped) return route.continue();
+    dropped = true;
+    return route.abort('internetdisconnected');
+  });
+
+  await open(page, url);
+
+  expect(dropped).toBe(true);
+  await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
 });

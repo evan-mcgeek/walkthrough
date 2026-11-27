@@ -5,11 +5,11 @@ import { parseDiff } from '../diff';
 import { previewType } from '../preview';
 import type { ThreadView } from '../review';
 import type { Step } from '../walkthrough';
-import { attrs, el } from './dom';
+import { attrs, el, readSignal } from './dom';
 import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
-import { grow, reduced } from './motion';
+import { flash, grow, scrollPane } from './motion';
 import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
@@ -26,7 +26,7 @@ export function pick(next: typeof picked): void {
   // The composer is still opening, so this scrolls to where its foot will be.
   const scroller = cell.closest('.main');
   const below = cell.getBoundingClientRect().top + cell.scrollHeight - (scroller?.getBoundingClientRect().bottom ?? innerHeight);
-  if (scroller && below > 0) scroller.scrollBy({ top: below, behavior: reduced() ? 'instant' : 'smooth' });
+  if (scroller instanceof HTMLElement && below > 0) scrollPane(scroller, scroller.scrollTop + below);
 }
 
 /** Files the person opened or folded themselves, by path; the others fold while viewed, generated or large. */
@@ -35,6 +35,27 @@ const folds = new Map<string, boolean>();
 const reopened = new Set<string>();
 const LARGE_FILE = 400;
 const SVG = 'http://www.w3.org/2000/svg';
+
+/** Marks a file Viewed or not, from its header, its row in the step list or V, as one state; Viewed folds the file. */
+export function setViewed(file: string, now: boolean): void {
+  const { view } = state;
+  if (view.viewed.includes(file) === now) return;
+  state.view = {
+    ...view,
+    viewed: now ? [...view.viewed, file] : view.viewed.filter(one => one !== file),
+    changed: view.changed.filter(one => one !== file),
+  };
+  folds.set(file, now);
+  state.render(true);
+  void send('viewed', { file, viewed: now });
+}
+
+/** Brings `target` to `above` px under the top of `scroller`, smoothly or at once. */
+export function goTo(scroller: HTMLElement, target: Element, above: number, smooth: boolean): void {
+  const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - above;
+  if (smooth) scrollPane(scroller, top);
+  else scroller.scrollTop = top;
+}
 
 /** Says whether something at `element` is above the bottom of what the reader sees, so adding it would move what they read. */
 export type Shows = (element: Element) => boolean;
@@ -91,38 +112,55 @@ export class FilePane {
     return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
 
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
-  look(start: number, end: number, scroller: HTMLElement): boolean {
+  /**
+   * Opens the file and its lines, brings them into view with 120px above, and flashes them; false when the diff does not show them.
+   * `smooth` scrolls there, as on the step you are on; otherwise the pane that just swapped in starts there.
+   */
+  look(start: number, end: number, scroller: HTMLElement, smooth = true): boolean {
     if (!this.rows.has(start)) return false;
-    return this.flash(
+    return this.flashRows(
       [...this.rows].flatMap(([line, row]) => (line >= start && line <= end ? [row] : [])),
       scroller,
+      smooth,
     );
   }
 
   /** The same for the row that says lines moved away from `line`. */
-  lookDeparture(line: number, scroller: HTMLElement): boolean {
+  lookDeparture(line: number, scroller: HTMLElement, smooth = true): boolean {
     const row = this.diffBox.querySelector<HTMLTableRowElement>(`tr[data-moved-from="${String(line)}"]`);
-    return this.flash(row ? [row] : [], scroller);
+    return this.flashRows(row ? [row] : [], scroller, smooth);
   }
 
-  private flash(rows: HTMLTableRowElement[], scroller: HTMLElement): boolean {
+  /** Brings the file's header to the top of the pane and flashes it. */
+  mark(scroller: HTMLElement, smooth: boolean): void {
+    goTo(scroller, this.box, 16, smooth);
+    flash([this.header]);
+  }
+
+  /** The rows of a thread's lines, to mark when it is reached; none on a whole file or once outdated, as those lines are gone. */
+  linesOf(id: string): HTMLTableRowElement[] {
+    const thread = state.view.threads.find(one => one.id === id);
+    const lines = thread?.step === null ? undefined : thread?.lines;
+    return lines ? [...this.rows].flatMap(([line, row]) => (line >= lines[0] && line <= lines[1] ? [row] : [])) : [];
+  }
+
+  /** The thread that shows first in the file, in the band above the diff or under its lines. */
+  firstThread(): string | undefined {
+    return this.box.querySelector<HTMLElement>('[data-thread]')?.dataset['thread'];
+  }
+
+  /** Takes the keyboard to the file, at its header. */
+  focus(): void {
+    this.header.querySelector<HTMLElement>('.file-toggle')?.focus({ preventScroll: true });
+  }
+
+  private flashRows(rows: HTMLTableRowElement[], scroller: HTMLElement, smooth: boolean): boolean {
     const [first] = rows;
     if (!first) return false;
-    if (this.closed()) {
-      folds.set(this.name, false);
-      this.update(() => false);
-    }
+    this.open();
     if (this.previewing) void this.showPreview(false);
-    const top = first.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
-    scroller.scrollTo({ top, behavior: reduced() ? 'instant' : 'smooth' });
-    for (const row of rows) {
-      // Restarted in this task, so a second click flashes again.
-      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-      row.classList.remove('flash');
-      row.getBoundingClientRect();
-      row.classList.add('flash');
-    }
+    goTo(scroller, first, 120, smooth);
+    flash(rows);
     return true;
   }
 
@@ -130,10 +168,14 @@ export class FilePane {
     return this.threads.get(id);
   }
 
+  /** Opens the file at once, with no animation: it is being jumped to, so its lines must be where they stay before the jump. */
   open(): void {
     if (!this.closed()) return;
     folds.set(this.name, false);
+    this.box.classList.add('opening-now');
     this.update(() => false);
+    void this.box.getBoundingClientRect();
+    this.box.classList.remove('opening-now');
   }
 
   /** Brings the file up to date; returns what arrived where the reader would see it move, which waits behind the pill. */
@@ -174,16 +216,7 @@ export class FilePane {
     };
     const viewed = el('input', { type: 'checkbox' });
     viewed.onchange = () => {
-      const now = viewed.checked;
-      const { view } = state;
-      state.view = {
-        ...view,
-        viewed: now ? [...view.viewed, this.name] : view.viewed.filter(one => one !== this.name),
-        changed: view.changed.filter(one => one !== this.name),
-      };
-      folds.set(this.name, now);
-      state.render(true);
-      void send('viewed', { file: this.name, viewed: now });
+      setViewed(this.name, viewed.checked);
     };
     const stats = parsed.isBinary
       ? [el('span', { className: 'file-stats' }, 'binary')]
@@ -443,7 +476,7 @@ export class FilePane {
       );
       return;
     }
-    const answer = await fetch(at(this.name)).catch(() => null);
+    const answer = await fetch(at(this.name), { signal: readSignal }).catch(() => null);
     const added = new Set(parsed.blocks.flatMap(block => block.lines).flatMap(line => (line.type === LineType.INSERT && line.newNumber ? [line.newNumber] : [])));
     if (!answer?.ok) {
       box.replaceChildren(el('p', { className: 'muted' }, 'Preview failed.'));

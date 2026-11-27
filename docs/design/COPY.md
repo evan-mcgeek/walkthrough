@@ -21,8 +21,11 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 |---|---|---|
 | `<N>` `<step title>` | step row | |
 | `<file name>` | file row | tooltip: full path |
-| Viewed / Not viewed | file tick, accessible name | **GH** |
-| N comment(s) | comment count, tooltip | **GH** |
+| Viewed | file row mark: a checkbox, accessible name and tooltip, described by the file name; checked or not | **GH**; decision 37; was "Viewed / Not viewed" on an icon |
+| N comment(s): go to the first | file row count, tooltip; accessible name "N comment(s) on `<file>`: go to the first" | decision 37; Tooltip, 12 |
+| N of M viewed · M files | under a folded step | decision 37; Chip, 4; "1 file" when one |
+| Show files / Hide files | step chevron, accessible name and tooltip | decision 37; Button, 3 |
+| Resize the step list | the step list's right edge, separator accessible name and tooltip | decision 37; Tooltip, 12 |
 | Summary | last row | |
 
 ## A step
@@ -86,8 +89,11 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 | Acceptance criteria | heading | |
 | checked by the AI | after the heading | |
 | Met / Partly met / Not met / Not checked | criterion status | |
+| `<file>:<line>` · `<file>` · `<file>:<start>–<end>` | link under a criterion: to the AI comment (partly or not met; `<file>` alone for a comment on the whole file), or to the lines that meet it (met) | decision 35; mono accent, as the Summary's other links; tooltip "`<path>` line N: go to the comment" or "`<path>` lines N–M: go to the lines" (Tooltip, 12) |
+| `<what is missing>` | after the link, under a partly or not met criterion | decision 35; written by the session; 12 words; the gap, never the fix (the fix is the comment's) |
+| `<why not checked>` | under a not checked criterion | decision 35; written by the session; 8 words, e.g. "Needs the running app." |
 | Finish your review | review box title | **GH** |
-| Comment / Approve / Request changes | review type | **GH** |
+| Comment / Approve / Request changes | review type | **GH**; none on a pull request you opened: its author can only comment, so it goes out as a Comment |
 | Submit review | pull request | **GH** |
 | Send to agent | your own change | no review type on your own change; disabled with no comments (decision 11) |
 | Add a comment to send it. | under a disabled Send to agent | |
@@ -168,7 +174,7 @@ New strings from decisions 12 to 20. Cap is the slot's cap from `DESIGN.md` → 
 | The files are as you viewed them. | under it | Empty state, 8 | |
 | Show all changes | button beside it | Button, 3 | **GH**; switches the view |
 | Changed since last view | file header | Tag, 4 | **GH**; already in use; now on every file whose diff changed |
-| The branch has new commits. Run the walkthrough again to see them: | one line under the header, every screen, when your branch moved | Notice, 12 | followed by `/walkthrough` and Copy command; the pull request case is not drawn (decision 15) |
+| The branch has new commits. Run the walkthrough again to see them: | one line under the header, every screen, when your branch moved | Notice, 12 | followed by `/walkthrough:update` and Copy command; the pull request case is not drawn (decision 15) |
 | Outdated | thread header and Summary row | Tag, 2 | **GH** |
 | AI marked this conversation as resolved. | a thread the AI resolved | Thread line, GitHub's sentence | **GH** ("… marked this conversation as resolved.") |
 | Show resolved / Hide resolved | button on that line | Button, 3 | **GH** |

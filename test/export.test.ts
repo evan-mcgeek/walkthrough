@@ -16,8 +16,9 @@ describe('walkthrough export', () => {
     repo = makeRepo();
     repo.run('start');
     repo.record(ONE_STEP);
-    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.\n\n```suggestion\nexport const login = () => false;\n```' }], 'comment');
-    repo.record([{ text: 'Logs in', status: 'partly' }], 'criteria');
+    const commented = repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.\n\n```suggestion\nexport const login = () => false;\n```' }], 'comment');
+    const comment = /: ([0-9a-f]{8})\./.exec(commented.stdout)?.[1];
+    repo.record([{ text: 'Logs in', status: 'partly', comment, missing: 'Anyone gets in.' }], 'criteria');
     const out = path.join(path.dirname(repo.dir), 'login.html');
 
     const exported = repo.run('export', '--out', out);
@@ -26,7 +27,7 @@ describe('walkthrough export', () => {
     expect(exported.stdout).toContain(`Exported the walkthrough of feature/login to ${out}.`);
     const html = fs.readFileSync(out, 'utf8');
     expect(html).toContain('Everyone gets in.');
-    expect(html).toContain('Logs in: Partly met');
+    expect(html).toContain('Logs in: Partly met. Anyone gets in.');
     expect(html).toContain('<div class="suggestion-head">Suggested change</div>');
     const text = html.replace(/<\/?span[^>]*>/g, '');
     expect(text).toMatch(/<tr class="suggestion-del">.*login = \(\) =&gt; true;<\/td><\/tr><tr class="suggestion-add">.*login = \(\) =&gt; false;/);
@@ -40,6 +41,8 @@ describe('walkthrough export', () => {
     // The self-hosted code font travels inside the file.
     expect(html).toContain('font-src data:');
     expect(html).toContain('data:font/woff2;base64,');
+    expect(html).toMatch(/font-family: ["']Geist Mono["'];/);
+    expect(html).not.toContain('JetBrains');
     expect(html).not.toContain(tokenOf(repo.url()));
     expect(html).not.toContain(repo.dir);
     expect(html).not.toContain(repo.state);

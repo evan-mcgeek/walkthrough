@@ -34,6 +34,8 @@ const source = (name: string) => `https://cdn.jsdelivr.net/npm/tm-grammars@${gra
 async function download(name: string): Promise<Buffer | null> {
   const folder = process.env['WALKTHROUGH_GRAMMARS'];
   if (folder) return fs.promises.readFile(path.join(folder, `${name}.json`)).catch(() => null);
+  // Under test nothing reaches the web: a grammar no test folder has stays plain.
+  if (process.env['WALKTHROUGH_TEST_SANDBOX']) return null;
   try {
     const answer = await fetch(source(name), { signal: AbortSignal.timeout(30_000) });
     return answer.ok ? Buffer.from(await answer.arrayBuffer()) : null;

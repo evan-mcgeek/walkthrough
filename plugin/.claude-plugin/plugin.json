@@ -1,6 +1,6 @@
 {
   "name": "walkthrough",
-  "version": "0.1.6",
+  "version": "0.1.9",
   "description": "A guided review of a code change on a local page, one step at a time. Provides /walkthrough:init to set it up, /walkthrough for your own change, /walkthrough:pr for a review request, and the walkthrough CLI.",
   "author": {
     "name": "evan-mcgeek",

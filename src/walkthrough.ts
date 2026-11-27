@@ -23,7 +23,16 @@ export type Step = {
   copies?: Copy[];
 };
 export const CRITERION_STATUSES = ['met', 'partly', 'not-met', 'not-checked'] as const;
-export type Criterion = { text: string; status: (typeof CRITERION_STATUSES)[number] };
+/** A gap links to the AI comment that closes it and says what is missing; met links to the lines that meet it; not checked says why. */
+export type Criterion = {
+  text: string;
+  status: (typeof CRITERION_STATUSES)[number];
+  comment?: string;
+  missing?: string;
+  file?: string;
+  lines?: Lines;
+  reason?: string;
+};
 export type Said = { author: string; at: string; body: string };
 /** A colleague's thread already on the change, by the id the session gave it. */
 export type Thread = Said & { id: string; file: string; lines?: Lines; resolved?: true; replies: Said[]; linesHash?: string; code?: Code };
@@ -31,7 +40,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   /** The revision the base was taken from; the head merged into it means the walkthrough is over. */
   target: string;
   /** Set for a pull request: the review goes out with Submit review, else to the agent. */
-  pr?: { number: string; title: string };
+  /** `yours` when the person opened it: its author can only comment, so the page offers no review type. */
+  pr?: { number: string; title: string; yours?: true };
   base: string;
   head: string;
   /** Empty until the session records its steps. */
@@ -42,6 +52,8 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
   lastStep?: number;
   /** False until the session runs `ready`; a walkthrough saved without it is ready. */
   ready?: boolean;
+  /** The head it was last ready at, once the head moved, so the session can review only what came since. */
+  reviewedAt?: string;
   /** Set once the page was opened in the browser. */
   opened?: true;
   criteria?: Criterion[];
@@ -50,21 +62,35 @@ export type Walkthrough = ({ kind: 'branch'; branch: string } | { kind: 'range';
 
 const file = (dir: string) => path.join(dir, 'walkthrough.json');
 
-// `~` cannot appear in a branch name, so `/` maps to it one to one; a label is encoded whole.
+// Down to characters no shell expands, so the inbox paths the session passes match the plugin hook unquoted.
+const encode = (name: string) =>
+  encodeURIComponent(name).replace(/[!'()*~]/g, char => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+
 export function walkthroughDir(repo: string, source: Source): string {
-  const name =
-    source.kind === 'branch'
-      ? `branch-${source.branch.replaceAll('/', '~')}`
-      : `range-${encodeURIComponent(source.label)}`;
+  const name = `${source.kind}-${encode(nameOf(source))}`;
   if (Buffer.byteLength(name) > 255)
     throw new Error(`${nameOf(source)} is too long to name a walkthrough; pass a shorter --label`);
   return path.join(stateDir(), repo, name);
 }
 
-/** The branch a walkthrough's folder is named after; undefined for a range. */
+/** The folder releases up to 0.1.6 named a walkthrough, with a branch's `/` as `~`. */
+export const earlierDir = (repo: string, source: Source) =>
+  path.join(
+    stateDir(),
+    repo,
+    source.kind === 'branch' ? `branch-${source.branch.replaceAll('/', '~')}` : `range-${encodeURIComponent(source.label)}`,
+  );
+
+/** The branch a walkthrough's folder is named after, in either naming; undefined for a range. */
 export const branchOfDir = (dir: string) => {
   const name = path.basename(dir);
-  return name.startsWith('branch-') ? name.slice('branch-'.length).replaceAll('~', '/') : undefined;
+  if (!name.startsWith('branch-')) return undefined;
+  const branch = name.slice('branch-'.length).replaceAll('~', '/');
+  try {
+    return decodeURIComponent(branch);
+  } catch {
+    return branch;
+  }
 };
 
 /** A range's target is a commit when its base named no branch. */
@@ -105,7 +131,9 @@ export function openWalkthrough(
       return { walkthrough: relabelled, opened: 'resumed' };
     }
     if (saved) {
-      const moved = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
+      const reviewedAt = saved.ready === false ? saved.reviewedAt : saved.head;
+      const moved: Walkthrough = { ...saved, ...given, target: change.target, base: change.base, head: change.head, ready: false };
+      if (reviewedAt) moved.reviewedAt = reviewedAt;
       const { steps, unplaced } = await carry(moved);
       setSteps(moved, steps);
       // Before any steps, the page shows the session preparing them instead.
