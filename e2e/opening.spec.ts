@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { ONE_STEP, type Repo } from '../test/helpers';
-import { expect, open, test } from './walkthrough';
+import { expect, open, record, test } from './walkthrough';
 
 /** The scene's animations still running, so a still picture has none. */
 const sceneMotion = (page: Page) => page.locator('.desk-scene').evaluate(scene => scene.getAnimations({ subtree: true }).length);
@@ -92,4 +92,19 @@ test('the Opening’s placeholder steps are 8px apart, each bar centred on its c
     }),
   );
   expect(shape).toEqual(Array(3).fill({ gap: 8, offset: 0 }));
+});
+
+test('a first load the network drops is tried again, and the page draws', async ({ page, repo, url }) => {
+  record(repo, ONE_STEP);
+  let dropped = false;
+  await page.route('**/data/walkthrough.json', route => {
+    if (dropped) return route.continue();
+    dropped = true;
+    return route.abort('internetdisconnected');
+  });
+
+  await open(page, url);
+
+  expect(dropped).toBe(true);
+  await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
 });

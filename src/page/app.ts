@@ -916,7 +916,15 @@ function poll(): void {
 
 PAGE.lost = poll;
 viewer = await loadViewer();
-const first = await fetch('data/walkthrough.json');
+// A first load that fails, as when the system briefly suspends the network, is tried again on the poll's beat.
+let first: Response | undefined;
+while (!first)
+  first = await fetch('data/walkthrough.json').catch(
+    () =>
+      new Promise<undefined>(done => {
+        setTimeout(done, POLL_MS);
+      }),
+  );
 tag = first.headers.get('etag') ?? '';
 state.view = (await first.json()) as WalkthroughView;
 if (!location.hash && firstAddress()) history.replaceState(null, '', `#${firstAddress()}`);
