@@ -45,6 +45,27 @@ test.describe('a pull request', () => {
   });
 });
 
+test.describe('a pull request you opened', () => {
+  test.use({ args: ['--pr', '212', '--title', 'Due dates for tasks', '--yours'] });
+
+  test('offers no review type, as its author can only comment, and Submit review sends a comment', async ({ page, repo, url }) => {
+    record(repo, ONE_STEP);
+    record(repo, [{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.' }], 'comment');
+    await open(page, url);
+    const listener = repo.background('listen');
+
+    await page.getByRole('link', { name: 'Finish review' }).click();
+    await expect(page.getByRole('heading', { name: 'Finish your review' })).toBeVisible();
+    await expect(page.getByRole('radiogroup')).toHaveCount(0);
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    await page.getByPlaceholder('Leave a comment').fill('Ready for a look.');
+    await page.getByRole('button', { name: 'Submit review' }).click();
+
+    await expect(page.getByText('Comment, with 1 comment, on #212.')).toBeVisible();
+    expect(JSON.parse((await listener.ended).stdout)).toMatchObject({ kind: 'submit', type: 'comment', summary: 'Ready for a look.' });
+  });
+});
+
 test('acceptance criteria go gaps first, each with what shows it: the comment and what is missing, the reason, or the lines that meet it', async ({ page, repo, url }) => {
   record(repo, ONE_STEP);
   const commented = repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Check the user before letting them in.' }, { file: 'app.ts', body: 'Name the app.' }], 'comment');

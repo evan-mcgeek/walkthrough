@@ -197,6 +197,16 @@ describe('the review', () => {
     ]);
   });
 
+  test('on a pull request the person opened, the review goes out only as a comment', async () => {
+    const page = started('--pr', '212', '--yours');
+    repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Check the user.' }], 'comment');
+
+    expect((await postTo(page, '/submit', { type: 'approve', summary: 'Mine.' })).status).toBe(400);
+    expect((await postTo(page, '/submit', { type: 'request-changes', summary: 'Mine.' })).status).toBe(400);
+    expect((await postTo(page, '/submit', { type: 'comment', summary: 'Mine.' })).status).toBe(200);
+    expect(await viewAt(page)).toMatchObject({ pr: { number: '212', yours: true } });
+  });
+
   test('records each criterion with what its status shows, and refuses what does not fit', async () => {
     const page = started();
     const id = /: ([0-9a-f]{8})\./.exec(repo.record([{ file: 'login.ts', lines: [1, 1], body: 'Check the user.' }], 'comment').stdout)?.[1] ?? '';
