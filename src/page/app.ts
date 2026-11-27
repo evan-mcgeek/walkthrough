@@ -4,12 +4,12 @@ import { DEFAULT_VIEWER } from '../viewer';
 import { chooseViewer, loadViewer } from './appearance';
 import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
-import { type FilePane, pick } from './files';
+import { type FilePane, pick, setViewed } from './files';
 import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeOut, grow, reduced, settle, tick } from './motion';
 import { moving, shownMoves } from './moves';
 import { Opening, openingNav } from './opening';
-import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile, threadStep } from './state';
+import { ago, allFiles, baseName, commentCount, outdatedIn, PAGE, pendingComments, phone, plural, state, stepOfFile, threadsIn, threadStep } from './state';
 import { changes, ChangesSwitch, shownFiles, shownSince } from './since';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
@@ -81,6 +81,9 @@ function go(address: string): void {
 /** After moving to another step or the Summary: what was held opens, the old pane leaves, the new one enters, and the page starts at its top. */
 function moved(): void {
   onFile = null;
+  const to = current();
+  // Moving to a step opens it, even one its chevron folded.
+  if (to.kind === 'step' && stepFolds.get(to.pane.step.id) === false) stepFolds.delete(to.pane.step.id);
   for (const one of arrived) one.classList.remove('arriving');
   arrived = [];
   const old = content.firstElementChild;
@@ -426,10 +429,13 @@ function hideEnd(): void {
   content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
 }
 
-// The step list is drawn again only when the steps change; Viewed, counts, spinners and the current row change in place.
+// The step list is drawn again only when the steps change; Viewed, counts, folds and the current row change in place.
 let drawnNav = '';
-type NavFile = { file: string; row: HTMLElement; tick: HTMLElement; count: HTMLElement; shown: number };
-let navSteps: { id: string; row: HTMLElement; files: NavFile[] }[] = [];
+type NavFile = { file: string; row: HTMLElement; mark: HTMLElement; count: HTMLElement; shown: number };
+type NavStep = { id: string; item: HTMLElement; row: HTMLElement; toggle: HTMLElement; meta: HTMLElement; files: NavFile[] };
+let navSteps: NavStep[] = [];
+/** Steps folded or opened by their chevron, kept while the page is open; the others are open only while you are on them. */
+const stepFolds = new Map<string, boolean>();
 const pendingCount = el('span', { className: 'file-count' });
 const summaryRow = navLink('summary', 'step-row summary-row', icon('summary'), el('span', { className: 'step-name' }, 'Summary'), pendingCount);
 summaryRow.dataset['key'] = 'summary';
@@ -444,6 +450,42 @@ function navLink(address: string, className: string, ...children: (Node | string
   return row;
 }
 
+/** The file's thread that shows first in it: on the whole file, then outdated, then by line. */
+function firstThread(step: string, file: string) {
+  const threads = threadsIn(step, file);
+  const onLines = threads.filter(one => one.lines).sort((a, b) => (a.lines?.[0] ?? 0) - (b.lines?.[0] ?? 0));
+  return [...threads.filter(one => !one.lines), ...outdatedIn(step, file), ...onLines][0];
+}
+
+/** A file's row: its Viewed checkbox, its name going to the file and its comment count going to the first comment. */
+function navFile(step: string, file: string, id: string): NavFile {
+  const mark = attrs(el('button', { type: 'button', className: 'viewed-mark', title: 'Viewed' }, icon('ring'), icon('met')), {
+    role: 'checkbox',
+    'aria-label': 'Viewed',
+    'aria-describedby': id,
+  });
+  mark.dataset['key'] = `mark:${file}`;
+  mark.onclick = () => {
+    setViewed(file, !state.view.viewed.includes(file));
+  };
+  const name = el('a', { className: 'file-name', id, href: `#${stepAddress(step)}`, title: file }, baseName(file));
+  name.dataset['key'] = `file:${file}`;
+  name.onclick = event => {
+    event.preventDefault();
+    reveal({ file });
+  };
+  const count = el('a', { className: 'file-count', href: `#${stepAddress(step)}`, hidden: true }, icon('message'), '');
+  count.dataset['key'] = `count:${file}`;
+  count.onclick = event => {
+    event.preventDefault();
+    const first = firstThread(step, file);
+    if (first) reveal({ thread: first.id });
+  };
+  const row = el('div', { className: 'file-row' }, mark, name, count);
+  row.dataset['file'] = file;
+  return { file, row, mark, count, shown: -1 };
+}
+
 function buildNav(): void {
   const focused = document.activeElement instanceof HTMLElement && nav.contains(document.activeElement) ? document.activeElement.dataset['key'] : undefined;
   const scrolled = nav.scrollTop;
@@ -451,21 +493,19 @@ function buildNav(): void {
     const row = navLink(stepAddress(step.id), 'step-row', el('span', { className: 'step-number' }, String(index + 1)), el('span', { className: 'step-name', title: step.title }, step.title));
     row.dataset['key'] = `step:${step.id}`;
     row.classList.toggle('quiet', shownFiles(step).length === 0);
-    const files = shownFiles(step).map(file => {
-      const tick = attrs(el('span', { className: 'viewed-tick' }, icon('ring'), icon('met')), { role: 'img' });
-      const count = el('span', { className: 'file-count' }, icon('message'), '');
-      const fileRow = el('a', { className: 'file-row', href: `#${stepAddress(step.id)}`, title: file }, tick, el('span', { className: 'file-name' }, baseName(file)), count);
-      fileRow.dataset['key'] = `file:${file}`;
-      fileRow.onclick = event => {
-        event.preventDefault();
-        reveal({ file });
-      };
-      return { file, row: fileRow, tick, count, shown: -1 };
-    });
-    return { id: step.id, row, files };
+    const files = shownFiles(step).map((file, at) => navFile(step.id, file, `nav-file-${String(index)}-${String(at)}`));
+    const list = el('ul', { className: 'file-list', id: `nav-files-${String(index)}` }, ...files.map(one => el('li', {}, one.row)));
+    const toggle = attrs(el('button', { type: 'button', className: 'icon-button step-toggle' }, icon('chevron-right')), { 'aria-controls': list.id });
+    toggle.dataset['key'] = `fold:${step.id}`;
+    toggle.onclick = () => {
+      stepFolds.set(step.id, !navSteps.find(one => one.id === step.id)?.item.classList.contains('open'));
+      drawNav(current());
+    };
+    const meta = el('p', { className: 'step-meta' });
+    const item = el('li', { className: 'step-item' }, el('div', { className: 'step-line' }, toggle, row), meta, el('div', { className: 'step-files' }, list));
+    return { id: step.id, item, row, toggle, meta, files };
   });
-  const items = navSteps.map(({ row, files }) => el('li', {}, row, el('ul', { className: 'file-list' }, ...files.map(one => el('li', {}, one.row)))));
-  nav.replaceChildren(el('ol', { className: 'steps' }, ...items), summaryRow);
+  nav.replaceChildren(el('ol', { className: 'steps' }, ...navSteps.map(({ item }) => item)), el('div', { className: 'summary-dock' }, summaryRow));
   nav.scrollTop = scrolled;
   if (focused !== undefined) nav.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }
@@ -485,21 +525,37 @@ function drawNav(at: At): void {
     buildNav();
   }
   const here = at.kind === 'step' ? at.pane.step.id : at.kind;
-  for (const { id, row, files } of navSteps) {
+  for (const { id, item, row, toggle, meta, files } of navSteps) {
     if (here === id) row.setAttribute('aria-current', 'page');
     else row.removeAttribute('aria-current');
+    const open = stepFolds.get(id) ?? here === id;
+    item.classList.toggle('open', open);
+    const fold = open ? 'Hide files' : 'Show files';
+    attrs(toggle, { 'aria-expanded': String(open), 'aria-label': fold, title: fold });
+    const list = item.querySelector<HTMLElement>('.step-files');
+    if (list) list.inert = !open;
+    let viewed = 0;
+    let comments = 0;
     for (const one of files) {
       const seen = view.viewed.includes(one.file);
+      if (seen) viewed++;
       one.row.classList.toggle('viewed', seen);
-      one.tick.setAttribute('aria-label', seen ? 'Viewed' : 'Not viewed');
+      one.mark.setAttribute('aria-checked', String(seen));
       const count = commentCount(id, one.file);
+      comments += count;
       if (count === one.shown) continue;
       one.count.hidden = count === 0;
-      one.count.title = plural(count, 'comment');
+      one.count.title = `${plural(count, 'comment')}: go to the first`;
+      one.count.setAttribute('aria-label', `${plural(count, 'comment')} on ${baseName(one.file)}: go to the first`);
       one.count.lastChild?.replaceWith(String(count));
       if (one.shown > 0 && count > 0) tick(one.count);
       one.shown = count;
     }
+    meta.hidden = open || files.length === 0;
+    meta.replaceChildren(
+      el('span', {}, viewed ? `${String(viewed)} of ${String(files.length)} viewed` : plural(files.length, 'file')),
+      ...(comments ? [el('span', { className: 'file-count', title: plural(comments, 'comment') }, icon('message'), String(comments))] : []),
+    );
   }
   if (here === 'summary') summaryRow.setAttribute('aria-current', 'page');
   else summaryRow.removeAttribute('aria-current');
@@ -510,6 +566,49 @@ function drawNav(at: At): void {
     shownPending = pending;
   }
 }
+
+// The step list's right edge resizes it while the page is open; at phone width the list is a drawer and the edge is hidden.
+const WIDTH = { least: 200, most: 400, start: 248, key: 16 } as const;
+const frame = nav.parentElement ?? document.body;
+let stepListWidth: number = WIDTH.start;
+const edge = attrs(el('div', { className: 'step-list-edge', tabIndex: 0, title: 'Resize the step list' }), {
+  role: 'separator',
+  'aria-label': 'Resize the step list',
+  'aria-orientation': 'vertical',
+  'aria-controls': 'nav',
+  'aria-valuemin': String(WIDTH.least),
+  'aria-valuemax': String(WIDTH.most),
+});
+
+function resizeStepList(width: number): void {
+  stepListWidth = Math.round(Math.min(WIDTH.most, Math.max(WIDTH.least, width)));
+  frame.style.setProperty('--step-list-width', `${String(stepListWidth)}px`);
+  edge.setAttribute('aria-valuenow', String(stepListWidth));
+}
+
+edge.onpointerdown = event => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  edge.setPointerCapture(event.pointerId);
+  edge.classList.add('dragging');
+};
+edge.onpointermove = event => {
+  if (edge.hasPointerCapture(event.pointerId)) resizeStepList(event.clientX - frame.getBoundingClientRect().left);
+};
+edge.onlostpointercapture = () => {
+  edge.classList.remove('dragging');
+};
+edge.ondblclick = () => {
+  resizeStepList(WIDTH.start);
+};
+edge.onkeydown = event => {
+  const by = event.key === 'ArrowLeft' ? -WIDTH.key : event.key === 'ArrowRight' ? WIDTH.key : 0;
+  if (!by) return;
+  event.preventDefault();
+  resizeStepList(stepListWidth + by);
+};
+resizeStepList(WIDTH.start);
+nav.after(edge);
 
 /** Redraws what changed, keeping the line being read where it is; `own` for what the person did, which shows in place. */
 function render(own: boolean, navigated = false): void {
@@ -643,7 +742,7 @@ function moveFile(by: 1 | -1): void {
 function toggleViewed(): void {
   onFile ??= fileAtTop() ?? null;
   drawOnFile();
-  if (onFile) content.querySelector<HTMLElement>(`:scope > :first-child .file[data-file="${CSS.escape(onFile)}"] .viewed-toggle input`)?.click();
+  if (onFile) setViewed(onFile, !state.view.viewed.includes(onFile));
 }
 
 /** The Opening fades out, then the walkthrough enters as a step does. */
