@@ -21,15 +21,22 @@ export const state = {
 
 export const phone = matchMedia('(max-width: 760px)');
 
-/** Sends what the person did and shows the view the server answers with at once. */
+/** What the page sent last, so each send reaches the server after the one before it. */
+let sending: Promise<unknown> = Promise.resolve();
+
+/** Sends what the person did, in the order they did it, and shows the view the server answers with, unless a later send will. */
 export async function send(route: string, body: Record<string, unknown>): Promise<boolean> {
-  state.sends++;
-  const answer = await post(PAGE, route, body);
+  const mine = ++state.sends;
+  const posted = sending.then(() => post(PAGE, route, body));
+  sending = posted;
+  const answer = await posted;
   if (!answer) {
     state.stale = true;
     return false;
   }
-  state.view = (await answer.json()) as WalkthroughView;
+  const view = (await answer.json()) as WalkthroughView;
+  if (mine !== state.sends) return true;
+  state.view = view;
   state.render(true);
   return true;
 }
