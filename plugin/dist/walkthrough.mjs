@@ -13376,6 +13376,24 @@ function record(dir, fields) {
   });
 }
 function replay(walkthrough, log) {
+  const once = replayAs(walkthrough, log, /* @__PURE__ */ new Map());
+  const became = sentAndBack(walkthrough, once.threads);
+  return became.size ? replayAs(walkthrough, log, became) : once;
+}
+var sameWords = (one, other) => withoutPrefix(one).replace(/\s+/g, " ") === withoutPrefix(other).replace(/\s+/g, " ");
+function sentAndBack(walkthrough, threads3) {
+  const became = /* @__PURE__ */ new Map();
+  for (const back of walkthrough.threads ?? []) {
+    const sent = threads3.find(({ id, colleague, file: file2, lines, comments: [first] }) => {
+      if (colleague || became.has(id) || !first || first.review === void 0) return false;
+      return file2 === back.file && JSON.stringify(lines) === JSON.stringify(back.lines) && sameWords(first.body, back.body);
+    });
+    if (sent) became.set(sent.id, back.id);
+  }
+  return became;
+}
+function replayAs(walkthrough, log, became) {
+  const as = (thread) => became.get(thread) ?? thread;
   const comments3 = /* @__PURE__ */ new Map();
   const roots = /* @__PURE__ */ new Map();
   const resolved = /* @__PURE__ */ new Map();
@@ -13386,8 +13404,8 @@ function replay(walkthrough, log) {
     switch (event.kind) {
       case "comment":
       case "ask": {
-        const thread = event.thread ?? event.id;
-        if (event.place && !event.thread) roots.set(event.id, event.place);
+        const thread = as(event.thread ?? event.id);
+        if (event.place && !event.thread && !became.has(event.id)) roots.set(event.id, event.place);
         const said2 = { id: event.id, at: event.at, body: event.text };
         const view = event.kind === "comment" ? { ...said2, by: event.by, pending: true } : { ...said2, by: "you", ask: true, waiting: true };
         comments3.set(event.id, { view, thread, wrote: event.text });
@@ -13411,11 +13429,11 @@ function replay(walkthrough, log) {
         break;
       }
       case "resolve":
-        if (!resolved.has(event.thread)) resolved.set(event.thread, { by: event.by ?? "you" });
+        if (!resolved.has(as(event.thread))) resolved.set(as(event.thread), { by: event.by ?? "you" });
         break;
       case "unresolve": {
-        const one = resolved.get(event.thread);
-        if (one && takesBack(one)) resolved.delete(event.thread);
+        const one = resolved.get(as(event.thread));
+        if (one && takesBack(one)) resolved.delete(as(event.thread));
         break;
       }
       case "submit":
@@ -13460,17 +13478,21 @@ function replay(walkthrough, log) {
     };
   };
   const threads3 = [
-    ...(walkthrough.threads ?? []).map(({ id, file: file2, lines, linesHash = "", code: code2, resolved: was, author, at, body, replies }) => ({
-      id,
-      ...placed2(lines ? { file: file2, lines, linesHash, ...code2 && { code: code2 } } : { file: file2 }),
-      colleague: true,
-      ...resolvedIn(id, was),
-      comments: [
-        { id, by: "colleague", author, at, body },
-        ...replies.map((reply, number) => ({ id: `${id}.${String(number + 1)}`, by: "colleague", ...reply })),
-        ...ownIn(id)
-      ]
-    })),
+    ...(walkthrough.threads ?? []).map(({ id, file: file2, lines, linesHash = "", code: code2, resolved: was, author, at, body, replies }) => {
+      const own2 = ownIn(id);
+      const sent = [...became.values()].includes(id) ? own2.shift() : void 0;
+      return {
+        id,
+        ...placed2(lines ? { file: file2, lines, linesHash, ...code2 && { code: code2 } } : { file: file2 }),
+        colleague: true,
+        ...resolvedIn(id, was),
+        comments: [
+          sent ?? { id, by: "colleague", author, at, body },
+          ...replies.map((reply, number) => ({ id: `${id}.${String(number + 1)}`, by: "colleague", ...reply })),
+          ...own2
+        ]
+      };
+    }),
     ...[...roots].filter(([id]) => !gone.has(id)).map(([id, place]) => ({ id, ...placed2(place), ...resolvedIn(id), comments: ownIn(id) }))
   ];
   const wrote = new Map([...comments3].map(([id, one]) => [id, one.wrote]));
@@ -13579,7 +13601,7 @@ async function ask(dir, { text: text2, thread, ...where }) {
 }
 var threadOf = (dir, id) => {
   const walkthrough = readWalkthrough(dir);
-  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find((one) => one.id === id) : void 0;
+  return walkthrough ? replay(walkthrough, logOf(dir)).threads.find((one) => one.id === id || one.comments[0]?.id === id) : void 0;
 };
 async function resolve(dir, { thread }) {
   const found = threadOf(dir, thread);
@@ -13647,7 +13669,7 @@ function reviewComments(dir, all = false) {
       (thread) => thread.comments.filter(inReview).map((one) => {
         const body = one.by === "ai" ? AI_PREFIX + one.body : one.body;
         const by = one.by === "colleague" ? one.author : one.by;
-        return one.id === thread.id ? { kind: "comment", id: one.id, by, ...whereOf(thread), body, ...reworded(one), ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body, ...reworded(one) };
+        return one === thread.comments[0] ? { kind: "comment", id: one.id, by, ...whereOf(thread), body, ...reworded(one), ...thread.step === null && { outdated: true } } : { kind: "reply", id: one.id, by, thread: thread.id, body, ...reworded(one) };
       })
     ),
     ...(all ? dropped : []).map(({ view, wrote: text2, place }) => ({ kind: "comment", id: view.id, by: "ai", ...whereOf(place), body: AI_PREFIX + text2, deleted: true })),

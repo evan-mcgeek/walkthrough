@@ -7402,7 +7402,7 @@ var commentCount = (step, file) => [...threadsIn(step, file), ...outdatedIn(step
 var threadStep = (thread) => thread.step ?? thread.fileStep;
 var unresolved = () => state.view.threads.filter((one) => one.colleague && !one.resolved && threadStep(one) !== void 0);
 var notViewed = () => allFiles().filter((file) => !state.view.viewed.includes(file));
-var threadBy = (thread) => thread.colleague ? "colleague" : thread.comments[0]?.by ?? "you";
+var threadBy = (thread) => thread.comments[0]?.by ?? "you";
 var plural = (count, one, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
 var linesLabel = ([first2, last]) => first2 === last ? String(first2) : `${String(first2)}\u2013${String(last)}`;
 var baseName = (file) => file.slice(file.lastIndexOf("/") + 1);
