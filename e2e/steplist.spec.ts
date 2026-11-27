@@ -29,6 +29,8 @@ test('the step you are on is open and the others fold to how much is viewed; a c
   await expect(show).toHaveAttribute('title', 'Show files');
   await expect(tasks.locator('.step-meta')).toHaveText('2 files2');
   await expect(tasks.locator('.step-meta .file-count')).toHaveAttribute('title', '2 comments');
+  // Read as its count of comments, not as a bare number.
+  expect(await tasks.locator('.step-meta').ariaSnapshot()).toContain('img "2 comments"');
   await expect(tasks.getByRole('link', { name: 'tasks.ts', exact: true })).toBeHidden();
 
   const scrolled = await page.locator('.main').evaluate(main => {
@@ -145,6 +147,40 @@ test('the step list resizes by its right edge between 200 and 400px, and double-
   await expect(edge).toBeHidden();
 });
 
+test('the comment count goes to the comment that shows first in the file, which sits under the last of its lines', async ({ page, repo, url }) => {
+  record(repo, STEPS);
+  // Starts higher but shows lower, under line 60.
+  record(repo, [{ file: 'tasks.ts', lines: [30, 60], body: 'From 30 to 60.' }, { file: 'tasks.ts', lines: [40, 40], body: 'Just 40.' }], 'comment');
+  await open(page, url);
+  await page.getByRole('link', { name: 'Tasks', exact: true }).click();
+
+  await page.locator('.file-row[data-file="tasks.ts"]').getByRole('link', { name: /2 comments on tasks\.ts/ }).click();
+
+  await expect(page.locator('tr.flash')).toHaveCount(1);
+  await expect(page.locator('tr.flash')).toHaveAttribute('data-line', '40');
+});
+
+test('the focus ring and the ring of the file J and K are on show whole on every part of a file row', async ({ page, repo, url }) => {
+  record(repo, STEPS);
+  record(repo, COMMENTS, 'comment');
+  await open(page, url);
+  await page.getByRole('link', { name: 'Tasks', exact: true }).click();
+
+  // A 2px ring outside the row's last part, and under the list's last row, must fit inside what the list clips.
+  const list = page.locator('.step-item').nth(1).locator('.file-list');
+  const fits = () => list.evaluate(box => {
+    const style = getComputedStyle(box);
+    const margin = Number.parseFloat(style.overflowClipMargin) || 0;
+    const clip = box.getBoundingClientRect();
+    const last = [...box.querySelectorAll('.file-row')].at(-1);
+    const part = box.querySelector('.file-row .file-count:not([hidden])');
+    if (!last || !part || style.overflowX === 'visible') return true;
+    return part.getBoundingClientRect().right + 2 <= clip.right + margin && last.getBoundingClientRect().bottom + 2 <= clip.bottom + margin;
+  });
+  // Measured once the step has opened.
+  await expect.poll(fits).toBe(true);
+});
+
 test.describe('with many steps', () => {
   const names = Array.from({ length: 12 }, (_, at) => `part${String(at + 1)}.ts`);
   test.use({ files: Object.fromEntries(names.map(name => [name, lines(3)])) });
@@ -189,5 +225,17 @@ test.describe('at 390', () => {
     const chevron = await stepOf(page, 'Tasks').getByRole('button', { name: 'Hide files' }).boundingBox();
     expect([chevron?.width, chevron?.height]).toEqual([44, 44]);
     await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeAttached();
+  });
+
+  test('picking a file of the step you are on closes the drawer and takes the keyboard to that file', async ({ page, repo, url }) => {
+    record(repo, STEPS);
+    await open(page, url);
+    await page.getByRole('button', { name: 'Steps and files' }).click();
+    const name = page.locator('.file-row[data-file="app.ts"]').getByRole('link', { name: 'app.ts', exact: true });
+    await name.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator('.step-list')).toBeHidden();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest<HTMLElement>('.file')?.dataset['file'])).toBe('app.ts');
   });
 });

@@ -139,3 +139,26 @@ test('the behind line goes in above the pane without moving the line you are rea
   await expect(page.locator('.behind')).toBeVisible();
   expect(await topOf(page, 'tr[data-line="40"]')).toBe(before);
 });
+
+test('back from the lost session while the branch is behind, the pane is where it was read', async ({ page, repo, url }) => {
+  await page.setViewportSize({ width: 1280, height: 420 });
+  record(repo, STEPS);
+  await open(page, url);
+  await page.locator('.step-row', { hasText: 'Tasks' }).click();
+  commit(repo.dir, 'app.ts', 'export const app = 3;\n');
+  await expect(page.locator('.behind')).toBeVisible();
+  const main = page.locator('.main');
+  await main.evaluate(pane => {
+    pane.scrollTop = 200;
+  });
+
+  await page.route('**/data/walkthrough.json', route => route.abort());
+  const end = page.locator('.end-page');
+  await expect(end.getByRole('heading', { level: 1, name: 'The session isn’t running' })).toBeVisible({ timeout: 8000 });
+  await page.unroute('**/data/walkthrough.json');
+  await end.getByRole('button', { name: 'Try again' }).click();
+  await expect(end).toBeHidden();
+
+  await expect(page.locator('.behind')).toBeVisible();
+  expect(await main.evaluate(pane => pane.scrollTop)).toBe(200);
+});

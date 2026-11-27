@@ -641,9 +641,11 @@ textarea {
   transition-duration: var(--slow);
 }
 
+/* Clipped while it folds, with room for the 2px rings of the row parts. */
 .step-files > .file-list {
   min-height: 0;
-  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: 2px;
   padding-left: 26px;
   visibility: hidden;
   transition: visibility 0s linear var(--base);

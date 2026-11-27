@@ -79,3 +79,17 @@ test('once the session stops listening before ready, the page says so and how to
   await expect(page.getByRole('heading', { level: 1, name: 'Preparing the walkthrough' })).toBeVisible();
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon-reading.svg');
 });
+
+test('the Opening’s placeholder steps are 8px apart, each bar centred on its circle', async ({ page, url }) => {
+  await open(page, url);
+  const placeholders = page.locator('.step-placeholder');
+  await expect(placeholders).toHaveCount(3);
+  const shape = await placeholders.evaluateAll(items =>
+    items.map(item => {
+      const circle = item.querySelector('.step-number')?.getBoundingClientRect();
+      const bar = item.querySelector('.step-row .placeholder-bar')?.getBoundingClientRect();
+      return { gap: Number.parseFloat(getComputedStyle(item).marginBottom), offset: circle && bar ? Math.abs(circle.top + circle.height / 2 - (bar.top + bar.height / 2)) : -1 };
+    }),
+  );
+  expect(shape).toEqual(Array(3).fill({ gap: 8, offset: 0 }));
+});

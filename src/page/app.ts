@@ -9,7 +9,7 @@ import { icon } from './icons';
 import { animate, duration, FADE_IN, fadeAway, fadeOut, flash, grow, reduced, settle, tick } from './motion';
 import { moving, shownMoves } from './moves';
 import { Opening, openingNav } from './opening';
-import { ago, allFiles, baseName, commentCount, outdatedIn, PAGE, pendingComments, phone, plural, state, stepOfFile, threadsIn, threadStep } from './state';
+import { ago, allFiles, baseName, commentCount, PAGE, pendingComments, phone, plural, state, stepOfFile, threadStep } from './state';
 import { changes, ChangesSwitch, shownFiles, shownSince } from './since';
 import { StepPane } from './step';
 import { type Reveal, SummaryPane } from './summary';
@@ -167,6 +167,8 @@ function reveal({ thread: id, edit, file, lines }: Reveal): void {
     const marked = pane.linesOf(thread.id);
     flash(marked.length ? marked : [shown.row]);
   } else pane.mark(main, smooth);
+  // The keyboard goes where the page went, as it goes to the step title after a pane swap; the step list may have closed under it.
+  pane.focus();
   if (shown && edit) shown.box.edit(edit);
 }
 
@@ -438,6 +440,8 @@ function showEnd(kind: Ending): void {
   endPage.replaceChildren(screen.box);
   endPage.hidden = false;
   endPage.scrollTop = 0;
+  // Fading first, so the walkthrough is never hidden in between and keeps its scroll while it fades.
+  if (fromWalkthrough) document.body.classList.add('fading');
   document.body.classList.add('ended');
   drawHeader(current().kind === 'summary');
   endPage.querySelector<HTMLElement>('.end-title')?.focus({ preventScroll: true });
@@ -445,7 +449,6 @@ function showEnd(kind: Ending): void {
     animate(endPage, 'end-in', FADE_IN, { ms: 'base', curve: 'linear' });
     return;
   }
-  document.body.classList.add('fading');
   const fades = walkthroughParts().map(part => {
     part.inert = true;
     return animate(part, 'end-leave', [{ opacity: 1 }, { opacity: 0 }], { ms: 'fast', curve: 'ease-in', fill: 'forwards' }).finished;
@@ -464,9 +467,10 @@ function hideEnd(): void {
   endPage.hidden = true;
   endPage.replaceChildren();
   document.body.classList.remove('ended');
+  render(true);
+  // After the redraw, which may put the behind line back and scroll by its height.
   main.scrollTop = mainTop;
   nav.scrollTop = navTop;
-  render(true);
   content.querySelector<HTMLElement>('.step-title')?.focus({ preventScroll: true });
 }
 
@@ -491,12 +495,6 @@ function navLink(address: string, className: string, ...children: (Node | string
   return row;
 }
 
-/** The file's thread that shows first in it: on the whole file, then outdated, then by line. */
-function firstThread(step: string, file: string) {
-  const threads = threadsIn(step, file);
-  const onLines = threads.filter(one => one.lines).sort((a, b) => (a.lines?.[0] ?? 0) - (b.lines?.[0] ?? 0));
-  return [...threads.filter(one => !one.lines), ...outdatedIn(step, file), ...onLines][0];
-}
 
 /** A file's row: its Viewed checkbox, its name going to the file and its comment count going to the first comment. */
 function navFile(step: string, file: string, id: string): NavFile {
@@ -519,8 +517,9 @@ function navFile(step: string, file: string, id: string): NavFile {
   count.dataset['key'] = `count:${file}`;
   count.onclick = event => {
     event.preventDefault();
-    const first = firstThread(step, file);
-    if (first) reveal({ thread: first.id });
+    // The first as the page draws them: the band above the diff, then down the lines.
+    const first = paneOf(step).fileNamed(file)?.firstThread();
+    if (first) reveal({ thread: first });
   };
   const row = el('div', { className: 'file-row' }, mark, name, count);
   row.dataset['file'] = file;
@@ -595,7 +594,7 @@ function drawNav(at: At): void {
     meta.hidden = open || files.length === 0;
     meta.replaceChildren(
       el('span', {}, viewed ? `${String(viewed)} of ${String(files.length)} viewed` : plural(files.length, 'file')),
-      ...(comments ? [el('span', { className: 'file-count', title: plural(comments, 'comment') }, icon('message'), String(comments))] : []),
+      ...(comments ? [attrs(el('span', { className: 'file-count', title: plural(comments, 'comment') }, icon('message'), String(comments)), { role: 'img', 'aria-label': plural(comments, 'comment') })] : []),
     );
   }
   if (here === 'summary') summaryRow.setAttribute('aria-current', 'page');

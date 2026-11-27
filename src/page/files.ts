@@ -137,10 +137,21 @@ export class FilePane {
     flash([this.header]);
   }
 
-  /** The rows of a thread's lines, to mark when it is reached; none on a whole file. */
+  /** The rows of a thread's lines, to mark when it is reached; none on a whole file or once outdated, as those lines are gone. */
   linesOf(id: string): HTMLTableRowElement[] {
-    const lines = state.view.threads.find(one => one.id === id)?.lines;
+    const thread = state.view.threads.find(one => one.id === id);
+    const lines = thread?.step === null ? undefined : thread?.lines;
     return lines ? [...this.rows].flatMap(([line, row]) => (line >= lines[0] && line <= lines[1] ? [row] : [])) : [];
+  }
+
+  /** The thread that shows first in the file, in the band above the diff or under its lines. */
+  firstThread(): string | undefined {
+    return this.box.querySelector<HTMLElement>('[data-thread]')?.dataset['thread'];
+  }
+
+  /** Takes the keyboard to the file, at its header. */
+  focus(): void {
+    this.header.querySelector<HTMLElement>('.file-toggle')?.focus({ preventScroll: true });
   }
 
   private flashRows(rows: HTMLTableRowElement[], scroller: HTMLElement, smooth: boolean): boolean {

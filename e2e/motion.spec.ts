@@ -130,6 +130,28 @@ test.describe('scroll and mark', () => {
     });
 });
 
+test.describe('ending', () => {
+  test.use({ files: { 'tasks.ts': lines(150, 'task') }, viewport: { width: 1280, height: 600 } });
+
+  test('End session fades the walkthrough out where it was read, without jumping it to the top', async ({ page, repo, url }) => {
+    record(repo, [{ title: 'Login', explanation: 'Adds login.', files: ['login.ts', 'app.ts', 'tasks.ts'] }]);
+    await open(page, url);
+    await page.locator('.main').evaluate(main => {
+      main.scrollTop = 600;
+    });
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const scrolled = await page.evaluate(async () => {
+      const main = document.querySelector<HTMLElement>('.main');
+      [...document.querySelectorAll<HTMLElement>('.menu-item')].find(item => item.textContent === 'End session')?.click();
+      const inTask = main?.scrollTop;
+      await new Promise(requestAnimationFrame);
+      const fading = document.getAnimations().some(running => running.id === 'end-leave' && running.playState === 'running');
+      return { inTask, fading, during: main?.scrollTop };
+    });
+    expect(scrolled).toEqual({ inTask: 600, fading: true, during: 600 });
+  });
+});
+
 test('the menu fades in and out, and End session fades the walkthrough out before the farewell fades in, with nothing sliding', async ({ page, repo, url }) => {
   record(repo, STEPS);
   await open(page, url);
