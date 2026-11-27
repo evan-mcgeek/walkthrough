@@ -21,8 +21,11 @@ Every string the page shows. GitHub's word wherever GitHub has one (marked **GH*
 |---|---|---|
 | `<N>` `<step title>` | step row | |
 | `<file name>` | file row | tooltip: full path |
-| Viewed / Not viewed | file tick, accessible name | **GH** |
-| N comment(s) | comment count, tooltip | **GH** |
+| Viewed | file row mark: a checkbox, accessible name and tooltip, described by the file name; checked or not | **GH**; decision 37; was "Viewed / Not viewed" on an icon |
+| N comment(s): go to the first | file row count, tooltip; accessible name "N comment(s) on `<file>`: go to the first" | decision 37; Tooltip, 12 |
+| N of M viewed · M files | under a folded step | decision 37; Chip, 4; "1 file" when one |
+| Show files / Hide files | step chevron, accessible name and tooltip | decision 37; Button, 3 |
+| Resize the step list | the step list's right edge, separator accessible name and tooltip | decision 37; Tooltip, 12 |
 | Summary | last row | |
 
 ## A step

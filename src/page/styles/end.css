@@ -138,7 +138,9 @@ body.walkthrough > .end-page {
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font: 500 13px/1.4 var(--font-mono);
+  font: 500 13.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -81,15 +81,15 @@
 
   /* Type */
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', 'Geist Mono Fallback Consolas', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   --text-headline: 650 19px/1.25 var(--font-ui);
   --text-title: 650 17px/1.4 var(--font-ui);
   --text-prose: 400 15px/1.6 var(--font-ui);
   --text-body-ui: 400 13px/1.4 var(--font-ui);
   --text-label: 600 12.5px/1.4 var(--font-ui);
   --text-meta: 500 12px/1.4 var(--font-ui);
-  --text-code: 400 12.5px/21px var(--font-mono);
-  --text-mono-label: 500 12.5px/1.4 var(--font-mono);
+  --text-code: 400 13px/21px var(--font-mono);
+  --text-mono-label: 500 13px/1.4 var(--font-mono);
 
   /* Spacing: the one 4px scale */
   --s1: 4px;

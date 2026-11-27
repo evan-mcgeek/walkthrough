@@ -150,13 +150,13 @@ typography:
     fontWeight: 500
     lineHeight: 1.4
   code:
-    fontFamily: "'JetBrains Mono', ui-monospace, monospace"
-    fontSize: "12.5px"
+    fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace"
+    fontSize: "13px"
     fontWeight: 400
     lineHeight: "21px"
   mono-label:
-    fontFamily: "'JetBrains Mono', ui-monospace, monospace"
-    fontSize: "12.5px"
+    fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace"
+    fontSize: "13px"
     fontWeight: 500
     lineHeight: 1.4
 rounded:
@@ -299,7 +299,7 @@ It borrows GitHub's concepts and words, not its look: no header bands, tab strip
 - Colour for meaning only where GitHub has it: diff additions and deletions, the amber Pending tag, and the criteria marks (green met, amber partly, red not met, grey not checked).
 - Reading prose at 15px/1.6 within 72ch; comments at 14px/1.55.
 - A walked-W mark in the accent signs the header and the app icon; the tab icon is Walky's head, by session state (`brand/mascot/README.md`).
-- System UI sans for everything human; JetBrains Mono for code, paths and line numbers.
+- System UI sans for everything human; Geist Mono for code, paths and line numbers.
 - Flat at rest; files and threads are bordered boxes because you act on them; one floating shadow for menus and the new-comment pill.
 - One 4px spacing scale (4, 8, 12, 16, 24, 32px).
 - Motion in 120 / 200 / 320ms on one ease-out curve, serving fewer things: files folding, Viewed, moving between steps, "Look at" landing, a comment growing in place, the new-comment pill, popovers, submitting, and the AI-reviewing indicator; reduced motion keeps opacity and colour only.
@@ -428,9 +428,9 @@ Contrast of each token on each background, ours, with GitHub's in brackets where
 ## Typography
 
 **UI Font:** system-ui (with -apple-system, Segoe UI, Roboto, sans-serif)
-**Code / Label Font:** JetBrains Mono 400/500/600 (with ui-monospace, monospace)
+**Code / Label Font:** Geist Mono 400/500/600, self-hosted woff2 in `fonts/` (Latin subset, `font-display: swap`; OFL), ligatures off (`font-variant-ligatures: none`; the font has none anyway), with GitHub's system stack as fallback: ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace (decision 36; was JetBrains Mono)
 
-**Character:** The platform's own sans makes the page sit with the reviewer's tools rather than perform; JetBrains Mono is the one deliberate voice, used where exact characters matter. There is no display tier: the largest text in the product is the 20px step title.
+**Character:** The platform's own sans makes the page sit with the reviewer's tools rather than perform; Geist Mono is the one deliberate voice, used where exact characters matter: a moderate lowercase (53% of the size) keeps word shapes clear at 12 to 13px, I l 1 and O 0 o each have their own shape, and it is drawn in the same neo-grotesque style as the interface sans, so code and interface read as one family. JetBrains Mono's taller lowercase (55%) and short ascenders read dense and blocky at these sizes. There is no display tier: the largest text in the product is the 20px step title.
 
 ### Hierarchy
 - **Headline** (650, 20px desktop / 19px phone, 1.25, -0.01em): the open step's title and the Summary heading.
@@ -439,8 +439,8 @@ Contrast of each token on each background, ours, with GitHub's in brackets where
 - **Body UI** (400, 13px): buttons (500), step-list titles, menus, criteria rows, the review box.
 - **Label** (500 to 650, 12.5px): comment headers (name 600, time muted), the header's files-viewed count and "AI reviewing", the Viewed pill; small buttons. The PR title in the header is 13.5px at 600.
 - **Meta** (500/600, 12px): counters, the Pending tag, section labels such as "checked by the AI".
-- **Code** (400, 12.5px / 21px line): diff lines; hunk headers drop to 12px in muted ink.
-- **Mono Label** (500, 11.5 to 12.5px): paths in file headers, file names in the step list, `file:line` links in the Summary and "Look at" links, the branch label, the `[AI]` prefix.
+- **Code** (400, 13px / 21px line): diff lines, code blocks, suggestions; hunk headers drop to 12.5px in muted ink.
+- **Mono Label** (500, 12 to 13px; each half a pixel up from JetBrains Mono, decision 36): paths in file headers, file names in the step list, `file:line` links in the Summary and "Look at" links, the branch label, the `[AI]` prefix.
 
 ### Prose
 Inside explanations, notes and comments: 12px between blocks; h2 and h3 at 15px 650 with 24px above and 8px below (no size jump, weight alone); disc lists (decimal for ordered) with muted markers, 22px indent and 4px between items; inline code on surface tint with 4px corners and 1px 5px padding at .86em; links in accent text, underlined 1px at a 3px offset; block quotes as a surface box (6px corners, 12px 16px padding, secondary ink), never a coloured side bar.
@@ -494,7 +494,12 @@ Small, tight radii. 4px on every control (buttons, inputs, icon buttons, inline 
 44px: the 18px mark; the change's label: a pull request as GitHub sets it, the number in secondary ink and the title in the sans at 600 ("#212 Due dates for tasks"), or a branch in mono ("feature/due-dates"); "3 / 12 files viewed" with a 72px, 4px-tall bar in secondary ink; then Finish review (primary, small) and the menu (…) with Theme and End session. At 390px: mark, a steps button that opens the step list over the page, "3 / 12", Finish (not on the Summary), menu. "AI reviewing" with the spinner belongs to the Opening's header only (HANDOFF decision 10).
 
 ### Step list
-248px on the surface tone where GitHub has its file tree. Each step is a row: a 18px numbered circle (ink-filled for the current step), and the title cut with an ellipsis. Under each step, its files in 12px mono with a Viewed tick (a muted ring, or a check in secondary ink when viewed; a viewed file's name goes muted) and a comment count with a bubble icon. The Summary is the last row, behind a rule, with the count of pending comments (comments only, not resolved conversations). Nothing else: no states, sub-lines or badges.
+248px on the surface tone where GitHub has its file tree (decision 37). Each step is a row: a 24px chevron button that folds or opens its files without moving you ("Hide files" / "Show files"), then the step's link: an 18px numbered circle (ink-filled for the current step) and the title in 13px, wrapping to two lines. The step you are on is open; the others are folded to their row and one 12px muted line: "N of M viewed" (or "M files" when none is viewed) and the comment count with its bubble icon. Folded titles are secondary ink at 500. Opening a step by its chevron does not move you; its title goes to the step and opens it; moving to a step opens it; a step you opened stays open while the page is open.
+- **File row, three parts, three hit areas** (24px tall): the mark (24 × 24) is GitHub's Viewed checkbox (`role="checkbox"`, name "Viewed", described by the file name), the same state as the file header's checkbox and V, drawn as the ring, or the check when viewed; the name (12.5px Geist Mono, tooltip the full path) is a link to the file; the count (bubble and number, 600 11.5px, hidden at 0) is a link to the file's first comment ("N comments on <file>: go to the first"). Hover tints only the part under the pointer (surface tint, ink); keyboard focus is the 2px accent ring on that part; pressing the mark fills it with the rule tone and turns it to a check.
+- **At 390** (the drawer): chevrons 44 × 44, every row part 44px tall, the mark 40px wide.
+- The Summary is the last row, behind a rule, pinned to the bottom of the panel (sticky): at the foot when the list is short, in view while a long list scrolls under it; it carries the count of pending comments (comments only, not resolved conversations). Nothing else: no states, sub-lines or badges beyond the folded line.
+- **Resizable:** the panel's right edge is a separator ("Resize the step list"): drag between 200 and 400px; an 8px hit area over the 1px rule, a 2px accent line on hover, focus and while dragging, `col-resize` cursor; double-click resets to 248px; focused, Left and Right move it 16px. At 390 the step list is a drawer and does not resize.
+- **Scroll bars** (step list, main pane, wide diffs): thin, 8px with a 2px inset, thumb in the rule tone, control edge on hover, no track (`scrollbar-width: thin` where the browser takes it).
 
 ### Step
 The title (20px; no step-number line above it: the step list shows where you are), "Look at:" with one or two links, one or two sentences of explanation at 15px/1.6 with More, then the files. At the foot, previous and next step as secondary buttons named by the steps' titles.
@@ -578,12 +583,18 @@ Kept: Diff / Preview, before and after side by side on a transparency checker.
 
 ### Motion
 One family: ease-out cubic-bezier(0.16, 1, 0.3, 1) arriving, ease-in cubic-bezier(0.7, 0, 0.84, 0) leaving, 120 / 200 / 320ms. Loops: the checking spinner (the Opening's header, criteria being checked, and the AI answering in a thread), and the opening desk scene, the one authored moment, which plays only until the review is ready and pauses while the tab is hidden or the scene is offscreen; the asleep robot's "z" drift (4.8s, opacity and 3px) on the lost-session screen.
+- **Four families only** (decision 37). Every state change uses one of them, or none:
+  - **Pane swap:** changes what the pane shows (another step, the Summary, a file or line in another step, the Opening becoming ready).
+  - **Fold:** grid rows, 320ms open, 200ms close, chevron 90° in 120ms; things that open in place (files, steps in the step list, composers, Show resolved, the screenshot, a deleted Summary row closing).
+  - **Scroll and mark:** a smooth scroll of the main pane (320ms ease-out; for a jump farther than one screen, cut to one screen away first, then scroll), then the target flashes in the line-pick tone and fades over 1.4s and keeps the focus ring: a file in the step you are on (from the step list, J or K), Look at, the new-comment pill. Lines from a Summary link get the pane swap, then the flash.
+  - **Fade:** opacity 120ms out, 200ms in, no movement: the changes switch's view, menus, a comment arriving, the AI's answer, the submitted note, the farewell and the lost session replacing the page.
+  - No check pop, no rise, no drop: the flourishes of the earlier rounds go. The robot scenes stay the one authored moment.
 - **Steps:** sequential pane swap: the old step leaves to −12px over 100ms, the new one enters from +12px over 200ms after 100ms.
-- **Files:** fold by grid rows (open 320ms; close 200ms after an 80ms content fade), chevron turning 90° in 120ms; Viewed folds the file, the tree's ring turns into a check (200ms, scale from .6), and the count ticks while the header bar grows (320ms).
+- **Files:** fold by grid rows (open 320ms; close 200ms after an 80ms content fade), chevron turning 90° in 120ms; Viewed folds the file, the step list's ring fades to a check (200ms, no scale), and the count ticks while the header bar grows (320ms).
 - **Look at:** the main pane scrolls smoothly to the range, then the lines flash in the line-pick tone and fade over 1.4s.
-- **A comment growing in place:** a composer or a new comment opens by grid rows (320ms) with its content fading in after 80ms; the AI's reply replaces its "Answering…" row, fading and rising 4px (320ms).
-- **New-comment pill:** fades and drops 6px into place (200ms).
-- **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades and rises in after it (200ms), its check popping from .5.
+- **A comment growing in place:** a composer or a new comment opens by grid rows (320ms) with its content fading in after 80ms; the AI's reply replaces its "Answering…" row by a fade (200ms).
+- **New-comment pill:** fades in (200ms); clicking it scrolls and marks the comment.
+- **Summary:** a deleted comment fades (120ms) then its row closes (320ms); the count ticks. Submit: the review box fades out (120ms ease-in) and the submitted note fades in after it (200ms).
 - **Opening:** the desk scene's story uses the house ease-out for the jerk back, lean-in and bubble pops (200ms), ease-in for bubble exits (150ms); nothing bounces. When the review is ready, the opening block fades out (120ms ease-in) and the whole walkthrough enters at once: the first step with the usual pane swap, the step list and header counts fading in (200ms).
 - **After the session:** the robot waves once (1.6s, after 400ms; ease-in-out swing, no overshoot) and then stays still.
 - **Syntax colours:** none. A file's colours replace its plain text in one frame; nothing fades and nothing moves, under reduced motion too.
@@ -638,7 +649,7 @@ Rules: one place per thing (elsewhere at most a count that leads to it); list ro
 - **Do** take every padding and gap from the 4px scale.
 - **Do** give every interactive control a hover, focus-visible and disabled state, and 44px targets at 390px.
 - **Do** ship the reduced-motion version with every animation.
-- **Do** self-host JetBrains Mono.
+- **Do** self-host Geist Mono (woff2 in `fonts/`, Latin subset, 400/500/600, `font-display: swap`) and keep ligatures off in every code font.
 
 ### Don't:
 - **Don't** add anything in VISION.md's "Not in the tool": step decisions, verdict chips, findings to accept, session status words or pages, chats, session-defined buttons or tones, swipe decks, accent pickers, help sheets or legends.

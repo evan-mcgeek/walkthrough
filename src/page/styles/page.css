@@ -53,6 +53,7 @@ button {
 code {
   font: 500 0.92em var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 [hidden] {
@@ -278,7 +279,9 @@ textarea {
 }
 
 .change-label.branch {
-  font: 500 12.5px/1.4 var(--font-mono);
+  font: 500 13px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .pr-number {
@@ -409,7 +412,7 @@ textarea {
 }
 
 .behind .command code {
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 .ended > .behind {
@@ -598,8 +601,9 @@ textarea {
   padding: 3px var(--s2) 3px 34px;
   border-radius: var(--r-xs);
   color: var(--ink-secondary);
-  font: 400 12px/1.5 var(--font-mono);
+  font: 400 12.5px/1.5 var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-decoration: none;
 }
 
@@ -737,7 +741,9 @@ textarea {
 
 .look-link {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
+  max-width: 100%;
   gap: 5px;
   min-height: 24px;
   padding: 2px var(--s2) 2px 6px;
@@ -760,7 +766,12 @@ textarea {
 }
 
 .look-link code {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .look-label {
@@ -915,8 +926,9 @@ textarea {
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font: 400 12.5px/1.4 var(--font-mono);
+  font: 400 13px/1.4 var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: color var(--base) linear;
@@ -928,7 +940,9 @@ textarea {
 
 .file-stats {
   flex: none;
-  font: 400 12px/1.4 var(--font-mono);
+  font: 400 12.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .file-stats .added {
@@ -1114,7 +1128,9 @@ textarea {
   min-width: 0;
   overflow: hidden;
   color: var(--ink-secondary);
-  font: 400 12px/1.4 var(--font-mono);
+  font: 400 12.5px/1.4 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1140,7 +1156,9 @@ textarea {
   padding: var(--s1) 0;
   overflow-x: auto;
   color: var(--ink-secondary);
-  font: 400 12px/20px var(--font-mono);
+  font: 400 12.5px/20px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .outdated-line {
@@ -1216,6 +1234,7 @@ textarea {
   border-collapse: collapse;
   font: var(--text-code);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .d2h-diff-table td {
@@ -1241,7 +1260,7 @@ textarea {
   width: 46px;
   min-height: 21px;
   padding: 0 var(--s2);
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: right;
   vertical-align: top;
 }
@@ -1308,7 +1327,7 @@ td.d2h-info {
 }
 
 td.d2h-info .d2h-code-line {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 /* Moved code: plain lines on the surface where they arrive, one label row at each end linking to the other. */
@@ -1329,6 +1348,8 @@ tr.moved-label td {
 tr.moved-label .line-num1 {
   min-height: 24px;
   font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .moved-link {
@@ -1552,7 +1573,9 @@ tr.flash td {
 
 .ai-tag {
   color: var(--ink-secondary);
-  font: 600 12px var(--font-mono);
+  font: 600 12.5px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .markdown .suggestion {
@@ -1583,6 +1606,7 @@ tr.flash td {
   border-collapse: collapse;
   font: var(--text-code);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .suggestion .suggestion-code td {
@@ -1897,8 +1921,9 @@ tr.flash td {
   overflow-x: auto;
   border-radius: var(--r-md);
   background: var(--surface-tint);
-  font: 400 12.5px/20px var(--font-mono);
+  font: 400 13px/20px var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .markdown pre code {
@@ -2007,7 +2032,9 @@ tr.flash td {
   width: 120px;
   overflow: hidden;
   color: var(--accent-text);
-  font: 400 11.5px/20px var(--font-mono);
+  font: 400 12px/20px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2103,7 +2130,9 @@ tr.flash td {
 
 .criterion-shows .where {
   color: var(--accent-text);
-  font: 400 11.5px/18px var(--font-mono);
+  font: 400 12px/18px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -2257,7 +2286,9 @@ tr.flash td {
 .export-step .d2h-file-header {
   padding: var(--s2) var(--s3);
   background: var(--surface);
-  font: 400 12.5px var(--font-mono);
+  font: 400 13px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .export-step .d2h-file-header :is(.d2h-icon, .d2h-tag, .d2h-file-collapse) {

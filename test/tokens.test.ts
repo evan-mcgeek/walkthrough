@@ -13,3 +13,26 @@ test('every custom property the stylesheets use is defined, so a renamed token c
 
   expect([...used].filter(name => !defined.has(name))).toEqual([]);
 });
+
+test('every rule that sets the code font turns ligatures off, so => and !== show as typed in any font of the stack', () => {
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, , body]) => /var\(--(font-mono|text-code)\)/.test(body ?? '') && !/--font-mono:/.test(body ?? ''));
+  const missing = rules.filter(([, , body]) => !/font-variant-ligatures: none;/.test(body ?? '') || !/font-feature-settings: 'liga' 0, 'calt' 0;/.test(body ?? ''));
+
+  expect(rules.length).toBeGreaterThan(10);
+  expect(missing.map(([, selector]) => selector?.trim())).toEqual([]);
+});
+
+test('code is set in the self-hosted Geist Mono, then a local face sized to it, then the system stack', () => {
+  expect(css).toContain(
+    "--font-mono: 'Geist Mono', 'Geist Mono Fallback', 'Geist Mono Fallback Consolas', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;",
+  );
+  const faces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(([, body]) => body ?? '');
+  const geist = faces.filter(face => face.includes("font-family: 'Geist Mono';"));
+  expect(geist.map(face => /font-weight: (\d+)/.exec(face)?.[1])).toEqual(['400', '500', '600']);
+  for (const face of geist) {
+    expect(face).toContain('font-display: swap;');
+    expect(face).toMatch(/src: url\('[./]+\/docs\/design\/fonts\/geist-mono-latin-\d00-normal\.woff2'\)/);
+  }
+  for (const face of faces.filter(one => !geist.includes(one))) expect(face).toMatch(/src: local\(.*size-adjust: [\d.]+%/s);
+  expect(css).not.toMatch(/JetBrains|https?:\/\//);
+});

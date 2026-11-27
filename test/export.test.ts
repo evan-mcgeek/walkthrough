@@ -41,6 +41,8 @@ describe('walkthrough export', () => {
     // The self-hosted code font travels inside the file.
     expect(html).toContain('font-src data:');
     expect(html).toContain('data:font/woff2;base64,');
+    expect(html).toMatch(/font-family: ["']Geist Mono["'];/);
+    expect(html).not.toContain('JetBrains');
     expect(html).not.toContain(tokenOf(repo.url()));
     expect(html).not.toContain(repo.dir);
     expect(html).not.toContain(repo.state);

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Walky, the Walkthrough mascot</title><link rel="icon" href="brand/favicon.svg"><style>
+@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-latin-400-normal.woff2') format('woff2');font-weight:400;font-display:swap}@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-latin-500-normal.woff2') format('woff2');font-weight:500;font-display:swap}@font-face{font-family:'Geist Mono';src:url('fonts/geist-mono-latin-600-normal.woff2') format('woff2');font-weight:600;font-display:swap}@font-face{font-family:'JetBrains Mono';src:url('fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');font-weight:400;font-display:swap}
 :root{--tx:#1d2126;--tx2:#3a4048;--mut:#5b636d;--bg:#fff;--bg2:#f6f7f9;--bg3:#eef0f3;--line:#dde1e6;--acc:#2d3a9e;color-scheme:light dark}
 @media (prefers-color-scheme: dark){:root{--tx:#e5e8ec;--tx2:#c3c8cf;--mut:#9aa2ac;--bg:#15181d;--bg2:#1b1f25;--bg3:#232830;--line:#2c323b;--acc:#a9b1ff}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
@@ -11,15 +12,15 @@ h1{font-size:40px;line-height:1.1;letter-spacing:-.02em;margin:0 0 6px}h2{font-s
 ul.grid{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 ul.grid.scenes{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
 .card{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg)}
-.card b{font-size:14px;margin-top:6px}.card span{font-size:13px;color:var(--tx2)}.card code{font:12px 'JetBrains Mono',ui-monospace,monospace;color:var(--mut)}
+.card b{font-size:14px;margin-top:6px}.card span{font-size:13px;color:var(--tx2)}.card code{font:12.5px 'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;color:var(--mut)}
 .pr{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pr.one{grid-template-columns:1fr}
 .t{margin:0;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 8px;min-height:120px}
 .t.lt{background:#fff;box-shadow:inset 0 0 0 1px #dde1e6}.t.dk{background:#15181d;box-shadow:inset 0 0 0 1px #2c323b}
 .t.sm{min-height:72px}.t.bn{padding:0;min-height:0;overflow:hidden}.t.bn img{display:block;width:100%}.t img{max-width:100%;height:auto}
 .fig .t{min-height:220px}.fig .t img{width:112px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:32px}.cols ul{margin:8px 0 0;padding-left:18px}.cols li{margin:4px 0}
-pre{background:var(--bg3);border-radius:8px;padding:12px 14px;overflow-x:auto;font:12.5px/20px 'JetBrains Mono',ui-monospace,monospace;margin:12px 0 0}
-a{color:var(--acc)}.files{columns:2;font:13px 'JetBrains Mono',ui-monospace,monospace;padding-left:18px}
+pre{background:var(--bg3);border-radius:8px;padding:12px 14px;overflow-x:auto;font:13px/20px 'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;margin:12px 0 0}
+a{color:var(--acc)}.files{columns:2;font:13.5px 'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;padding-left:18px}
 @media (max-width:640px){main{padding:28px 16px 64px}h1{font-size:32px}.cols{grid-template-columns:1fr}ul.grid.scenes{grid-template-columns:1fr}.files{columns:1}}
 </style></head><body><main>
 <h1>Walky</h1>
