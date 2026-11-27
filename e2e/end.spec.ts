@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { ONE_STEP } from '../test/helpers';
-import { expect, open, record, test } from './walkthrough';
+import { catchCopies, expect, lastCopied, open, record, test } from './walkthrough';
 
 const AI_COMMENT = [{ file: 'login.ts', lines: [1, 1], body: 'Everyone gets in.' }];
 
@@ -77,10 +77,10 @@ test.describe('a pull request', () => {
     await expect.poll(() => fetch(url).then(() => 'up', () => 'down')).toBe('down');
   });
 
-  test('End session from the menu with nothing submitted: nothing was posted, dot eyes, the exact command to copy, and no more polls', async ({ page, repo, url, context }) => {
+  test('End session from the menu with nothing submitted: nothing was posted, dot eyes, the exact command to copy, and no more polls', async ({ page, repo, url }) => {
     record(repo, ONE_STEP);
     record(repo, AI_COMMENT, 'comment');
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await catchCopies(page);
     await open(page, url);
 
     await page.getByRole('button', { name: 'Menu' }).click();
@@ -99,7 +99,7 @@ test.describe('a pull request', () => {
 
     await end.getByRole('button', { name: 'Copy command' }).click();
     await expect(end.getByRole('button', { name: 'Copied' })).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('/walkthrough:pr 212');
+    expect(await lastCopied(page)).toBe('/walkthrough:pr 212');
     await expect(end.getByRole('button', { name: 'Copy command' })).toBeVisible({ timeout: 4000 });
     expect(polls.count).toBe(0);
   });
