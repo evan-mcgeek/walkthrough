@@ -641,12 +641,12 @@ textarea {
   transition-duration: var(--slow);
 }
 
-/* Clipped while it folds, with room for the 2px rings of the row parts. */
+/* Clipped while it folds; 2px of padding, taken back by the margin, leaves room for the rings of the row parts in every browser. */
 .step-files > .file-list {
   min-height: 0;
-  overflow: clip;
-  overflow-clip-margin: 2px;
-  padding-left: 26px;
+  overflow: hidden;
+  margin: -2px -2px -2px 0;
+  padding: 2px 2px 2px 26px;
   visibility: hidden;
   transition: visibility 0s linear var(--base);
 }
