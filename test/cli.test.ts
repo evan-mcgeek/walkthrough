@@ -118,6 +118,21 @@ describe('walkthrough start', () => {
     expect(servers).toEqual([String(pid)]);
   });
 
+  test('a page server another build of the plugin started is replaced, so the page is this build\'s', () => {
+    repo = makeRepo();
+    repo.run('start');
+    const record = path.join(walkthroughFolder(repo), 'server.json');
+    const earlier = JSON.parse(fs.readFileSync(record, 'utf8')) as { pid: number; script?: string };
+    fs.writeFileSync(record, JSON.stringify({ ...earlier, script: '/plugins/cache/walkthrough/walkthrough/0.1.3/dist/walkthrough.mjs' }));
+
+    expect(repo.run('start').status).toBe(0);
+
+    const now = JSON.parse(fs.readFileSync(record, 'utf8')) as { pid: number; script: string };
+    expect(now.pid).not.toBe(earlier.pid);
+    expect(now.script).toBe(earlier.script);
+    expect(spawnSync('kill', ['-0', String(earlier.pid)]).status).not.toBe(0);
+  });
+
   test('answers a poll for an unchanged walkthrough with no body, and a changed one in full', async () => {
     repo = makeRepo();
     repo.run('start');
