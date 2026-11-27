@@ -110,6 +110,6 @@ export function openingNav(): Node[] {
   return [
     el('p', { className: 'steps-note' }, gone ? 'No steps yet.' : 'Steps appear here when the AI is done.'),
     attrs(el('ol', { className: 'steps' }, ...rows), { 'aria-hidden': 'true' }),
-    el('span', { className: 'step-row summary-row still' }, icon('summary'), el('span', { className: 'step-name' }, 'Summary'), el('span', { className: 'file-count' }, '0')),
+    el('div', { className: 'summary-dock' }, el('span', { className: 'step-row summary-row still' }, icon('summary'), el('span', { className: 'step-name' }, 'Summary'), el('span', { className: 'file-count' }, '0'))),
   ];
 }
