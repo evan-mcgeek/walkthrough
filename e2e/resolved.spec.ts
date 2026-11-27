@@ -87,6 +87,9 @@ test('an outdated comment sits at the top of its file, under the file’s own co
   await expect(row.locator('.outdated-tag')).toHaveText('Outdated');
   await row.getByRole('link', { name: 'app.ts:1' }).click();
   await expect(thread).toBeInViewport();
+  // Its lines are the old ones, so the thread itself is marked, never today's line 1.
+  await expect(thread).toHaveClass(/\bflash\b/);
+  await expect(file.locator('tr.flash')).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Finish review' }).click();
   await page.getByRole('link', { name: '1 unresolved thread' }).click();

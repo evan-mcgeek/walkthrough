@@ -5,7 +5,7 @@ import { attrs, el } from './dom';
 import { sentLine, them, TYPE_NAMES, viewReview } from './end';
 import { icon, type IconName } from './icons';
 import { baseName, linesLabel, markdown, notViewed, pendingComments, plural, send, sentComments, state, suggestionCode, threadStep, unresolved } from './state';
-import { animate, duration, FADE_IN, reduced, shrink, tick } from './motion';
+import { animate, duration, FADE_IN, shrink, tick } from './motion';
 import { avatar } from './threads';
 
 const TYPES = Object.entries(TYPE_NAMES) as [ReviewType, string][];
@@ -104,10 +104,7 @@ export class SummaryPane {
         () => {},
       );
     }
-    const still = reduced();
-    animate(note, 'review-done', still ? FADE_IN : [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { ms: 'base', curve: still ? 'linear' : 'ease-out', delay: after });
-    const check = note.querySelector(':scope > .icon');
-    if (check && !still) animate(check, 'review-check', [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], { ms: 'slow', curve: 'ease-out', delay: after + 40 });
+    animate(note, 'review-done', FADE_IN, { ms: 'base', curve: 'linear', delay: after });
   }
 
   /** The row fades, then closes, while the comment is deleted. */
@@ -286,8 +283,7 @@ export class SummaryPane {
     submit.onclick = async () => {
       this.sending = true;
       submit.disabled = true;
-      const still = reduced();
-      const fading = animate(box, 'review-leave', still ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.98)' }], {
+      const fading = animate(box, 'review-leave', [{ opacity: 1 }, { opacity: 0 }], {
         ms: 'fast',
         curve: 'ease-in',
         fill: 'forwards',

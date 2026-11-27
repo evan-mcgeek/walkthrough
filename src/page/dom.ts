@@ -64,15 +64,23 @@ export function showUnreachable({ name, reopen }: { name: string; reopen: string
   document.body.classList.add('unreachable');
 }
 
-const send = (route: string, body: Record<string, unknown>) =>
+/** What the page reads for itself (code colours, previews), cancelled when the session ends so no request is left to fail as the server stops. */
+const reads = new AbortController();
+export const readSignal = reads.signal;
+export const stopReading = () => {
+  reads.abort();
+};
+
+const send = (route: string, body: Record<string, unknown>, signal?: AbortSignal) =>
   fetch(`/${route}?token=${token}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
+    ...(signal && { signal }),
   });
 
 /** For what the page sends on its own: how it ends leaves the alert about what the person did alone. */
-export const postQuietly = (route: string, body: Record<string, unknown>) => send(route, body).catch(() => null);
+export const postQuietly = (route: string, body: Record<string, unknown>, signal?: AbortSignal) => send(route, body, signal).catch(() => null);
 
 /** The server's answer, or null once the person has been told why there is none. */
 export async function post(page: PageName, route: string, body: Record<string, unknown>): Promise<Response | null> {

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { git, postTo } from '../test/helpers';
-import { expect, lines, open, record, test } from './walkthrough';
+import { expect, lines, open, record, test, topOf } from './walkthrough';
 
 const TASKS = lines(60, 'task');
 test.use({ start: { 'tasks.ts': TASKS }, files: { 'tasks.ts': TASKS.replace('task5 = 5;', 'task5 = 50;').replace('task15 = 15;', 'task15 = 150;').replace('task40 = 40;', 'task40 = 400;') } });
@@ -122,4 +122,43 @@ test('J and K move through the files across steps, V marks the file you are on V
   await page.keyboard.press('k');
   await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
   await expect(page.locator('.file.on')).toHaveAttribute('data-file', 'login.ts');
+});
+
+test('the behind line goes in above the pane without moving the line you are reading', async ({ page, repo, url }) => {
+  await page.setViewportSize({ width: 1280, height: 420 });
+  record(repo, STEPS);
+  await open(page, url);
+  await page.locator('.step-row', { hasText: 'Tasks' }).click();
+  await page.locator('tr[data-line="40"]').evaluate(row => {
+    row.scrollIntoView({ block: 'center' });
+  });
+  const before = await topOf(page, 'tr[data-line="40"]');
+
+  commit(repo.dir, 'app.ts', 'export const app = 3;\n');
+
+  await expect(page.locator('.behind')).toBeVisible();
+  expect(await topOf(page, 'tr[data-line="40"]')).toBe(before);
+});
+
+test('back from the lost session while the branch is behind, the pane is where it was read', async ({ page, repo, url }) => {
+  await page.setViewportSize({ width: 1280, height: 420 });
+  record(repo, STEPS);
+  await open(page, url);
+  await page.locator('.step-row', { hasText: 'Tasks' }).click();
+  commit(repo.dir, 'app.ts', 'export const app = 3;\n');
+  await expect(page.locator('.behind')).toBeVisible();
+  const main = page.locator('.main');
+  await main.evaluate(pane => {
+    pane.scrollTop = 200;
+  });
+
+  await page.route('**/data/walkthrough.json', route => route.abort());
+  const end = page.locator('.end-page');
+  await expect(end.getByRole('heading', { level: 1, name: 'The session isn’t running' })).toBeVisible({ timeout: 8000 });
+  await page.unroute('**/data/walkthrough.json');
+  await end.getByRole('button', { name: 'Try again' }).click();
+  await expect(end).toBeHidden();
+
+  await expect(page.locator('.behind')).toBeVisible();
+  expect(await main.evaluate(pane => pane.scrollTop)).toBe(200);
 });

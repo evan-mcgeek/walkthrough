@@ -1,7 +1,7 @@
 // Syntax colours, put on code the page already drew: diff rows by side and line number, and Markdown code blocks by their language.
 import type { DiffFile } from 'diff2html/lib-esm/types';
 import { colourHtml, joinLines, PLAIN, type Run } from '../colours';
-import { postQuietly } from './dom';
+import { postQuietly, readSignal } from './dom';
 
 function paint(element: HTMLElement, runs: Run[] | undefined): void {
   // Painted once, so drawing a box again does not wrap its spans twice.
@@ -29,10 +29,10 @@ const once = (key: string, ask: () => Promise<Run[][] | null>) => {
   return found;
 };
 
-const code = (body: Record<string, string>) => once(JSON.stringify(body), () => lines(postQuietly('code', body)));
+const code = (body: Record<string, string>) => once(JSON.stringify(body), () => lines(postQuietly('code', body, readSignal)));
 
 const fileAt = (rev: string, file: string) =>
-  once(`${rev}:${file}`, () => lines(fetch(`tokens?rev=${encodeURIComponent(rev)}&path=${encodeURIComponent(file)}`).catch(() => null)));
+  once(`${rev}:${file}`, () => lines(fetch(`tokens?rev=${encodeURIComponent(rev)}&path=${encodeURIComponent(file)}`, { signal: readSignal }).catch(() => null)));
 
 /**
  * Colours a file's diff table once both sides' tokens arrive, in one pass so the file changes in one frame:

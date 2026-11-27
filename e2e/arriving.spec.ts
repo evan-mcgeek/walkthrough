@@ -59,5 +59,6 @@ test('an answer arriving above never moves the line being read', async ({ page, 
   await expect(page.locator('.comment-ai').filter({ hasText: 'Because a hundred tasks fit.' })).toBeAttached();
   await expect(page.getByText('Answering…')).toHaveCount(0);
   // The pane scrolls by whole pixels, so the answer's fractional height may round.
-  expect(await topOf(page, 'tr[data-line="130"]')).toBeCloseTo(before, 0);
+  // Within a pixel: WebKit keeps scroll positions in whole pixels, so a fractional height above cannot be taken back more exactly.
+  expect(Math.abs((await topOf(page, 'tr[data-line="130"]')) - before)).toBeLessThan(1);
 });
