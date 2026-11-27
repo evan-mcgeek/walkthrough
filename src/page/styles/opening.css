@@ -26,7 +26,9 @@
 }
 
 .opening-line code {
-  font: 500 13.5px/1 var(--font-mono);
+  font: 500 14px/1 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   white-space: nowrap;
 }
 
@@ -87,15 +89,18 @@
   min-width: 0;
   overflow: hidden;
   color: var(--ink-secondary);
-  font: 400 12.5px/1.5 var(--font-mono);
+  font: 400 13px/1.5 var(--font-mono);
   font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .changed-stat {
   flex: none;
-  font: 400 12px/1.5 var(--font-mono);
+  font: 400 12.5px/1.5 var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -269,7 +274,9 @@
 
 .desk6 .cbt {
   fill: var(--canvas);
-  font: 600 8px var(--font-mono);
+  font: 600 8.5px var(--font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 .desk6 .ckc {
