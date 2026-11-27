@@ -57,16 +57,16 @@ Nothing is ever checked out, and uncommitted edits are left out with a warning.
    Meanwhile the tab shows Walky reading and its title starts with "Reviewing", and you can ask the session to open it earlier.
 3. Each step has "Look at:" links to the lines that matter and a sentence or two of explanation.
    The AI's comments are on the lines, marked `[AI]`. Colleagues' threads show on their lines as well.
-4. You read, mark files Viewed, comment, edit or delete the AI's comments, reply and resolve.
+4. You read, mark files Viewed in the file or the step list, comment, edit or delete the AI's comments, reply and resolve.
    For a question, use Ask AI in a thread; the answer stays on the page and never goes out.
-5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them.
-   On a pull request, pick Comment, Approve or Request changes and submit.
+5. The Summary shows every comment that will go out, the threads and files left, and the acceptance criteria as the AI checked them, each gap linked to the comment that closes it.
+   On a pull request, pick Comment, Approve or Request changes and submit; on one you opened, it goes out as a comment, as on GitHub.
 
 While the AI finishes its review, the page shows it at its desk:
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/opening-dark.png">
-  <img alt="The Opening: the AI at its desk, and the changed files, while the review is not ready" src="docs/images/opening-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/opening-dark.gif">
+  <img alt="The Opening: the AI at its desk, and the changed files, while the review is not ready" src="docs/images/opening-light.gif">
 </picture>
 
 ### Steps, each with what to look at
@@ -89,7 +89,7 @@ While the AI finishes its review, the page shows it at its desk:
 
 ### Finish on the Summary
 
-> Every comment that will go out, the acceptance criteria as the AI checked them, then Submit review or Send to agent.
+> Every comment that will go out, the acceptance criteria with what is missing and where, then Submit review or Send to agent.
 
 <img alt="The Summary with what goes out and the criteria, then Send to agent" src="docs/images/summary.gif">
 
@@ -99,9 +99,6 @@ So, nothing leaves before you submit.
 
 When new commits arrive, such as the fixes, `/walkthrough:update` goes on with the same walkthrough; the fix list ends by asking the agent to run it.
 It asks whether to review only what changed, with whether each comment was addressed, or the whole change again, and a file you viewed opens again as "Changed since last view".
-It works on a phone as well.
-
-<img alt="A walkthrough at 390px wide" src="docs/images/phone.png" width="300">
 
 Ask the session to export a walkthrough and you get one read-only HTML file, or ask which walkthroughs you have open and you get a list.
 
@@ -134,22 +131,17 @@ The plugin's hook approves only `walkthrough` commands and the session's writes 
 
 | Command | What it does |
 | --- | --- |
-| `start` | Starts or resumes a walkthrough and serves its page; `--pr <number>` makes it a pull request. |
+| `start` | Starts or resumes a walkthrough and serves its page; `--pr <number>` makes it a pull request, `--yours` one you opened. |
 | `files` | Lists the changed files. |
 | `steps`, `comment`, `threads`, `criteria` | Record the steps, the AI's comments, colleagues' threads and the acceptance criteria. |
 | `open`, `ready` | Open the page; show the whole walkthrough once the review is done. |
 | `listen`, `say` | Wait for Ask AI and the submit; answer in the thread. |
-| `comments`, `posted` | Print what goes out; record that it went out, and where. |
+| `comments`, `posted`, `resolve` | Print what goes out; record that it went out, and where; resolve the AI's own comment once the code fixes it. |
 | `policy` | Shows, creates or saves your review policy. |
 | `export`, `list` | Write a read-only HTML file; open the list of walkthroughs. |
 | `stop`, `prune` | End the page; remove old walkthroughs. |
 
 `walkthrough guide` prints the exact formats.
-
-## Cost
-
-Preparing a 16-file change (steps and comments, no reviewer agents) took about $0.79 at list price with Claude Opus 5.5, measured once before the page was rebuilt.
-Each reviewer agent your policy runs adds its own cost, around 74,000 tokens for a 10-file change in my runs.
 
 ## Development
 
