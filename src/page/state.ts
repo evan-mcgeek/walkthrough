@@ -57,7 +57,7 @@ export const unresolved = () => state.view.threads.filter(one => one.colleague &
 export const notViewed = () => allFiles().filter(file => !state.view.viewed.includes(file));
 
 /** Who started a thread, which its gutter mark and stripe tick show. */
-export const threadBy = (thread: ThreadView) => (thread.colleague ? 'colleague' : (thread.comments[0]?.by ?? 'you'));
+export const threadBy = (thread: ThreadView) => thread.comments[0]?.by ?? 'you';
 
 export const plural = (count: number, one: string, many = `${one}s`) => `${String(count)} ${count === 1 ? one : many}`;
 export const linesLabel = ([first, last]: [number, number]) => (first === last ? String(first) : `${String(first)}–${String(last)}`);

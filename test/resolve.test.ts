@@ -93,6 +93,44 @@ describe('walkthrough resolve', () => {
   });
 });
 
+describe('a comment that went out', () => {
+  test('comes back from the code host as one thread: the comment as written, the replies there, and the code host\'s id for replies and resolves', async () => {
+    const page = started('--pr', '212');
+    const ai = aiComment('Everyone gets in.');
+    await postTo(page, '/comment', { file: 'app.ts', lines: [1, 1], text: 'Bump it once.' });
+    expect((await postTo(page, '/submit', { type: 'comment', summary: '' })).status).toBe(200);
+    repo.run('posted');
+    const at = '2026-11-24T10:00:00Z';
+    repo.record(
+      [
+        { id: 'gh-1', file: 'login.ts', lines: [1, 1], author: 'me', at, body: '[AI] Everyone gets in.', replies: [{ author: 'dana-k', at, body: 'Fixed next.' }] },
+        { id: 'gh-2', file: 'app.ts', lines: [1, 1], author: 'me', at, body: 'Bump it once.' },
+        THREAD,
+      ],
+      'threads',
+    );
+
+    const { threads } = await viewAt(page);
+    expect(threads.map(one => [one.id, one.comments.map(comment => `${comment.by}: ${comment.body}`)])).toEqual([
+      ['gh-1', ['ai: Everyone gets in.', 'colleague: Fixed next.']],
+      ['gh-2', ['you: Bump it once.']],
+      ['1042', ['colleague: Does this let everyone in?']],
+    ]);
+
+    expect(repo.run('resolve', ai).stdout).toBe(`Resolved the thread of comment ${ai}.\n`);
+    expect(await threadOf(page, 'gh-1')).toMatchObject({ resolved: true, resolvedBy: 'ai' });
+    expect((await postTo(page, '/comment', { thread: 'gh-1', text: 'Thanks.' })).status).toBe(200);
+    expect(lines(repo.run('comments').stdout)).toEqual([
+      expect.objectContaining({ kind: 'reply', thread: 'gh-1', by: 'you', body: 'Thanks.' }),
+      { kind: 'resolve', thread: 'gh-1', by: 'ai', file: 'login.ts', lines: [1, 1], body: '[AI] Everyone gets in.' },
+    ]);
+    expect(lines(repo.run('comments', '--all').stdout).filter(one => one.kind === 'comment').map(one => [one.id, one.body])).toEqual([
+      [ai, '[AI] Everyone gets in.'],
+      [expect.any(String), 'Bump it once.'],
+    ]);
+  });
+});
+
 describe('an outdated comment', () => {
   test('keeps the code it was written on, numbered across hunks, and names the step that now holds its file; one whose file left the change names none', async () => {
     const long = (changed: Record<number, string>) => Array.from({ length: 30 }, (_, at) => changed[at + 1] ?? `export const v${String(at + 1)} = 1;`).join('\n') + '\n';
