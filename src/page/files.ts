@@ -9,7 +9,7 @@ import { attrs, el } from './dom';
 import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
-import { flash, grow, scrollPane } from './motion';
+import { flash, grow, placePane, scrollPane } from './motion';
 import { drawMoves } from './moves';
 import { commentCount, outdatedIn, plural, send, state, threadBy, threadsIn } from './state';
 import { composer, ThreadBox } from './threads';
@@ -54,7 +54,7 @@ export function setViewed(file: string, now: boolean): void {
 export function goTo(scroller: HTMLElement, target: Element, above: number, smooth: boolean): void {
   const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - above;
   if (smooth) scrollPane(scroller, top);
-  else scroller.scrollTop = top;
+  else placePane(scroller, top);
 }
 
 /** Says whether something at `element` is above the bottom of what the reader sees, so adding it would move what they read. */

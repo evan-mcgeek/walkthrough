@@ -112,6 +112,22 @@ test.describe('scroll and mark', () => {
     expect(moved.flashing).toEqual(['dates.ts']);
     expect(await page.locator('.file[data-file="dates.ts"]').evaluate(box => Math.round(box.getBoundingClientRect().top - (box.closest('.main')?.getBoundingClientRect().top ?? 0)))).toBe(16);
   });
+
+  for (const motion of ['reduce', 'no-preference'] as const)
+    test(`a Summary link to a comment in a folded file in another step lands on it once the file opens (${motion})`, async ({ page, repo, url }) => {
+      await page.emulateMedia({ reducedMotion: motion });
+      record(repo, TWO);
+      record(repo, [{ file: 'dates.ts', lines: [140, 140], body: 'Near the end.' }], 'comment');
+      await open(page, url);
+      await page.locator('.step-item').nth(1).getByRole('button', { name: 'Show files' }).click();
+      await page.locator('.file-row[data-file="dates.ts"]').getByRole('checkbox', { name: 'Viewed' }).click();
+      await page.getByRole('link', { name: 'Finish review' }).click();
+
+      await page.locator('.going-row').filter({ hasText: 'Near the end.' }).locator('a.where').click();
+
+      const row = page.locator('.file[data-file="dates.ts"] .thread-row').filter({ hasText: 'Near the end.' });
+      await expect.poll(() => row.evaluate(one => Math.round(one.getBoundingClientRect().top - (one.closest('.main')?.getBoundingClientRect().top ?? 0)))).toBe(120);
+    });
 });
 
 test('the menu fades in and out, and End session fades the walkthrough out before the farewell fades in, with nothing sliding', async ({ page, repo, url }) => {
