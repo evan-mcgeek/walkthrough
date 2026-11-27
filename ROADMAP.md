@@ -79,6 +79,15 @@ The pull request that ships or drops an item updates this file.
 - A page server an older release of the plugin started is replaced, so the page always has what the release you run ships, such as syntax colours.
 - A release makes its own tag, and a release run by hand keeps its notes.
 
+### 0.1.9 (2026-11-27): a step list that folds, calmer motion, and Geist Mono
+
+- Code, paths and file names in Geist Mono, self-hosted, half a pixel larger, with ligatures off and no shift when the font loads.
+- The step list folds every step but the one you are on to its title and "N of M viewed"; a file row's Viewed mark, name and comment count each do their own job; the list resizes and its Summary stays at the foot.
+- Moving between files scrolls and then marks where you landed; other changes fade, with no pops or jumps; a jump into a folded file opens it and lands on its line.
+- At 390 a file header takes two rows, with the whole path.
+- Fixes: a first load the network drops is tried again instead of leaving the page blank; End session leaves no request to fail; Close returns the keyboard to the screenshot in Safari; quick Viewed clicks reach the server in order.
+- The page tests pass in Chromium, Firefox and WebKit, and no test reaches the web.
+
 ## Now
 
 - Nothing in progress.
