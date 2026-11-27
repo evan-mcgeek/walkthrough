@@ -779,12 +779,18 @@ function showUnreachable({ name, reopen }) {
   box2.hidden = false;
   document.body.classList.add("unreachable");
 }
-var send = (route, body) => fetch(`/${route}?token=${token}`, {
+var reads = new AbortController();
+var readSignal = reads.signal;
+var stopReading = () => {
+  reads.abort();
+};
+var send = (route, body, signal) => fetch(`/${route}?token=${token}`, {
   method: "POST",
   headers: { "content-type": "application/json" },
-  body: JSON.stringify(body)
+  body: JSON.stringify(body),
+  ...signal && { signal }
 });
-var postQuietly = (route, body) => send(route, body).catch(() => null);
+var postQuietly = (route, body, signal) => send(route, body, signal).catch(() => null);
 async function post(page, route, body) {
   const problem = tooLong(body);
   if (problem) {
@@ -929,8 +935,8 @@ var once = (key2, ask) => {
   }
   return found2;
 };
-var code = (body) => once(JSON.stringify(body), () => lines(postQuietly("code", body)));
-var fileAt = (rev, file) => once(`${rev}:${file}`, () => lines(fetch(`tokens?rev=${encodeURIComponent(rev)}&path=${encodeURIComponent(file)}`).catch(() => null)));
+var code = (body) => once(JSON.stringify(body), () => lines(postQuietly("code", body, readSignal)));
+var fileAt = (rev, file) => once(`${rev}:${file}`, () => lines(fetch(`tokens?rev=${encodeURIComponent(rev)}&path=${encodeURIComponent(file)}`, { signal: readSignal }).catch(() => null)));
 async function colourDiff(table2, file, revs) {
   const [before, after] = await Promise.all([
     revs.base && !file.isNew ? fileAt(revs.base, file.oldName) : null,
@@ -7370,14 +7376,19 @@ var state = {
   stale: false
 };
 var phone = matchMedia("(max-width: 760px)");
+var sending = Promise.resolve();
 async function send2(route, body) {
-  state.sends++;
-  const answer = await post(PAGE, route, body);
+  const mine = ++state.sends;
+  const posted = sending.then(() => post(PAGE, route, body));
+  sending = posted;
+  const answer = await posted;
   if (!answer) {
     state.stale = true;
     return false;
   }
-  state.view = await answer.json();
+  const view = await answer.json();
+  if (mine !== state.sends) return true;
+  state.view = view;
   state.render(true);
   return true;
 }
@@ -9512,6 +9523,46 @@ function shrink(element, done) {
     element.classList.remove("growing");
   });
 }
+function scrollPane(scroller, top) {
+  for (const running of scroller.getAnimations()) if (running.id === "scroll") running.cancel();
+  const to = Math.max(0, top);
+  if (reduced()) {
+    scroller.scrollTop = to;
+    return;
+  }
+  const screen = scroller.clientHeight;
+  scroller.scrollTop = Math.max(to - screen, Math.min(to + screen, scroller.scrollTop));
+  const from = scroller.scrollTop;
+  const timing = animate(scroller, "scroll", [], { ms: "slow", curve: "ease-out", fill: "none" });
+  let last = from;
+  const step = () => {
+    if (timing.playState === "idle") return;
+    if (Math.abs(scroller.scrollTop - last) > 1) {
+      timing.cancel();
+      return;
+    }
+    const progress = timing.playState === "finished" ? 1 : timing.effect?.getComputedTiming().progress ?? 0;
+    scroller.scrollTop = from + (to - from) * progress;
+    last = scroller.scrollTop;
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function flash(elements) {
+  for (const marked of document.querySelectorAll(".flash")) if (!elements.includes(marked)) marked.classList.remove("flash");
+  for (const element of elements) {
+    for (const running of element.getAnimations({ subtree: true })) if (running instanceof CSSAnimation && running.animationName === "flash") running.cancel();
+    element.classList.remove("flash");
+    element.getBoundingClientRect();
+    element.classList.add("flash");
+  }
+}
+function fadeAway(element) {
+  attrs(element, { inert: "", "aria-hidden": "true" });
+  fadeOut(element, "fast", () => {
+    element.remove();
+  });
+}
 
 // src/moves.ts
 var MIN_LINES = 3;
@@ -9647,7 +9698,7 @@ var ChangesSwitch = class {
   }
   close(refocus) {
     if (!this.menu) return;
-    this.menu.remove();
+    fadeAway(this.menu);
     this.menu = null;
     this.button.setAttribute("aria-expanded", "false");
     if (refocus) this.button.focus();
@@ -9669,7 +9720,7 @@ function drawMoves(table2, file, copies = []) {
   const row = (type, line2) => [...table2.querySelectorAll(`tr:has(> td.d2h-${type})`)].find((one) => Number(one.querySelector(type === "del" ? ".line-num1" : ".line-num2")?.textContent.trim()) === line2);
   const link2 = (onclick, down, ...text2) => el("button", { type: "button", className: "moved-link", onclick }, icon(down ? "chevron-down" : "chevron-right"), el("span", {}, ...text2));
   const label = (number, content2) => el("tr", { className: "moved-label" }, el("td", { className: "d2h-code-linenumber" }, el("div", { className: "line-num1" }, number)), el("td", {}, el("div", { className: "d2h-code-line" }, content2)));
-  const goTo = (move, to) => () => {
+  const goTo2 = (move, to) => () => {
     moving.show(move, to);
   };
   const where = (one, other) => one === other ? "" : `${other} `;
@@ -9685,7 +9736,7 @@ function drawMoves(table2, file, copies = []) {
       const rows = Array.from({ length: count }, (_, at) => row("del", from.line + at));
       const departure = label(
         String(from.line),
-        link2(goTo(move, "to"), true, `${plural(count, "line")} moved to ${where(from.file, to.file)}line ${String(to.line)}`)
+        link2(goTo2(move, "to"), true, `${plural(count, "line")} moved to ${where(from.file, to.file)}line ${String(to.line)}`)
       );
       departure.dataset["movedFrom"] = String(from.line);
       rows[0]?.before(departure);
@@ -9694,7 +9745,7 @@ function drawMoves(table2, file, copies = []) {
     if (to.file === file) {
       const rows = Array.from({ length: count }, (_, at) => row("ins", to.line + at));
       const { title, text: text2 } = source("Moved", from, count);
-      rows[0]?.before(label("", Object.assign(link2(goTo(move, "from"), false, ...text2), { title })));
+      rows[0]?.before(label("", Object.assign(link2(goTo2(move, "from"), false, ...text2), { title })));
       for (const one of rows) {
         one?.classList.add("moved");
         for (const cell of one?.cells ?? []) cell.classList.replace("d2h-ins", "d2h-cntx");
@@ -10003,12 +10054,29 @@ function pick(next) {
   cell.querySelector("textarea")?.focus({ preventScroll: true });
   const scroller = cell.closest(".main");
   const below = cell.getBoundingClientRect().top + cell.scrollHeight - (scroller?.getBoundingClientRect().bottom ?? innerHeight);
-  if (scroller && below > 0) scroller.scrollBy({ top: below, behavior: reduced() ? "instant" : "smooth" });
+  if (scroller instanceof HTMLElement && below > 0) scrollPane(scroller, scroller.scrollTop + below);
 }
 var folds = /* @__PURE__ */ new Map();
 var reopened = /* @__PURE__ */ new Set();
 var LARGE_FILE = 400;
 var SVG3 = "http://www.w3.org/2000/svg";
+function setViewed(file, now) {
+  const { view } = state;
+  if (view.viewed.includes(file) === now) return;
+  state.view = {
+    ...view,
+    viewed: now ? [...view.viewed, file] : view.viewed.filter((one) => one !== file),
+    changed: view.changed.filter((one) => one !== file)
+  };
+  folds.set(file, now);
+  state.render(true);
+  void send2("viewed", { file, viewed: now });
+}
+function goTo(scroller, target, above, smooth) {
+  const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - above;
+  if (smooth) scrollPane(scroller, top);
+  else scroller.scrollTop = top;
+}
 var FilePane = class {
   constructor(step, parsed, diff, shown = {}) {
     this.step = step;
@@ -10056,44 +10124,62 @@ var FilePane = class {
     const { view } = state;
     return folds.get(this.name) ?? (!!this.shown.quiet || view.viewed.includes(this.name) || this.name in (this.step.folded ?? {}) || this.changedLines > LARGE_FILE);
   }
-  /** Opens the file and its lines, scrolls them into view with 120px above, and flashes them; false when the diff does not show them. */
-  look(start, end, scroller) {
+  /**
+   * Opens the file and its lines, brings them into view with 120px above, and flashes them; false when the diff does not show them.
+   * `smooth` scrolls there, as on the step you are on; otherwise the pane that just swapped in starts there.
+   */
+  look(start, end, scroller, smooth = true) {
     if (!this.rows.has(start)) return false;
-    return this.flash(
+    return this.flashRows(
       [...this.rows].flatMap(([line2, row]) => line2 >= start && line2 <= end ? [row] : []),
-      scroller
+      scroller,
+      smooth
     );
   }
   /** The same for the row that says lines moved away from `line`. */
-  lookDeparture(line2, scroller) {
+  lookDeparture(line2, scroller, smooth = true) {
     const row = this.diffBox.querySelector(`tr[data-moved-from="${String(line2)}"]`);
-    return this.flash(row ? [row] : [], scroller);
+    return this.flashRows(row ? [row] : [], scroller, smooth);
   }
-  flash(rows, scroller) {
+  /** Brings the file's header to the top of the pane and flashes it. */
+  mark(scroller, smooth) {
+    goTo(scroller, this.box, 16, smooth);
+    flash([this.header]);
+  }
+  /** The rows of a thread's lines, to mark when it is reached; none on a whole file or once outdated, as those lines are gone. */
+  linesOf(id) {
+    const thread = state.view.threads.find((one) => one.id === id);
+    const lines2 = thread?.step === null ? void 0 : thread?.lines;
+    return lines2 ? [...this.rows].flatMap(([line2, row]) => line2 >= lines2[0] && line2 <= lines2[1] ? [row] : []) : [];
+  }
+  /** The thread that shows first in the file, in the band above the diff or under its lines. */
+  firstThread() {
+    return this.box.querySelector("[data-thread]")?.dataset["thread"];
+  }
+  /** Takes the keyboard to the file, at its header. */
+  focus() {
+    this.header.querySelector(".file-toggle")?.focus({ preventScroll: true });
+  }
+  flashRows(rows, scroller, smooth) {
     const [first2] = rows;
     if (!first2) return false;
-    if (this.closed()) {
-      folds.set(this.name, false);
-      this.update(() => false);
-    }
+    this.open();
     if (this.previewing) void this.showPreview(false);
-    const top = first2.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 120;
-    scroller.scrollTo({ top, behavior: reduced() ? "instant" : "smooth" });
-    for (const row of rows) {
-      for (const cell of row.cells) for (const running of cell.getAnimations()) running.cancel();
-      row.classList.remove("flash");
-      row.getBoundingClientRect();
-      row.classList.add("flash");
-    }
+    goTo(scroller, first2, 120, smooth);
+    flash(rows);
     return true;
   }
   thread(id) {
     return this.threads.get(id);
   }
+  /** Opens the file at once, with no animation: it is being jumped to, so its lines must be where they stay before the jump. */
   open() {
     if (!this.closed()) return;
     folds.set(this.name, false);
+    this.box.classList.add("opening-now");
     this.update(() => false);
+    void this.box.getBoundingClientRect();
+    this.box.classList.remove("opening-now");
   }
   /** Brings the file up to date; returns what arrived where the reader would see it move, which waits behind the pill. */
   update(shows) {
@@ -10132,16 +10218,7 @@ var FilePane = class {
     };
     const viewed = el("input", { type: "checkbox" });
     viewed.onchange = () => {
-      const now = viewed.checked;
-      const { view } = state;
-      state.view = {
-        ...view,
-        viewed: now ? [...view.viewed, this.name] : view.viewed.filter((one) => one !== this.name),
-        changed: view.changed.filter((one) => one !== this.name)
-      };
-      folds.set(this.name, now);
-      state.render(true);
-      void send2("viewed", { file: this.name, viewed: now });
+      setViewed(this.name, viewed.checked);
     };
     const stats = parsed.isBinary ? [el("span", { className: "file-stats" }, "binary")] : [el("span", { className: "file-stats" }, el("span", { className: "added" }, `+${String(parsed.addedLines)}`), " ", el("span", { className: "deleted" }, `\u2212${String(parsed.deletedLines)}`))];
     const reason = this.step.folded?.[this.name];
@@ -10386,7 +10463,7 @@ var FilePane = class {
       );
       return;
     }
-    const answer = await fetch(at(this.name)).catch(() => null);
+    const answer = await fetch(at(this.name), { signal: readSignal }).catch(() => null);
     const added = new Set(parsed.blocks.flatMap((block2) => block2.lines).flatMap((line2) => line2.type === LineType.INSERT && line2.newNumber ? [line2.newNumber] : []));
     if (!answer?.ok) {
       box2.replaceChildren(el("p", { className: "muted" }, "Preview failed."));
@@ -10517,7 +10594,7 @@ function openingNav() {
   return [
     el("p", { className: "steps-note" }, gone ? "No steps yet." : "Steps appear here when the AI is done."),
     attrs(el("ol", { className: "steps" }, ...rows), { "aria-hidden": "true" }),
-    el("span", { className: "step-row summary-row still" }, icon("summary"), el("span", { className: "step-name" }, "Summary"), el("span", { className: "file-count" }, "0"))
+    el("div", { className: "summary-dock" }, el("span", { className: "step-row summary-row still" }, icon("summary"), el("span", { className: "step-name" }, "Summary"), el("span", { className: "file-count" }, "0")))
   ];
 }
 
@@ -10645,6 +10722,7 @@ function screenshot({ name, alt }) {
   };
   close.onclick = () => {
     toggle(false);
+    button.focus();
   };
   toggle(false);
   return figure;
@@ -10751,10 +10829,7 @@ var SummaryPane = class {
         }
       );
     }
-    const still = reduced();
-    animate(note, "review-done", still ? FADE_IN : [{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { ms: "base", curve: still ? "linear" : "ease-out", delay: after });
-    const check = note.querySelector(":scope > .icon");
-    if (check && !still) animate(check, "review-check", [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "none" }], { ms: "slow", curve: "ease-out", delay: after + 40 });
+    animate(note, "review-done", FADE_IN, { ms: "base", curve: "linear", delay: after });
   }
   /** The row fades, then closes, while the comment is deleted. */
   delete(row, id) {
@@ -10931,8 +11006,7 @@ var SummaryPane = class {
     submit.onclick = async () => {
       this.sending = true;
       submit.disabled = true;
-      const still = reduced();
-      const fading = animate(box2, "review-leave", still ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.98)" }], {
+      const fading = animate(box2, "review-leave", [{ opacity: 1 }, { opacity: 0 }], {
         ms: "fast",
         curve: "ease-in",
         fill: "forwards"
@@ -11017,6 +11091,8 @@ function go(address) {
 }
 function moved() {
   onFile = null;
+  const to = current();
+  if (to.kind === "step" && stepFolds.get(to.pane.step.id) === false) stepFolds.delete(to.pane.step.id);
   for (const one of arrived) one.classList.remove("arriving");
   arrived = [];
   const old = content.firstElementChild;
@@ -11041,13 +11117,13 @@ function moved() {
   content.querySelector(".step-title")?.focus({ preventScroll: true });
 }
 var LEAVE_MS = 100;
-function leave(old, scrolled) {
+function leave(old, scrolled, slide = true) {
   attrs(old, { inert: "", "aria-hidden": "true" });
   content.append(old);
-  const at = `translateY(${String(-scrolled)}px)`;
-  const still = reduced();
+  const at = `translateY(${String(main.scrollTop - scrolled)}px)`;
+  const still = reduced() || !slide;
   const leaving = animate(old, "pane-leave", [{ opacity: 1, transform: at }, { opacity: 0, transform: still ? at : `${at} translateX(-12px)` }], {
-    ms: LEAVE_MS,
+    ms: slide ? LEAVE_MS : "fast",
     curve: still ? "linear" : "ease-in",
     fill: "forwards"
   });
@@ -11062,7 +11138,8 @@ function leave(old, scrolled) {
 function reveal({ thread: id, edit, file, lines: lines2 }) {
   if (file !== void 0 && lines2) {
     const look = { file, start: lines2[0], end: lines2[1], label: "" };
-    if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+    const found3 = paneOfFile(file);
+    if (!found3?.pane?.look(look.start, look.end, main, found3.smooth)) changes.look(look);
     return;
   }
   const thread = state.view.threads.find((one) => one.id === id);
@@ -11070,16 +11147,28 @@ function reveal({ thread: id, edit, file, lines: lines2 }) {
   if (stepId === void 0) return;
   const name = thread?.file ?? file ?? "";
   const found2 = paneOf(stepId).fileNamed(name);
-  if (changes.since && (!found2 || thread && !found2.thread(thread.id))) changes.since = false;
-  go(stepAddress(stepId));
+  const widen = changes.since && (!found2 || thread && !found2.thread(thread.id));
+  if (widen) changes.since = false;
+  const at = current();
+  const smooth = !widen && at.kind === "step" && at.pane.step.id === stepId;
+  if (smooth) {
+    pick(null);
+    showDrawer(false);
+  } else go(stepAddress(stepId));
   const pane = paneOf(stepId).fileNamed(name);
   if (!pane) return;
   pane.open();
-  const shown = thread && pane.thread(thread.id);
-  shown?.box.show();
-  const target = shown ? shown.row : pane.box;
-  main.scrollTop += target.getBoundingClientRect().top - main.getBoundingClientRect().top - (shown ? 120 : 0);
   for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
+  onFile = name;
+  drawOnFile();
+  const shown = thread && pane.thread(thread.id);
+  if (shown) {
+    shown.box.show();
+    goTo(main, shown.row, 120, smooth);
+    const marked = pane.linesOf(thread.id);
+    flash(marked.length ? marked : [shown.row]);
+  } else pane.mark(main, smooth);
+  pane.focus();
   if (shown && edit) shown.box.edit(edit);
 }
 function readingAnchor() {
@@ -11114,11 +11203,10 @@ pill.onclick = () => {
   for (const one of arrived) grow(one.querySelector(":scope > td > .thread-cell") ?? one);
   arrived = [];
   drawPill();
-  if (first2)
-    main.scrollTo({
-      top: main.scrollTop + first2.getBoundingClientRect().top - main.getBoundingClientRect().top - 120,
-      behavior: reduced() ? "instant" : "smooth"
-    });
+  if (first2) {
+    goTo(main, first2, 120, true);
+    flash([first2]);
+  }
 };
 var viewedFill = el("i");
 var viewedNumber = el("span", { className: "viewed-number" });
@@ -11215,9 +11303,12 @@ function drawHeader(onSummary) {
     });
 }
 function drawBehind(behind) {
+  if (behindLine.hidden === !behind) return;
   if (behind && !behindLine.hasChildNodes())
     behindLine.append(icon("info"), el("span", { className: "behind-text" }, "The branch has new commits. Run the walkthrough again to see them:"), commandBox(true));
+  const top = main.getBoundingClientRect().top;
   behindLine.hidden = !behind;
+  main.scrollTop += main.getBoundingClientRect().top - top;
 }
 function showDrawer(open) {
   document.body.classList.toggle("drawer-open", open);
@@ -11231,7 +11322,7 @@ function toggleDrawer() {
 var menu = null;
 function closeMenu(refocus) {
   if (!menu) return;
-  menu.remove();
+  fadeAway(menu);
   menu = null;
   const button = header.querySelector(".menu-button");
   button?.setAttribute("aria-expanded", "false");
@@ -11293,13 +11384,23 @@ function endSession() {
   stopped = true;
   clearInterval(poller);
   showEnd("ended");
+  stopReading();
   void postQuietly("stop", {});
 }
 var endPage = el("main", { className: "end-page", hidden: true });
 document.body.append(endPage);
 var ending = null;
+var walkthroughParts = () => [frame, ...[...header.children].filter((one) => one instanceof HTMLElement && !one.matches(".mark, .change-label"))];
+function settleWalkthrough() {
+  document.body.classList.remove("fading");
+  for (const part of walkthroughParts()) {
+    settle(part);
+    part.inert = false;
+  }
+}
 function showEnd(kind) {
   if (ending?.kind === kind) return;
+  const fromWalkthrough = !ending;
   ending?.stop();
   closeMenu(false);
   showDrawer(false);
@@ -11309,25 +11410,39 @@ function showEnd(kind) {
   endPage.replaceChildren(screen.box);
   endPage.hidden = false;
   endPage.scrollTop = 0;
+  if (fromWalkthrough) document.body.classList.add("fading");
   document.body.classList.add("ended");
   drawHeader(current().kind === "summary");
   endPage.querySelector(".end-title")?.focus({ preventScroll: true });
+  if (!fromWalkthrough) {
+    animate(endPage, "end-in", FADE_IN, { ms: "base", curve: "linear" });
+    return;
+  }
+  const fades = walkthroughParts().map((part) => {
+    part.inert = true;
+    return animate(part, "end-leave", [{ opacity: 1 }, { opacity: 0 }], { ms: "fast", curve: "ease-in", fill: "forwards" }).finished;
+  });
+  animate(endPage, "end-in", FADE_IN, { ms: "base", curve: "linear", delay: duration("fast") });
+  Promise.all(fades).then(settleWalkthrough, () => {
+  });
 }
 function hideEnd() {
   if (!ending) return;
   const [mainTop, navTop] = ending.scrolled;
   ending.stop();
   ending = null;
+  settleWalkthrough();
   endPage.hidden = true;
   endPage.replaceChildren();
   document.body.classList.remove("ended");
+  render(true);
   main.scrollTop = mainTop;
   nav.scrollTop = navTop;
-  render(true);
   content.querySelector(".step-title")?.focus({ preventScroll: true });
 }
 var drawnNav = "";
 var navSteps = [];
+var stepFolds = /* @__PURE__ */ new Map();
 var pendingCount = el("span", { className: "file-count" });
 var summaryRow = navLink("summary", "step-row summary-row", icon("summary"), el("span", { className: "step-name" }, "Summary"), pendingCount);
 summaryRow.dataset["key"] = "summary";
@@ -11340,6 +11455,33 @@ function navLink(address, className, ...children) {
   };
   return row;
 }
+function navFile(step, file, id) {
+  const mark = attrs(el("button", { type: "button", className: "viewed-mark", title: "Viewed" }, icon("ring"), icon("met")), {
+    role: "checkbox",
+    "aria-label": "Viewed",
+    "aria-describedby": id
+  });
+  mark.dataset["key"] = `mark:${file}`;
+  mark.onclick = () => {
+    setViewed(file, !state.view.viewed.includes(file));
+  };
+  const name = el("a", { className: "file-name", id, href: `#${stepAddress(step)}`, title: file }, baseName(file));
+  name.dataset["key"] = `file:${file}`;
+  name.onclick = (event) => {
+    event.preventDefault();
+    reveal({ file });
+  };
+  const count = el("a", { className: "file-count", href: `#${stepAddress(step)}`, hidden: true }, icon("message"), "");
+  count.dataset["key"] = `count:${file}`;
+  count.onclick = (event) => {
+    event.preventDefault();
+    const first2 = paneOf(step).fileNamed(file)?.firstThread();
+    if (first2) reveal({ thread: first2 });
+  };
+  const row = el("div", { className: "file-row" }, mark, name, count);
+  row.dataset["file"] = file;
+  return { file, row, mark, count, shown: -1 };
+}
 function buildNav() {
   const focused = document.activeElement instanceof HTMLElement && nav.contains(document.activeElement) ? document.activeElement.dataset["key"] : void 0;
   const scrolled = nav.scrollTop;
@@ -11347,21 +11489,19 @@ function buildNav() {
     const row = navLink(stepAddress(step.id), "step-row", el("span", { className: "step-number" }, String(index + 1)), el("span", { className: "step-name", title: step.title }, step.title));
     row.dataset["key"] = `step:${step.id}`;
     row.classList.toggle("quiet", shownFiles(step).length === 0);
-    const files = shownFiles(step).map((file) => {
-      const tick2 = attrs(el("span", { className: "viewed-tick" }, icon("ring"), icon("met")), { role: "img" });
-      const count = el("span", { className: "file-count" }, icon("message"), "");
-      const fileRow = el("a", { className: "file-row", href: `#${stepAddress(step.id)}`, title: file }, tick2, el("span", { className: "file-name" }, baseName(file)), count);
-      fileRow.dataset["key"] = `file:${file}`;
-      fileRow.onclick = (event) => {
-        event.preventDefault();
-        reveal({ file });
-      };
-      return { file, row: fileRow, tick: tick2, count, shown: -1 };
-    });
-    return { id: step.id, row, files };
+    const files = shownFiles(step).map((file, at) => navFile(step.id, file, `nav-file-${String(index)}-${String(at)}`));
+    const list2 = el("ul", { className: "file-list", id: `nav-files-${String(index)}` }, ...files.map((one) => el("li", {}, one.row)));
+    const toggle = attrs(el("button", { type: "button", className: "icon-button step-toggle" }, icon("chevron-right")), { "aria-controls": list2.id });
+    toggle.dataset["key"] = `fold:${step.id}`;
+    toggle.onclick = () => {
+      stepFolds.set(step.id, !navSteps.find((one) => one.id === step.id)?.item.classList.contains("open"));
+      drawNav(current());
+    };
+    const meta = el("p", { className: "step-meta" });
+    const item = el("li", { className: "step-item" }, el("div", { className: "step-line" }, toggle, row), meta, el("div", { className: "step-files" }, list2));
+    return { id: step.id, item, row, toggle, meta, files };
   });
-  const items = navSteps.map(({ row, files }) => el("li", {}, row, el("ul", { className: "file-list" }, ...files.map((one) => el("li", {}, one.row)))));
-  nav.replaceChildren(el("ol", { className: "steps" }, ...items), summaryRow);
+  nav.replaceChildren(el("ol", { className: "steps" }, ...navSteps.map(({ item }) => item)), el("div", { className: "summary-dock" }, summaryRow));
   nav.scrollTop = scrolled;
   if (focused !== void 0) nav.querySelector(`[data-key="${CSS.escape(focused)}"]`)?.focus();
 }
@@ -11380,21 +11520,37 @@ function drawNav(at) {
     buildNav();
   }
   const here = at.kind === "step" ? at.pane.step.id : at.kind;
-  for (const { id, row, files } of navSteps) {
+  for (const { id, item, row, toggle, meta, files } of navSteps) {
     if (here === id) row.setAttribute("aria-current", "page");
     else row.removeAttribute("aria-current");
+    const open = stepFolds.get(id) ?? here === id;
+    item.classList.toggle("open", open);
+    const fold = open ? "Hide files" : "Show files";
+    attrs(toggle, { "aria-expanded": String(open), "aria-label": fold, title: fold });
+    const list2 = item.querySelector(".step-files");
+    if (list2) list2.inert = !open;
+    let viewed = 0;
+    let comments = 0;
     for (const one of files) {
       const seen = view.viewed.includes(one.file);
+      if (seen) viewed++;
       one.row.classList.toggle("viewed", seen);
-      one.tick.setAttribute("aria-label", seen ? "Viewed" : "Not viewed");
+      one.mark.setAttribute("aria-checked", String(seen));
       const count = commentCount(id, one.file);
+      comments += count;
       if (count === one.shown) continue;
       one.count.hidden = count === 0;
-      one.count.title = plural(count, "comment");
+      one.count.title = `${plural(count, "comment")}: go to the first`;
+      one.count.setAttribute("aria-label", `${plural(count, "comment")} on ${baseName(one.file)}: go to the first`);
       one.count.lastChild?.replaceWith(String(count));
       if (one.shown > 0 && count > 0) tick(one.count);
       one.shown = count;
     }
+    meta.hidden = open || files.length === 0;
+    meta.replaceChildren(
+      el("span", {}, viewed ? `${String(viewed)} of ${String(files.length)} viewed` : plural(files.length, "file")),
+      ...comments ? [attrs(el("span", { className: "file-count", title: plural(comments, "comment") }, icon("message"), String(comments)), { role: "img", "aria-label": plural(comments, "comment") })] : []
+    );
   }
   if (here === "summary") summaryRow.setAttribute("aria-current", "page");
   else summaryRow.removeAttribute("aria-current");
@@ -11405,6 +11561,45 @@ function drawNav(at) {
     shownPending = pending;
   }
 }
+var WIDTH = { least: 200, most: 400, start: 248, key: 16 };
+var frame = nav.parentElement ?? document.body;
+var stepListWidth = WIDTH.start;
+var edge = attrs(el("div", { className: "step-list-edge", tabIndex: 0, title: "Resize the step list" }), {
+  role: "separator",
+  "aria-label": "Resize the step list",
+  "aria-orientation": "vertical",
+  "aria-controls": "nav",
+  "aria-valuemin": String(WIDTH.least),
+  "aria-valuemax": String(WIDTH.most)
+});
+function resizeStepList(width) {
+  stepListWidth = Math.round(Math.min(WIDTH.most, Math.max(WIDTH.least, width)));
+  frame.style.setProperty("--step-list-width", `${String(stepListWidth)}px`);
+  edge.setAttribute("aria-valuenow", String(stepListWidth));
+}
+edge.onpointerdown = (event) => {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  edge.setPointerCapture(event.pointerId);
+  edge.classList.add("dragging");
+};
+edge.onpointermove = (event) => {
+  if (edge.hasPointerCapture(event.pointerId)) resizeStepList(event.clientX - frame.getBoundingClientRect().left);
+};
+edge.onlostpointercapture = () => {
+  edge.classList.remove("dragging");
+};
+edge.ondblclick = () => {
+  resizeStepList(WIDTH.start);
+};
+edge.onkeydown = (event) => {
+  const by = event.key === "ArrowLeft" ? -WIDTH.key : event.key === "ArrowRight" ? WIDTH.key : 0;
+  if (!by) return;
+  event.preventDefault();
+  resizeStepList(stepListWidth + by);
+};
+resizeStepList(WIDTH.start);
+nav.after(edge);
 function render(own, navigated = false) {
   followSince();
   const at = current();
@@ -11448,6 +11643,9 @@ function showChanges(since) {
   const top = main.getBoundingClientRect().top;
   const reading = [...content.querySelectorAll(":scope > :first-child .file")].find((box2) => box2.getBoundingClientRect().bottom > top);
   const was = reading?.getBoundingClientRect().top;
+  const old = content.firstElementChild;
+  const scrolled = main.scrollTop;
+  if (old) settle(old);
   changes.since = since;
   render(true, true);
   const shown = content.firstElementChild;
@@ -11458,31 +11656,37 @@ function showChanges(since) {
   }
   const same = reading && content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(reading.dataset["file"] ?? "")}"]`);
   if (same && was !== void 0) main.scrollTop += same.getBoundingClientRect().top - was;
+  if (old instanceof HTMLElement && shown && shown !== old) {
+    leave(old, scrolled, false);
+    animate(shown, "pane-enter", FADE_IN, { ms: "base", curve: "linear" });
+  }
 }
 changes.choose = showChanges;
 changes.look = ({ file, start, end }) => {
   if (!changes.since) return;
   showChanges(false);
   const at = current();
-  if (at.kind === "step") at.pane.fileNamed(file)?.look(start, end, main);
+  if (at.kind === "step") at.pane.fileNamed(file)?.look(start, end, main, false);
 };
 function paneOfFile(file) {
   const step = stepOfFile(file);
   const at = current();
   if (!step || at.kind === "opening") return void 0;
-  if (at.kind !== "step" || at.pane.step.id !== step.id) go(stepAddress(step.id));
+  const smooth = at.kind === "step" && at.pane.step.id === step.id;
+  if (!smooth) go(stepAddress(step.id));
   for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
-  return paneOf(step.id).fileNamed(file);
+  return { pane: paneOf(step.id).fileNamed(file), smooth };
 }
 moving.show = (move, to) => {
   const { file, line: line2 } = move[to];
-  const pane = paneOfFile(file);
-  if (to === "from") pane?.lookDeparture(line2, main);
-  else pane?.look(line2, line2 + move.count - 1, main);
+  const found2 = paneOfFile(file);
+  if (to === "from") found2?.pane?.lookDeparture(line2, main, found2.smooth);
+  else found2?.pane?.look(line2, line2 + move.count - 1, main, found2.smooth);
 };
 moving.copied = ({ from: { file, line: line2 }, count }) => {
   const look = { file, start: line2, end: line2 + count - 1, label: "" };
-  if (!paneOfFile(file)?.look(look.start, look.end, main)) changes.look(look);
+  const found2 = paneOfFile(file);
+  if (!found2?.pane?.look(look.start, look.end, main, found2.smooth)) changes.look(look);
 };
 var onFile = null;
 function drawOnFile() {
@@ -11503,17 +11707,17 @@ function moveFile(by) {
   const on = order.findIndex((one) => one.file === onFile);
   const next = on === -1 ? order.find((one) => one.file === top) ?? (by > 0 ? order.find((one) => one.index > here) : order.findLast((one) => one.index < here)) : order[on + by];
   if (!next) return;
-  if (next.step !== at.pane.step.id) go(stepAddress(next.step));
+  const smooth = next.step === at.pane.step.id;
+  if (!smooth) go(stepAddress(next.step));
   onFile = next.file;
   drawOnFile();
-  const box2 = paneOf(next.step).fileNamed(next.file)?.box;
   for (const leaving of content.querySelectorAll(":scope > [inert]")) leaving.remove();
-  if (box2) main.scrollTop += box2.getBoundingClientRect().top - main.getBoundingClientRect().top - 16;
+  paneOf(next.step).fileNamed(next.file)?.mark(main, smooth);
 }
 function toggleViewed() {
   onFile ??= fileAtTop() ?? null;
   drawOnFile();
-  if (onFile) content.querySelector(`:scope > :first-child .file[data-file="${CSS.escape(onFile)}"] .viewed-toggle input`)?.click();
+  if (onFile) setViewed(onFile, !state.view.viewed.includes(onFile));
 }
 function leaveOpening() {
   const leaving = opening;
@@ -11619,7 +11823,13 @@ function poll() {
 }
 PAGE.lost = poll;
 viewer = await loadViewer();
-var first = await fetch("data/walkthrough.json");
+var first;
+while (!first)
+  first = await fetch("data/walkthrough.json").catch(
+    () => new Promise((done) => {
+      setTimeout(done, POLL_MS);
+    })
+  );
 tag = first.headers.get("etag") ?? "";
 state.view = await first.json();
 if (!location.hash && firstAddress()) history.replaceState(null, "", `#${firstAddress()}`);

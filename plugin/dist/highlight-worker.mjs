@@ -10457,6 +10457,7 @@ var source = (name) => `https://cdn.jsdelivr.net/npm/tm-grammars@${grammars.vers
 async function download(name) {
   const folder = process.env["WALKTHROUGH_GRAMMARS"];
   if (folder) return fs.promises.readFile(path2.join(folder, `${name}.json`)).catch(() => null);
+  if (process.env["WALKTHROUGH_TEST_SANDBOX"]) return null;
   try {
     const answer = await fetch(source(name), { signal: AbortSignal.timeout(3e4) });
     return answer.ok ? Buffer.from(await answer.arrayBuffer()) : null;

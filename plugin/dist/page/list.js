@@ -127,10 +127,13 @@ function showUnreachable({ name, reopen }) {
   box.hidden = false;
   document.body.classList.add("unreachable");
 }
-var send = (route, body) => fetch(`/${route}?token=${token}`, {
+var reads = new AbortController();
+var readSignal = reads.signal;
+var send = (route, body, signal) => fetch(`/${route}?token=${token}`, {
   method: "POST",
   headers: { "content-type": "application/json" },
-  body: JSON.stringify(body)
+  body: JSON.stringify(body),
+  ...signal && { signal }
 });
 async function post(page, route, body) {
   const problem = tooLong(body);
