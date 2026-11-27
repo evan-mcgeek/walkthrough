@@ -2,7 +2,7 @@
 import type { WalkthroughView } from '../review';
 import { DEFAULT_VIEWER } from '../viewer';
 import { chooseViewer, loadViewer } from './appearance';
-import { attrs, el, menuKeys, postQuietly, region, showAlert } from './dom';
+import { attrs, el, menuKeys, postQuietly, region, showAlert, stopReading } from './dom';
 import { commandBox, type Ending, endScreen } from './end';
 import { type FilePane, goTo, pick, setViewed } from './files';
 import { icon } from './icons';
@@ -408,6 +408,7 @@ function endSession(): void {
   stopped = true;
   clearInterval(poller);
   showEnd('ended');
+  stopReading();
   void postQuietly('stop', {});
 }
 

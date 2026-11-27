@@ -5,7 +5,7 @@ import { parseDiff } from '../diff';
 import { previewType } from '../preview';
 import type { ThreadView } from '../review';
 import type { Step } from '../walkthrough';
-import { attrs, el } from './dom';
+import { attrs, el, readSignal } from './dom';
 import { colourCode, colourDiff, colourSuggestions } from './highlight';
 import { icon } from './icons';
 import { renderMarkdown } from './markdown';
@@ -476,7 +476,7 @@ export class FilePane {
       );
       return;
     }
-    const answer = await fetch(at(this.name)).catch(() => null);
+    const answer = await fetch(at(this.name), { signal: readSignal }).catch(() => null);
     const added = new Set(parsed.blocks.flatMap(block => block.lines).flatMap(line => (line.type === LineType.INSERT && line.newNumber ? [line.newNumber] : [])));
     if (!answer?.ok) {
       box.replaceChildren(el('p', { className: 'muted' }, 'Preview failed.'));
