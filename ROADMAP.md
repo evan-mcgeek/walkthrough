@@ -88,6 +88,10 @@ The pull request that ships or drops an item updates this file.
 - Fixes: a first load the network drops is tried again instead of leaving the page blank; End session leaves no request to fail; Close returns the keyboard to the screenshot in Safari; quick Viewed clicks reach the server in order.
 - The page tests pass in Chromium, Firefox and WebKit, and no test reaches the web.
 
+### 0.1.10 (2026-11-27): a sent comment comes back once
+
+- Coming back to a pull request, a comment this walkthrough posted shows once, with its replies from the code host, instead of again as a colleague's thread beside it.
+
 ## Now
 
 - Nothing in progress.
